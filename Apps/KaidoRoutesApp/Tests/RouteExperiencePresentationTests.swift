@@ -46,7 +46,10 @@ final class RouteExperiencePresentationTests: XCTestCase {
     }
     XCTAssertEqual(
       advertised,
-      ["shuto.circuit.wangan-daikoku-run": ["shuto.pa.daikoku"]]
+      [
+        "shuto.circuit.wangan-daikoku-run": ["shuto.pa.daikoku"],
+        "shuto.circuit.scenic-grand-tour": ["shuto.pa.daikoku"],
+      ]
     )
     // A course cannot anchor on a parking area the snapshot cannot enter.
     for stopIDs in advertised.values {

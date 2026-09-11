@@ -64,8 +64,6 @@ radial-to-loop joins, and repeated laps — must render through the same pipelin
    path.
 9. **Uncertainty is visible.** Toll and passage information renders its
    explicit unconfirmed state when no current source exists.
-10. **No performance framing.** No speed, lap-time, ranking, or racing
-    elements anywhere in the presentation.
 
 ## Shape families
 
@@ -113,7 +111,7 @@ authority.
   distinguishable;
 - cyan for an eligible measured position;
 - coral for recovery or blocking states;
-- neutral, action-first copy; no speed, lap-time, ranking, or racing language.
+- neutral, action-first copy.
 
 ## Recognition reference
 

@@ -212,7 +212,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     TariffQuote(
       id: "preview.synthetic.quote.active",
       entryFacilityID: routePlan.entryFacilityID,
-      exitFacilityID: routePlan.exitFacilityID,
+      exitFacilityID: routePlan.exitFacilityID!,
       vehicleClass: vehicleClass,
       paymentMethod: paymentMethod,
       tariffVersionID: "preview.synthetic.tariff.active",

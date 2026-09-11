@@ -60,13 +60,12 @@ map as context, an explicit current-location origin chip, and the named
 route-experience catalog — versioned candidate templates over the bundled
 planning snapshot, covering the drives the audience actually runs (the C1
 inner loop, the C2-plus-Bayshore grand loop,
-the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
+the Bayshore run ending inside Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
 entry for interface language, guidance voice, ordinary-road routing preference,
-known map limitations, privacy, and licences. **Major roads first** is the
-default; **Faster route** remains available for drivers who prefer the quickest
-provider candidate. OSM source and licence credit sits under the title as a compact
+known map limitations, privacy, and licences. **Prefer highways** is the
+default, with **Avoid when possible** as the alternative. OSM source and licence credit sits under the title as a compact
 caption, adjacent to the map and off the road drawing. Each catalog card presents the
 route as a finished experience: its directional shape thumbnail, reference
 distance and duration, reviewed junction count, mapped tunnel share, landmark
@@ -139,8 +138,10 @@ band, and never recommends an exit sharing the entrance's name (same-named
 ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
 search confirm across its Bayshore and Daikoku Line ramps). An entrance on
 a member route must still match the experience's carriageway direction
-(the opposite loop is a different experience), and ordered tours keep
-their selected direction-valid entrances and exits throughout. The pairing appears as one
+(the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
+every anchor in course order. Highway preference defaults to prefer highways;
+avoid when possible limits recommendations to entrances on the chosen course
+and prefers ordinary roads for connecting legs. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.
@@ -198,23 +199,40 @@ The editor previews the concrete route shields and distance before **Use this
 route** applies a new exact `RoutePlan`. Opening or dismissing the editor
 never marks a draft as selected. Selecting another option immediately clears
 any stale access or egress preview unless the complete comparison has already
-cached the exact option's two bounded legs. While replacement surface legs
+cached the exact option's required bounded legs. While replacement surface legs
 resolve, the new option remains selected and the journey start action stays
 unavailable; only the latest selection may publish resolved surface legs. A
 selected custom route restores as custom only when its exact snapshot-bound
 plan can be reconstructed.
 
-### Optional destination
+### Journey ending
 
-A journey may end as a circuit — a directional exit and surface egress near
-the origin — or continue to a searched destination. The destination field
-appears after route choice as an optional step. Typing presents a compact list
-of address and point-of-interest candidates. Selecting one resolves a single
-coordinate and places its destination marker on the map; if suggestions are
-unavailable, the entered name remains usable by the normal search action. The
-bounded provider resolves the egress leg to that destination under the same
-fail-closed rules as every journey: missing either surface leg blocks review
-and start rather than silently skipping part of the journey.
+After choosing a route, the driver selects **Return to start**, **End at an
+expressway exit**, or **Continue to another place**. Loops default to the fixed
+planning origin, except the Daikoku loop. The three Daikoku recommendations
+finish inside Daikoku PA; exact entry/exit routes finish at their chosen exit. Opening a saved loop uses the new journey origin, not an old
+recorded location. The ending is visible in route review and persists with the
+journey checkpoint.
+
+Return to start resolves surface egress to the origin captured before departure.
+Continue to another place offers place suggestions and address search. PAs
+appear here as destinations with their own facility identity. Selecting a PA
+plans the final expressway approach and ends navigation inside the parking area;
+ordinary destinations use a legal exit and an onward surface leg. Cancelling
+an edit preserves the previous ending. A search failure leaves the edit open
+with a retry message. Required surface legs must resolve before starting.
+
+End at an expressway exit completes only after the planned exit handoff; it has
+no onward surface leg and never fabricates a return journey. Changing the exit
+replans explicitly: circuit choices retain their course and lap count, while
+custom choices must produce a legal directional route. Invalid exit choices
+leave the existing plan intact. Optional onward guidance starts automatically
+after the highway segment; the app does not require a destination prompt at the
+exit while driving.
+
+The map corner shows only the KAIDO wordmark. Route choice, scope, route names,
+and lap counts belong in the route controls and review, not in the brand mark.
+**Route map / Map** names the two map presentations.
 
 Ordinary-road access, egress, and live rerouting use the same persisted
 preference. **Major roads first** requests provider alternatives and may accept
@@ -268,8 +286,7 @@ Mirai, and the named bridges) and names a short PA set — Daikoku, Tatsumi
 First, Shibaura, Heiwajima, Oi, and Hakozaki. Pinching past the detail
 threshold names those places and every bundled PA. A
 checkered start-grid glyph may mark the derived entrance direction; it is
-purely presentational and no copy anywhere adopts competitive or performance
-framing. Each journey phase re-establishes its natural default (planning,
+purely presentational. Each journey phase re-establishes its natural default (planning,
 review, and the expressway body open on the Kaido presentation; ordinary-road
 legs open on the geographic map), and the driver may override it at any time.
 While planning, the diagram carries the driver's current position, the selected
@@ -302,8 +319,7 @@ only as quiet context or not at all. Repeated laps remain separate occurrences; 
 repeated traversals and exposes their ordinal and count instead of
 deduplicating them. A compact summary reports the entrance, JCT, PA, and exit
 counts. Facility names follow the interface locale while Japanese sign text
-and route shields remain available. The track map carries no speed, lap-time,
-ranking, or racing elements.
+and route shields remain available.
 
 Dense circuits keep the complete entrance and exit names in the header and
 visually distinguish each required route section. A practical C2 circuit

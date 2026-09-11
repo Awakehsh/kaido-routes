@@ -51,8 +51,8 @@ traffic control.
    evidence each expose their own confidence or verification state.
 6. **The driver prepares before moving.** Complex editing and study happen while
    parked. Driving mode remains glanceable and low-interaction.
-7. **Culture without racing.** Night scenery, engineering, JDM history, and PA
-   etiquette are useful content. Speed mechanics are not.
+7. **Culture is the content.** Night scenery, engineering, JDM history, and PA
+   etiquette are what the product has to say.
 8. **Recovery preserves the route.** With released rejoin evidence, a missed
    movement finds a safe legal path to a later occurrence in the selected route;
    it does not replace the drive with destination-first navigation. Without
@@ -148,6 +148,4 @@ The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 - live traffic redistribution without licensed data;
 - guaranteed toll or PA availability;
 - crowd rendezvous or event coordination at parking areas;
-- lap timing, speed scoring, competitive leaderboards, or driving telemetry for
-  public-road performance comparison;
 - claiming continuous precise location in every tunnel or CarPlay setup.

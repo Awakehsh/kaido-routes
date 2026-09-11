@@ -16,7 +16,8 @@ internal review workbench.
   planning surface — the C1 inner loop, the C2 inner loop closed by the
   Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
   Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge finishing at the Daikoku-Futo exit. The driver
+  Mirai, and the Yokohama Bay Bridge. These three Daikoku experiences end
+  inside the PA, including completion of the chosen laps on the loop. The driver
   chooses a route, never designs an entrance or exit: selecting an
   experience derives the pairing automatically (nearest reachable
   direction-valid entrance, and for loops the exit whose pairing lands in
@@ -30,6 +31,16 @@ internal review workbench.
   shortest all-Shuto path between entry and exit, lap count never changes
   the band. Destination search remains an optional continuation below the
   catalog.
+- Highway preference defaults to prefer highways: nearby connecting-expressway
+  entrances can feed both loops and one-way tours without removing their
+  ordered course. Avoid when possible keeps the selected Shuto course but
+  prefers its own entrances and ordinary roads on connecting legs. Connecting
+  tolls are outside the Shuto estimate.
+- PAs appear in destination search alongside other places. Selecting one
+  plans its exact directional access and an arrival point on the reviewed
+  parking interior. There is no separate stop-selection screen. A PA-ended
+  route has no exit, exit handoff, surface egress or entrance/exit tariff quote.
+  Arrival completes automatically from resolved position evidence inside the PA.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every
@@ -46,7 +57,7 @@ internal review workbench.
   combines the bounded surface access and egress legs with the exact selected
   Shuto route, shows full-journey distance and a non-realtime preview duration,
   and keeps passage and toll information explicitly unconfirmed when no current
-  source exists. Missing either surface leg blocks review and start rather than
+  source exists. Missing a required surface leg blocks review and start rather than
   silently skipping that part of the journey.
 - Saved-route import preserves the complete shared `RoutePlan` and never
   upgrades its evidence. A record labeled `CURRENT SNAPSHOT` has been
@@ -169,6 +180,12 @@ internal review workbench.
   targets stay in Japanese. The default whole-network journey provides
   persisted Japanese, Simplified Chinese, and English interface controls plus
   an independently persisted guidance-voice language.
+
+Journey review offers return to the fixed start, finish at the selected exit, or
+continue to a searched place, including a PA. The three Daikoku recommendations
+default to Daikoku PA; other loops default to return and exact entry/exit routes
+default to their chosen exit. Exit-only journeys have no onward surface leg. The map corner
+shows only the KAIDO wordmark; route details remain in the route controls and review.
 
 The previous C2 and K7 artifacts remain useful deterministic fixtures. They are
 not the default product, do not constrain where a journey may start, and are not

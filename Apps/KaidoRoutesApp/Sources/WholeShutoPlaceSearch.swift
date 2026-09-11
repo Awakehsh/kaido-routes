@@ -27,155 +27,89 @@ enum WholeShutoPlaceSearchState: Equatable {
   case idle
   case searching
   case results
-  case resolving
+  case empty
   case unavailable
 }
 
 @MainActor
-final class WholeShutoPlaceSearchController:
-  NSObject,
-  ObservableObject,
-  @preconcurrency MKLocalSearchCompleterDelegate
-{
+final class WholeShutoPlaceSearchController: ObservableObject {
+  typealias Search = @MainActor (String, ShutoCoordinate?) async throws
+    -> [(WholeShutoPlaceSuggestion, WholeShutoPlace)]
+
   @Published private(set) var suggestions: [WholeShutoPlaceSuggestion] = []
   @Published private(set) var state: WholeShutoPlaceSearchState = .idle
   @Published private(set) var selectedSuggestion: WholeShutoPlaceSuggestion?
 
-  private let completer: MKLocalSearchCompleter?
-  private let localSuggestionsByID: [String: WholeShutoPlaceSuggestion]
-  private let localPlacesByID: [String: WholeShutoPlace]
-  private var completionsByID: [String: MKLocalSearchCompletion] = [:]
-  private var localMatches: [WholeShutoPlaceSuggestion] = []
-
-  override init() {
-    let completer = MKLocalSearchCompleter()
-    self.completer = completer
-    localSuggestionsByID = [:]
-    localPlacesByID = [:]
-    super.init()
-    configure(completer)
-  }
+  private let localPlaces: [(WholeShutoPlaceSuggestion, WholeShutoPlace)]
+  private let searchPlaces: Search?
+  private var placesByID: [String: WholeShutoPlace] = [:]
+  private var requestID = UUID()
 
   init(
-    localPlaces: [(WholeShutoPlaceSuggestion, WholeShutoPlace)],
-    usesMapKit: Bool = true
+    localPlaces: [(WholeShutoPlaceSuggestion, WholeShutoPlace)] = [],
+    usesMapKit: Bool = true,
+    searchPlaces: Search? = nil
   ) {
-    let completer = usesMapKit ? MKLocalSearchCompleter() : nil
-    self.completer = completer
-    localSuggestionsByID = Dictionary(
-      uniqueKeysWithValues: localPlaces.map { ($0.0.id, $0.0) }
-    )
-    localPlacesByID = Dictionary(
-      uniqueKeysWithValues: localPlaces.map { ($0.0.id, $0.1) }
-    )
-    super.init()
-    if let completer {
-      configure(completer)
-    }
+    self.localPlaces = localPlaces
+    self.searchPlaces = usesMapKit ? (searchPlaces ?? Self.searchMapKit) : nil
   }
 
-  init(previewPlaces: [(WholeShutoPlaceSuggestion, WholeShutoPlace)]) {
-    completer = nil
-    localSuggestionsByID = Dictionary(
-      uniqueKeysWithValues: previewPlaces.map { ($0.0.id, $0.0) }
-    )
-    localPlacesByID = Dictionary(
-      uniqueKeysWithValues: previewPlaces.map { ($0.0.id, $0.1) }
-    )
-    super.init()
+  convenience init(previewPlaces: [(WholeShutoPlaceSuggestion, WholeShutoPlace)]) {
+    self.init(localPlaces: previewPlaces, usesMapKit: false)
   }
 
-  func update(
-    query: String,
-    near coordinate: ShutoCoordinate?
-  ) {
+  func update(query: String, near _: ShutoCoordinate?) {
+    dismissResults()
     let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard normalized.count >= 2 else {
-      clearResults()
-      return
-    }
-    if selectedSuggestion?.title == normalized {
-      suggestions = []
-      state = .idle
-      return
-    }
-
+    if selectedSuggestion?.title == normalized { return }
     selectedSuggestion = nil
-    localMatches = localSuggestionsByID.values
-      .filter { suggestion in
-        suggestion.title.localizedCaseInsensitiveContains(normalized)
-          || suggestion.subtitle.localizedCaseInsensitiveContains(normalized)
+    guard !normalized.isEmpty else { return }
+    let key = Self.searchKey(normalized)
+    let matches = localPlaces.filter { suggestion, _ in
+      [suggestion.title, suggestion.subtitle, suggestion.id].contains {
+        Self.searchKey($0).contains(key)
       }
-      .sorted {
-        if $0.isShutoFacility != $1.isShutoFacility {
-          return $0.isShutoFacility
-        }
-        return $0.id < $1.id
+    }.sorted {
+      if ($0.1.parkingAreaID != nil) != ($1.1.parkingAreaID != nil) {
+        return $0.1.parkingAreaID != nil
       }
-    if completer == nil {
-      suggestions = localMatches
-      state = suggestions.isEmpty ? .idle : .results
-      return
+      if $0.0.isShutoFacility != $1.0.isShutoFacility { return $0.0.isShutoFacility }
+      return $0.0.id < $1.0.id
     }
-
-    suggestions = localMatches
-    state = localMatches.isEmpty ? .searching : .results
-
-    if let coordinate {
-      completer?.region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude
-        ),
-        latitudinalMeters: 120_000,
-        longitudinalMeters: 120_000
-      )
-    }
-    completer?.queryFragment = normalized
+    append(matches)
+    state = suggestions.isEmpty ? .idle : .results
   }
 
-  func resolve(
-    _ suggestion: WholeShutoPlaceSuggestion
-  ) async throws -> WholeShutoPlace {
-    state = .resolving
-    if let localPlace = localPlacesByID[suggestion.id] {
-      selectedSuggestion = suggestion
-      suggestions = []
-      state = .idle
-      return localPlace
+  func search(query: String, near coordinate: ShutoCoordinate?) async {
+    clearSelection()
+    update(query: query, near: coordinate)
+    let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !normalized.isEmpty else { return }
+    guard let searchPlaces else {
+      state = suggestions.isEmpty ? .empty : .results
+      return
     }
-    guard let completion = completionsByID[suggestion.id] else {
+    let currentRequest = requestID
+    state = .searching
+    do {
+      let results = try await searchPlaces(normalized, coordinate)
+      guard currentRequest == requestID else { return }
+      append(results)
+      state = suggestions.isEmpty ? .empty : .results
+    } catch {
+      guard currentRequest == requestID else { return }
+      state = .unavailable
+    }
+  }
+
+  func resolve(_ suggestion: WholeShutoPlaceSuggestion) async throws -> WholeShutoPlace {
+    guard let place = placesByID[suggestion.id] else {
       state = .unavailable
       throw C2NavigationDemoError.placeNotFound
     }
-
-    do {
-      let request = MKLocalSearch.Request(completion: completion)
-      let response = try await MKLocalSearch(request: request).start()
-      guard let item = response.mapItems.first else {
-        throw C2NavigationDemoError.placeNotFound
-      }
-      let coordinate: CLLocationCoordinate2D
-      if #available(iOS 26.0, *) {
-        coordinate = item.location.coordinate
-      } else {
-        coordinate = item.placemark.coordinate
-      }
-      let place = WholeShutoPlace(
-        title: item.name ?? suggestion.title,
-        coordinate: ShutoCoordinate(
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude
-        )
-      )
-      selectedSuggestion = suggestion
-      suggestions = []
-      state = .idle
-      return place
-    } catch {
-      state = .unavailable
-      throw error
-    }
+    dismissResults()
+    selectedSuggestion = suggestion
+    return place
   }
 
   func clearSelection() {
@@ -183,77 +117,65 @@ final class WholeShutoPlaceSearchController:
   }
 
   func dismissResults() {
-    completer?.cancel()
-    completionsByID = [:]
+    requestID = UUID()
     suggestions = []
-    localMatches = []
-    if state != .resolving {
-      state = .idle
-    }
-  }
-
-  func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-    let completions = completer.results.prefix(5)
-    var mapped = localMatches
-    var originals: [String: MKLocalSearchCompletion] = [:]
-    var canonicalTitles = Set(localMatches.map { Self.canonicalTitle($0.title) })
-    for completion in completions {
-      let id = Self.suggestionID(
-        title: completion.title,
-        subtitle: completion.subtitle
-      )
-      let canonicalTitle = Self.canonicalTitle(completion.title)
-      guard originals[id] == nil,
-        !canonicalTitles.contains(canonicalTitle)
-      else { continue }
-      originals[id] = completion
-      canonicalTitles.insert(canonicalTitle)
-      mapped.append(
-        WholeShutoPlaceSuggestion(
-          id: id,
-          title: completion.title,
-          subtitle: completion.subtitle
-        )
-      )
-    }
-    completionsByID = originals
-    suggestions = mapped
-    state = mapped.isEmpty ? .idle : .results
-  }
-
-  func completer(
-    _: MKLocalSearchCompleter,
-    didFailWithError _: any Error
-  ) {
-    completionsByID = [:]
-    suggestions = localMatches
-    state = localMatches.isEmpty ? .unavailable : .results
-  }
-
-  private func clearResults() {
-    completer?.queryFragment = ""
-    completionsByID = [:]
-    localMatches = []
-    suggestions = []
+    placesByID = [:]
     state = .idle
   }
 
-  private func configure(_ completer: MKLocalSearchCompleter) {
-    completer.delegate = self
-    completer.resultTypes = [.address, .pointOfInterest]
+  private func append(_ results: [(WholeShutoPlaceSuggestion, WholeShutoPlace)]) {
+    let facilityTitles = Set(suggestions.filter(\.isShutoFacility).map {
+      Self.searchKey($0.title).filter { !$0.isWhitespace }
+    })
+    for (suggestion, place) in results where placesByID[suggestion.id] == nil {
+      // Keep the bundled directional identity when MapKit repeats a facility.
+      guard !facilityTitles.contains(Self.searchKey(suggestion.title).filter { !$0.isWhitespace }) else { continue }
+      suggestions.append(suggestion)
+      placesByID[suggestion.id] = place
+    }
   }
 
-  private static func suggestionID(
-    title: String,
-    subtitle: String
-  ) -> String {
-    "\(title)|\(subtitle)"
+  private static func searchKey(_ text: String) -> String {
+    (text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text)
+      .replacingOccurrences(of: "黒", with: "黑").lowercased()
   }
 
-  private static func canonicalTitle(_ title: String) -> String {
-    title
-      .replacingOccurrences(of: " ", with: "")
-      .replacingOccurrences(of: "　", with: "")
-      .lowercased()
+  private static func searchMapKit(
+    query: String, near coordinate: ShutoCoordinate?
+  ) async throws -> [(WholeShutoPlaceSuggestion, WholeShutoPlace)] {
+    let request = MKLocalSearch.Request()
+    request.naturalLanguageQuery = query
+    request.resultTypes = [.address, .pointOfInterest]
+    if let coordinate {
+      request.region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude),
+        latitudinalMeters: 120_000, longitudinalMeters: 120_000)
+    }
+    let response: MKLocalSearch.Response
+    do {
+      response = try await MKLocalSearch(request: request).start()
+    } catch let error as MKError where error.code == .placemarkNotFound {
+      return []
+    }
+    return response.mapItems.map { item in
+      let coordinate: CLLocationCoordinate2D
+      let address: String
+      if #available(iOS 26.0, *) {
+        coordinate = item.location.coordinate
+        address = item.address?.fullAddress ?? ""
+      } else {
+        coordinate = item.placemark.coordinate
+        address = item.placemark.title ?? ""
+      }
+      let title = item.name ?? address
+      return (
+        WholeShutoPlaceSuggestion(
+          id: "mapkit:\(coordinate.latitude),\(coordinate.longitude):\(title)",
+          title: title, subtitle: address),
+        WholeShutoPlace(
+          title: title,
+          coordinate: ShutoCoordinate(latitude: coordinate.latitude, longitude: coordinate.longitude))
+      )
+    }
   }
 }

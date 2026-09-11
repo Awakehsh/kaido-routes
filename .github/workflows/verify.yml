@@ -183,7 +183,15 @@ jobs:
             -only-testing:KaidoRoutesAppTests/ReleasedProductRouteAuthoringModelTests \
             -only-testing:KaidoRoutesAppTests/RouteAtlasAttributionTests \
             -only-testing:KaidoRoutesAppTests/RouteExperiencePresentationTests \
+            -only-testing:KaidoRoutesAppTests/WholeShutoParkingDestinationTests \
             -only-testing:KaidoRoutesAppTests/SavedRouteLibraryModelTests \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testJourneyEndingChangesPreserveRouteAndRestoreFixedOrigin \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExitEndingCompletesWithoutInventingSurfaceEgress \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDaikokuDefaultsToPAAndC1ReturnsToStart \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExitChangeRetainsCircuitAndLapsAndRejectsInvalidExit \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testMissingAccessStillBlocksAnExitOnlyJourney \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testOnwardDestinationStartsAutomaticallyAfterExit \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCustomRouteFromTheHomeCatalogEndsAtItsExit \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testFirstLocationPermissionRoundTripStartsTheSameLiveJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testEntryTransitionRequiresOrderedObservationsBeforeExpressway \
@@ -192,9 +200,18 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryStalePositionCancelsObsoleteManeuver \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryCurrentStepPrecedesPreviewAfterFixGap \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRetriesAnUnstartedJunctionThroughLiveObservations \
-            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleButKeepsInaccurateSurfaceFixes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRejectedRampAdmissionKeepsTheSurfacePositionAvailable \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testPositionLossNoticeStaysSilentInsideTheCooldown \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace \
+            -only-testing:KaidoRoutesAppTests/WholeShutoPlaceSearchTests \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDestinationSearchSelectsOneResolvedPlace \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testPAIsSelectedThroughDestinationSearch \
             -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"

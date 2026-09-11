@@ -562,11 +562,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let facilitiesByID = context.facilitiesByID
     guard
       route.routePlan.entryFacilityID == route.entryFacility.facilityID,
-      route.routePlan.exitFacilityID == route.exitFacility.facilityID,
+      route.routePlan.hasValidDestination,
+      route.routePlan.exitFacilityID == route.exitFacility?.facilityID,
+      route.routePlan.destinationParkingAreaID == route.destinationParkingArea?.parkingAreaID,
       facilitiesByID[route.entryFacility.facilityID] == route.entryFacility,
-      facilitiesByID[route.exitFacility.facilityID] == route.exitFacility,
       route.entryFacility.canEnter,
-      route.exitFacility.canExit
+      (route.exitFacility.map { facilitiesByID[$0.facilityID] == $0 && $0.canExit } == true
+        || route.destinationParkingArea.map { database.parkingAreas.contains($0) && $0.isDrivable } == true)
     else {
       throw ShutoPlannedRouteRuntimeCompilationError
         .facilityBindingMismatch
@@ -625,9 +627,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       route.entryFacility.entryEdgeCandidates.contains(where: {
         $0.edgeID == route.edges.first?.edgeID
       }),
-      route.exitFacility.exitEdgeCandidates.contains(where: {
-        $0.edgeID == route.edges.last?.edgeID
-      })
+      (route.exitFacility?.exitEdgeCandidates.contains(where: { $0.edgeID == route.edges.last?.edgeID }) == true
+        || route.destinationParkingArea?.interiorEdgeIDs?.contains(route.edges.last!.edgeID) == true)
     else {
       throw ShutoPlannedRouteRuntimeCompilationError
         .networkEdgeBindingMismatch

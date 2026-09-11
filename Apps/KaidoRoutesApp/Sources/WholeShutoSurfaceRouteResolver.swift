@@ -6,8 +6,8 @@ import OSLog
 enum WholeShutoSurfaceRoutePreference:
   String, CaseIterable, Codable, Equatable, Hashable, Sendable
 {
-  case majorRoads = "MAJOR_ROADS"
-  case fastest = "FASTEST"
+  case preferHighways = "PREFER_HIGHWAYS"
+  case avoidHighways = "AVOID_HIGHWAYS"
 }
 
 protocol WholeShutoSurfaceRouteResolving: Sendable {
@@ -43,7 +43,7 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
     recommendations: [ShutoRouteRecommendation],
     origin: ShutoCoordinate,
     destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference = .majorRoads
+    preference: WholeShutoSurfaceRoutePreference = .preferHighways
   ) async -> WholeShutoRouteChoiceEvaluation {
     var surfaceRoutesByRoutePlanID: [
       String: WholeShutoRouteChoiceSurfaceRoutes
@@ -55,7 +55,7 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
       let entry = recommendation.route.coordinates.first
         ?? recommendation.route.entryFacility.coordinate
       let exit = recommendation.route.coordinates.last
-        ?? recommendation.route.exitFacility.coordinate
+        ?? recommendation.route.destinationCoordinate
       async let access = resolver.route(
         from: origin,
         to: entry,
@@ -131,8 +131,8 @@ struct WholeShutoMapKitSurfaceRouteResolver:
   WholeShutoSurfaceRouteResolving,
   Sendable
 {
-  static let maximumMajorRoadDetourFraction = 0.15
-  static let maximumMajorRoadDetourSeconds = 8.0 * 60.0
+  static let maximumPreferenceDetourFraction = 0.15
+  static let maximumPreferenceDetourSeconds = 8.0 * 60.0
 
   private static let logger = Logger(
     subsystem: "app.kaidoroutes",
@@ -144,20 +144,10 @@ struct WholeShutoMapKitSurfaceRouteResolver:
     to destination: ShutoCoordinate,
     preference: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
-    let request = MKDirections.Request()
-    request.source = Self.mapItem(origin)
-    request.destination = Self.mapItem(destination)
-    request.transportType = .automobile
-    request.requestsAlternateRoutes = true
-    request.highwayPreference = .avoid
-    request.tollPreference = .avoid
+    let request = Self.request(from: origin, to: destination, preference: preference)
     do {
       let response = try await MKDirections(request: request).calculate()
-      let surfaceRoutes: [WholeShutoSurfaceRoute] =
-        response.routes.compactMap { route in
-          guard !route.hasHighways, !route.hasTolls else { return nil }
-          return Self.surfaceRoute(from: route)
-        }
+      let surfaceRoutes = response.routes.compactMap(Self.surfaceRoute)
       guard
         let route = Self.selectRoute(
           from: surfaceRoutes,
@@ -177,25 +167,48 @@ struct WholeShutoMapKitSurfaceRouteResolver:
     }
   }
 
+  static func request(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate,
+    preference: WholeShutoSurfaceRoutePreference
+  ) -> MKDirections.Request {
+    let request = MKDirections.Request()
+    request.source = Self.mapItem(origin)
+    request.destination = Self.mapItem(destination)
+    request.transportType = .automobile
+    request.requestsAlternateRoutes = true
+    request.highwayPreference = preference == .avoidHighways ? .avoid : .any
+    request.tollPreference = preference == .avoidHighways ? .avoid : .any
+    return request
+  }
+
   static func selectRoute(
     from routes: [WholeShutoSurfaceRoute],
     preference: WholeShutoSurfaceRoutePreference
   ) -> WholeShutoSurfaceRoute? {
-    guard let fastest = routes.min(by: isFaster) else { return nil }
-    guard preference == .majorRoads else { return fastest }
+    let preferredRoutes: [WholeShutoSurfaceRoute]
+    if preference == .avoidHighways {
+      let ordinaryRoads = routes.filter { $0.hasHighways != true && $0.hasTolls != true }
+      preferredRoutes = ordinaryRoads.isEmpty ? routes : ordinaryRoads
+    } else {
+      preferredRoutes = routes
+    }
+    guard let fastest = preferredRoutes.min(by: isFaster) else { return nil }
 
-    // MapKit exposes neither road class nor width. Within a bounded detour,
-    // fewer maneuvers and higher implied speed are the only honest signals
-    // that an alternate is likely to stay on simpler, better-flowing roads.
+    // A highway preference must not turn a short connection into a long detour.
     let allowedDetour = min(
       fastest.expectedTravelTimeSeconds
-        * maximumMajorRoadDetourFraction,
-      maximumMajorRoadDetourSeconds
+        * maximumPreferenceDetourFraction,
+      maximumPreferenceDetourSeconds
     )
-    let eligible = routes.filter {
+    let eligible = preferredRoutes.filter {
       $0.expectedTravelTimeSeconds
         <= fastest.expectedTravelTimeSeconds + allowedDetour
     }
+    if preference == .preferHighways {
+      return eligible.filter { $0.hasHighways == true }.min(by: isFaster) ?? fastest
+    }
+    // MapKit exposes no road width; fewer maneuvers only suggest a simpler route.
     return eligible.min(by: isMoreMajorRoadLike) ?? fastest
   }
 
@@ -279,7 +292,9 @@ struct WholeShutoMapKitSurfaceRouteResolver:
       },
       guidanceLanguageCode: Self.supportedSpeechLanguageCode(
         Locale.preferredLanguages.first ?? Locale.current.identifier
-      )
+      ),
+      hasHighways: route.hasHighways,
+      hasTolls: route.hasTolls
     )
   }
 

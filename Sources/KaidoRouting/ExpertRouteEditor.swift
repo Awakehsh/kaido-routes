@@ -55,10 +55,12 @@ public enum ExpertRouteEditorError: Error, Equatable, Sendable {
 public enum ReviewedRouteEditorDestination: Codable, Equatable, Sendable {
   case decisionPoint(String)
   case exitFacility(String)
+  case parkingArea(String)
 
   private enum CodingKeys: String, CodingKey {
     case decisionPointID = "decision_point_id"
     case exitFacilityID = "exit_facility_id"
+    case parkingAreaID = "parking_area_id"
   }
 
   public init(from decoder: Decoder) throws {
@@ -71,11 +73,14 @@ public enum ReviewedRouteEditorDestination: Codable, Equatable, Sendable {
       String.self,
       forKey: .exitFacilityID
     )
-    switch (decisionPointID, exitFacilityID) {
-    case (.some(let id), .none):
+    let parkingAreaID = try container.decodeIfPresent(String.self, forKey: .parkingAreaID)
+    switch (decisionPointID, exitFacilityID, parkingAreaID) {
+    case (.some(let id), .none, .none):
       self = .decisionPoint(id)
-    case (.none, .some(let id)):
+    case (.none, .some(let id), .none):
       self = .exitFacility(id)
+    case (.none, .none, .some(let id)):
+      self = .parkingArea(id)
     default:
       throw DecodingError.dataCorrupted(
         DecodingError.Context(
@@ -93,6 +98,8 @@ public enum ReviewedRouteEditorDestination: Codable, Equatable, Sendable {
       try container.encode(id, forKey: .decisionPointID)
     case .exitFacility(let id):
       try container.encode(id, forKey: .exitFacilityID)
+    case .parkingArea(let id):
+      try container.encode(id, forKey: .parkingAreaID)
     }
   }
 }
@@ -166,6 +173,7 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
   public let initialEdgeTollDomainID: String
   public let firstDecisionPointID: String?
   public let directExitFacilityID: String?
+  public let directParkingAreaID: String?
   public let directRouteOccurrences: [RouteOccurrence]
 
   public init(
@@ -179,6 +187,7 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     self.initialEdgeTollDomainID = initialEdgeTollDomainID
     self.firstDecisionPointID = firstDecisionPointID
     directExitFacilityID = nil
+    directParkingAreaID = nil
     directRouteOccurrences = []
   }
 
@@ -186,7 +195,8 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     facilityID: String,
     initialEdgeID: String,
     initialEdgeTollDomainID: String,
-    directExitFacilityID: String,
+    directExitFacilityID: String? = nil,
+    directParkingAreaID: String? = nil,
     directRouteOccurrences: [RouteOccurrence]
   ) {
     self.facilityID = facilityID
@@ -194,6 +204,7 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     self.initialEdgeTollDomainID = initialEdgeTollDomainID
     firstDecisionPointID = nil
     self.directExitFacilityID = directExitFacilityID
+    self.directParkingAreaID = directParkingAreaID
     self.directRouteOccurrences = directRouteOccurrences
   }
 
@@ -203,6 +214,7 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     case initialEdgeTollDomainID = "initial_edge_toll_domain_id"
     case firstDecisionPointID = "first_decision_point_id"
     case directExitFacilityID = "direct_exit_facility_id"
+    case directParkingAreaID = "direct_parking_area_id"
     case directRouteOccurrences = "direct_route_occurrences"
   }
 
@@ -222,6 +234,7 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
       String.self,
       forKey: .directExitFacilityID
     )
+    directParkingAreaID = try container.decodeIfPresent(String.self, forKey: .directParkingAreaID)
     directRouteOccurrences =
       try container.decodeIfPresent(
         [RouteOccurrence].self,
@@ -329,7 +342,14 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
       ].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
         issues.append("editor entrance contains an empty identifier")
       }
-      switch (entrance.firstDecisionPointID, entrance.directExitFacilityID) {
+      if entrance.directExitFacilityID != nil && entrance.directParkingAreaID != nil {
+        issues.append("editor direct route has multiple destinations")
+      }
+      if let parkingID = entrance.directParkingAreaID,
+        (entrance.directRouteOccurrences.last?.parkingAreaID != parkingID || entrance.directRouteOccurrences.last?.kind != .paVisit) {
+        issues.append("editor direct PA route has an invalid destination")
+      }
+      switch (entrance.firstDecisionPointID, entrance.directExitFacilityID ?? entrance.directParkingAreaID) {
       case (.some(let firstDecisionPointID), .none):
         if firstDecisionPointID.trimmingCharacters(
           in: .whitespacesAndNewlines
@@ -407,6 +427,9 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
           !decisionPointIDSet.contains(nextID)
         {
           issues.append("editor choice references an unknown decision point")
+        }
+        if case .parkingArea(let id) = choice.destination, id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          issues.append("editor choice contains an empty parking area ID")
         }
         if case .exitFacility(let exitID) = choice.destination,
           exitID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -496,7 +519,7 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
       else { continue }
       for choice in decisionPoint.choices {
         switch choice.destination {
-        case .exitFacility:
+        case .exitFacility, .parkingArea:
           return true
         case .decisionPoint(let nextDecisionPointID):
           pending.append(nextDecisionPointID)
@@ -539,6 +562,7 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
   public let availableLapCandidates: [ExpertRouteEditorLapCandidate]
   public let occurrences: [RouteOccurrence]
   public let selectedExitFacilityID: String?
+  public let selectedParkingAreaID: String?
 
   public init(
     state: ExpertRouteEditorState,
@@ -551,7 +575,8 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
     availableChoices: [ReviewedRouteEditorChoice],
     availableLapCandidates: [ExpertRouteEditorLapCandidate],
     occurrences: [RouteOccurrence],
-    selectedExitFacilityID: String?
+    selectedExitFacilityID: String?,
+    selectedParkingAreaID: String? = nil
   ) {
     self.state = state
     self.networkSnapshotID = networkSnapshotID
@@ -564,6 +589,7 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
     self.availableLapCandidates = availableLapCandidates
     self.occurrences = occurrences
     self.selectedExitFacilityID = selectedExitFacilityID
+    self.selectedParkingAreaID = selectedParkingAreaID
   }
 }
 
@@ -587,6 +613,7 @@ public struct ExpertRouteEditorSession: Sendable {
   private let recoveryPolicy: RoutePlan.RecoveryPolicy
   private var currentDecisionPointID: String?
   private var selectedExitFacilityID: String?
+  private var selectedParkingAreaID: String?
   private var occurrences: [RouteOccurrence]
   private var history: [SelectionRecord]
   public private(set) var state: ExpertRouteEditorState
@@ -624,13 +651,14 @@ public struct ExpertRouteEditorSession: Sendable {
     self.entranceFacilityID = entranceFacilityID
     self.recoveryPolicy = recoveryPolicy
     history = []
-    if let directExitFacilityID = entrance.directExitFacilityID {
+    if entrance.directExitFacilityID != nil || entrance.directParkingAreaID != nil {
       guard entrance.directRouteOccurrences.first?.id == initialOccurrenceID
       else {
         throw ExpertRouteEditorError.invalidIdentifier
       }
       currentDecisionPointID = nil
-      selectedExitFacilityID = directExitFacilityID
+      selectedExitFacilityID = entrance.directExitFacilityID
+      selectedParkingAreaID = entrance.directParkingAreaID
       occurrences = entrance.directRouteOccurrences
       state = .finished
     } else {
@@ -662,7 +690,8 @@ public struct ExpertRouteEditorSession: Sendable {
       availableChoices: state == .editing ? decisionPoint?.choices ?? [] : [],
       availableLapCandidates: availableLapCandidates,
       occurrences: occurrences,
-      selectedExitFacilityID: selectedExitFacilityID
+      selectedExitFacilityID: selectedExitFacilityID,
+      selectedParkingAreaID: selectedParkingAreaID
     )
   }
 
@@ -724,6 +753,10 @@ public struct ExpertRouteEditorSession: Sendable {
     switch choice.destination {
     case .decisionPoint(let nextDecisionPointID):
       self.currentDecisionPointID = nextDecisionPointID
+    case .parkingArea(let parkingID):
+      self.currentDecisionPointID = nil
+      selectedParkingAreaID = parkingID
+      state = .finished
     case .exitFacility(let exitFacilityID):
       self.currentDecisionPointID = nil
       selectedExitFacilityID = exitFacilityID
@@ -810,6 +843,7 @@ public struct ExpertRouteEditorSession: Sendable {
     occurrences.removeLast(record.appendedOccurrenceIDs.count)
     currentDecisionPointID = record.decisionPointIDs.first
     selectedExitFacilityID = nil
+    selectedParkingAreaID = nil
     state = .editing
   }
 
@@ -819,7 +853,7 @@ public struct ExpertRouteEditorSession: Sendable {
     guard interaction == .parked else {
       throw ExpertRouteEditorError.interactionLocked
     }
-    guard state == .finished, let selectedExitFacilityID else {
+    guard state == .finished, selectedExitFacilityID != nil || selectedParkingAreaID != nil else {
       throw ExpertRouteEditorError.routeIncomplete
     }
     return RoutePlan(
@@ -827,6 +861,7 @@ public struct ExpertRouteEditorSession: Sendable {
       networkSnapshotID: catalog.networkSnapshotID,
       entryFacilityID: entranceFacilityID,
       exitFacilityID: selectedExitFacilityID,
+      destinationParkingAreaID: selectedParkingAreaID,
       recoveryPolicy: recoveryPolicy,
       occurrences: occurrences
     )

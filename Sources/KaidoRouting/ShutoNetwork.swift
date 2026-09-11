@@ -459,7 +459,8 @@ public enum ShutoRoutePreference:
 public struct ShutoPlannedRoute: Equatable, Sendable {
   public let routePlan: RoutePlan
   public let entryFacility: ShutoNetworkDatabase.Facility
-  public let exitFacility: ShutoNetworkDatabase.Facility
+  public let exitFacility: ShutoNetworkDatabase.Facility?
+  public let destinationParkingArea: ShutoNetworkDatabase.ParkingArea?
   public let edges: [ShutoNetworkDatabase.Edge]
   public let coordinates: [ShutoCoordinate]
   public let routeIDsInOrder: [String]
@@ -476,7 +477,8 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
   public init(
     routePlan: RoutePlan,
     entryFacility: ShutoNetworkDatabase.Facility,
-    exitFacility: ShutoNetworkDatabase.Facility,
+    exitFacility: ShutoNetworkDatabase.Facility?,
+    destinationParkingArea: ShutoNetworkDatabase.ParkingArea? = nil,
     edges: [ShutoNetworkDatabase.Edge],
     coordinates: [ShutoCoordinate],
     routeIDsInOrder: [String],
@@ -487,6 +489,7 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
     self.routePlan = routePlan
     self.entryFacility = entryFacility
     self.exitFacility = exitFacility
+    self.destinationParkingArea = destinationParkingArea
     self.edges = edges
     self.coordinates = coordinates
     self.routeIDsInOrder = routeIDsInOrder
@@ -494,6 +497,10 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
     self.preference = preference
     self.lapBoundaryOccurrenceIndices = lapBoundaryOccurrenceIndices
   }
+
+  public var destinationID: String { destinationParkingArea?.parkingAreaID ?? exitFacility!.facilityID }
+  public var destinationNameJA: String { destinationParkingArea?.nameJA ?? exitFacility!.nameJA }
+  public var destinationCoordinate: ShutoCoordinate { coordinates.last ?? destinationParkingArea?.coordinate ?? exitFacility!.coordinate }
 
   /// Whether both values describe the same road: the same plan, the same
   /// ordered edges and geometry, the same facilities and preference.
@@ -506,6 +513,7 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
     routePlan == other.routePlan
       && entryFacility == other.entryFacility
       && exitFacility == other.exitFacility
+      && destinationParkingArea == other.destinationParkingArea
       && edges == other.edges
       && coordinates == other.coordinates
       && routeIDsInOrder == other.routeIDsInOrder
@@ -625,11 +633,16 @@ public struct ShutoRoutePlanner: Sendable {
     guard (try? SharedRouteCodec.validate(document)) != nil,
       routePlan.networkSnapshotID == database.networkSnapshotID,
       let entryFacility = facilitiesByID[routePlan.entryFacilityID],
-      let exitFacility = facilitiesByID[routePlan.exitFacilityID],
-      entryFacility.canEnter,
-      exitFacility.canExit
+      entryFacility.canEnter
     else {
       throw ShutoNetworkError.routeUnavailable
+    }
+
+    let exitFacility = routePlan.exitFacilityID.flatMap { facilitiesByID[$0] }
+    let parkingArea = database.parkingAreas.first { $0.parkingAreaID == routePlan.destinationParkingAreaID }
+    guard (exitFacility?.canExit == true && parkingArea == nil)
+      || (exitFacility == nil && parkingArea?.isDrivable == true) else {
+      throw ShutoNetworkError.facilityUnavailable
     }
 
     let movementDefinitionsByID = Dictionary(
@@ -658,9 +671,8 @@ public struct ShutoRoutePlanner: Sendable {
       entryFacility.entryEdgeCandidates.contains(where: {
         $0.edgeID == firstEdge.edgeID
       }),
-      exitFacility.exitEdgeCandidates.contains(where: {
-        $0.edgeID == lastEdge.edgeID
-      }),
+      (exitFacility?.exitEdgeCandidates.contains(where: { $0.edgeID == lastEdge.edgeID }) == true
+        || parkingArea?.interiorEdgeIDs?.contains(lastEdge.edgeID) == true),
       zip(routeEdges, routeEdges.dropFirst()).allSatisfy({
         $0.toNodeID == $1.fromNodeID
       })
@@ -673,6 +685,7 @@ public struct ShutoRoutePlanner: Sendable {
       planID: routePlan.id,
       entryFacility: entryFacility,
       exitFacility: exitFacility,
+      destinationParkingArea: parkingArea,
       preference: preference
     )
     guard restored.routePlan == routePlan else {
@@ -751,7 +764,7 @@ public struct ShutoRoutePlanner: Sendable {
       .filter {
         let signature =
           $0.route.entryFacility.facilityID + "|"
-          + $0.route.exitFacility.facilityID + "|"
+          + $0.route.destinationID + "|"
           + $0.route.routeIDsInOrder.joined(separator: ",")
         return signatures.insert(signature).inserted
       }
@@ -870,7 +883,8 @@ public struct ShutoRoutePlanner: Sendable {
     routeEdges: [ShutoNetworkDatabase.Edge],
     planID: String,
     entryFacility: ShutoNetworkDatabase.Facility,
-    exitFacility: ShutoNetworkDatabase.Facility,
+    exitFacility: ShutoNetworkDatabase.Facility?,
+    destinationParkingArea: ShutoNetworkDatabase.ParkingArea? = nil,
     preference: ShutoRoutePreference,
     lapBoundaryOccurrenceIndices: [Int] = []
   ) -> ShutoPlannedRoute {
@@ -919,7 +933,8 @@ public struct ShutoRoutePlanner: Sendable {
       id: planID,
       networkSnapshotID: database.networkSnapshotID,
       entryFacilityID: entryFacility.facilityID,
-      exitFacilityID: exitFacility.facilityID,
+      exitFacilityID: exitFacility?.facilityID,
+      destinationParkingAreaID: destinationParkingArea?.parkingAreaID,
       recoveryPolicy: .safeRejoin,
       actualDistanceKM: distanceMeters / 1_000,
       occurrences: occurrences
@@ -928,6 +943,7 @@ public struct ShutoRoutePlanner: Sendable {
       routePlan: routePlan,
       entryFacility: entryFacility,
       exitFacility: exitFacility,
+      destinationParkingArea: destinationParkingArea,
       edges: routeEdges,
       coordinates: coordinates,
       routeIDsInOrder: routeIDs,

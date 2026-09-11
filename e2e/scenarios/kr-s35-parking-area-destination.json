@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S35",
+  "title": "A PA destination completes inside the parking area without an exit handoff",
+  "layer": "SIMULATION",
+  "tags": ["parking-area", "destination", "arrival"],
+  "purpose": "Finish at the exact parking interior only with resolved high-confidence arrival evidence, without inventing an expressway exit.",
+  "evidence": {"classification": "SYNTHETIC", "sources": [], "limitations": ["Synthetic arrival evidence; no physical parking-area or location-accuracy qualification."], "release_blockers": []},
+  "given": {
+    "network_snapshot": {"id": "test.snapshot.pa-destination", "status": "TEST", "effective_at": "2026-09-09T00:00:00+09:00"},
+    "route_plan": {
+      "plan_id": "test.plan.pa-destination",
+      "network_snapshot_id": "test.snapshot.pa-destination",
+      "entry_facility_id": "test.entry",
+      "destination_parking_area_id": "test.pa",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {"occurrence_id": "approach", "index": 0, "kind": "EDGE", "entity_id": "test.approach"},
+        {"occurrence_id": "pa-access", "index": 1, "kind": "JUNCTION_MOVEMENT", "entity_id": "test.pa-access", "parking_area_id": "test.pa"},
+        {"occurrence_id": "parking-arrival", "index": 2, "kind": "PA_VISIT", "entity_id": "test.parking-interior", "parking_area_id": "test.pa"}
+      ]
+    },
+    "inputs": {},
+    "system_state": {"journey_phase": "STRICT_ROUTE", "current_occurrence_id": "approach"}
+  },
+  "when": [
+    {"id": "approaching", "at_ms": 1000, "type": "LOCATION_UPDATED", "payload": {"matched_occurrence_id": "approach", "candidate_resolution": "RESOLVED", "confidence": "HIGH"}},
+    {"id": "uncertain-parking", "at_ms": 2000, "type": "LOCATION_UPDATED", "payload": {"matched_occurrence_id": "parking-arrival", "candidate_resolution": "RESOLVED", "confidence": "LOW"}},
+    {"id": "parking-arrived", "at_ms": 3000, "type": "LOCATION_UPDATED", "payload": {"matched_occurrence_id": "parking-arrival", "candidate_resolution": "RESOLVED", "confidence": "HIGH"}},
+    {"id": "later-fix", "at_ms": 4000, "type": "LOCATION_UPDATED", "payload": {"matched_occurrence_id": "approach", "candidate_resolution": "RESOLVED", "confidence": "HIGH"}}
+  ],
+  "then": [
+    {"id": "approach-does-not-arrive", "after": "approaching", "category": "NAVIGATION", "subject": "journey.phase", "matcher": "EQUALS", "expected": "STRICT_ROUTE", "rationale": "Being near the PA is not arrival."},
+    {"id": "uncertainty-does-not-arrive", "after": "uncertain-parking", "category": "SAFETY", "subject": "journey.phase", "matcher": "EQUALS", "expected": "STRICT_ROUTE", "rationale": "Low confidence cannot complete the journey."},
+    {"id": "arrives-in-pa", "after": "parking-arrived", "category": "NAVIGATION", "subject": "journey.phase", "matcher": "EQUALS", "expected": "COMPLETED", "rationale": "The PA is the destination, not an intermediate stop before an exit."},
+    {"id": "pa-arrival-trigger", "after": "parking-arrived", "category": "NAVIGATION", "subject": "journey.last_phase_transition.trigger", "matcher": "EQUALS", "expected": "PARKING_AREA_DESTINATION_REACHED", "rationale": "No exit handoff or user confirmation is used."},
+    {"id": "no-exit-invented", "after": "parking-arrived", "category": "SAFETY", "subject": "egress_plan.exit_facility_id", "matcher": "ABSENT", "rationale": "The driver remains inside the toll domain."},
+    {"id": "completion-stays-complete", "after": "later-fix", "category": "NAVIGATION", "subject": "journey.phase", "matcher": "EQUALS", "expected": "COMPLETED", "rationale": "Later location callbacks cannot restart navigation past the destination."}
+  ]
+}

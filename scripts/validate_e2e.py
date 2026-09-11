@@ -235,7 +235,6 @@ def validate_route_plan(v: Validation, route_plan: Any, network_snapshot_id: Any
         "plan_id",
         "network_snapshot_id",
         "entry_facility_id",
-        "exit_facility_id",
         "recovery_policy",
         "occurrences",
     }
@@ -246,11 +245,20 @@ def validate_route_plan(v: Validation, route_plan: Any, network_snapshot_id: Any
     if route_plan["recovery_policy"] not in RECOVERY_POLICIES:
         v.add(f"unknown recovery policy: {route_plan['recovery_policy']!r}")
 
+    destination_keys = [key for key in ("exit_facility_id", "destination_parking_area_id") if key in route_plan]
+    if len(destination_keys) != 1:
+        v.add("given.route_plan requires exactly one of exit_facility_id or destination_parking_area_id")
+    for key in destination_keys:
+        if not isinstance(route_plan[key], str) or not route_plan[key].strip():
+            v.add(f"given.route_plan.{key} must be non-empty")
     occurrences = route_plan["occurrences"]
     if not isinstance(occurrences, list) or not occurrences:
         v.add("given.route_plan.occurrences must be a non-empty array")
         return
 
+    destination_pa = route_plan.get("destination_parking_area_id")
+    if destination_pa is not None and (not isinstance(occurrences[-1], dict) or occurrences[-1].get("kind") != "PA_VISIT" or occurrences[-1].get("parking_area_id") != destination_pa):
+        v.add("given.route_plan must end inside its PA destination")
     occurrence_ids: set[str] = set()
     indexes: list[int] = []
     parking_groups: dict[str, list[dict[str, Any]]] = {}
@@ -315,7 +323,7 @@ def validate_route_plan(v: Validation, route_plan: Any, network_snapshot_id: Any
         ]
         if not access_movements:
             v.add(f"parking area {parking_area_id!r} requires an access movement before PA_VISIT")
-        if not return_movements:
+        if not return_movements and parking_area_id != destination_pa:
             v.add(f"parking area {parking_area_id!r} requires a return movement after PA_VISIT")
         optional_values = {item.get("optional", False) for item in group}
         if len(optional_values) != 1:

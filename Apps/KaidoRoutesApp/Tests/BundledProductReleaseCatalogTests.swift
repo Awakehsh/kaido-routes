@@ -41,22 +41,20 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let wangan = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07"
+          == "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07"
       }
     )
     XCTAssertEqual(
       wangan.release.navigation.bundle.routePlan.entryFacilityID,
       "shuto.ic.b.chidoricho"
     )
-    XCTAssertEqual(
-      wangan.release.navigation.bundle.routePlan.exitFacilityID,
-      "shuto.ic.b.daikokufutou"
-    )
+    XCTAssertNil(wangan.release.navigation.bundle.routePlan.exitFacilityID)
+    XCTAssertEqual(wangan.release.navigation.bundle.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
     // The run drives into Daikoku PA rather than passing its sign, so the
     // plan carries the interchange loop and the parking area itself.
     XCTAssertEqual(
       wangan.release.navigation.bundle.routePlan.occurrences.count,
-      562
+      441
     )
     XCTAssertTrue(
       wangan.release.navigation.bundle.routePlan.occurrences.contains {
@@ -89,20 +87,18 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let daikoku = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-09-07"
+          == "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07"
       }
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.routePlan.entryFacilityID,
       "shuto.ic.b.wangankanpachi"
     )
-    XCTAssertEqual(
-      daikoku.release.navigation.bundle.routePlan.exitFacilityID,
-      "shuto.ic.b.daikokufutou"
-    )
+    XCTAssertNil(daikoku.release.navigation.bundle.routePlan.exitFacilityID)
+    XCTAssertEqual(daikoku.release.navigation.bundle.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
     XCTAssertEqual(
       daikoku.release.navigation.bundle.routePlan.occurrences.count,
-      556
+      658
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
@@ -113,20 +109,18 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let scenic = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.scenic-harumi-daikokufutou.2026-09-07"
+          == "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07"
       }
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.routePlan.entryFacilityID,
       "shuto.ic.10.harumi"
     )
-    XCTAssertEqual(
-      scenic.release.navigation.bundle.routePlan.exitFacilityID,
-      "shuto.ic.b.daikokufutou"
-    )
+    XCTAssertNil(scenic.release.navigation.bundle.routePlan.exitFacilityID)
+    XCTAssertEqual(scenic.release.navigation.bundle.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
     XCTAssertEqual(
       scenic.release.navigation.bundle.routePlan.occurrences.count,
-      718
+      849
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
@@ -945,7 +939,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
               TariffQuote(
                 id: "test.tariff.standard-etc.active",
                 entryFacilityID: routePlan.entryFacilityID,
-                exitFacilityID: routePlan.exitFacilityID,
+                exitFacilityID: routePlan.exitFacilityID!,
                 vehicleClass: .standard,
                 paymentMethod: .etc,
                 tariffVersionID: "test.tariff.v1",

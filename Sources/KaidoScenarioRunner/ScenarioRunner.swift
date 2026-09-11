@@ -642,9 +642,9 @@ private struct ScenarioHarness {
       adapterObservations["circuit_plan.entry_facility_id"] = .string(
         route.routePlan.entryFacilityID
       )
-      adapterObservations["circuit_plan.exit_facility_id"] = .string(
-        route.routePlan.exitFacilityID
-      )
+      if let exitID = route.routePlan.exitFacilityID {
+        adapterObservations["circuit_plan.exit_facility_id"] = .string(exitID)
+      }
       adapterObservations["circuit_plan.occurrence_count"] = .integer(
         occurrences.count
       )
@@ -2286,9 +2286,9 @@ private struct ScenarioHarness {
     adapterObservations["editor.compiled.entrance_facility_id"] = .string(
       routePlan.entryFacilityID
     )
-    adapterObservations["editor.compiled.exit_facility_id"] = .string(
-      routePlan.exitFacilityID
-    )
+    if let exitID = routePlan.exitFacilityID {
+      adapterObservations["editor.compiled.exit_facility_id"] = .string(exitID)
+    }
     adapterObservations["editor.compiled.occurrence_ids"] = .strings(
       routePlan.occurrences.map(\.id)
     )

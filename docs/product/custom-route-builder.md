@@ -275,7 +275,6 @@ Primary references:
 - Never optimize away an explicit road, direction, movement, or lap.
 - Never insert an unverified shortcut merely to meet a duration target.
 - Never promise that a toll stays constant as laps or elapsed time increase.
-- Never turn route difficulty into a competitive score.
 - When a branch is missed, do not ask for an abrupt correction. Continue safely,
   first find a checked path to a later occurrence in the active route plan, and
   make skipped occurrences and the recovery path explicit. Use a safe exit only

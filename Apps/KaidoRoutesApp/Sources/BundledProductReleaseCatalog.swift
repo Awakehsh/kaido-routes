@@ -37,15 +37,15 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var wanganWestboundChidorichoDaikokufutou: AppBundleProductReleaseDescriptor {
+  static var wanganWestboundChidorichoDaikokuPA: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName:
-        "wangan-westbound-chidoricho-daikokufutou-product-release",
+        "wangan-westbound-chidoricho-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "a3e467b486d52250e875d7045f44c39e389d30b0de1cea14845159bca3d5626e",
+        "f5e80289490ebad2902c2d5b0de14fa54fc7bebbb80e893144ff7e9147840533",
       expectedReleaseID:
-        "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
+        "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
     )
   }
@@ -62,27 +62,27 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var daikokuYokohamaWangankanpachiDaikokufutou: AppBundleProductReleaseDescriptor {
+  static var daikokuYokohamaWangankanpachiDaikokuPA: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName:
-        "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
+        "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "ae6c4c65f1caa816931ff6db235c62afd525b636c4a1e7974af65fdd3c76ff23",
+        "902afc8e3875e960c8685315256e27b901467f4962124aa3f914bcd3fede657a",
       expectedReleaseID:
-        "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-09-07",
+        "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
     )
   }
 
-  static var scenicHarumiDaikokufutou: AppBundleProductReleaseDescriptor {
+  static var scenicHarumiDaikokuPA: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
-      resourceName: "scenic-harumi-daikokufutou-product-release",
+      resourceName: "scenic-harumi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "57275edb3a6ffe371089127321e1d7f666b1a884017fb414cf8dac9a405aec53",
+        "8e8c3c7ab4ec183b496a4b61427ed3f247011da2dc8348d5c9b0bac3294fadcf",
       expectedReleaseID:
-        "shutoko.product.scenic-harumi-daikokufutou.2026-09-07",
+        "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
     )
   }
@@ -257,10 +257,10 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
 enum BundledProductReleaseCatalogLoader {
   static let foregroundManifest: [BundledProductReleaseDescriptor] = [
     .c1InnerShibakoenShiodome,
-    .wanganWestboundChidorichoDaikokufutou,
+    .wanganWestboundChidorichoDaikokuPA,
     .c2InnerOujiminamiShikahamabashi,
-    .daikokuYokohamaWangankanpachiDaikokufutou,
-    .scenicHarumiDaikokufutou,
+    .daikokuYokohamaWangankanpachiDaikokuPA,
+    .scenicHarumiDaikokuPA,
   ]
 
   static let previewManifest: [BundledProductReleaseDescriptor] = [

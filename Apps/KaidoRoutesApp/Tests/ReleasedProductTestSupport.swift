@@ -150,12 +150,12 @@ private func makeBundledPreDriveEvidenceData(
           vehicleClass: .standard,
           paymentMethod: paymentMethod,
           passageEvidence: .noKnownConflictRealtimeUnconfirmed,
-          tariffQuotes: [
+          tariffQuotes: routePlan.exitFacilityID.map { exitID in [
             TariffQuote(
               id:
                 "test.released-road.tariff.\(paymentMethod.rawValue.lowercased()).active",
               entryFacilityID: routePlan.entryFacilityID,
-              exitFacilityID: routePlan.exitFacilityID,
+              exitFacilityID: exitID,
               vehicleClass: .standard,
               paymentMethod: paymentMethod,
               tariffVersionID: "test.released-road.tariff.v1",
@@ -167,7 +167,7 @@ private func makeBundledPreDriveEvidenceData(
               checkedAt: "2026-07-25T11:30:00+09:00",
               officialQueryReference: "https://search.shutoko.jp/"
             )
-          ]
+          ] } ?? []
         )
       )
     }
@@ -203,11 +203,11 @@ func makeReleasedPreDriveEvidence(
     vehicleClass: vehicleClass,
     paymentMethod: paymentMethod,
     passageEvidence: passageEvidence,
-    tariffQuotes: [
+    tariffQuotes: routePlan.exitFacilityID.map { exitID in [
       TariffQuote(
         id: "test.released-road.tariff.active",
         entryFacilityID: routePlan.entryFacilityID,
-        exitFacilityID: routePlan.exitFacilityID,
+        exitFacilityID: exitID,
         vehicleClass: quoteVehicleClass ?? vehicleClass,
         paymentMethod: quotePaymentMethod ?? paymentMethod,
         tariffVersionID: "test.released-road.tariff.v1",
@@ -218,7 +218,7 @@ func makeReleasedPreDriveEvidence(
         checkedAt: "2026-07-25T11:30:00+09:00",
         officialQueryReference: "https://search.shutoko.jp/"
       )
-    ]
+    ] } ?? []
   )
 }
 

@@ -8,6 +8,13 @@ curated PA set at the default frame, then names those places and every
 bundled PA once pinched in. Its route-first home
 offers named experiences, automatic direction-valid entrance/exit pairing,
 1–9 laps for loops, and exact custom routes before the optional destination.
+Destination search and the journey-ending editor use an explicit Search action
+(or keyboard Search), followed by a choice of place and address. Only the chosen
+place's coordinate can be confirmed; unselected text never chooses the first
+result automatically. Bundled ICs and PAs remain locally searchable, while Apple
+MapKit supplies online place results. Empty results and service failures are
+visible; editing the query invalidates the choice and any pending old results.
+Location updates do not reset the search list or dismiss the ending editor's results.
 Automatic circuit pairing keeps the nearest bounded radial candidates and every
 direction-valid member-route entrance. It prefers a complete foreground-release
 pairing over a closer preview-only pairing, labels access beyond 16 km as long,
@@ -100,8 +107,12 @@ replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
 recomputed. While the device fix remains outside that surface leg, presentation
 reports that the drive is waiting to join the route; it does not relabel a valid
-fix as weak positioning. Planning location and replay never run in the
-background; only the explicitly user-started live session does. No current path
+fix as weak positioning. On the surface legs horizontal accuracy only widens the
+on-route corridor and never marks weak positioning, and a rejected ramp
+admission inside the approach zone leaves the surface position available. The
+spoken position-lost notice belongs to a stale fix alone, at most once per
+60 seconds, so a flapping signal stays silent. Planning location and replay
+never run in the background; only the explicitly user-started live session does. No current path
 supplies tunnel
 dead-reckoning authority. The live adapter drives the actor's tunnel entry/exit
 and multi-observation reacquisition state. For a tagged tunnel or covered edge only, the App may
@@ -1401,15 +1412,18 @@ That is a development fact, not yet the minimum deployment target.
   near the selected directional ramp. Provider steps remain ordinary-road
   presentation: they cannot mutate the exact `RoutePlan` or grant expressway
   occurrence authority.
-- The default MapKit adapter asks for alternate ordinary-road routes and rejects
-  candidates that MapKit marks as highway or toll routes. The persisted
-  ordinary-road preference defaults to `MAJOR_ROADS`: among candidates no more
-  than 15 percent slower than the fastest route, capped at eight additional
-  minutes, it prefers fewer maneuvers and then a higher implied average speed.
-  `FASTEST` selects the shortest provider ETA. The same preference is captured
-  for access, egress, and live surface rerouting. This is a bounded selection
-  policy, not road-width evidence; MapKit exposes no road-class or width
-  attribute, and neither preference may mutate the selected `RoutePlan`.
+- The persisted connection preference defaults to `PREFER_HIGHWAYS`. Both
+  loops and tours admit nearby connecting-expressway entrances after the same
+  direction and ordered-anchor checks. MapKit allows highways and toll roads
+  on the bounded access/egress legs; among alternatives no more than 15 percent
+  slower than the fastest, capped at eight additional minutes, it prefers the
+  fastest highway alternative. `AVOID_HIGHWAYS` offers entrances on the chosen
+  course and requests highway/toll avoidance for connecting legs. It selects
+  an ordinary-road alternative when one exists, otherwise the available route;
+  avoidance is a preference, not a reachability guarantee. Ordinary alternatives
+  retain the bounded fewer-maneuvers selection. The same preference is captured
+  for access, egress, and live connecting-leg rerouting. Neither setting mutates
+  the selected `RoutePlan`; connecting tolls are outside the Shuto tariff band.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
   artwork. The internal iPhone renderer now maps normalized path points and
@@ -2306,3 +2320,39 @@ routing excludes `PARKING` edges; the interior carries no numbered-route
 membership and never becomes a fare shortcut. Shared approach/return roads keep
 their original role. A modelled interior alone does not authorize an unsupported
 external-expressway entrance or enroll the route for live navigation.
+
+### Parking-area destinations
+
+A RoutePlan has exactly one terminal facility: `exitFacilityID` or
+`destinationParkingAreaID`. A PA destination ends with a `PA_VISIT` occurrence
+on the reviewed interior, at the path node nearest the PA point. It has no
+return ramp, exit handoff, surface-egress leg or entry/exit tariff quote. The
+reviewed editor catalog carries an explicit PA destination and the release
+binds the complete route, guidance and matcher corridor to it.
+
+The Bayshore Daikoku run, Daikoku Yokohama loop and scenic tour default to
+Daikoku PA. The loop completes its requested laps before its final approach to
+the PA. PAs are local, identity-bearing destination-search results; they are
+never handed to a surface provider as an untyped nearby point. Choosing an
+ordinary onward destination from a PA-ended journey first plans a legal exit.
+
+The navigation actor completes only on a resolved high-confidence match inside
+the final contiguous visit to the destination PA. Earlier visits cannot finish
+remaining road or lap occurrences. Remaining parking-interior geometry is marked
+untraversed rather than counted as driven. No exact parking-bay coordinate or
+exit handoff is required; later position callbacks cannot resume the journey.
+Replay exercises the same arrival path. Existing saved routes and checkpoints
+retain their exact destination type; legacy authored PA visits remain readable,
+but the product has no separate PA-stop editor.
+
+### Pre-departure journey ending
+
+The App persists an explicit journey ending alongside the exact route checkpoint:
+return to the fixed planning origin, complete at the directional exit handoff,
+or continue to a selected destination. A PA destination finishes inside the
+expressway network without surface egress. Older checkpoints without this field
+retain their existing destination and surface legs. Exit-only journeys require
+surface access but no provider egress; the existing exit-handoff completion path
+ends them. Ordinary onward destinations require resolved access and egress. Changing the onward
+destination invalidates cached surface comparisons and does not alter RoutePlan.
+Changing an exit is an explicit route edit; a circuit retains its course and laps.

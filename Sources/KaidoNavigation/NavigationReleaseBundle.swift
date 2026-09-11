@@ -267,7 +267,14 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       \.directExitFacilityID
     )
     let catalogExitIDs = Set(decisionExitIDs + directExitIDs)
-    if !catalogExitIDs.contains(routePlan.exitFacilityID) {
+    let parkingIDs = Set(editorCatalog.entrances.compactMap(\.directParkingAreaID)
+      + editorCatalog.decisionPoints.flatMap(\.choices).compactMap { choice -> String? in
+        guard case .parkingArea(let id) = choice.destination else { return nil }
+        return id
+      })
+    let matchesDestination = routePlan.exitFacilityID.map { catalogExitIDs.contains($0) }
+      ?? routePlan.destinationParkingAreaID.map { parkingIDs.contains($0) } ?? false
+    if !matchesDestination {
       issues.append(.unknownRouteExit)
     }
 
@@ -398,7 +405,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     guard !normalized(routePlan.id).isEmpty,
       !normalized(routePlan.networkSnapshotID).isEmpty,
       !normalized(routePlan.entryFacilityID).isEmpty,
-      !normalized(routePlan.exitFacilityID).isEmpty,
+      routePlan.hasValidDestination,
       !routePlan.occurrences.isEmpty,
       routePlan.actualDistanceKM.map({ $0.isFinite && $0 > 0 }) != false
     else {

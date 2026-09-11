@@ -23,7 +23,7 @@ whole-Shuto product journey rather than the internal evidence workbench:
    experiences, exact customization, and saved routes;
 2. planning derives a direction-valid entrance/exit pairing and compiles one
    exact occurrence-preserving `RoutePlan` from the current bundled snapshot;
-3. Review requires both bounded surface legs and keeps passage/toll uncertainty
+3. Review requires access plus any selected onward leg and keeps passage/toll uncertainty
    visible; and
 4. **Replay route** runs the deterministic complete-journey trace, while
    **Start navigation** constructs the selected route's exact joint release and

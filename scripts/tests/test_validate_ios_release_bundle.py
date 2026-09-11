@@ -219,6 +219,10 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         wangan_release["route_atlas_release"]["route_plan"] = (
             wangan_route_plan
         )
+        wangan_route_plan.pop("exit_facility_id", None)
+        wangan_route_plan["destination_parking_area_id"] = "shuto.pa.daikoku"
+        wangan_route_plan["occurrences"][-1].update({"kind": "PA_VISIT", "parking_area_id": "shuto.pa.daikoku"})
+        wangan_release["navigation_release"]["runtime_policy"] = {"egress_options": []}
         encoded_wangan_release = json.dumps(wangan_release).encode("utf-8")
         wangan_source = (
             self.repository / validator.WANGAN_PRODUCT_RELEASE_SOURCE
@@ -271,6 +275,10 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         daikoku_release["route_atlas_release"]["route_plan"] = (
             daikoku_route_plan
         )
+        daikoku_route_plan.pop("exit_facility_id", None)
+        daikoku_route_plan["destination_parking_area_id"] = "shuto.pa.daikoku"
+        daikoku_route_plan["occurrences"][-1].update({"kind": "PA_VISIT", "parking_area_id": "shuto.pa.daikoku"})
+        daikoku_release["navigation_release"]["runtime_policy"] = {"egress_options": []}
         encoded_daikoku_release = json.dumps(daikoku_release).encode("utf-8")
         daikoku_source = (
             self.repository / validator.DAIKOKU_PRODUCT_RELEASE_SOURCE
@@ -297,6 +305,10 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         scenic_release["route_atlas_release"]["route_plan"] = (
             scenic_route_plan
         )
+        scenic_route_plan.pop("exit_facility_id", None)
+        scenic_route_plan["destination_parking_area_id"] = "shuto.pa.daikoku"
+        scenic_route_plan["occurrences"][-1].update({"kind": "PA_VISIT", "parking_area_id": "shuto.pa.daikoku"})
+        scenic_release["navigation_release"]["runtime_policy"] = {"egress_options": []}
         encoded_scenic_release = json.dumps(scenic_release).encode("utf-8")
         scenic_source = self.repository / validator.SCENIC_PRODUCT_RELEASE_SOURCE
         scenic_source.parent.mkdir(parents=True, exist_ok=True)
@@ -354,6 +366,29 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
                     {"NSLocationWhenInUseUsageDescription": description}
                 )
             )
+
+    def test_declared_product_identities_match_actual_bundled_releases(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        validator.validate_foreground_product_releases(
+            repository / "Apps/KaidoRoutesApp/Resources"
+        )
+
+    def test_pa_destination_rejects_exit_or_mainline_ending(self) -> None:
+        resource = self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE
+        original = resource.read_bytes()
+        for field in ("exit", "mainline"):
+            with self.subTest(field=field):
+                artifact = json.loads(original)
+                route = artifact["navigation_release"]["route_plan"]
+                if field == "exit":
+                    route.pop("destination_parking_area_id")
+                    route["exit_facility_id"] = "shuto.ic.b.daikokufutou"
+                else:
+                    route["occurrences"][-1]["kind"] = "EDGE"
+                artifact["route_atlas_release"]["route_plan"] = route
+                resource.write_text(json.dumps(artifact), encoding="utf-8")
+                with self.assertRaisesRegex(validator.ReleaseBundleValidationError, "Wangan (exit facility|parking arrival)"):
+                    validator.validate_foreground_product_releases(self.app)
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

@@ -27,7 +27,12 @@ internal review workbench.
   trip through the normal review gate. Tariff bands come from dated ACTIVE
   evidence (normal car, ETC): the minimum band is asserted only with a
   distance safety margin, mid-range amounts stay explicit estimates, and
-  nothing is shown until a band is computed. Because the tariff uses the
+  nothing is shown until a band is computed. Two dated rules are encoded from
+  the operator's own pages: the current one (29.52 yen/km, 300–1,950 yen)
+  through 2026-09-30, and the 2026-10-01 revision (32.472 yen/km, 300–2,130
+  yen, the 55.0 km cap distance kept). The rule payable on today's Japanese
+  calendar day is the one quoted, so the revision is never shown early and
+  takes over on its day without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
   the band. Destination search remains an optional continuation below the
   catalog.

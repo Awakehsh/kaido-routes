@@ -129,7 +129,9 @@ driven in between. The fare distance is the shortest DRIVABLE directed
 path: this was verified against the operator's own fare search on
 2026-08-04 (Hatsudai-minami to Tomigaya quotes the minimum; Higashi-Ogijima
 to Daikoku-Futo quotes ¥420 matching our estimate; Kahei to Sachiura hits
-the ¥1,950 cap). The folklore radial pairings are dead under the current
+the ¥1,950 cap, the cap in force through 2026-09-30; from 2026-10-01 the
+operator's dated revision quotes 32.472 yen/km and a ¥2,130 cap, selected by
+the Japanese calendar day). The folklore radial pairings are dead under the current
 rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
 radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the soonest forward exits and

@@ -47,7 +47,7 @@ struct ShutoParkingStopPlannerTests {
     let visits = route.routePlan.occurrences.compactMap(\.parkingAreaID)
     #expect(visits.first == "shuto.pa.oi-westbound")
     #expect(visits.last == "shuto.pa.daikoku")
-    #expect(try planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: route.exitFacility!.facilityID, evidence: .etcNormalCarActive) == planner.tariffBand(entryFacilityID: base.entryFacility.facilityID, exitFacilityID: base.exitFacility!.facilityID, evidence: .etcNormalCarActive))
+    #expect(try planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: route.exitFacility!.facilityID, evidence: .etcNormalCarUntil2026September) == planner.tariffBand(entryFacilityID: base.entryFacility.facilityID, exitFacilityID: base.exitFacility!.facilityID, evidence: .etcNormalCarUntil2026September))
     #expect(!planner.parkingStopOptions(for: base).contains { ["shuto.pa.yoga", "shuto.pa.ichikawa"].contains($0.id) })
   }
 

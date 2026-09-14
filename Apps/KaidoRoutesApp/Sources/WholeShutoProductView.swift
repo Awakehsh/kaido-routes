@@ -45,6 +45,8 @@ struct WholeShutoProductView: View {
   @State private var waitsForPlanningLocation = false
   @State private var waitsForCircuitLocation = false
   @State private var showsCircuitAlternatives = false
+  @State private var showsCircuitExits = false
+  @State private var circuitExitQuery = ""
   @State private var showsDestinationComposer = false
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
@@ -1594,6 +1596,8 @@ struct WholeShutoProductView: View {
       HStack {
         Button {
           showsCircuitAlternatives = false
+          showsCircuitExits = false
+          circuitExitQuery = ""
           model.clearCircuitDraft()
         } label: {
           HStack(spacing: 5) {
@@ -1655,6 +1659,81 @@ struct WholeShutoProductView: View {
             ) { facility in
               circuitEntranceRow(facility)
             }
+          }
+        }
+      }
+
+      if !model.circuitExitCandidates.isEmpty {
+        Button {
+          showsCircuitExits.toggle()
+        } label: {
+          HStack(spacing: 5) {
+            Text(
+              copy.resolve(
+                japanese: "出口を変更",
+                simplifiedChinese: "更换出口",
+                english: "CHANGE EXIT"
+              )
+            )
+            Image(
+              systemName: showsCircuitExits
+                ? "chevron.up" : "chevron.down"
+            )
+          }
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(.secondary)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("whole-shuto-circuit-exit-alternatives")
+
+        if showsCircuitExits {
+          VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+              Image(systemName: "magnifyingglass")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(KaidoTheme.positionCyan)
+              TextField(
+                copy.resolve(
+                  japanese: "出口名または路線番号",
+                  simplifiedChinese: "搜索出口名称或路线编号",
+                  english: "Search exit or route"
+                ),
+                text: $circuitExitQuery
+              )
+              .font(.system(size: 13, weight: .semibold))
+              .autocorrectionDisabled()
+              .accessibilityIdentifier("whole-shuto-circuit-exit-search")
+            }
+            .padding(.horizontal, 10)
+            .frame(minHeight: 38)
+            .background(KaidoTheme.nightRaised)
+            .clipShape(RoundedRectangle(cornerRadius: 9))
+
+            ForEach(visibleCircuitExits, id: \.facilityID) { facility in
+              circuitExitRow(facility)
+            }
+            if visibleCircuitExits.isEmpty {
+              Text(
+                copy.resolve(
+                  japanese: "一致する出口がありません",
+                  simplifiedChinese: "没有匹配的出口",
+                  english: "No matching exit"
+                )
+              )
+              .font(.system(size: 12, weight: .semibold))
+              .foregroundStyle(KaidoTheme.signalAmber)
+              .accessibilityIdentifier("whole-shuto-circuit-exit-empty")
+            }
+            Text(
+              copy.resolve(
+                japanese: "入口からの走行順 · 料金はこの入口との組み合わせ",
+                simplifiedChinese: "按从入口起的行驶顺序 · 费用按与该入口的组合",
+                english: "In driving order from the entrance · toll as a pairing with it"
+              )
+            )
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
           }
         }
       }
@@ -1781,6 +1860,7 @@ struct WholeShutoProductView: View {
           HStack(spacing: 5) {
             Image(
               systemName: model.circuitEntranceWasOverridden
+                || model.circuitExitWasOverridden
                 ? "hand.tap.fill" : "location.fill"
             )
             Text(circuitPairingReasonLabel)
@@ -1807,13 +1887,7 @@ struct WholeShutoProductView: View {
               .foregroundStyle(.secondary)
               .padding(.bottom, 3)
             VStack(alignment: .leading, spacing: 2) {
-              Text(
-                copy.resolve(
-                  japanese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "おすすめ出口" : "目的地",
-                  simplifiedChinese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "推荐出口" : "目的地",
-                  english: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "RECOMMENDED EXIT" : "DESTINATION"
-                )
-              )
+              Text(circuitExitTitle)
               .font(.caption2.weight(.semibold))
               .foregroundStyle(.secondary)
               Text(destinationName)
@@ -1922,8 +1996,57 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private var circuitExitTitle: String {
+    if model.selectedCircuit?.defaultDestinationParkingAreaID != nil {
+      return copy.resolve(
+        japanese: "目的地",
+        simplifiedChinese: "目的地",
+        english: "DESTINATION"
+      )
+    }
+    return model.circuitExitWasOverridden
+      ? copy.resolve(
+        japanese: "出口",
+        simplifiedChinese: "出口",
+        english: "EXIT"
+      )
+      : copy.resolve(
+        japanese: "おすすめ出口",
+        simplifiedChinese: "推荐出口",
+        english: "RECOMMENDED EXIT"
+      )
+  }
+
+  /// The selected exit first, the recommendation next, then driving order;
+  /// six rows until a search narrows the list.
+  private var visibleCircuitExits: [ShutoNetworkDatabase.Facility] {
+    let query = circuitExitQuery.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    var pinned: [String] = []
+    for id in [
+      model.circuitExitFacilityID, model.circuitRecommendedExitFacilityID,
+    ].compactMap({ $0 })
+    where !pinned.contains(id) {
+      pinned.append(id)
+    }
+    let candidates = model.circuitExitCandidates
+    let ordered =
+      pinned.compactMap { id in candidates.first { $0.facilityID == id } }
+      + candidates.filter { !pinned.contains($0.facilityID) }
+    guard !query.isEmpty else { return Array(ordered.prefix(6)) }
+    return ordered.filter { facility in
+      facility.nameJA.localizedCaseInsensitiveContains(query)
+        || shieldLabel(facility.routeID)
+          .localizedCaseInsensitiveContains(query)
+        || facility.exitDirections.contains {
+          $0.localizedCaseInsensitiveContains(query)
+        }
+    }
+  }
+
   private var circuitPairingReasonLabel: String {
-    if model.circuitEntranceWasOverridden {
+    if model.circuitEntranceWasOverridden || model.circuitExitWasOverridden {
       return copy.resolve(
         japanese: "選択した入口と出口",
         simplifiedChinese: "已选择的入口和出口",
@@ -2021,6 +2144,96 @@ struct WholeShutoProductView: View {
     .buttonStyle(.plain)
     .accessibilityIdentifier(
       "whole-shuto-circuit-entrance-\(facility.facilityID)"
+    )
+  }
+
+  private func circuitExitRow(
+    _ facility: ShutoNetworkDatabase.Facility
+  ) -> some View {
+    let isSelected = model.circuitExitFacilityID == facility.facilityID
+    let isRecommended =
+      model.circuitRecommendedExitFacilityID == facility.facilityID
+    return Button {
+      model.selectCircuitExit(facilityID: facility.facilityID)
+    } label: {
+      HStack(spacing: 8) {
+        Image(
+          systemName: isSelected ? "circle.inset.filled" : "circle"
+        )
+        .font(.system(size: 14))
+        .foregroundStyle(
+          isSelected ? KaidoTheme.routeGreen : Color.secondary
+        )
+        Text(shieldLabel(facility.routeID))
+          .font(.system(size: 9, weight: .black, design: .rounded))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 5)
+          .frame(height: 17)
+          .background(routeColor(facility.routeID))
+          .clipShape(RoundedRectangle(cornerRadius: 4))
+        Text(facility.nameJA)
+          .font(.system(size: 13, weight: .semibold))
+        Text(facility.exitDirections.joined(separator: "・"))
+          .font(.system(size: 10.5, weight: .semibold))
+          .foregroundStyle(.secondary)
+        if isSelected {
+          Text(
+            copy.resolve(
+              japanese: "選択中",
+              simplifiedChinese: "已选",
+              english: "SELECTED"
+            )
+          )
+          .font(.caption2.weight(.black))
+          .foregroundStyle(KaidoTheme.night)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 2)
+          .background(KaidoTheme.positionCyan)
+          .clipShape(Capsule())
+        } else if isRecommended {
+          Text(
+            copy.resolve(
+              japanese: "おすすめ",
+              simplifiedChinese: "推荐",
+              english: "RECOMMENDED"
+            )
+          )
+          .font(.caption2.weight(.black))
+          .foregroundStyle(KaidoTheme.routeGreen)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 2)
+          .background(KaidoTheme.routeGreen.opacity(0.18))
+          .clipShape(Capsule())
+        }
+        if facility.etcOnly {
+          Text("ETC")
+            .font(.system(size: 9, weight: .bold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(KaidoTheme.roadGray.opacity(0.25))
+            .clipShape(Capsule())
+        }
+        Spacer()
+        if let band =
+          model.circuitTariffBandsByExitFacilityID[facility.facilityID]
+        {
+          Text(circuitTariffText(band))
+            .font(.system(size: 10.5, weight: .bold))
+            .monospacedDigit()
+            .foregroundStyle(
+              circuitTariffIsMinimum(band)
+                ? KaidoTheme.routeGreen : Color.secondary
+            )
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-exit-tariff-\(facility.facilityID)"
+            )
+        }
+      }
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "whole-shuto-circuit-exit-\(facility.facilityID)"
     )
   }
 

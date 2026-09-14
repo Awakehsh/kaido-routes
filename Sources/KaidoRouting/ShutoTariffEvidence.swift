@@ -153,6 +153,60 @@ extension ShutoRoutePlanner {
     else {
       throw ShutoNetworkError.routeUnavailable
     }
+    return tariffBand(forFareDistanceMeters: distance, evidence: evidence)
+  }
+
+  /// Bands for many exits after one entrance from a single relaxation of
+  /// the entrance's toll point, for an exit list that prices every row.
+  /// Exits whose toll point no directed path reaches are absent.
+  public func tariffBands(
+    entryFacilityID: String,
+    exitFacilityIDs: [String],
+    evidence: ShutoTariffEvidence
+  ) -> [String: ShutoTariffBand] {
+    guard let entry = facilitiesByID[entryFacilityID] else { return [:] }
+    var distances: [Int64: Double] = [:]
+    var queue = MinHeap<TollPointQueueValue>()
+    for seed in tollPointSeeds(forEntryGroupOf: entry) {
+      if seed.cost < distances[seed.nodeID, default: .infinity] {
+        distances[seed.nodeID] = seed.cost
+        queue.insert(seed)
+      }
+    }
+    while let current = queue.removeMinimum() {
+      guard current.cost == distances[current.nodeID] else { continue }
+      for edge in outgoingEdges[current.nodeID, default: []] {
+        let candidate = current.cost + edge.lengthMeters
+        if candidate < distances[edge.toNodeID, default: .infinity] {
+          distances[edge.toNodeID] = candidate
+          queue.insert(
+            TollPointQueueValue(cost: candidate, nodeID: edge.toNodeID)
+          )
+        }
+      }
+    }
+    var bands: [String: ShutoTariffBand] = [:]
+    for exitFacilityID in exitFacilityIDs {
+      guard let exit = facilitiesByID[exitFacilityID] else { continue }
+      var best: Double?
+      for (nodeID, tail) in tollPointTargets(forExitGroupOf: exit) {
+        guard let reach = distances[nodeID] else { continue }
+        if reach + tail < (best ?? .infinity) { best = reach + tail }
+      }
+      if let best {
+        bands[exitFacilityID] = tariffBand(
+          forFareDistanceMeters: best,
+          evidence: evidence
+        )
+      }
+    }
+    return bands
+  }
+
+  private func tariffBand(
+    forFareDistanceMeters distance: Double,
+    evidence: ShutoTariffEvidence
+  ) -> ShutoTariffBand {
     let margin = Self.tariffDistanceMarginMeters
     if evidence.rawYen(forTariffDistanceMeters: distance + margin)
       <= Double(evidence.minimumYen)
@@ -176,22 +230,43 @@ extension ShutoRoutePlanner {
   /// Shortest directed network distance between two toll points, seeding
   /// from every same-named entrance ramp and terminating at every
   /// same-named exit ramp.
-  private func tollPointFareDistanceMeters(
-    entryFacilityID: String,
-    exitFacilityID: String
-  ) -> Double? {
-    guard let entry = facilitiesByID[entryFacilityID],
-      let exit = facilitiesByID[exitFacilityID]
-    else { return nil }
-    let entryGroup = database.directionalFacilities.filter {
-      $0.nameJA == entry.nameJA && $0.canEnter
-    }
-    let exitGroup = database.directionalFacilities.filter {
-      $0.nameJA == exit.nameJA && $0.canExit
-    }
+  private struct TollPointQueueValue: Comparable {
+    let cost: Double
+    let nodeID: Int64
 
+    static func < (lhs: TollPointQueueValue, rhs: TollPointQueueValue) -> Bool {
+      if lhs.cost != rhs.cost { return lhs.cost < rhs.cost }
+      return lhs.nodeID < rhs.nodeID
+    }
+  }
+
+  /// Every same-named entrance ramp's first mainline node, priced from the
+  /// toll point through the ramp.
+  private func tollPointSeeds(
+    forEntryGroupOf entry: ShutoNetworkDatabase.Facility
+  ) -> [TollPointQueueValue] {
+    database.directionalFacilities
+      .filter { $0.nameJA == entry.nameJA && $0.canEnter }
+      .flatMap { facility in
+        facility.entryEdgeCandidates.compactMap { candidate in
+          edgesByID[candidate.edgeID].map {
+            TollPointQueueValue(
+              cost: candidate.distanceMeters + $0.lengthMeters,
+              nodeID: $0.toNodeID
+            )
+          }
+        }
+      }
+  }
+
+  /// Every same-named exit ramp's last mainline node with the ramp tail to
+  /// the toll point, keeping the cheapest tail per node.
+  private func tollPointTargets(
+    forExitGroupOf exit: ShutoNetworkDatabase.Facility
+  ) -> [Int64: Double] {
     var targets: [Int64: Double] = [:]
-    for facility in exitGroup {
+    for facility in database.directionalFacilities
+    where facility.nameJA == exit.nameJA && facility.canExit {
       for candidate in facility.exitEdgeCandidates {
         guard let edge = edgesByID[candidate.edgeID] else { continue }
         let tail = candidate.distanceMeters + edge.lengthMeters
@@ -200,27 +275,28 @@ extension ShutoRoutePlanner {
         }
       }
     }
+    return targets
+  }
+
+  /// Shortest directed network distance between two toll points, seeding
+  /// from every same-named entrance ramp and terminating at every
+  /// same-named exit ramp.
+  private func tollPointFareDistanceMeters(
+    entryFacilityID: String,
+    exitFacilityID: String
+  ) -> Double? {
+    guard let entry = facilitiesByID[entryFacilityID],
+      let exit = facilitiesByID[exitFacilityID]
+    else { return nil }
+    let targets = tollPointTargets(forExitGroupOf: exit)
     guard !targets.isEmpty else { return nil }
 
-    struct QueueValue: Comparable {
-      let cost: Double
-      let nodeID: Int64
-
-      static func < (lhs: QueueValue, rhs: QueueValue) -> Bool {
-        if lhs.cost != rhs.cost { return lhs.cost < rhs.cost }
-        return lhs.nodeID < rhs.nodeID
-      }
-    }
     var distances: [Int64: Double] = [:]
-    var queue = MinHeap<QueueValue>()
-    for facility in entryGroup {
-      for candidate in facility.entryEdgeCandidates {
-        guard let edge = edgesByID[candidate.edgeID] else { continue }
-        let cost = candidate.distanceMeters + edge.lengthMeters
-        if cost < distances[edge.toNodeID, default: .infinity] {
-          distances[edge.toNodeID] = cost
-          queue.insert(QueueValue(cost: cost, nodeID: edge.toNodeID))
-        }
+    var queue = MinHeap<TollPointQueueValue>()
+    for seed in tollPointSeeds(forEntryGroupOf: entry) {
+      if seed.cost < distances[seed.nodeID, default: .infinity] {
+        distances[seed.nodeID] = seed.cost
+        queue.insert(seed)
       }
     }
     var best: Double?
@@ -238,7 +314,7 @@ extension ShutoRoutePlanner {
         if candidate < distances[edge.toNodeID, default: .infinity] {
           distances[edge.toNodeID] = candidate
           queue.insert(
-            QueueValue(cost: candidate, nodeID: edge.toNodeID)
+            TollPointQueueValue(cost: candidate, nodeID: edge.toNodeID)
           )
         }
       }

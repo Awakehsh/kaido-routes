@@ -3187,6 +3187,91 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  func testCircuitExitIsTheDriversToFixAsWellAsTheEntrance() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+
+    let entryID = try XCTUnwrap(model.circuitEntryFacilityID)
+    let recommendedExitID = try XCTUnwrap(model.circuitExitFacilityID)
+    XCTAssertEqual(model.circuitRecommendedExitFacilityID, recommendedExitID)
+    XCTAssertFalse(model.circuitExitWasOverridden)
+    let expectedExits = try model.planner.circuitExitCandidates(
+      for: .c1Inner,
+      afterEntering: entryID
+    ).map(\.facilityID)
+    XCTAssertEqual(model.circuitExitCandidates.map(\.facilityID), expectedExits)
+    XCTAssertEqual(
+      Set(model.circuitTariffBandsByExitFacilityID.keys),
+      Set(expectedExits)
+    )
+    XCTAssertEqual(
+      model.circuitTariffBandsByExitFacilityID[recommendedExitID],
+      model.circuitPairingBand
+    )
+
+    // Fixing a far exit prices that pairing, for the entrance and for each
+    // ranked alternative, and keeps the recommendation known.
+    let chosen = try XCTUnwrap(
+      model.circuitExitCandidates.last { $0.facilityID != recommendedExitID }
+    )
+    model.selectCircuitExit(facilityID: chosen.facilityID)
+    await waitForCircuitPairing(model)
+    XCTAssertEqual(model.circuitExitFacilityID, chosen.facilityID)
+    XCTAssertTrue(model.circuitExitWasOverridden)
+    XCTAssertEqual(model.circuitEntryFacilityID, entryID)
+    XCTAssertEqual(model.circuitRecommendedExitFacilityID, recommendedExitID)
+    XCTAssertEqual(
+      model.circuitPairingBand,
+      try model.planner.tariffBand(
+        entryFacilityID: entryID,
+        exitFacilityID: chosen.facilityID,
+        evidence: model.activeTariffEvidence
+      )
+    )
+    XCTAssertFalse(model.circuitTariffBandsByFacilityID.isEmpty)
+    for (facilityID, band) in model.circuitTariffBandsByFacilityID {
+      XCTAssertEqual(
+        band,
+        try model.planner.tariffBand(
+          entryFacilityID: facilityID,
+          exitFacilityID: chosen.facilityID,
+          evidence: model.activeTariffEvidence
+        ),
+        facilityID
+      )
+    }
+
+    // Choosing the recommendation again returns to the derived pairing.
+    model.selectCircuitExit(facilityID: recommendedExitID)
+    await waitForCircuitPairing(model)
+    XCTAssertFalse(model.circuitExitWasOverridden)
+    XCTAssertEqual(model.circuitExitFacilityID, recommendedExitID)
+
+    // A fixed exit survives an entrance change and starts the journey.
+    model.selectCircuitExit(facilityID: chosen.facilityID)
+    await waitForCircuitPairing(model)
+    let otherEntrance = try XCTUnwrap(
+      model.circuitEntranceCandidates.first { $0.facilityID != entryID }
+    )
+    model.selectCircuitEntrance(facilityID: otherEntrance.facilityID)
+    await waitForCircuitPairing(model)
+    XCTAssertEqual(model.circuitEntryFacilityID, otherEntrance.facilityID)
+    XCTAssertEqual(model.circuitExitFacilityID, chosen.facilityID)
+    XCTAssertTrue(model.circuitExitWasOverridden)
+    XCTAssertTrue(model.startCircuitJourney())
+    XCTAssertEqual(
+      model.selectedRoute?.exitFacility?.facilityID,
+      chosen.facilityID
+    )
+  }
+
   func testCircuitJourneyIsARoundTripThroughTheReviewGate() async {
     let suiteName = UUID().uuidString
     let defaults = UserDefaults(suiteName: suiteName)!

@@ -788,6 +788,32 @@ final class KaidoProductJourneyUITests: XCTestCase {
       ).firstMatch.waitForExistence(timeout: 5)
     )
 
+    // The exit is the driver's to fix as well: the priced exit list is one
+    // disclosure away, and choosing one replaces the recommendation.
+    element("whole-shuto-circuit-alternatives", in: app).tap()
+    element("whole-shuto-circuit-exit-alternatives", in: app).tap()
+    let exitRows = app.descendants(matching: .any).matching(
+      NSPredicate(
+        format: "identifier BEGINSWITH %@",
+        "whole-shuto-circuit-exit-shuto.ic."
+      )
+    )
+    XCTAssertTrue(exitRows.firstMatch.waitForExistence(timeout: 5))
+    XCTAssertGreaterThan(exitRows.count, 1)
+    exitRows.element(boundBy: 1).tap()
+    let exitChosen = expectation(
+      for: NSPredicate(format: "NOT (label CONTAINS %@)", "推荐出口"),
+      evaluatedWith: pairing
+    )
+    wait(for: [exitChosen], timeout: 10)
+    XCTAssertTrue(pairing.label.contains("已选择的入口和出口"))
+    let exitScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    exitScreenshot.name = "Whole Shuto experience with a chosen exit"
+    exitScreenshot.lifetime = .keepAlways
+    add(exitScreenshot)
+
     element("whole-shuto-circuit-laps-increase", in: app).tap()
     let lapsUpdated = expectation(
       for: NSPredicate(format: "value == %@", "2"),

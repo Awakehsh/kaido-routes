@@ -83,13 +83,19 @@ editing as a compact secondary action rather than an empty full-size choice card
 Selecting an experience replaces the catalog with one compact draft that has
 an explicit **All routes** return action. The draft labels the entrance and its
 automatically recommended exit separately; changing the entrance always
-recomputes the exit and tariff band as one pairing. Route sequences pair every
+recomputes the exit and tariff band as one pairing. Either end is the
+driver's to fix: **Change entrance** lists the ranked entrances, and
+**Change exit** lists every exit the experience reaches after the entrance in
+driving order, searchable, each priced as a pairing with that entrance. A
+fixed exit survives an entrance change and is priced again for it; choosing
+the recommended exit again returns to the derived pairing. Route sequences pair every
 shield with its official Japanese route name, so a transition such as `4 → C1`
 is shown as `4 · 高速4号新宿線 → C1 · 高速都心環状線`.
 
-The driver chooses a route, never designs an entrance or exit. Entrances and
-exits are derived outputs of the chosen route plus the origin and the dated
-tariff rule, not inputs the driver must assemble. The manual pairing workflow
+The driver chooses a route and never has to design an entrance or exit.
+Entrances and exits are derived outputs of the chosen route plus the origin
+and the dated tariff rule; the driver may override either, never assemble
+both from nothing. The manual pairing workflow
 survives only inside the advanced custom entry.
 
 The origin chip uses current location only after explicit permission. It also

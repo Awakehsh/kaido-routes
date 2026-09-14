@@ -646,6 +646,39 @@ struct ShutoCircuitPlannerTests {
     }
   }
 
+  @Test("one-pass exit bands agree with the pairwise band for every priced exit")
+  func exitBandsAgreeWithPairwiseBands() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let entrance = "shuto.ic.c2.hatsudaiminami"
+    let exits = try planner.circuitExitCandidates(
+      for: .c2InnerWithBayshore,
+      afterEntering: entrance
+    )
+    let bands = planner.tariffBands(
+      entryFacilityID: entrance,
+      exitFacilityIDs: exits.map(\.facilityID),
+      evidence: .etcNormalCarUntil2026September
+    )
+    #expect(bands.count == exits.count)
+    #expect(bands["shuto.ic.c2.tomigaya"] == .minimum(yen: 300))
+    for exit in stride(from: 0, to: exits.count, by: 7).map({ exits[$0] }) {
+      let pairwise = try planner.tariffBand(
+        entryFacilityID: entrance,
+        exitFacilityID: exit.facilityID,
+        evidence: .etcNormalCarUntil2026September
+      )
+      #expect(bands[exit.facilityID] == pairwise, Comment(rawValue: exit.facilityID))
+    }
+    #expect(
+      planner.tariffBands(
+        entryFacilityID: "shuto.ic.missing",
+        exitFacilityIDs: exits.map(\.facilityID),
+        evidence: .etcNormalCarUntil2026September
+      ).isEmpty
+    )
+  }
+
   @Test("entrances reaching an exit mirror the exits reachable after each entrance")
   func entryCandidatesMirrorExitCandidates() throws {
     let database = try loadDatabase()

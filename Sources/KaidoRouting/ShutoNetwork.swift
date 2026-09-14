@@ -103,12 +103,30 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     }
   }
 
+  /// A post-build source review that re-pointed facility ramp candidates
+  /// the builder had bound to the wrong ramp (`scripts/apply_facility_candidate_patch.py`).
+  public struct FacilityCandidatePatchSource: Codable, Equatable, Sendable {
+    public let checkedAt: String
+    public let patchedFacilityCount: Int
+    public let reviewID: String
+    public let sha256: String
+
+    private enum CodingKeys: String, CodingKey {
+      case checkedAt = "checked_at"
+      case patchedFacilityCount = "patched_facility_count"
+      case reviewID = "review_id"
+      case sha256
+    }
+  }
+
   public struct Sources: Codable, Equatable, Sendable {
+    public let facilityCandidatePatch: FacilityCandidatePatchSource?
     public let facilityCandidateReview: FacilityCandidateReviewSource
     public let officialCatalog: OfficialCatalogSource
     public let osm: OSMSource
 
     private enum CodingKeys: String, CodingKey {
+      case facilityCandidatePatch = "facility_candidate_patch"
       case facilityCandidateReview = "facility_candidate_review"
       case officialCatalog = "official_catalog"
       case osm

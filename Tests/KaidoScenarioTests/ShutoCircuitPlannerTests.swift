@@ -608,6 +608,44 @@ struct ShutoCircuitPlannerTests {
     )
   }
 
+  @Test("every bound facility pairs with a differently named counterpart somewhere on the network")
+  func everyBoundFacilityPairsWithTheNetwork() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let exits = database.directionalFacilities.filter(\.canExit)
+    let entrances = database.directionalFacilities.filter(\.canEnter)
+    // Ramps that only ever lead off the network: 三溪園 westbound onto the
+    // Bayshore's tail, 足立入谷 and 浦和北 outbound onto connecting
+    // expressways. They still pair with the stub exits ahead of them.
+    for entrance in entrances {
+      let reachable = planner.exitCandidates(exits, reachableAfterEntering: entrance.facilityID)
+        .filter { $0.nameJA != entrance.nameJA }
+      #expect(!reachable.isEmpty, Comment(rawValue: entrance.facilityID))
+    }
+    for exit in exits {
+      let reaching = planner.entryCandidates(entrances, reaching: exit.facilityID)
+        .filter { $0.nameJA != exit.nameJA }
+      #expect(!reaching.isEmpty, Comment(rawValue: exit.facilityID))
+    }
+    // The re-pointed ramps pair with the whole network, not just themselves.
+    for facilityID in [
+      "shuto.ic.10.toyosu", "shuto.ic.c2.gotanda", "shuto.ic.s1.kaga",
+      "shuto.ic.k1.asada", "shuto.ic.s5.urawaminami", "shuto.ic.6-misato.yashio",
+      "shuto.ic.s2.shintoshin",
+    ] {
+      #expect(
+        planner.entryCandidates(entrances, reaching: facilityID).count >= 100,
+        Comment(rawValue: facilityID)
+      )
+    }
+    for facilityID in ["shuto.ic.s5.yono", "shuto.ic.s2.shintoshin"] {
+      #expect(
+        planner.exitCandidates(exits, reachableAfterEntering: facilityID).count >= 100,
+        Comment(rawValue: facilityID)
+      )
+    }
+  }
+
   @Test("one-pass exit bands agree with the pairwise band for every priced exit")
   func exitBandsAgreeWithPairwiseBands() throws {
     let database = try loadDatabase()

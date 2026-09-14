@@ -52,10 +52,22 @@ struct ShutoNetworkTests {
     #expect(komatsugawa.osmNodeIDs.contains(370_270_524))
     #expect(komatsugawa.osmNodeIDs.contains(600_726_158))
     #expect(!komatsugawa.osmNodeIDs.contains(31_337_397))
+    // Every available facility with a ramp is matched; the one available
+    // facility without a ramp of its own is the 横浜港北 twin listed under
+    // 横浜北西線, whose ramps belong to 横浜北線 and bind that twin instead.
+    let availableFacilities = database.directionalFacilities.filter {
+      $0.operationalStatus == "AVAILABLE"
+    }
     #expect(
-      database.directionalFacilities
-        .filter { $0.operationalStatus == "AVAILABLE" }
+      availableFacilities
+        .filter { $0.canEnter || $0.canExit }
         .allSatisfy { $0.geometryMatchState == "CANDIDATE_MATCHED" }
+    )
+    #expect(
+      availableFacilities
+        .filter { !$0.canEnter && !$0.canExit }
+        .map(\.facilityID)
+        == ["shuto.ic.k7-yokohama-hokusei.yokohamakohoku"]
     )
     let yaesu = try #require(
       database.routes.first { $0.routeID == "Y" }
@@ -97,6 +109,10 @@ struct ShutoNetworkTests {
     #expect(
       database.sources.facilityCandidateReview.checkedAt == "2026-08-15"
     )
+    let patch = try #require(database.sources.facilityCandidatePatch)
+    #expect(patch.reviewID == "shuto-facility-candidate-patch-20260914")
+    #expect(patch.checkedAt == "2026-09-14")
+    #expect(patch.patchedFacilityCount == 10)
     #expect(
       database.sources.facilityCandidateReview
         .entryBoundaryRebindingCount == 2

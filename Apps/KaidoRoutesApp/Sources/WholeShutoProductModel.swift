@@ -454,6 +454,16 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
   @Published private(set) var circuitEntranceDistanceMeters: Double?
   @Published private(set) var circuitEntranceWasOverridden = false
+  /// The exit is the driver's to fix as well: every exit the experience
+  /// reaches after its resolved entrance, in driving order, each priced as a
+  /// pairing with that entrance. The recommendation stays known so choosing
+  /// it again returns to the derived pairing.
+  @Published private(set) var circuitExitCandidates:
+    [ShutoNetworkDatabase.Facility] = []
+  @Published private(set) var circuitTariffBandsByExitFacilityID:
+    [String: ShutoTariffBand] = [:]
+  @Published private(set) var circuitRecommendedExitFacilityID: String?
+  @Published private(set) var circuitExitWasOverridden = false
   @Published private(set) var circuitPreviewsByID: [String: WholeShutoCircuitPreview] =
     [:]
   @Published private(set) var isResolvingCircuitPairing = false
@@ -2446,7 +2456,10 @@ final class WholeShutoProductModel: ObservableObject {
     guard preference != surfaceRoutePreference else { return }
     surfaceRoutePreference = preference
     if phase == .planning, selectedCircuit != nil {
-      resolveCircuitPairing(entranceOverride: nil)
+      resolveCircuitPairing(
+        entranceOverride: nil,
+        exitOverride: circuitExitWasOverridden ? circuitExitFacilityID : nil
+      )
       return
     }
     guard
@@ -2992,8 +3005,12 @@ final class WholeShutoProductModel: ObservableObject {
     circuitEntranceDistanceMeters = nil
     circuitEntranceWasOverridden = false
     circuitTariffBandsByFacilityID = [:]
+    circuitExitCandidates = []
+    circuitTariffBandsByExitFacilityID = [:]
+    circuitRecommendedExitFacilityID = nil
+    circuitExitWasOverridden = false
     if origin != nil {
-      resolveCircuitPairing(entranceOverride: nil)
+      resolveCircuitPairing(entranceOverride: nil, exitOverride: nil)
     }
   }
 
@@ -3012,6 +3029,10 @@ final class WholeShutoProductModel: ObservableObject {
     circuitPairingBand = nil
     circuitEntranceDistanceMeters = nil
     circuitEntranceWasOverridden = false
+    circuitExitCandidates = []
+    circuitTariffBandsByExitFacilityID = [:]
+    circuitRecommendedExitFacilityID = nil
+    circuitExitWasOverridden = false
     isResolvingCircuitPairing = false
     startsCircuitJourneyAfterPairing = false
     circuitLaps = 1
@@ -3039,7 +3060,23 @@ final class WholeShutoProductModel: ObservableObject {
       )
     else { return }
     circuitEntranceWasOverridden = true
-    resolveCircuitPairing(entranceOverride: facilityID)
+    resolveCircuitPairing(
+      entranceOverride: facilityID,
+      exitOverride: circuitExitWasOverridden ? circuitExitFacilityID : nil
+    )
+  }
+
+  /// Fixes the exit of the drafted experience. Choosing the recommended
+  /// exit again returns to the derived pairing.
+  func selectCircuitExit(facilityID: String) {
+    guard
+      circuitExitCandidates.contains(where: { $0.facilityID == facilityID })
+    else { return }
+    resolveCircuitPairing(
+      entranceOverride:
+        circuitEntranceWasOverridden ? circuitEntryFacilityID : nil,
+      exitOverride: facilityID
+    )
   }
 
   func selectCircuitLaps(_ laps: Int) {
@@ -3062,16 +3099,21 @@ final class WholeShutoProductModel: ObservableObject {
     }
     resolveCircuitPairing(
       entranceOverride:
-        circuitEntranceWasOverridden ? circuitEntryFacilityID : nil
+        circuitEntranceWasOverridden ? circuitEntryFacilityID : nil,
+      exitOverride: circuitExitWasOverridden ? circuitExitFacilityID : nil
     )
   }
 
-  /// Derives the recommended entrance/exit pairing off the main actor: the
-  /// nearest reachable entrance (or the driver's override), the tariff-best
-  /// exit, and the per-alternative bands. Until resolution completes the
-  /// start action stays unavailable and the interface shows nothing rather
-  /// than inventing a pairing or an amount.
-  private func resolveCircuitPairing(entranceOverride: String?) {
+  /// Derives the entrance/exit pairing off the main actor: the nearest
+  /// reachable entrance (or the driver's override), the tariff-best exit
+  /// (or the driver's override, priced as that pairing), the per-alternative
+  /// bands, and the priced exit list. Until resolution completes the start
+  /// action stays unavailable and the interface shows nothing rather than
+  /// inventing a pairing or an amount.
+  private func resolveCircuitPairing(
+    entranceOverride: String?,
+    exitOverride: String?
+  ) {
     circuitTariffTask?.cancel()
     guard let circuit = selectedCircuit else { return }
     isResolvingCircuitPairing = true
@@ -3079,6 +3121,7 @@ final class WholeShutoProductModel: ObservableObject {
     let originCoordinate = origin?.coordinate
     let tariffEvidence = activeTariffEvidence
     let includeConnectingEntrances = surfaceRoutePreference == .preferHighways
+    let choosesExit = circuit.defaultDestinationParkingAreaID == nil
     circuitPairingOriginCoordinate = originCoordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
@@ -3094,7 +3137,7 @@ final class WholeShutoProductModel: ObservableObject {
       let entranceID =
         overriddenEntranceID
         ?? candidates.first?.facilityID
-      let pairing = entranceID.flatMap {
+      let recommended = entranceID.flatMap {
         try? planner.recommendedCircuitPairing(
           for: circuit,
           entranceFacilityID: $0,
@@ -3102,11 +3145,49 @@ final class WholeShutoProductModel: ObservableObject {
           evidence: tariffEvidence
         )
       }
+      let exits: [ShutoNetworkDatabase.Facility] =
+        choosesExit
+        ? entranceID.flatMap {
+          try? planner.circuitExitCandidates(for: circuit, afterEntering: $0)
+        } ?? []
+        : []
+      if Task.isCancelled { return }
+      let exitBands =
+        entranceID.map {
+          planner.tariffBands(
+            entryFacilityID: $0,
+            exitFacilityIDs: exits.map(\.facilityID),
+            evidence: tariffEvidence
+          )
+        } ?? [:]
+      let overriddenExit = exits.first {
+        $0.facilityID == exitOverride
+          && $0.facilityID != recommended?.exit.facilityID
+      }
+      let pairing: ShutoCircuitPairing?
+      if let recommended, let overriddenExit {
+        pairing = ShutoCircuitPairing(
+          entrance: recommended.entrance,
+          exit: overriddenExit,
+          tariffBand: exitBands[overriddenExit.facilityID],
+          entranceDistanceMeters: recommended.entranceDistanceMeters
+        )
+      } else {
+        pairing = recommended
+      }
       var bands: [String: ShutoTariffBand] = [:]
       for candidate in candidates.prefix(3) {
         if Task.isCancelled { return }
         if candidate.facilityID == pairing?.entrance.facilityID {
           bands[candidate.facilityID] = pairing?.tariffBand
+          continue
+        }
+        if let overriddenExit {
+          bands[candidate.facilityID] = try? planner.tariffBand(
+            entryFacilityID: candidate.facilityID,
+            exitFacilityID: overriddenExit.facilityID,
+            evidence: tariffEvidence
+          )
           continue
         }
         bands[candidate.facilityID] =
@@ -3120,6 +3201,10 @@ final class WholeShutoProductModel: ObservableObject {
       let resolvedPairing = pairing
       let resolvedBands = bands.compactMapValues { $0 }
       let resolvedCandidates = candidates
+      let resolvedExits = exits
+      let resolvedExitBands = exitBands
+      let recommendedExitID = choosesExit ? recommended?.exit.facilityID : nil
+      let exitWasOverridden = overriddenExit != nil
       await MainActor.run { [weak self] in
         guard let self, !Task.isCancelled,
           self.phase == .planning,
@@ -3128,11 +3213,15 @@ final class WholeShutoProductModel: ObservableObject {
         self.circuitEntranceCandidates = resolvedCandidates
         self.circuitEntryFacilityID =
           resolvedPairing?.entrance.facilityID
-        self.circuitExitFacilityID = circuit.defaultDestinationParkingAreaID == nil ? resolvedPairing?.exit.facilityID : nil
-        self.circuitPairingBand = circuit.defaultDestinationParkingAreaID == nil ? resolvedPairing?.tariffBand : nil
+        self.circuitExitFacilityID = choosesExit ? resolvedPairing?.exit.facilityID : nil
+        self.circuitPairingBand = choosesExit ? resolvedPairing?.tariffBand : nil
         self.circuitEntranceDistanceMeters =
           resolvedPairing?.entranceDistanceMeters
-        self.circuitTariffBandsByFacilityID = circuit.defaultDestinationParkingAreaID == nil ? resolvedBands : [:]
+        self.circuitTariffBandsByFacilityID = choosesExit ? resolvedBands : [:]
+        self.circuitExitCandidates = resolvedExits
+        self.circuitTariffBandsByExitFacilityID = resolvedExitBands
+        self.circuitRecommendedExitFacilityID = recommendedExitID
+        self.circuitExitWasOverridden = exitWasOverridden
         self.isResolvingCircuitPairing = false
         if self.startsCircuitJourneyAfterPairing {
           self.startsCircuitJourneyAfterPairing = false
@@ -3366,6 +3455,7 @@ final class WholeShutoProductModel: ObservableObject {
         circuitTariffBandsByFacilityID[route.entryFacility.facilityID] = band
       }
       circuitEntranceWasOverridden = true
+      circuitExitWasOverridden = route.exitFacility != nil
       circuitRecommendation = recommendation
       selectedSavedRouteTemplateParameters = nil
     } else {

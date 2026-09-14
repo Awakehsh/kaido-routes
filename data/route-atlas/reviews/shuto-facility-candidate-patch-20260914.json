@@ -1,0 +1,170 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shuto-facility-candidate-patch-20260914",
+  "checked_at": "2026-09-14",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "input_database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908",
+  "input_database_sha256": "c4602ba48c84dcf3305775d335d2be7438c4ba284cb8111b32ebeb764fd7a2b3",
+  "source": {
+    "method": "Directed reachability over the snapshot graph (non-parking edges) for every entrance/exit pair, the planner's exact pairing rule; ramp identity from the snapshot's own OSM way tags and node topology; operator facility pages as already hashed in the catalog.",
+    "finding": "Ten facilities paired with nothing but themselves. Nine bind the wrong ramp: the operator's real ramp is a route-relation member typed MAINLINE, so the builder's LINK-only candidate search fell back to the opposite-role ramp; one split interchange keeps its ramps beyond the 750 m radius; one exit bound a rest-area entry ramp. One facility is a per-route twin whose route carries no ramp of its own.",
+    "kept_as_is": "三溪園 西行き, 足立入谷 下り and 浦和北 下り entrances reach only their own onward stubs; that is the road, not the data. 八重洲線 facilities are UNAVAILABLE and stay unbound."
+  },
+  "patches": [
+    {
+      "facility_id": "shuto.ic.10.toyosu",
+      "reason": "The 上り exit was bound to its own 下り entrance ramp (osm.760585209, osm.760583395); the exit ramp ways 44882519→760585208→760583394 are named 首都高速10号晴海線;豊洲出口 and diverge from the 上り carriageway at node 493584453.",
+      "evidence": [
+        "osm way 760583394 name=首都高速10号晴海線;豊洲出口 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-10/toyosu"
+      ],
+      "exit_edge_candidates": [
+        "osm.760583394.1.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.c2.gotanda",
+      "reason": "The 内回り exit was bound to the 外回り entrance ramp (osm.805171061, osm.806000820); the exit ramp ways 541983769→805171062 are named 五反田出口 with destination=五反田 and diverge from the C2 内回り carriageway at node 3387909578.",
+      "evidence": [
+        "osm way 805171062 name=五反田出口 destination=五反田 ref=C2 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-c2/gotanda"
+      ],
+      "exit_edge_candidates": [
+        "osm.805171062.3.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.s1.kaga",
+      "reason": "The 下り exit was bound to the 上り entrance ramp (osm.28188014); the exit ramp ways 491244288→1023900267 carry destination=鳩ヶ谷;川口;竹ノ塚 and diverge from the S1 下り carriageway at node 4361138358, ending at the shared plaza beside the 上り entrance start.",
+      "evidence": [
+        "osm way 1023900267 name=首都高速川口線 destination=鳩ヶ谷;川口;竹ノ塚 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-s1/kaga"
+      ],
+      "exit_edge_candidates": [
+        "osm.1023900267.1.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.s1.higashiryouke",
+      "reason": "The 上り exit was bound to a through lane; the exit ramp ways 563799388→1023900266 carry destination=川口;環七通り and diverge from the S1 上り carriageway at node 5432829255. Only the three entrances upstream on S1 (新郷, 安行, 新井宿) can reach it; 加賀's entrance merges downstream of the divergence.",
+      "evidence": [
+        "osm way 1023900266 name=首都高速川口線 destination=川口;環七通り highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-s1/higashiryouke"
+      ],
+      "exit_edge_candidates": [
+        "osm.1023900266.1.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 3,
+        "reachable_exits": 0
+      }
+    },
+    {
+      "facility_id": "shuto.ic.k1.asada",
+      "reason": "The 上り exit was bound to its own 下り entrance ramp (osm.438360420); the exit ramp ways 567321755→1022520297 (ref=K1, motorway_link) diverge from the K1 上り carriageway and end at the plaza.",
+      "evidence": [
+        "osm way 1022520297 name=首都高速神奈川1号横羽線 ref=K1 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-k1/asada"
+      ],
+      "exit_edge_candidates": [
+        "osm.1022520297.2.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.s5.urawaminami",
+      "reason": "The 下り exit was bound to its own 上り entrance ramp (osm.438475084); the exit ramp ways 567240067→1023386115 (motorway_link) diverge from the S5 下り carriageway at node 4362198088 and end at the plaza.",
+      "evidence": [
+        "osm way 1023386115 name=首都高速埼玉大宮線 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-s5/urawaminami"
+      ],
+      "exit_edge_candidates": [
+        "osm.1023386115.1.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.s5.yono",
+      "reason": "The 上り entrance was bound to the 下り exit ramp (osm.156793113); the entrance ramp way 56132891 (ref=S5, motorway_link) starts at node 252830367 and merges into the S5 上り carriageway at node 252830935.",
+      "evidence": [
+        "osm way 56132891 name=首都高速埼玉大宮線 ref=S5 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-s5/yono"
+      ],
+      "entry_edge_candidates": [
+        "osm.56132891.0.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.s2.shintoshin",
+      "reason": "新都心 is a split interchange: its 上り entrance and 下り exit ramps sit about 1.5 km from the catalog point, outside the builder's 750 m radius, so both roles bound the same short stub near the point and paired only with each other. The 上り entrance ramp way 283894031 starts at node 2877126783 and merges toward 与野 at node 2879195923; the 下り exit ramps 283919441 and 284163654 diverge at node 2877286249 from the carriageway fed by the 与野 side.",
+      "evidence": [
+        "osm way 283894031 highway=motorway_link oneway=yes",
+        "osm way 283919441 highway=motorway_link oneway=yes",
+        "osm way 284163654 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-s2/shintoshin"
+      ],
+      "entry_edge_candidates": [
+        "osm.283894031.0.forward"
+      ],
+      "exit_edge_candidates": [
+        "osm.283919441.2.forward",
+        "osm.284163654.7.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.yashio",
+      "reason": "The 下り exit was bound to the 八潮PA (上り side) entry ramp osm.288896620, which now ends in parking edges. The 下り exit ramp way 1463660809 (motorway_link, destination=八潮入口 destination:ref=6) leaves the 6号三郷線 下り carriageway at node 13426271751 and ends at the plaza node 559433465. The way is a first OSM version; confirm against aerial imagery before relying on its exact geometry.",
+      "evidence": [
+        "osm way 1463660809 name=首都高速道路 destination=八潮入口 destination:ref=6 highway=motorway_link oneway=yes",
+        "https://www.shutoko.jp/use/network/map/route-6-misato/yashio"
+      ],
+      "exit_edge_candidates": [
+        "osm.1463660809.6.forward"
+      ],
+      "expect": {
+        "reaching_entrances": 100,
+        "reachable_exits": 100
+      }
+    },
+    {
+      "facility_id": "shuto.ic.k7-yokohama-hokusei.yokohamakohoku",
+      "reason": "横浜港北 is one interchange listed by the operator under 横浜北西線; its ramps carry only 横浜北線 (K7_YOKOHAMA_KITA) membership and already bind the K7_YOKOHAMA_KITA twin, which pairs with the whole network. This twin, with no ramp on its own route, fell back to twelve through-lane segments as both entrance and exit and paired only with itself. It is unbound like the other facilities without a ramp of their own.",
+      "evidence": [
+        "https://www.shutoko.jp/use/network/map/route-k7ho/yokohamakohoku",
+        "snapshot: every candidate edge of this twin is a MAINLINE segment of 5–13 m; the K7_YOKOHAMA_KITA twin shares the coordinate and page"
+      ],
+      "entry_edge_candidates": [],
+      "exit_edge_candidates": [],
+      "expect": {
+        "reaching_entrances": 0,
+        "reachable_exits": 0
+      }
+    }
+  ]
+}

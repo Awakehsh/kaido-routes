@@ -15,7 +15,7 @@ struct WholeShutoAttribution: Equatable, Sendable {
   // build drops, so the bundled graph is not the unrevised build and does
   // not answer to its identity.
   static let expectedDatabaseID =
-    "kaido.shuto.whole-network.2026-08-04+pa-access-20260908"
+    "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914"
   static let expectedNetworkSnapshotID =
     "shuto-official-2026-07-29-osm-2026-08-04"
   static let expectedVerificationState =

@@ -3907,13 +3907,85 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.customExitCandidates.first?.facilityID,
       model.customExitFacilityID
     )
-    // An exit no directed path reaches is refused rather than drafted.
-    if let unreachable = allExits.first(where: {
-      !reachable.contains($0.facilityID)
-    }) {
-      model.selectCustomExit(facilityID: unreachable.facilityID)
-      XCTAssertNotEqual(model.customExitFacilityID, unreachable.facilityID)
-    }
+    let unreachable = model.customExitCandidatesNotReachableFromEntry
+    XCTAssertEqual(
+      Set(unreachable.map(\.facilityID)),
+      Set(allExits.map(\.facilityID)).subtracting(reachable)
+    )
+    // An exit no directed path reaches from this entry is still choosable
+    // from a search; it clears the entry instead of drafting a refused pair.
+    let chosen = try XCTUnwrap(unreachable.first)
+    model.selectCustomExit(facilityID: chosen.facilityID)
+    XCTAssertEqual(model.customExitFacilityID, chosen.facilityID)
+    XCTAssertNil(model.customEntryFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    let allEntrances = model.database.directionalFacilities.filter(\.canEnter)
+    XCTAssertEqual(
+      Set(model.customEntryCandidates.map(\.facilityID)),
+      Set(
+        model.planner.entryCandidates(
+          allEntrances,
+          reaching: chosen.facilityID
+        ).map(\.facilityID)
+      )
+    )
+  }
+
+  func testCustomEntryCandidatesFollowTheChosenExit() throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    model.prepareCustomRouteDraft()
+    XCTAssertFalse(model.editsSelectedCircuit)
+    model.selectCustomEntry(facilityID: "shuto.ic.c1.takaracho")
+
+    let exitID = "shuto.ic.k1.yokohamakouen"
+    model.selectCustomExit(facilityID: exitID)
+    XCTAssertEqual(model.customExitFacilityID, exitID)
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.c1.takaracho")
+
+    let allEntrances = model.database.directionalFacilities.filter(\.canEnter)
+    let reaching = Set(
+      model.planner.entryCandidates(allEntrances, reaching: exitID)
+        .map(\.facilityID)
+    )
+    XCTAssertFalse(reaching.isEmpty)
+    XCTAssertEqual(Set(model.customEntryCandidates.map(\.facilityID)), reaching)
+    XCTAssertEqual(
+      model.customEntryCandidates.first?.facilityID,
+      model.customEntryFacilityID
+    )
+    let notReaching = model.customEntryCandidatesNotReachingExit
+    XCTAssertEqual(
+      Set(notReaching.map(\.facilityID)),
+      Set(allEntrances.map(\.facilityID)).subtracting(reaching)
+    )
+
+    // Fixing an entrance the exit rules out clears that exit, and the exit
+    // list then follows the new entrance.
+    let chosen = try XCTUnwrap(notReaching.first)
+    model.selectCustomEntry(facilityID: chosen.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, chosen.facilityID)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    XCTAssertTrue(model.customEntryCandidatesNotReachingExit.isEmpty)
+    let allExits = model.database.directionalFacilities.filter(\.canExit)
+    let reachable = Set(
+      model.planner.exitCandidates(
+        allExits,
+        reachableAfterEntering: chosen.facilityID
+      ).map(\.facilityID)
+    )
+    XCTAssertEqual(Set(model.customExitCandidates.map(\.facilityID)), reachable)
+    let exit = try XCTUnwrap(model.customExitCandidates.first)
+    model.selectCustomExit(facilityID: exit.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, chosen.facilityID)
+    XCTAssertNotNil(model.customDraftRoute)
+    XCTAssertTrue(model.canApplyCustomRoute)
   }
 
   func testCustomRouteReviewCheckpointDoesNotRestoreStaleOrigin() async throws {

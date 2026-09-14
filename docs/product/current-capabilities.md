@@ -54,8 +54,11 @@ internal review workbench.
   entrances and only the exits it reaches after the chosen entrance, then
   re-plans the same experience and lap count. An experience that ends inside
   a PA has no exit to keep, so choosing an exit there authors an explicit
-  entrance/exit route. A custom pairing offers only
-  exits a directed path reaches from its entry. When the bounded
+  entrance/exit route. A custom pairing constrains
+  whichever end the driver fixes first: only exits a directed path reaches
+  from the entry, only entrances a directed path leads from to the exit.
+  A search still surfaces an IC the other end rules out, marked unreachable;
+  choosing it clears the other end rather than drafting a refused pair. When the bounded
   surface provider resolves both ordinary-road legs for every exact candidate,
   the row uses those comparable ETAs for ordering and shows full-journey preview
   time and distance. A partial provider result preserves deterministic Kaido

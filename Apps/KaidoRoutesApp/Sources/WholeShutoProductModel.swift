@@ -435,7 +435,15 @@ final class WholeShutoProductModel: ObservableObject {
   /// would refuse.
   @Published private(set) var reachableExitCandidates:
     [ShutoNetworkDatabase.Facility] = []
-  @Published private(set) var customExitFacilityID: String?
+  @Published private(set) var customExitFacilityID: String? {
+    didSet { refreshEntryCandidatesReachingExit() }
+  }
+  /// The mirror for a driver who fixes the exit first: entrances some
+  /// directed all-Shuto path leads from to the current exit. Only an exact
+  /// custom pairing needs it; an experience's direction-valid entrances all
+  /// reach the same exits once its course completes.
+  private var entryCandidatesReachingExit:
+    [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var customPreference: ShutoRoutePreference =
     .recommended
   @Published private(set) var customDraftRoute: ShutoPlannedRoute?
@@ -1451,25 +1459,63 @@ final class WholeShutoProductModel: ObservableObject {
 
   var editsSelectedCircuit: Bool { editedCircuit != nil }
 
+  /// Entrances that pair with the current exit, so whichever end the driver
+  /// fixes first constrains the other.
   var customEntryCandidates: [ShutoNetworkDatabase.Facility] {
+    customEntryPartition.pairable
+  }
+
+  /// Entrances a search may still surface while an exit is chosen. Choosing
+  /// one clears that exit rather than drafting a pairing the planner refuses.
+  var customEntryCandidatesNotReachingExit: [ShutoNetworkDatabase.Facility] {
+    customEntryPartition.unpairable
+  }
+
+  var customExitCandidates: [ShutoNetworkDatabase.Facility] {
+    customExitPartition.pairable
+  }
+
+  var customExitCandidatesNotReachableFromEntry:
+    [ShutoNetworkDatabase.Facility]
+  {
+    customExitPartition.unpairable
+  }
+
+  private var customEntryPartition:
+    (pairable: [ShutoNetworkDatabase.Facility], unpairable: [ShutoNetworkDatabase.Facility])
+  {
     if editedCircuit != nil {
-      return pinningSelection(
-        circuitEntranceCandidates,
-        selectedFacilityID: customEntryFacilityID
+      return (
+        pinningSelection(
+          circuitEntranceCandidates,
+          selectedFacilityID: customEntryFacilityID
+        ),
+        []
       )
     }
-    return rankedCustomFacilities(
+    let ranked = rankedCustomFacilities(
       from: origin?.coordinate,
       selectedFacilityID: customEntryFacilityID,
       isEligible: \.canEnter
     )
+    guard customExitFacilityID != nil else { return (ranked, []) }
+    let reaching = Set(entryCandidatesReachingExit.map(\.facilityID))
+    return (
+      ranked.filter { reaching.contains($0.facilityID) },
+      ranked.filter { !reaching.contains($0.facilityID) }
+    )
   }
 
-  var customExitCandidates: [ShutoNetworkDatabase.Facility] {
+  private var customExitPartition:
+    (pairable: [ShutoNetworkDatabase.Facility], unpairable: [ShutoNetworkDatabase.Facility])
+  {
     if editedCircuit != nil {
-      return pinningSelection(
-        reachableExitCandidates,
-        selectedFacilityID: customExitFacilityID
+      return (
+        pinningSelection(
+          reachableExitCandidates,
+          selectedFacilityID: customExitFacilityID
+        ),
+        []
       )
     }
     let ranked = rankedCustomFacilities(
@@ -1480,9 +1526,12 @@ final class WholeShutoProductModel: ObservableObject {
       selectedFacilityID: customExitFacilityID,
       isEligible: \.canExit
     )
-    guard customEntryFacilityID != nil else { return ranked }
+    guard customEntryFacilityID != nil else { return (ranked, []) }
     let reachable = Set(reachableExitCandidates.map(\.facilityID))
-    return ranked.filter { reachable.contains($0.facilityID) }
+    return (
+      ranked.filter { reachable.contains($0.facilityID) },
+      ranked.filter { !reachable.contains($0.facilityID) }
+    )
   }
 
   var customEntryFacility: ShutoNetworkDatabase.Facility? {
@@ -3199,10 +3248,12 @@ final class WholeShutoProductModel: ObservableObject {
       guard
         let entry = nearest(facilities.filter(\.canEnter))
       else { return }
-      let exit = nearest(
-        facilities.filter { $0.canExit && $0.nameJA != entry.nameJA }
-      )
       customEntryFacilityID = entry.facilityID
+      let exit = nearest(
+        reachableExitCandidates.filter {
+          $0.operationalStatus == "AVAILABLE" && $0.nameJA != entry.nameJA
+        }
+      )
       customExitFacilityID = exit?.facilityID
       customPreference = .recommended
       refreshCustomRouteDraft()
@@ -3221,23 +3272,32 @@ final class WholeShutoProductModel: ObservableObject {
         })
     else { return }
     customEntryFacilityID = facilityID
-    // An exit the new entrance cannot reach is not kept as a broken draft:
-    // an experience falls back to its soonest forward exit, a custom pairing
-    // waits for the driver to choose again.
+    // The pair is always plannable or half-chosen, never silently
+    // substituted: an exit this entrance cannot reach is cleared for the
+    // driver to choose again among the exits it does reach.
     if let exitID = customExitFacilityID,
       !reachableExitCandidates.contains(where: { $0.facilityID == exitID })
     {
-      customExitFacilityID =
-        editedCircuit != nil ? reachableExitCandidates.first?.facilityID : nil
+      customExitFacilityID = nil
     }
     refreshCustomRouteDraft()
   }
 
   func selectCustomExit(facilityID: String) {
-    guard
-      reachableExitCandidates.contains(where: { $0.facilityID == facilityID })
+    guard let facility = facility(id: facilityID),
+      facility.canExit,
+      facility.operationalStatus == "AVAILABLE",
+      editedCircuit == nil
+        || reachableExitCandidates.contains(where: {
+          $0.facilityID == facilityID
+        })
     else { return }
     customExitFacilityID = facilityID
+    if let entryID = customEntryFacilityID, editedCircuit == nil,
+      !entryCandidatesReachingExit.contains(where: { $0.facilityID == entryID })
+    {
+      customEntryFacilityID = nil
+    }
     refreshCustomRouteDraft()
   }
 
@@ -6354,6 +6414,18 @@ final class WholeShutoProductModel: ObservableObject {
     reachableExitCandidates = planner.exitCandidates(
       database.directionalFacilities,
       reachableAfterEntering: entryFacilityID
+    )
+  }
+
+  private func refreshEntryCandidatesReachingExit() {
+    guard let exitFacilityID = customExitFacilityID, editedCircuit == nil
+    else {
+      entryCandidatesReachingExit = []
+      return
+    }
+    entryCandidatesReachingExit = planner.entryCandidates(
+      database.directionalFacilities,
+      reaching: exitFacilityID
     )
   }
 

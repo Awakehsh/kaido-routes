@@ -1467,6 +1467,37 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(customExit.waitForExistence(timeout: 3))
     customEntry.tap()
     customExit.tap()
+
+    // A fixed exit constrains the entry list. An entrance the exit rules
+    // out still answers a search, marked, and choosing it clears the exit.
+    let entrySearch = routeApp.textFields["whole-shuto-custom-entry-search"]
+    entrySearch.tap()
+    entrySearch.typeText("三溪園")
+    let unpairableEntry = routeApp.buttons[
+      "whole-shuto-custom-entry-shuto.ic.b.sankeien"
+    ]
+    XCTAssertTrue(unpairableEntry.waitForExistence(timeout: 3))
+    XCTAssertTrue(unpairableEntry.label.contains("无法到达出口"))
+    XCTAssertTrue(
+      element("whole-shuto-custom-entry-unpairable-hint", in: routeApp).exists
+    )
+    let unpairableScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    unpairableScreenshot.name = "Whole Shuto entrance the exit rules out"
+    unpairableScreenshot.lifetime = .keepAlways
+    add(unpairableScreenshot)
+    unpairableEntry.tap()
+    XCTAssertFalse(
+      routeApp.buttons["whole-shuto-apply-custom-route"].isEnabled
+    )
+    entrySearch.typeText(
+      String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3) + "\n"
+    )
+    XCTAssertTrue(customEntry.waitForExistence(timeout: 3))
+    customEntry.tap()
+    XCTAssertTrue(customExit.waitForExistence(timeout: 3))
+    customExit.tap()
     let fewerJunctions = routeApp.buttons[
       "whole-shuto-custom-preference-fewer_junctions"
     ]

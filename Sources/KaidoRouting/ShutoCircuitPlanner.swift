@@ -650,6 +650,41 @@ extension ShutoRoutePlanner {
     }
   }
 
+  /// Entrances from which some directed all-Shuto path reaches one exit, in
+  /// the same order the caller passes them: the mirror of
+  /// `exitCandidates(_:reachableAfterEntering:)` for an editor whose driver
+  /// fixes the exit first.
+  public func entryCandidates(
+    _ candidates: [ShutoNetworkDatabase.Facility],
+    reaching exitFacilityID: String
+  ) -> [ShutoNetworkDatabase.Facility] {
+    guard let exit = facilitiesByID[exitFacilityID], exit.canExit
+    else { return [] }
+    var reaching: Set<Int64> = []
+    var frontier: [Int64] = []
+    for candidate in exit.exitEdgeCandidates {
+      guard let edge = edgesByID[candidate.edgeID],
+        reaching.insert(edge.fromNodeID).inserted
+      else { continue }
+      frontier.append(edge.fromNodeID)
+    }
+    while let node = frontier.popLast() {
+      for edge in incomingEdges[node, default: []]
+      where edgeCost(edge, preference: .recommended).isFinite
+        && reaching.insert(edge.fromNodeID).inserted
+      {
+        frontier.append(edge.fromNodeID)
+      }
+    }
+    return candidates.filter { facility in
+      facility.canEnter
+        && facility.entryEdgeCandidates.contains {
+          guard let edge = edgesByID[$0.edgeID] else { return false }
+          return reaching.contains(edge.toNodeID)
+        }
+    }
+  }
+
   /// The derived pairing an experience card shows: nearest reachable
   /// entrance, and — for loops — the exit whose pairing lands in the lowest
   /// tariff band, tie-broken by shortest forward travel. Tours keep their

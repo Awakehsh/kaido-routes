@@ -5002,13 +5002,26 @@ private struct WholeShutoCustomRouteSheet: View {
             ),
             tint: KaidoTheme.positionCyan,
             candidates: model.customEntryCandidates,
+            unpairableCandidates: model.customEntryCandidatesNotReachingExit,
+            unpairableNote: copy.resolve(
+              japanese: "出口へ到達不可",
+              simplifiedChinese: "无法到达出口",
+              english: "Can't reach exit"
+            ),
             selectedFacilityID: model.customEntryFacilityID,
             usesEntranceDirection: true,
-            orderingLabel: copy.resolve(
-              japanese: "近い順 · 選択中を先頭表示",
-              simplifiedChinese: "按距离排序 · 已选项置顶",
-              english: "Nearest first · selection pinned"
-            ),
+            orderingLabel: !model.editsSelectedCircuit
+              && model.customExitFacilityID != nil
+              ? copy.resolve(
+                japanese: "出口へ行ける入口 · 近い順",
+                simplifiedChinese: "能到达出口的入口 · 按距离",
+                english: "Entrances reaching the exit · nearest first"
+              )
+              : copy.resolve(
+                japanese: "近い順 · 選択中を先頭表示",
+                simplifiedChinese: "按距离排序 · 已选项置顶",
+                english: "Nearest first · selection pinned"
+              ),
             identifierPrefix: "whole-shuto-custom-entry",
             query: $entryQuery,
             referenceCoordinate: model.origin?.coordinate
@@ -5023,6 +5036,13 @@ private struct WholeShutoCustomRouteSheet: View {
             ),
             tint: KaidoTheme.evidenceCoral,
             candidates: model.customExitCandidates,
+            unpairableCandidates:
+              model.customExitCandidatesNotReachableFromEntry,
+            unpairableNote: copy.resolve(
+              japanese: "入口から到達不可",
+              simplifiedChinese: "入口无法到达",
+              english: "Unreachable from entry"
+            ),
             selectedFacilityID: model.customExitFacilityID,
             usesEntranceDirection: false,
             orderingLabel: model.editsSelectedCircuit
@@ -5031,11 +5051,17 @@ private struct WholeShutoCustomRouteSheet: View {
                 simplifiedChinese: "按从入口起的行驶顺序 · 已选项置顶",
                 english: "In driving order from the entrance · selection pinned"
               )
-              : copy.resolve(
-                japanese: "近い順 · 選択中を先頭表示",
-                simplifiedChinese: "按距离排序 · 已选项置顶",
-                english: "Nearest first · selection pinned"
-              ),
+              : model.customEntryFacilityID != nil
+                ? copy.resolve(
+                  japanese: "入口から行ける出口 · 近い順",
+                  simplifiedChinese: "入口能到达的出口 · 按距离",
+                  english: "Exits reachable from the entry · nearest first"
+                )
+                : copy.resolve(
+                  japanese: "近い順 · 選択中を先頭表示",
+                  simplifiedChinese: "按距离排序 · 已选项置顶",
+                  english: "Nearest first · selection pinned"
+                ),
             identifierPrefix: "whole-shuto-custom-exit",
             query: $exitQuery,
             referenceCoordinate:
@@ -5179,6 +5205,8 @@ private struct WholeShutoCustomRouteSheet: View {
     title: String,
     tint: Color,
     candidates: [ShutoNetworkDatabase.Facility],
+    unpairableCandidates: [ShutoNetworkDatabase.Facility],
+    unpairableNote: String,
     selectedFacilityID: String?,
     usesEntranceDirection: Bool,
     orderingLabel: String,
@@ -5190,7 +5218,7 @@ private struct WholeShutoCustomRouteSheet: View {
     let normalizedQuery = query.wrappedValue.trimmingCharacters(
       in: .whitespacesAndNewlines
     )
-    let matchingCandidates = candidates.filter { facility in
+    let matches: (ShutoNetworkDatabase.Facility) -> Bool = { facility in
       normalizedQuery.isEmpty
         || facility.nameJA.localizedCaseInsensitiveContains(normalizedQuery)
         || shieldLabel(facility.routeID)
@@ -5200,10 +5228,15 @@ private struct WholeShutoCustomRouteSheet: View {
             $0.localizedCaseInsensitiveContains(normalizedQuery)
           }
     }
+    let matchingCandidates = candidates.filter(matches)
     let visibleCandidates =
       normalizedQuery.isEmpty
       ? Array(matchingCandidates.prefix(12))
       : matchingCandidates
+    // An IC the other end rules out is never hidden from a search for it:
+    // it shows why, and choosing it clears the other end.
+    let visibleUnpairable =
+      normalizedQuery.isEmpty ? [] : unpairableCandidates.filter(matches)
 
     return VStack(alignment: .leading, spacing: 7) {
       HStack {
@@ -5261,7 +5294,7 @@ private struct WholeShutoCustomRouteSheet: View {
       }
       .accessibilityIdentifier("\(identifierPrefix)-search")
 
-      if visibleCandidates.isEmpty {
+      if visibleCandidates.isEmpty && visibleUnpairable.isEmpty {
         HStack(spacing: 8) {
           Image(systemName: "magnifyingglass")
           Text(
@@ -5287,88 +5320,28 @@ private struct WholeShutoCustomRouteSheet: View {
           ScrollView(.horizontal) {
             LazyHStack(spacing: 8) {
               ForEach(visibleCandidates) { facility in
-                let isSelected =
-                  facility.facilityID == selectedFacilityID
-                Button {
-                  onSelect(facility.facilityID)
-                } label: {
-                  VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 5) {
-                      Text(shieldLabel(facility.routeID))
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .frame(height: 19)
-                        .background(routeColor(facility.routeID))
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
-
-                      Spacer()
-
-                      if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                          .font(.system(size: 11, weight: .black))
-                          .foregroundStyle(tint)
-                      }
-                    }
-
-                    Text(facility.nameJA)
-                      .font(.system(size: 13, weight: .black))
-                      .foregroundStyle(KaidoTheme.routeWhite)
-                      .lineLimit(1)
-
-                    Text(
-                      facilityDirection(
-                        facility,
-                        usesEntranceDirection: usesEntranceDirection
-                      )
-                    )
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(KaidoTheme.nightQuiet)
-                    .lineLimit(1)
-
-                    if let referenceCoordinate {
-                      Text(
-                        facilityDistanceLabel(
-                          facility,
-                          from: referenceCoordinate
-                        )
-                      )
-                      .font(.caption2.weight(.bold))
-                      .foregroundStyle(
-                        isSelected
-                          ? tint : KaidoTheme.nightQuiet
-                      )
-                      .monospacedDigit()
-                    }
-                  }
-                  .padding(.horizontal, 10)
-                  .frame(width: 132, height: 78, alignment: .leading)
-                  .background(
-                    isSelected ? tint.opacity(0.13) : KaidoTheme.nightRaised
-                  )
-                  .clipShape(RoundedRectangle(cornerRadius: 11))
-                  .overlay {
-                    RoundedRectangle(cornerRadius: 11)
-                      .stroke(
-                        isSelected ? tint : KaidoTheme.nightDivider,
-                        lineWidth: isSelected ? 2 : 1
-                      )
-                  }
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                  "\(facility.nameJA), \(shieldLabel(facility.routeID)), "
-                    + facilityDirection(
-                      facility,
-                      usesEntranceDirection: usesEntranceDirection
-                    )
+                facilityChip(
+                  facility,
+                  isSelected: facility.facilityID == selectedFacilityID,
+                  tint: tint,
+                  note: nil,
+                  usesEntranceDirection: usesEntranceDirection,
+                  identifierPrefix: identifierPrefix,
+                  referenceCoordinate: referenceCoordinate,
+                  onSelect: onSelect
                 )
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
-                .accessibilityIdentifier(
-                  "\(identifierPrefix)-\(facility.facilityID)"
+              }
+              ForEach(visibleUnpairable) { facility in
+                facilityChip(
+                  facility,
+                  isSelected: false,
+                  tint: tint,
+                  note: unpairableNote,
+                  usesEntranceDirection: usesEntranceDirection,
+                  identifierPrefix: identifierPrefix,
+                  referenceCoordinate: referenceCoordinate,
+                  onSelect: onSelect
                 )
-                .id(facility.facilityID)
               }
             }
           }
@@ -5384,8 +5357,118 @@ private struct WholeShutoCustomRouteSheet: View {
             }
           }
         }
+        if !visibleUnpairable.isEmpty {
+          Text(
+            copy.resolve(
+              japanese: "到達不可のICを選ぶと、もう一方を選び直します",
+              simplifiedChinese: "选择不可到达的 IC 后，需重新选择另一端",
+              english: "Choosing an unreachable IC clears the other end"
+            )
+          )
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+          .accessibilityIdentifier("\(identifierPrefix)-unpairable-hint")
+        }
       }
     }
+  }
+
+  private func facilityChip(
+    _ facility: ShutoNetworkDatabase.Facility,
+    isSelected: Bool,
+    tint: Color,
+    note: String?,
+    usesEntranceDirection: Bool,
+    identifierPrefix: String,
+    referenceCoordinate: ShutoCoordinate?,
+    onSelect: @escaping (String) -> Void
+  ) -> some View {
+    Button {
+      onSelect(facility.facilityID)
+    } label: {
+      VStack(alignment: .leading, spacing: 3) {
+        HStack(spacing: 5) {
+          Text(shieldLabel(facility.routeID))
+            .font(.system(size: 9, weight: .black, design: .rounded))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .frame(height: 19)
+            .background(routeColor(facility.routeID))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+
+          Spacer()
+
+          if isSelected {
+            Image(systemName: "checkmark.circle.fill")
+              .font(.system(size: 11, weight: .black))
+              .foregroundStyle(tint)
+          }
+        }
+
+        Text(facility.nameJA)
+          .font(.system(size: 13, weight: .black))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .lineLimit(1)
+
+        Text(
+          facilityDirection(
+            facility,
+            usesEntranceDirection: usesEntranceDirection
+          )
+        )
+        .font(.system(size: 8, weight: .bold))
+        .foregroundStyle(KaidoTheme.nightQuiet)
+        .lineLimit(1)
+
+        if let note {
+          Text(note)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(KaidoTheme.evidenceCoral)
+            .lineLimit(1)
+        } else if let referenceCoordinate {
+          Text(
+            facilityDistanceLabel(
+              facility,
+              from: referenceCoordinate
+            )
+          )
+          .font(.caption2.weight(.bold))
+          .foregroundStyle(
+            isSelected
+              ? tint : KaidoTheme.nightQuiet
+          )
+          .monospacedDigit()
+        }
+      }
+      .padding(.horizontal, 10)
+      .frame(width: 132, height: 78, alignment: .leading)
+      .background(
+        isSelected ? tint.opacity(0.13) : KaidoTheme.nightRaised
+      )
+      .clipShape(RoundedRectangle(cornerRadius: 11))
+      .overlay {
+        RoundedRectangle(cornerRadius: 11)
+          .stroke(
+            isSelected ? tint : KaidoTheme.nightDivider,
+            lineWidth: isSelected ? 2 : 1
+          )
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(
+      "\(facility.nameJA), \(shieldLabel(facility.routeID)), "
+        + facilityDirection(
+          facility,
+          usesEntranceDirection: usesEntranceDirection
+        )
+        + (note.map { ", \($0)" } ?? "")
+    )
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
+    .accessibilityIdentifier(
+      "\(identifierPrefix)-\(facility.facilityID)"
+    )
+    .id(facility.facilityID)
   }
 
   private func facilityDistanceLabel(

@@ -608,6 +608,73 @@ struct ShutoCircuitPlannerTests {
     )
   }
 
+  @Test("entrances reaching an exit mirror the exits reachable after each entrance")
+  func entryCandidatesMirrorExitCandidates() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let exits = database.directionalFacilities.filter(\.canExit)
+    let entrances = database.directionalFacilities.filter(\.canEnter)
+    let sampledEntrances = stride(from: 0, to: entrances.count, by: 9)
+      .map { entrances[$0] }
+    #expect(sampledEntrances.count >= 15)
+    let reachableByEntrance = Dictionary(
+      uniqueKeysWithValues: sampledEntrances.map { entrance in
+        (
+          entrance.facilityID,
+          Set(
+            planner.exitCandidates(
+              exits,
+              reachableAfterEntering: entrance.facilityID
+            ).map(\.facilityID)
+          )
+        )
+      }
+    )
+    for exit in exits {
+      let reaching = Set(
+        planner.entryCandidates(sampledEntrances, reaching: exit.facilityID)
+          .map(\.facilityID)
+      )
+      let expected = Set(
+        sampledEntrances.filter {
+          reachableByEntrance[$0.facilityID]?.contains(exit.facilityID) == true
+        }.map(\.facilityID)
+      )
+      #expect(reaching == expected, Comment(rawValue: exit.facilityID))
+    }
+    #expect(
+      planner.entryCandidates(entrances, reaching: "shuto.ic.missing").isEmpty
+    )
+  }
+
+  @Test("every direction-valid entrance of an experience reaches the same exits after its course")
+  func experienceExitsDoNotDependOnTheEntrance() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    for circuit in ShutoCircuitDefinition.bundled {
+      let entrances = planner.circuitEntranceCandidates(
+        for: circuit,
+        origin: nil
+      )
+      #expect(entrances.count >= 10, Comment(rawValue: circuit.circuitID))
+      let exitSets = Set(
+        try entrances.map { entrance in
+          Set(
+            try planner.circuitExitCandidates(
+              for: circuit,
+              afterEntering: entrance.facilityID
+            ).map(\.facilityID)
+          )
+        }
+      )
+      #expect(exitSets.count == 1, Comment(rawValue: circuit.circuitID))
+      #expect(
+        exitSets.first?.isEmpty == false,
+        Comment(rawValue: circuit.circuitID)
+      )
+    }
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

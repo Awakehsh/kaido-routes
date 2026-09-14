@@ -571,6 +571,7 @@ public struct ShutoRoutePlanner: Sendable {
   let nodesByID: [Int64: ShutoNetworkDatabase.Node]
   let edgesByID: [String: ShutoNetworkDatabase.Edge]
   let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
+  let incomingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
   let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
 
@@ -590,6 +591,10 @@ public struct ShutoRoutePlanner: Sendable {
     outgoingEdges = Dictionary(
       grouping: database.edges,
       by: \.fromNodeID
+    )
+    incomingEdges = Dictionary(
+      grouping: database.edges,
+      by: \.toNodeID
     )
     facilitiesByID = Dictionary(
       uniqueKeysWithValues:

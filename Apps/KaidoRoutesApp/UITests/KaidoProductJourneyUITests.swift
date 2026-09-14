@@ -964,9 +964,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(
       [
-        "ACTIVE_MINIMUM_BAND · 2026-08-03",
-        "ACTIVE_ESTIMATED · 2026-08-03",
-        "ACTIVE_MAXIMUM · 2026-08-03",
+        "ACTIVE_MINIMUM_BAND · 2026-09-12",
+        "ACTIVE_ESTIMATED · 2026-09-12",
+        "ACTIVE_MAXIMUM · 2026-09-12",
       ].contains(
         element("whole-shuto-toll-status", in: app).value as? String
           ?? ""

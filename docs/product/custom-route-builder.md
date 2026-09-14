@@ -234,8 +234,9 @@ Warnings include:
 
 ### Low-price circuit evidence
 
-Current official pages checked 2026-07-22 state that standard-car ETC basic
-charges range from JPY 300 to JPY 1,950, that tariff distance can differ from
+Official pages checked 2026-07-22 state that standard-car ETC basic charges
+range from JPY 300 to JPY 1,950 (through 2026-09-30; the operator's dated
+2026-10-01 revision raises the cap to JPY 2,130), that tariff distance can differ from
 actual distance, and that the shortest Shuto-only path is used when multiple
 paths connect the same entrance and exit. The D10 fixture separately preserves
 one reproduced official query: Iikura to Shibakoen via Takaracho returned JPY

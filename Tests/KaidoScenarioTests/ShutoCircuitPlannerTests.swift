@@ -34,13 +34,13 @@ struct ShutoCircuitPlannerTests {
       #expect(planner.circuitEntranceCandidates(for: circuit).isEmpty)
       #expect(throws: ShutoNetworkError.facilityUnavailable) {
         _ = try planner.recommendedCircuitPairing(
-          for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarActive
+          for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarUntil2026September
         )
       }
       return
     }
     let pairing = try planner.recommendedCircuitPairing(
-      for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarActive
+      for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarUntil2026September
     )
     let route = try planner.planCircuit(
       circuit: circuit, entryFacilityID: pairing.entrance.facilityID,
@@ -330,7 +330,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .wanganDaikokuRun,
       origin: origin,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
 
@@ -384,7 +384,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .wanganDaikokuRun,
       origin: harumi.coordinate,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.entrance.facilityID == harumi.facilityID)
     let route = try planner.planCircuit(
@@ -420,7 +420,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .daikokuYokohamaLoop,
       origin: origin,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     // The Daikoku Line entrance right beside the PA is on the cycle and
     // geodesically nearest; the same-named Bayshore exit is never paired,
@@ -466,7 +466,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .scenicGrandTour,
       origin: origin,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.10.harumi")
     #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
@@ -504,7 +504,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .c1Inner,
       origin: origin,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.4.shinjuku")
     #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
@@ -535,7 +535,7 @@ struct ShutoCircuitPlannerTests {
     let pairing = try planner.recommendedCircuitPairing(
       for: .c2InnerWithBayshore,
       origin: origin,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     let distance = try #require(pairing.entranceDistanceMeters)
     #expect(distance > ShutoEntranceAccessTier.outerRadiusMeters)

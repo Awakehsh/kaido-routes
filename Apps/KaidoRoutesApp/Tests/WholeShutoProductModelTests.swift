@@ -1111,7 +1111,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       try model.planner.tariffBand(
         entryFacilityID: namedEntry.facilityID,
         exitFacilityID: try XCTUnwrap(route.exitFacility).facilityID,
-        evidence: .etcNormalCarActive
+        evidence: model.activeTariffEvidence
       )
     )
 

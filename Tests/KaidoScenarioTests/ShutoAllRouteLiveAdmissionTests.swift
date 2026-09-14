@@ -153,7 +153,7 @@ struct ShutoAllRouteLiveAdmissionTests {
               pairing = try planner.recommendedCircuitPairing(
                 for: circuit,
                 entranceFacilityID: entry.facilityID,
-                evidence: .etcNormalCarActive
+                evidence: .etcNormalCarUntil2026September
               )
             } catch ShutoNetworkError.facilityUnavailable {
               continue

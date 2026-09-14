@@ -482,7 +482,7 @@ struct WholeShutoJourneyReviewView: View {
     tint: Color,
     accessibilityValue: String
   ) {
-    let evidence = ShutoTariffEvidence.etcNormalCarActive
+    let evidence = model.activeTariffEvidence
     if model.entryIsUnconfirmed {
       // Priced between toll points: with no known entrance only the cap is
       // honest, and it is labeled as a cap rather than an estimate.

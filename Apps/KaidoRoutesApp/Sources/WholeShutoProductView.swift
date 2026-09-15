@@ -828,7 +828,7 @@ struct WholeShutoProductView: View {
       .fontDesign(.rounded)
       .foregroundStyle(
         model.mapMode == mode
-          ? KaidoInk.textPrimary
+          ? KaidoInk.surface
           : KaidoInk.textQuiet
       )
       .padding(.horizontal, 9)
@@ -1804,7 +1804,7 @@ struct WholeShutoProductView: View {
           }
         }
         .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(KaidoInk.textPrimary)
+        .foregroundStyle(KaidoInk.surface)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
         .frame(height: 48)
@@ -2622,7 +2622,7 @@ struct WholeShutoProductView: View {
         }
       }
       .font(.system(size: 13, weight: .bold))
-      .foregroundStyle(KaidoInk.textPrimary)
+      .foregroundStyle(KaidoInk.surface)
       .padding(.horizontal, 16)
       .frame(maxWidth: .infinity)
       .frame(height: 48)
@@ -3035,7 +3035,7 @@ struct WholeShutoProductView: View {
           Image(systemName: "arrow.right")
             .font(.system(size: 13, weight: .black))
         }
-        .foregroundStyle(KaidoInk.textPrimary)
+        .foregroundStyle(KaidoInk.surface)
         .padding(.horizontal, 15)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: 50)
@@ -5786,7 +5786,7 @@ private struct WholeShutoCustomRouteSheet: View {
           Image(systemName: "arrow.right")
         }
         .font(.system(size: 13, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoInk.textPrimary)
+        .foregroundStyle(KaidoInk.surface)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
         .frame(height: 48)

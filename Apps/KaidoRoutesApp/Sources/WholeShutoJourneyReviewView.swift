@@ -609,7 +609,7 @@ struct WholeShutoJourneyReviewView: View {
           Image(systemName: "location.north.fill")
         }
         .font(.system(size: 14, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoInk.textPrimary)
+        .foregroundStyle(KaidoInk.surface)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
         .frame(height: 52)
@@ -646,7 +646,7 @@ struct WholeShutoJourneyReviewView: View {
           .foregroundStyle(
             model.canStartLiveNavigation
               ? KaidoInk.textQuiet
-              : KaidoInk.textPrimary
+              : KaidoInk.surface
           )
           .frame(maxWidth: .infinity)
           .frame(height: model.canStartLiveNavigation ? 34 : 48)

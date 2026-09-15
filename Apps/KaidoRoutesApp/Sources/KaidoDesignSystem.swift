@@ -30,6 +30,14 @@ struct KaidoPalette: Equatable, Sendable {
   // Accents. Three hues, no more: the active route owns the warm one, the
   // measured/enterable things own the cool one, and leaving or failing owns
   // the clay one.
+  //
+  // Each accent is mid-lightness in *both* palettes, which is what lets it
+  // read against a dark ground and a light one. The cost is that a control
+  // filled with an accent must label itself with `surface`, never
+  // `textPrimary`: a light label on `accentWarm` measures 2.28:1. The
+  // filled-chip assertion in `AccessibilityPresentationTests` holds that
+  // pairing, and `KRU09AccessibilityUITests` catches it on the rendered
+  // screen if a call site gets it wrong anyway.
   let accentWarm: KaidoColorToken
   /// Casing beneath `accentWarm`, so a route line reads as a drawn road
   /// rather than a stroke.

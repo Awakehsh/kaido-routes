@@ -1353,6 +1353,11 @@ struct WholeShutoProductView: View {
 
   /// The route's silhouette in the card, drawn from the precomputed
   /// normalized track shape.
+  /// The course's own shape, drawn large enough to be what the card is
+  /// *about* rather than an ornament above the text. Casing under core so the
+  /// line reads as a road, and one chevron says which way the course runs —
+  /// which is also what lets the card drop the "周回ルート / CIRCUIT" line it
+  /// used to spend a row on.
   private func circuitThumbnail(_ points: [CGPoint]) -> some View {
     Canvas { context, size in
       let xs = points.map { Double($0.x) }
@@ -1361,7 +1366,8 @@ struct WholeShutoProductView: View {
         let minY = ys.min(), let maxY = ys.max(),
         maxX > minX, maxY > minY
       else { return }
-      let inset = 3.0
+      // Room for the casing stroke, and for the kind badge in the top-right.
+      let inset = 14.0
       let width = Double(size.width)
       let height = Double(size.height)
       let scale = min(
@@ -1386,9 +1392,18 @@ struct WholeShutoProductView: View {
       }
       context.stroke(
         path,
-        with: .color(KaidoInk.accentCool),
+        with: .color(KaidoInk.accentWarmDeep),
         style: StrokeStyle(
-          lineWidth: 3,
+          lineWidth: 7,
+          lineCap: .round,
+          lineJoin: .round
+        )
+      )
+      context.stroke(
+        path,
+        with: .color(KaidoInk.accentWarm),
+        style: StrokeStyle(
+          lineWidth: 3.2,
           lineCap: .round,
           lineJoin: .round
         )
@@ -1414,7 +1429,7 @@ struct WholeShutoProductView: View {
         }
       }
     }
-    .frame(height: 52)
+    .frame(height: 96)
     .accessibilityHidden(true)
   }
 
@@ -1487,6 +1502,71 @@ struct WholeShutoProductView: View {
       .joined(separator: " → ")
   }
 
+  /// Loop or tour as a mark instead of a sentence. The drawn shape above it
+  /// already says which; this only confirms it, so it costs a corner rather
+  /// than a row. Hidden from VoiceOver like the shields — a 23pt element
+  /// inside the card's own button reads to the hit-region audit as a target
+  /// too small to press — and the wording rides the card's value instead.
+  private func circuitKindBadge(
+    _ circuit: ShutoCircuitDefinition
+  ) -> some View {
+    Image(
+      systemName: circuit.kind == .loop
+        ? "arrow.triangle.capsulepath"
+        : "arrow.forward"
+    )
+    .font(.system(size: 11, weight: .bold))
+    .foregroundStyle(KaidoInk.textQuiet)
+    .padding(6)
+    .background(KaidoInk.surface.opacity(0.62), in: Circle())
+    .accessibilityHidden(true)
+  }
+
+  /// The one fact that tells this course apart from the others on the row.
+  /// A parking stop outranks a landmark because it is something the drive
+  /// *does*, not something it passes; either way the card shows exactly one.
+  /// The rest — every landmark, the junction-cue count — belongs to the
+  /// course detail, not to a card the driver scans sideways.
+  ///
+  /// Text alone, no parking glyph: the filled SF parking symbol renders its
+  /// counter in the card ground and fails the home's contrast audit.
+  @ViewBuilder
+  private func circuitDifferentiator(
+    _ circuit: ShutoCircuitDefinition
+  ) -> some View {
+    if let parking = model.database.parkingAreas.first(where: {
+      $0.parkingAreaID == circuit.defaultDestinationParkingAreaID
+    }) {
+      Text(
+        copy.resolve(
+          japanese: "目的地：", simplifiedChinese: "目的地：",
+          english: "Destination: "
+        ) + parking.nameJA
+      )
+      .font(KaidoType.caption)
+      .foregroundStyle(KaidoInk.accentCool)
+      .lineLimit(1)
+      .accessibilityIdentifier(
+        "whole-shuto-circuit-destination-\(circuit.circuitID)"
+      )
+    } else if let stop = circuitParkingStopNames(circuit).first {
+      Text(stop)
+        .font(KaidoType.caption)
+        .foregroundStyle(KaidoInk.accentCool)
+        .lineLimit(1)
+        .accessibilityIdentifier(
+          "whole-shuto-circuit-pa-stops-\(circuit.circuitID)"
+        )
+    } else if let landmark = circuit.landmarkNames(
+      for: languageSettings.interfaceLocale
+    ).first {
+      Text(landmark)
+        .font(KaidoType.caption)
+        .foregroundStyle(KaidoInk.textQuiet)
+        .lineLimit(1)
+    }
+  }
+
   private func circuitCard(
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
@@ -1499,94 +1579,94 @@ struct WholeShutoProductView: View {
         planningLocation.requestCurrentLocation()
       }
     } label: {
-      VStack(alignment: .leading, spacing: 5) {
-        if let preview = model.circuitPreviewsByID[circuit.circuitID],
-          preview.points.count > 1
-        {
-          circuitThumbnail(preview.points)
-        } else {
-          Image(
-            systemName: circuit.kind == .loop
-              ? "arrow.triangle.capsulepath"
-              : "point.topleft.down.curvedto.point.bottomright.up"
-          )
-          .font(.system(size: 15, weight: .bold))
-          .foregroundStyle(KaidoInk.accentWarm)
-          .frame(height: 38)
-        }
-        if let preview = model.circuitPreviewsByID[circuit.circuitID],
-          !preview.routeIDsInOrder.isEmpty
-        {
-          circuitShields(preview.routeIDsInOrder)
-        }
-        Text(circuit.displayName(for: languageSettings.interfaceLocale))
-          .font(.subheadline.weight(.bold))
-          .multilineTextAlignment(.leading)
-          .fixedSize(horizontal: false, vertical: true)
-        Text(circuitKindText(circuit))
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-        if let preview = model.circuitPreviewsByID[circuit.circuitID] {
-          Text(copy.resolve(
-            japanese: "約\(preview.referenceMinutes)分 · \(distanceLabel(preview.distanceMeters))",
-            simplifiedChinese: "约 \(preview.referenceMinutes) 分钟 · \(distanceLabel(preview.distanceMeters))",
-            english: "~\(preview.referenceMinutes) min · \(distanceLabel(preview.distanceMeters))"
-          ))
-          .font(.system(.headline, design: .rounded).weight(.bold))
-          .foregroundStyle(KaidoInk.textPrimary)
-          .monospacedDigit()
-          .accessibilityIdentifier("whole-shuto-circuit-metrics-\(circuit.circuitID)")
-          Text(copy.resolve(
-            japanese: "分岐案内 \(preview.junctionCount)か所",
-            simplifiedChinese: "\(preview.junctionCount) 处路口提示",
-            english: "\(preview.junctionCount) junction cues"
-          ))
-          .font(.caption)
-          .foregroundStyle(KaidoInk.textQuiet)
-        }
-        let landmarkNames = circuit.landmarkNames(
-          for: languageSettings.interfaceLocale
-        )
-        if !landmarkNames.isEmpty {
-          Text(landmarkNames.joined(separator: "・"))
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        let parkingStopNames = circuitParkingStopNames(circuit)
-        if let parking = model.database.parkingAreas.first(where: { $0.parkingAreaID == circuit.defaultDestinationParkingAreaID }) {
-          Text(copy.resolve(japanese: "目的地：", simplifiedChinese: "目的地：", english: "Destination: ") + parking.nameJA)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(KaidoInk.accentCool)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityIdentifier("whole-shuto-circuit-destination-\(circuit.circuitID)")
-        } else if !parkingStopNames.isEmpty {
-          // Text alone, no parking glyph: the filled SF parking symbol
-          // renders its counter in the card ground and fails the home's
-          // contrast audit, and the green line already reads as a stop.
-          Text(parkingStopNames.joined(separator: "・"))
-            .font(.caption.weight(.bold))
-            .foregroundStyle(KaidoInk.accentCool)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityIdentifier(
-              "whole-shuto-circuit-pa-stops-\(circuit.circuitID)"
+      VStack(alignment: .leading, spacing: 0) {
+        ZStack(alignment: .topTrailing) {
+          if let preview = model.circuitPreviewsByID[circuit.circuitID],
+            preview.points.count > 1
+          {
+            circuitThumbnail(preview.points)
+          } else {
+            Image(
+              systemName: circuit.kind == .loop
+                ? "arrow.triangle.capsulepath"
+                : "point.topleft.down.curvedto.point.bottomright.up"
             )
+            .font(.system(size: 22, weight: .bold))
+            .foregroundStyle(KaidoInk.accentWarm)
+            .frame(height: 96)
+          }
+          circuitKindBadge(circuit)
+            .padding(.top, 11)
+            .padding(.trailing, 12)
         }
+        .frame(maxWidth: .infinity)
+        .background(
+          RadialGradient(
+            colors: [KaidoInk.accentWarm.opacity(0.17), .clear],
+            center: UnitPoint(x: 0.5, y: 1.15),
+            startRadius: 0,
+            endRadius: 170
+          )
+        )
+
+        VStack(alignment: .leading, spacing: KaidoSpace.sm) {
+          if let preview = model.circuitPreviewsByID[circuit.circuitID],
+            !preview.routeIDsInOrder.isEmpty
+          {
+            circuitShields(preview.routeIDsInOrder)
+          }
+          // The name is identity, not the reason to pick this course, so it
+          // sits below the shape and above the number — and stays on one
+          // line rather than pushing the card taller.
+          Text(circuit.displayName(for: languageSettings.interfaceLocale))
+            .font(KaidoType.headline)
+            .foregroundStyle(KaidoInk.textSecondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+          if let preview = model.circuitPreviewsByID[circuit.circuitID] {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+              Text("\(preview.referenceMinutes)")
+                .font(KaidoType.display)
+                .foregroundStyle(KaidoInk.textPrimary)
+                .monospacedDigit()
+              Text(copy.resolve(
+                japanese: "分", simplifiedChinese: "分钟", english: "min"
+              ))
+              .font(KaidoType.label)
+              .foregroundStyle(KaidoInk.textQuiet)
+              Rectangle()
+                .fill(KaidoInk.divider)
+                .frame(width: 1, height: 12)
+                .padding(.horizontal, 2)
+              Text(distanceLabel(preview.distanceMeters))
+                .font(KaidoType.headline)
+                .foregroundStyle(KaidoInk.textQuiet)
+                .monospacedDigit()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-metrics-\(circuit.circuitID)"
+            )
+          }
+          circuitDifferentiator(circuit)
+        }
+        .padding(.horizontal, KaidoSpace.lg)
+        .padding(.bottom, KaidoSpace.lg)
       }
       .frame(width: 222, alignment: .leading)
-      .padding(14)
-      .background(KaidoInk.surfaceRaised.opacity(0.94))
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      .overlay {
-        RoundedRectangle(cornerRadius: 12)
-          .stroke(KaidoInk.divider, lineWidth: 1)
-      }
+      .kaidoRaised()
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier(
       "whole-shuto-circuit-option-\(circuit.circuitID)"
     )
-    .accessibilityValue(circuitRoutesAccessibilityValue(circuit) ?? "")
+    // The kind rides here because its badge is hidden from VoiceOver; a
+    // reader who never sees the drawn shape still hears loop or tour.
+    .accessibilityValue(
+      [circuitKindText(circuit), circuitRoutesAccessibilityValue(circuit)]
+        .compactMap { $0 }
+        .joined(separator: ", ")
+    )
   }
 
   private func selectedCircuitPanel(

@@ -1873,10 +1873,12 @@ final class WholeShutoProductModelTests: XCTestCase {
       Self.liveLocationEnvelope(id: "surface.off-route.0", coordinate: offRoute)
     )
 
+    // One fix off the line is a mismeasurement, not a lost route: the header
+    // keeps the current step and the position stays the car's.
     XCTAssertEqual(model.phase, .surfaceAccess)
-    XCTAssertEqual(model.liveLocationState, .degraded)
-    XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_OFF_ROUTE")
-    XCTAssertEqual(model.positionState, .surfaceRoutePending)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertEqual(model.positionState, .surfacePreview)
     XCTAssertEqual(model.progressFraction, acceptedProgress, accuracy: 0.001)
     XCTAssertEqual(model.accessRoute, route)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
@@ -1921,6 +1923,9 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.accessRoute, retainedRoute)
     XCTAssertEqual(model.selectedRoute?.routePlan, routePlan)
     XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_REROUTE_UNAVAILABLE")
+    // The label the single stray fix no longer earns is still reached once
+    // the route is genuinely lost and no replacement can be built.
+    XCTAssertEqual(model.positionState, .surfaceRoutePending)
 
     await resolver.setUnavailable(false)
     for timestamp in [37_000, 38_000] {

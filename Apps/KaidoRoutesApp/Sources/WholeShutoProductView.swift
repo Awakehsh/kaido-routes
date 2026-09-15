@@ -1408,13 +1408,18 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The catalog card's shape well. Square, because a course outline is
+  /// roughly as tall as it is wide and the old full-width band letterboxed
+  /// it into 96pt of mostly empty card.
+  static let circuitThumbnailSide: CGFloat = 76
+
   /// The route's silhouette in the card, drawn from the precomputed
   /// normalized track shape.
   /// The course's own shape, drawn large enough to be what the card is
-  /// *about* rather than an ornament above the text. Casing under core so the
-  /// line reads as a road, and one chevron says which way the course runs —
-  /// which is also what lets the card drop the "周回ルート / CIRCUIT" line it
-  /// used to spend a row on.
+  /// *about* rather than an ornament beside the text. Casing under core so
+  /// the line reads as a road, and one chevron says which way the course
+  /// runs — which is also what lets the card drop the "周回ルート / CIRCUIT"
+  /// line it used to spend a row on.
   private func circuitThumbnail(_ points: [CGPoint]) -> some View {
     Canvas { context, size in
       let xs = points.map { Double($0.x) }
@@ -1424,7 +1429,7 @@ struct WholeShutoProductView: View {
         maxX > minX, maxY > minY
       else { return }
       // Room for the casing stroke, and for the kind badge in the top-right.
-      let inset = 14.0
+      let inset = 11.0
       let width = Double(size.width)
       let height = Double(size.height)
       let scale = min(
@@ -1486,7 +1491,7 @@ struct WholeShutoProductView: View {
         }
       }
     }
-    .frame(height: 96)
+    .frame(width: Self.circuitThumbnailSide, height: Self.circuitThumbnailSide)
     .accessibilityHidden(true)
   }
 
@@ -1573,9 +1578,12 @@ struct WholeShutoProductView: View {
         : "arrow.forward"
     )
     .font(.system(size: 11, weight: .bold))
-    .foregroundStyle(KaidoInk.textQuiet)
+    // The badge now sits on a 76pt shape well rather than a wide band, so
+    // the drawn course passes under it. It carries its own opaque ground and
+    // the primary ink, which is what keeps it legible over the warm line.
+    .foregroundStyle(KaidoInk.textPrimary)
     .padding(6)
-    .background(KaidoInk.surface.opacity(0.62), in: Circle())
+    .background(KaidoInk.surface.opacity(0.88), in: Circle())
     .accessibilityHidden(true)
   }
 
@@ -1624,6 +1632,18 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The catalog card, laid out across rather than down.
+  ///
+  /// Stacked, the shape sat above four rows of text and the card stood about
+  /// 216pt tall — enough that the dock overflowed its half-screen budget and
+  /// the driver had to scroll the home to reach the origin chip. Side by
+  /// side, the shape is a square thumbnail against a column of text and the
+  /// card is about 100pt, so the whole home fits one screen and the map
+  /// keeps its half.
+  ///
+  /// Nothing is dropped: the same shape, shields, name, number and fact are
+  /// all still here. The shields move onto the name's line, which is where a
+  /// driver reads them anyway — the mark and the road it belongs to.
   private func circuitCard(
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
@@ -1636,7 +1656,7 @@ struct WholeShutoProductView: View {
         planningLocation.requestCurrentLocation()
       }
     } label: {
-      VStack(alignment: .leading, spacing: 0) {
+      HStack(alignment: .center, spacing: KaidoSpace.md) {
         ZStack(alignment: .topTrailing) {
           if let preview = model.circuitPreviewsByID[circuit.circuitID],
             preview.points.count > 1
@@ -1650,36 +1670,50 @@ struct WholeShutoProductView: View {
             )
             .font(.system(size: 22, weight: .bold))
             .foregroundStyle(KaidoInk.accentWarm)
-            .frame(height: 96)
+            .frame(
+              width: Self.circuitThumbnailSide,
+              height: Self.circuitThumbnailSide
+            )
           }
           circuitKindBadge(circuit)
-            .padding(.top, 11)
-            .padding(.trailing, 12)
+            .padding(.top, 2)
+            .padding(.trailing, 2)
         }
-        .frame(maxWidth: .infinity)
+        .frame(
+          width: Self.circuitThumbnailSide,
+          height: Self.circuitThumbnailSide
+        )
         .background(
           RadialGradient(
             colors: [KaidoInk.accentWarm.opacity(0.17), .clear],
-            center: UnitPoint(x: 0.5, y: 1.15),
+            center: .center,
             startRadius: 0,
-            endRadius: 170
+            endRadius: Self.circuitThumbnailSide
+          )
+        )
+        .clipShape(
+          RoundedRectangle(
+            cornerRadius: KaidoRadius.control,
+            style: .continuous
           )
         )
 
-        VStack(alignment: .leading, spacing: KaidoSpace.sm) {
-          if let preview = model.circuitPreviewsByID[circuit.circuitID],
-            !preview.routeIDsInOrder.isEmpty
-          {
-            circuitShields(preview.routeIDsInOrder)
+        VStack(alignment: .leading, spacing: 5) {
+          // The marks the overhead signs carry, then the name they belong
+          // to: a driver recognises the experience by road before reading
+          // what it is called.
+          HStack(spacing: KaidoSpace.xs) {
+            if let preview = model.circuitPreviewsByID[circuit.circuitID],
+              !preview.routeIDsInOrder.isEmpty
+            {
+              circuitShields(preview.routeIDsInOrder)
+            }
+            Text(circuit.displayName(for: languageSettings.interfaceLocale))
+              .font(KaidoType.headline)
+              .foregroundStyle(KaidoInk.textSecondary)
+              .lineLimit(1)
+              .truncationMode(.tail)
           }
-          // The name is identity, not the reason to pick this course, so it
-          // sits below the shape and above the number — and stays on one
-          // line rather than pushing the card taller.
-          Text(circuit.displayName(for: languageSettings.interfaceLocale))
-            .font(KaidoType.headline)
-            .foregroundStyle(KaidoInk.textSecondary)
-            .lineLimit(1)
-            .truncationMode(.tail)
           if let preview = model.circuitPreviewsByID[circuit.circuitID] {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
               Text("\(preview.referenceMinutes)")
@@ -1705,12 +1739,19 @@ struct WholeShutoProductView: View {
               "whole-shuto-circuit-metrics-\(circuit.circuitID)"
             )
           }
+          // The fact line is the card's quietest text, and the card face is
+          // a gradient — which the home's contrast audit cannot resolve as a
+          // background colour, so it measures this line against something
+          // that is not the card and fails it. Naming the ground it is
+          // actually drawn on settles that; it paints the colour the
+          // gradient already ends on, so nothing changes on screen.
           circuitDifferentiator(circuit)
+            .background(KaidoInk.surfaceRaised)
         }
-        .padding(.horizontal, KaidoSpace.lg)
-        .padding(.bottom, KaidoSpace.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .frame(width: 222, alignment: .leading)
+      .padding(KaidoSpace.md)
+      .frame(width: 288, alignment: .leading)
       .kaidoRaised()
     }
     .buttonStyle(.plain)
@@ -6566,7 +6607,7 @@ private struct WholeShutoGeographicMap: View {
         // route. A dash cannot carry "provider leg, not Kaido authority"
         // here: the casing shows through its gaps and the leg reads as a
         // striped ribbon rather than a road. Colour carries that meaning
-        // instead — cyan in, coral out, against the route's green.
+        // instead — teal in, coral out, against the route's blue.
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
@@ -6596,6 +6637,11 @@ private struct WholeShutoGeographicMap: View {
         // every navigation renderer uses. The casing must be darker than
         // the line it borders: a white one blends into MapKit's own white
         // motorway fill and the route stops looking like an overlay at all.
+        //
+        // The core is `mapRouteDriving`, not the warm route accent: this is
+        // the one map that draws Apple's congestion layer, and amber and red
+        // belong to it there. A warm route line on top of it reads as a
+        // kilometres-long jam.
         MapPolyline(
           coordinates: route.coordinates.map(\.mapCoordinate)
         )
@@ -6616,7 +6662,7 @@ private struct WholeShutoGeographicMap: View {
                 progress.traveledCoordinates.map(\.mapCoordinate)
             )
             .stroke(
-              KaidoInk.accentWarm.opacity(0.3),
+              KaidoInk.mapRouteDriving.opacity(0.32),
               style: StrokeStyle(
                 lineWidth: 7,
                 lineCap: .round,
@@ -6630,7 +6676,7 @@ private struct WholeShutoGeographicMap: View {
                 progress.remainingCoordinates.map(\.mapCoordinate)
             )
             .stroke(
-              KaidoInk.accentWarm,
+              KaidoInk.mapRouteDriving,
               style: StrokeStyle(
                 lineWidth: 7,
                 lineCap: .round,
@@ -6643,7 +6689,7 @@ private struct WholeShutoGeographicMap: View {
             coordinates: route.coordinates.map(\.mapCoordinate)
           )
           .stroke(
-            KaidoInk.accentWarm,
+            KaidoInk.mapRouteDriving,
             style: StrokeStyle(
               lineWidth: 7,
               lineCap: .round,
@@ -6657,7 +6703,7 @@ private struct WholeShutoGeographicMap: View {
             coordinates: model.activeRecoveryRouteCoordinates.map(\.mapCoordinate)
           )
           .stroke(
-            KaidoInk.accentWarm,
+            KaidoInk.mapRouteDriving,
             style: StrokeStyle(
               lineWidth: 8,
               lineCap: .round,

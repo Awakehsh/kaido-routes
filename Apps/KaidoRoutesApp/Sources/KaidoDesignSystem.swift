@@ -27,9 +27,12 @@ struct KaidoPalette: Equatable, Sendable {
   let textSecondary: KaidoColorToken
   let textQuiet: KaidoColorToken
 
-  // Accents. Three hues, no more: the active route owns the warm one, the
-  // measured/enterable things own the cool one, and leaving or failing owns
-  // the clay one.
+  // Accents. Three hues, no more: the route experience owns the warm one,
+  // the measured/enterable things own the cool one, and leaving or failing
+  // owns the clay one. The warm accent carries the route everywhere Kaido
+  // draws the ground itself — cards, thumbnails, the track map; only the
+  // provider basemap takes `mapRouteDriving` instead, for the reason given
+  // there.
   //
   // Each accent is mid-lightness in *both* palettes, which is what lets it
   // read against a dark ground and a light one. The cost is that a control
@@ -46,6 +49,12 @@ struct KaidoPalette: Equatable, Sendable {
   let accentClay: KaidoColorToken
 
   // Map layers.
+  /// The planned route drawn on the provider basemap. It cannot be
+  /// `accentWarm`: that basemap paints its own congestion layer in amber and
+  /// red, so a warm route line reads as a jam rather than as the route. Blue
+  /// is the one hue the congestion band never uses, which is why every
+  /// mainstream navigator draws its route in it.
+  let mapRouteDriving: KaidoColorToken
   let mapWater: KaidoColorToken
   let mapCasing: KaidoColorToken
   /// Off-route network. Deliberately near the ground — the contract keeps
@@ -82,6 +91,7 @@ extension KaidoPalette {
     accentWarmDeep: KaidoColorToken(hex: 0x7A5A32),
     accentCool: KaidoColorToken(hex: 0x7FA8B4),
     accentClay: KaidoColorToken(hex: 0xCE7C67),
+    mapRouteDriving: KaidoColorToken(hex: 0x4E8FE8),
     mapWater: KaidoColorToken(hex: 0x0B1119),
     mapCasing: KaidoColorToken(hex: 0x161A23),
     mapRestCore: KaidoColorToken(hex: 0x353C4C),
@@ -107,6 +117,7 @@ extension KaidoPalette {
     accentWarmDeep: KaidoColorToken(hex: 0x6B4720),
     accentCool: KaidoColorToken(hex: 0x2F6373),
     accentClay: KaidoColorToken(hex: 0xA3402F),
+    mapRouteDriving: KaidoColorToken(hex: 0x1A5FD0),
     mapWater: KaidoColorToken(hex: 0xDCE6EF),
     mapCasing: KaidoColorToken(hex: 0xCDD5DE),
     mapRestCore: KaidoColorToken(hex: 0x8A97A5),
@@ -139,6 +150,7 @@ enum KaidoInk {
   static let accentCool = resolve(\.accentCool)
   static let accentClay = resolve(\.accentClay)
 
+  static let mapRouteDriving = resolve(\.mapRouteDriving)
   static let mapWater = resolve(\.mapWater)
   static let mapCasing = resolve(\.mapCasing)
   static let mapRestCore = resolve(\.mapRestCore)

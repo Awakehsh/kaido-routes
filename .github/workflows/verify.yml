@@ -213,6 +213,7 @@ jobs:
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testPAIsSelectedThroughDestinationSearch \
             -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \
+            -only-testing:KaidoRoutesAppUITests/RouteExperienceUITests \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
           wait "$SIMULATOR_PID"

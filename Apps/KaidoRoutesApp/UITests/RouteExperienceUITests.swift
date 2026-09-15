@@ -15,7 +15,11 @@ final class RouteExperienceUITests: XCTestCase {
         .matching(identifier: "whole-shuto-circuit-metrics-shuto.circuit.c1-inner").firstMatch
       XCTAssertTrue(metrics.waitForExistence(timeout: 15))
       XCTAssertTrue(metrics.label.contains("min"))
-      XCTAssertTrue(app.staticTexts["Shuto reference · excludes access roads and live traffic"].exists)
+      XCTAssertTrue(
+        app.staticTexts[
+          "Expressway reference · excludes access roads and live traffic"
+        ].exists
+      )
       let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
       screenshot.name = "Route catalog - \(appearance)"
       screenshot.lifetime = .keepAlways

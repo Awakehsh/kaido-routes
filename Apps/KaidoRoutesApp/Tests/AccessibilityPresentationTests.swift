@@ -37,6 +37,50 @@ final class AccessibilityPresentationTests: XCTestCase {
     )
   }
 
+  /// Every text and accent role has to clear the normal-text bar against
+  /// every ground it can land on, in *both* palettes. This is the line that
+  /// makes the `day` map appearance safe to offer: the whole-Shuto surfaces
+  /// take `.preferredColorScheme` from that preference, so a ground can
+  /// lighten under text that was only ever checked against a dark one.
+  func testEveryPaletteRoleClearsNormalTextContrast() {
+    for (appearance, palette) in [
+      ("night", KaidoPalette.night), ("day", KaidoPalette.day),
+    ] {
+      let grounds = [
+        ("surface", palette.surface),
+        ("surfacePanel", palette.surfacePanel),
+        ("surfaceRaised", palette.surfaceRaised),
+        ("surfaceRaisedTop", palette.surfaceRaisedTop),
+        ("mapPlate", palette.mapPlate),
+      ]
+      let inks = [
+        ("textPrimary", palette.textPrimary),
+        ("textSecondary", palette.textSecondary),
+        ("textQuiet", palette.textQuiet),
+        ("accentWarm", palette.accentWarm),
+        ("accentCool", palette.accentCool),
+        ("accentClay", palette.accentClay),
+      ]
+      for (groundName, ground) in grounds {
+        for (inkName, ink) in inks {
+          XCTAssertGreaterThanOrEqual(
+            ink.contrastRatio(against: ground),
+            4.5,
+            "\(appearance): \(inkName) on \(groundName)"
+          )
+        }
+      }
+      // A chip filled with the accent carries the ground colour as its label,
+      // which only works because the two move in opposite directions between
+      // the palettes.
+      XCTAssertGreaterThanOrEqual(
+        palette.surface.contrastRatio(against: palette.accentWarm),
+        4.5,
+        "\(appearance): accent-filled chip label"
+      )
+    }
+  }
+
   func testAccessibilityDynamicTypeUsesSingleColumnControls() {
     XCTAssertEqual(
       KaidoAccessibilityLayoutPolicy.mode(for: .large),

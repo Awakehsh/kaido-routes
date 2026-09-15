@@ -870,10 +870,10 @@ struct WholeShutoNetworkOverviewView: View {
           }
         }
       }
-      drawMark(entrance, glyph: "入", color: KaidoTheme.positionCyan)
+      drawMark(entrance, glyph: "入", color: KaidoInk.accentCool)
     }
     if let exit = overlay.exitMark {
-      drawMark(exit, glyph: "出", color: KaidoTheme.evidenceCoral)
+      drawMark(exit, glyph: "出", color: KaidoInk.accentClay)
     }
     if let position = overlay.currentPosition {
       let center = point(position)
@@ -883,14 +883,14 @@ struct WholeShutoNetworkOverviewView: View {
             x: center.x - 14, y: center.y - 14, width: 28, height: 28
           )
         ),
-        with: .color(KaidoTheme.positionCyan.opacity(0.18))
+        with: .color(KaidoInk.accentCool.opacity(0.18))
       )
       let core = Path(
         ellipseIn: CGRect(
           x: center.x - 6, y: center.y - 6, width: 12, height: 12
         )
       )
-      context.fill(core, with: .color(KaidoTheme.positionCyan))
+      context.fill(core, with: .color(KaidoInk.accentCool))
       context.stroke(
         core,
         with: .color(.white),

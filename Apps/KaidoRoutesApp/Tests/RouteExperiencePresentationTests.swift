@@ -61,9 +61,11 @@ final class RouteExperiencePresentationTests: XCTestCase {
   }
 
   /// Route marks are printed small — 10pt on the catalog card — so every
-  /// shield ground has to carry `routeWhite` at the 4.5:1 normal-text bar,
-  /// not the 3:1 large-text one the audit falls back to.
-  func testRouteShieldGroundsCarryRouteWhiteAtSmallSizes() {
+  /// shield ground has to carry the mark at the 4.5:1 normal-text bar, not
+  /// the 3:1 large-text one the audit falls back to. The mark is
+  /// `KaidoInk.onShield`, which deliberately does not follow the appearance:
+  /// the ground under it is the operator's own colour and does not either.
+  func testRouteShieldGroundsCarryTheShieldMarkAtSmallSizes() {
     let routeIDs = [
       "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5",
       "C2", "6_MUKOJIMA", "6_MISATO", "K6",
@@ -75,12 +77,19 @@ final class RouteExperiencePresentationTests: XCTestCase {
     for routeID in routeIDs {
       for style in [UIUserInterfaceStyle.light, .dark] {
         XCTAssertGreaterThanOrEqual(
-          contrast(KaidoTheme.routeWhite, routeColor(routeID), style: style),
+          contrast(KaidoInk.onShield, routeColor(routeID), style: style),
           4.5,
           "shield \(shieldLabel(routeID)) is unreadable in \(style.rawValue)"
         )
       }
     }
+    XCTAssertEqual(
+      UIColor(KaidoInk.onShield)
+        .resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)),
+      UIColor(KaidoInk.onShield)
+        .resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)),
+      "the shield mark must not follow the appearance — its ground does not"
+    )
   }
 
   func testMapLabelsRemainReadableInDayAndNightPalettes() {

@@ -19,6 +19,11 @@ The product distinguishes what is known from what is still unconfirmed:
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
+- The driving map draws the planned route in blue, never in the product's warm
+  route accent: Apple's congestion layer owns amber and red on that basemap, so
+  a warm route line would read as a jam along the whole route. Kaido's own
+  surfaces — route cards, course thumbnails, the track map — draw no congestion
+  and keep the warm accent.
 - The driving map draws Apple's congestion layer and, on tap, Apple's place
   card for a basemap point of interest — the only surface carrying its
   operating hours, because MapKit exposes them to no API. Both are Apple's
@@ -36,11 +41,13 @@ The product distinguishes what is known from what is still unconfirmed:
   authority. Two consecutive accurate off-route observations trigger a bounded
   MapKit recalculation of only the active ordinary-road leg, with a cooldown;
   the exact Shuto plan and the opposite surface leg remain unchanged. Entry
-  evidence takes over only near the exact directional ramp. A valid device fix
-  that has not joined the surface route is labeled as waiting to join the route,
-  not as weak positioning, and a coarse but on-route fix is still the position;
-  genuinely stale positioning keeps the separate degraded warning and speaks it
-  at most once per minute.
+  evidence takes over only near the exact directional ramp. A single fix that
+  misses the ordinary-road leg changes nothing on screen: the step, the
+  distance and the position stay as they were, and only the second consecutive
+  miss labels the drive as waiting to join the route. That label is never weak
+  positioning, and a coarse but on-route fix is still the position; genuinely
+  stale positioning keeps the separate degraded warning and speaks it at most
+  once per minute.
 - The default App's Core Location lifecycle keeps planning location
   foreground-only, while an explicitly foreground-started live navigation
   session continues through screen lock or temporary app switching and stops

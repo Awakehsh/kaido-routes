@@ -4532,16 +4532,17 @@ final class WholeShutoProductModel: ObservableObject {
         along: route.coordinates
       )
     else {
+      guard noteSurfaceOffRouteObservation() else { return false }
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
-      recordSurfaceOffRouteObservation(
-        coordinate: coordinate,
-        observedAtMilliseconds:
-          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
-      )
       liveLocationState = .degraded
       if !isReroutingSurfaceRoute {
         liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
       }
+      beginSurfaceRerouteIfDue(
+        from: coordinate,
+        observedAtMilliseconds:
+          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+      )
       return false
     }
     let maximumLateralDistance = min(
@@ -4552,16 +4553,17 @@ final class WholeShutoProductModel: ObservableObject {
       measurement.lateralDistanceMeters
         <= maximumLateralDistance
     else {
+      guard noteSurfaceOffRouteObservation() else { return false }
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
-      recordSurfaceOffRouteObservation(
-        coordinate: coordinate,
-        observedAtMilliseconds:
-          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
-      )
       liveLocationState = .degraded
       if !isReroutingSurfaceRoute {
         liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
       }
+      beginSurfaceRerouteIfDue(
+        from: coordinate,
+        observedAtMilliseconds:
+          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+      )
       return false
     }
     consecutiveSurfaceOffRouteObservations = 0
@@ -4920,21 +4922,36 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  private func recordSurfaceOffRouteObservation(
-    coordinate: ShutoCoordinate,
-    observedAtMilliseconds: Int
-  ) {
+  /// Counts one fix that did not land on the surface leg, and answers
+  /// whether the car is off the route rather than momentarily mismeasured.
+  ///
+  /// A single fix cannot answer that. Beside a tower or under an elevated
+  /// road one fix lands a hundred metres sideways and the next is back on
+  /// the line. Acting on the first one wiped the instruction and the
+  /// distance and left the header reading "waiting to join the route" while
+  /// the car was driving exactly the leg it had been told to. The reroute
+  /// already waited for `surfaceRerouteRequiredOffRouteObservations`
+  /// consecutive fixes before believing it; the header now waits for the
+  /// same evidence, so the driver keeps the current step until the route
+  /// really is lost.
+  private func noteSurfaceOffRouteObservation() -> Bool {
     guard
       isLiveDrive,
       isPlaying,
       phase == .surfaceAccess || phase == .surfaceEgress
     else {
-      return
+      return false
     }
     consecutiveSurfaceOffRouteObservations += 1
+    return consecutiveSurfaceOffRouteObservations
+      >= Self.surfaceRerouteRequiredOffRouteObservations
+  }
+
+  private func beginSurfaceRerouteIfDue(
+    from coordinate: ShutoCoordinate,
+    observedAtMilliseconds: Int
+  ) {
     guard
-      consecutiveSurfaceOffRouteObservations
-        >= Self.surfaceRerouteRequiredOffRouteObservations,
       surfaceRerouteTask == nil,
       lastSurfaceRerouteAttemptAtMilliseconds.map({
         observedAtMilliseconds - $0

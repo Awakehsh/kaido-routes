@@ -406,6 +406,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
     screenshot.name = "Whole Shuto highway preference"
     screenshot.lifetime = .keepAlways
     add(screenshot)
+
+    // The launch argument only overrides what this launch *reads*; the tap
+    // above wrote the flipped preference into the app container, where it
+    // outlives the test. Switching back proves the picker moves both ways
+    // and leaves the container on the product default, which the entrance
+    // recommendation in `testHatsudaiC1ShowsLocalPairingTariffAndBackAction`
+    // depends on.
+    preference.tap()
+    let preferred = element(
+      "whole-shuto-surface-route-preference-prefer-highways",
+      in: app
+    )
+    XCTAssertTrue(preferred.waitForExistence(timeout: 3))
+    preferred.tap()
+    XCTAssertTrue(
+      [preference.label, preference.value as? String ?? ""]
+        .contains { $0.contains("Prefer highways") }
+    )
   }
 
   func testSettingsSheetCanBePulledDownAndReopened() {
@@ -836,6 +854,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
+      // Hatsudai is on Route 4, not on C1: it is offered for a C1 circuit
+      // only under "Prefer highways", which lets a radial entrance join the
+      // loop at a junction. Under "Avoid when possible" the recommendation
+      // is correctly the nearest entrance on C1 itself, 5 km away. The
+      // preference persists in the app container, so this test names the one
+      // it is about instead of inheriting whatever ran last.
+      "-app.kaidoroutes.surface-route.preference",
+      "PREFER_HIGHWAYS",
     ]
     app.launchSilently()
 

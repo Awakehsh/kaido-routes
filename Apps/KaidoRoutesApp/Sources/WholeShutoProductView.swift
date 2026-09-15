@@ -1066,66 +1066,159 @@ struct WholeShutoProductView: View {
           }
         }
 
+        // What the numbers are and are not, in one line. The sentence this
+        // replaces spent its second half explaining what a reference value
+        // excludes — prose the driver reads once and never again.
         Text(copy.resolve(
-          japanese: "高速区間の参考値 · 接続道路と渋滞は含みません",
-          simplifiedChinese: "高速路段参考 · 不含接驳与实时路况",
-          english: "Expressway reference · excludes access roads and live traffic"
+          japanese: "高速区間のみの目安",
+          simplifiedChinese: "仅高速路段 · 估算",
+          english: "Expressway only · estimate"
         ))
-        .font(.caption)
+        .font(KaidoType.caption)
         .foregroundStyle(KaidoInk.textQuiet)
 
-        savedRouteHomeEntry
-        Button { showsDriveHistory = true } label: {
-          HStack {
-            Label(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"), systemImage: "clock.arrow.circlepath")
-            Spacer()
-            Image(systemName: "chevron.right")
-          }
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(KaidoInk.accentCool)
-          .frame(minHeight: 44)
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("whole-shuto-drive-history-open")
-        customRouteHomeEntry
+        homeEntryRow
       }
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-circuit-experiences")
   }
 
-  private var savedRouteHomeEntry: some View {
-    Button {
-      pendingSavedRouteRecordID = nil
-      savedRouteOpenErrorCode = nil
-      savedRouteImportErrorCode = nil
-      showsSavedRoutes = true
-    } label: {
-      HStack(spacing: 6) {
+  /// The three ways into the product that are not a catalog course. They were
+  /// three full-width rows — about 140pt of dock for taps the driver makes
+  /// rarely, stacked directly under the course they are not. One row of three
+  /// gives that height back to the map and still leaves every target far
+  /// above 44pt.
+  ///
+  /// The visible captions are short enough to fit a third of the width; each
+  /// tile keeps the full wording as its accessibility label, which is both
+  /// what VoiceOver should read and what the UI tests select on.
+  private var homeEntryRow: some View {
+    HStack(spacing: KaidoSpace.sm) {
+      homeEntryTile(
+        caption: copy.resolve(
+          japanese: "保存", simplifiedChinese: "已保存", english: "SAVED"
+        ),
+        label: copy.resolve(
+          japanese: "保存したルート",
+          simplifiedChinese: "已保存路线",
+          english: "SAVED ROUTES"
+        ),
+        tint: KaidoInk.accentCool,
+        identifier: "whole-shuto-saved-routes",
+        value: "\(savedRoutes.records.count)",
+        action: {
+          pendingSavedRouteRecordID = nil
+          savedRouteOpenErrorCode = nil
+          savedRouteImportErrorCode = nil
+          showsSavedRoutes = true
+        }
+      ) {
         Image(systemName: "bookmark.fill")
-          .font(.system(size: 10, weight: .black))
-        Text(
-          copy.resolve(
-            japanese: "保存したルート",
-            simplifiedChinese: "已保存路线",
-            english: "SAVED ROUTES"
-          )
-        )
-        Spacer()
-        Text("\(savedRoutes.records.count)")
-          .font(.system(size: 9, weight: .black, design: .monospaced))
-        Image(systemName: "chevron.right")
-          .font(.system(size: 9, weight: .black))
+          .font(.system(size: 14, weight: .black))
+          .overlay(alignment: .topTrailing) {
+            // Zero saved routes is not news; the badge appears once there is
+            // something to count.
+            if savedRoutes.records.count > 0 {
+              Text("\(savedRoutes.records.count)")
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .foregroundStyle(KaidoInk.surface)
+                .padding(.horizontal, 4)
+                .frame(minWidth: 14, minHeight: 14)
+                .background(KaidoInk.accentWarm, in: Capsule())
+                .offset(x: 12, y: -8)
+            }
+          }
       }
-      .font(.system(size: 10, weight: .bold))
-      .foregroundStyle(KaidoInk.accentCool)
-      .frame(minHeight: 44)
+
+      homeEntryTile(
+        caption: copy.resolve(
+          japanese: "履歴", simplifiedChinese: "记录", english: "HISTORY"
+        ),
+        label: copy.resolve(
+          japanese: "走行履歴",
+          simplifiedChinese: "行程记录",
+          english: "Drive history"
+        ),
+        tint: KaidoInk.accentCool,
+        identifier: "whole-shuto-drive-history-open",
+        value: nil,
+        action: { showsDriveHistory = true }
+      ) {
+        Image(systemName: "clock.arrow.circlepath")
+          .font(.system(size: 14, weight: .black))
+      }
+
+      homeEntryTile(
+        caption: waitsForCustomRouteLocation
+          ? copy.resolve(
+            japanese: "確認中", simplifiedChinese: "查找中", english: "CHECKING"
+          )
+          : copy.resolve(
+            japanese: "カスタム", simplifiedChinese: "自定义", english: "CUSTOM"
+          ),
+        label: waitsForCustomRouteLocation
+          ? copy.resolve(
+            japanese: "近くの入口を確認中",
+            simplifiedChinese: "正在查找附近入口",
+            english: "Finding nearby entrances"
+          )
+          : copy.resolve(
+            japanese: "カスタム · 入口と出口を指定",
+            simplifiedChinese: "自定义 · 指定入口和出口",
+            english: "CUSTOM · EXACT ENTRY AND EXIT"
+          ),
+        tint: KaidoInk.textQuiet,
+        identifier: "whole-shuto-custom-from-home",
+        value: nil,
+        isEnabled: !waitsForCustomRouteLocation,
+        action: startCustomRouteFromHome
+      ) {
+        if waitsForCustomRouteLocation {
+          ProgressView()
+            .controlSize(.small)
+            .tint(KaidoInk.accentCool)
+            .frame(height: 17)
+        } else {
+          Image(systemName: "slider.horizontal.3")
+            .font(.system(size: 14, weight: .black))
+        }
+      }
+    }
+  }
+
+  private func homeEntryTile<Glyph: View>(
+    caption: String,
+    label: String,
+    tint: Color,
+    identifier: String,
+    value: String?,
+    isEnabled: Bool = true,
+    action: @escaping () -> Void,
+    @ViewBuilder glyph: () -> Glyph
+  ) -> some View {
+    Button(action: action) {
+      VStack(spacing: 6) {
+        glyph()
+        Text(caption)
+          .font(KaidoType.caption)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+      }
+      .foregroundStyle(tint)
+      .frame(maxWidth: .infinity)
+      .frame(height: 58)
+      .background(KaidoInk.surfaceRaised)
+      .clipShape(
+        RoundedRectangle(cornerRadius: KaidoRadius.control, style: .continuous)
+      )
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
-    .accessibilityIdentifier("whole-shuto-saved-routes")
-    .accessibilityValue("\(savedRoutes.records.count)")
+    .disabled(!isEnabled)
+    .accessibilityIdentifier(identifier)
+    .accessibilityLabel(label)
+    .accessibilityValue(value ?? "")
   }
 
   private var savedRouteLibrarySheet: some View {
@@ -1264,68 +1357,33 @@ struct WholeShutoProductView: View {
     }
   }
 
-  /// The advanced entry at the catalog's foot: exact entrance/exit routes
-  /// for drivers who want to specify the pairing themselves.
-  private var customRouteHomeEntry: some View {
-    Button {
-      if let snapshot = planningLocation.snapshot {
-        model.selectCurrentOrigin(snapshot.coordinate)
-        openCustomRouteEditor()
-      } else if model.origin != nil {
-        openCustomRouteEditor()
-      } else if !model.usesCurrentLocationOrigin,
-        !model.originQuery.trimmingCharacters(
-          in: .whitespacesAndNewlines
-        ).isEmpty
-      {
-        resolveManualOriginForCustomRoute()
-      } else if planningLocation.state == .denied
-        || planningLocation.state == .unavailable
-      {
-        showsManualOrigin = true
-        showsDestinationComposer = true
-        focusedPlanningField = .origin
-      } else {
-        waitsForCustomRouteLocation = true
-        planningLocation.requestCurrentLocation()
-        handlePlanningLocationUpdate()
-      }
-    } label: {
-      HStack(spacing: 6) {
-        if waitsForCustomRouteLocation {
-          ProgressView()
-            .controlSize(.small)
-            .tint(KaidoInk.accentCool)
-          Text(
-            copy.resolve(
-              japanese: "近くの入口を確認中",
-              simplifiedChinese: "正在查找附近入口",
-              english: "Finding nearby entrances"
-            )
-          )
-        } else {
-          Image(systemName: "slider.horizontal.3")
-            .font(.system(size: 10, weight: .black))
-          Text(
-            copy.resolve(
-              japanese: "カスタム · 入口と出口を指定",
-              simplifiedChinese: "自定义 · 指定入口和出口",
-              english: "CUSTOM · EXACT ENTRY AND EXIT"
-            )
-          )
-          Spacer()
-          Image(systemName: "chevron.right")
-            .font(.system(size: 9, weight: .black))
-        }
-      }
-      .font(.system(size: 10, weight: .bold))
-      .foregroundStyle(KaidoInk.textQuiet)
-      .frame(minHeight: 44)
-      .contentShape(Rectangle())
+  /// The advanced entry at the catalog's foot: exact entrance/exit routes for
+  /// drivers who want to specify the pairing themselves. This settles what the
+  /// editor needs before it can open — an origin it can anchor to, or the
+  /// shortest path to one.
+  private func startCustomRouteFromHome() {
+    if let snapshot = planningLocation.snapshot {
+      model.selectCurrentOrigin(snapshot.coordinate)
+      openCustomRouteEditor()
+    } else if model.origin != nil {
+      openCustomRouteEditor()
+    } else if !model.usesCurrentLocationOrigin,
+      !model.originQuery.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      ).isEmpty
+    {
+      resolveManualOriginForCustomRoute()
+    } else if planningLocation.state == .denied
+      || planningLocation.state == .unavailable
+    {
+      showsManualOrigin = true
+      showsDestinationComposer = true
+      focusedPlanningField = .origin
+    } else {
+      waitsForCustomRouteLocation = true
+      planningLocation.requestCurrentLocation()
+      handlePlanningLocationUpdate()
     }
-    .buttonStyle(.plain)
-    .disabled(waitsForCustomRouteLocation)
-    .accessibilityIdentifier("whole-shuto-custom-from-home")
   }
 
   private func openCustomRouteEditor() {

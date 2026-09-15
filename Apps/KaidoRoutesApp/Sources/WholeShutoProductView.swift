@@ -569,7 +569,6 @@ struct WholeShutoProductView: View {
           database: model.database,
           selectedRoute: model.selectedRoute,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
-          usesDarkStyle: true,
           visibleBottomFraction: mapVisibleBottomFraction
         )
       }
@@ -6033,7 +6032,6 @@ private struct WholeShutoNetworkDiagram: View {
   let database: ShutoNetworkDatabase
   let selectedRoute: ShutoPlannedRoute?
   let currentCoordinate: ShutoCoordinate?
-  let usesDarkStyle: Bool
   let visibleBottomFraction: Double
 
   private var nodesByID: [Int64: ShutoCoordinate] {
@@ -6052,9 +6050,7 @@ private struct WholeShutoNetworkDiagram: View {
       )
       context.fill(
         Path(CGRect(origin: .zero, size: size)),
-        with: .color(
-          usesDarkStyle ? KaidoInk.surface : KaidoInk.surfacePanel
-        )
+        with: .color(KaidoInk.surface)
       )
 
       drawWater(context: &context, size: size)
@@ -6080,11 +6076,7 @@ private struct WholeShutoNetworkDiagram: View {
       for way in wayPaths {
         context.stroke(
           way.path,
-          with: .color(
-            usesDarkStyle
-              ? Color(red: 0.11, green: 0.14, blue: 0.2)
-              : Color(red: 0.85, green: 0.87, blue: 0.9)
-          ),
+          with: .color(Color(red: 0.11, green: 0.14, blue: 0.2)),
           style: StrokeStyle(
             lineWidth: 4.2,
             lineCap: .round,
@@ -6096,7 +6088,7 @@ private struct WholeShutoNetworkDiagram: View {
         context.stroke(
           way.path,
           with: .color(
-            routeColor(way.routeID).opacity(usesDarkStyle ? 0.78 : 0.88)
+            routeColor(way.routeID).opacity(0.78)
           ),
           style: StrokeStyle(
             lineWidth: 2.3,
@@ -6116,11 +6108,7 @@ private struct WholeShutoNetworkDiagram: View {
           }
           context.stroke(
             path,
-            with: .color(
-              usesDarkStyle
-                ? KaidoInk.textPrimary.opacity(0.86)
-                : Color.white.opacity(0.95)
-            ),
+            with: .color(KaidoInk.textPrimary.opacity(0.86)),
             style: StrokeStyle(
               lineWidth: 10,
               lineCap: .round,
@@ -6171,11 +6159,7 @@ private struct WholeShutoNetworkDiagram: View {
               height: 4.4
             )
           ),
-          with: .color(
-            usesDarkStyle
-              ? KaidoInk.textPrimary.opacity(0.8)
-              : KaidoInk.textPrimary.opacity(0.65)
-          )
+          with: .color(KaidoInk.textPrimary.opacity(0.8))
         )
       }
 
@@ -6310,11 +6294,7 @@ private struct WholeShutoNetworkDiagram: View {
     )
     context.fill(
       bay,
-      with: .color(
-        usesDarkStyle
-          ? Color(hex: 0x112C36)
-          : KaidoInk.mapWater
-      )
+      with: .color(Color(hex: 0x112C36))
     )
   }
 
@@ -6379,11 +6359,7 @@ private struct WholeShutoNetworkDiagram: View {
       context.fill(shield, with: .color(routeColor(placement.routeID)))
       context.stroke(
         shield,
-        with: .color(
-          usesDarkStyle
-            ? KaidoInk.surface.opacity(0.9)
-            : Color.white.opacity(0.9)
-        ),
+        with: .color(KaidoInk.surface.opacity(0.9)),
         style: StrokeStyle(lineWidth: 1.2)
       )
       context.draw(resolved, at: point)

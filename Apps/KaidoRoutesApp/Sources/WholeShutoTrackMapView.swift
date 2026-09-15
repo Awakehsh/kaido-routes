@@ -582,7 +582,7 @@ struct WholeShutoTrackMapView: View {
               with: .color(
                 (column + row) % 2 == 0
                   ? Color.white.opacity(0.92)
-                  : KaidoTheme.night
+                  : KaidoInk.surface
               )
             )
           }
@@ -807,7 +807,7 @@ struct WholeShutoTrackMapView: View {
           style: StrokeStyle(lineWidth: 2.4, dash: [3, 2.4])
         )
       } else {
-        context.fill(dot, with: .color(Palette.position))
+        context.fill(dot, with: .color(Palette.positionCore))
         context.stroke(
           dot,
           with: .color(Palette.background),

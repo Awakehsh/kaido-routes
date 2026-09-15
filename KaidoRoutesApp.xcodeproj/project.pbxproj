@@ -20,6 +20,7 @@
 		121F4BE9646F0D2D9455465A /* KaidoInterfaceLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */; };
 		17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */ = {isa = PBXBuildFile; fileRef = 5B5C29A887143CDA94BEEBFD /* c2-b-20260729-geographic-route.json */; };
 		18D1E35E5D2E762BAE5ADF87 /* WholeShutoDriveRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E729B5FD665FA2783F79978F /* WholeShutoDriveRecordTests.swift */; };
+		195F63CF44C83D318E580C8D /* KaidoDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581D72C4B38B669FA1A44FB8 /* KaidoDesignSystem.swift */; };
 		19B05CDE221D814344D7ED46 /* C2GeographicRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */; };
 		1C7F2076FBD06953570E9B70 /* PreDriveReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */; };
 		1EC891E7001BF88B15F4F259 /* AppGuidanceSpeechOutputFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92238A03BB59E6CCA5CADE8D /* AppGuidanceSpeechOutputFactory.swift */; };
@@ -204,6 +205,7 @@
 		20E264620254982057122D82 /* GuidanceSpeechProsodyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceSpeechProsodyTests.swift; sourceTree = "<group>"; };
 		21EC9E55887FD44C8699F108 /* KaidoProductJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyView.swift; sourceTree = "<group>"; };
 		25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift"; sourceTree = "<group>"; };
+		265E1263AB30C757BDAEE934 /* design-system-day-night-tokens */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "design-system-day-night-tokens"; path = .; sourceTree = SOURCE_ROOT; };
 		285D35C9D855FBA6B08F704E /* ProductJunctionInsetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductJunctionInsetView.swift; sourceTree = "<group>"; };
 		28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewModel.swift; sourceTree = "<group>"; };
 		2940C3E443E4E0CE8AECA910 /* ProductMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMapView.swift; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 		50368EEEA3BA63C029EE16C1 /* C2NavigationDemoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoModel.swift; sourceTree = "<group>"; };
 		513FF3BEE47FE636B05D5775 /* NavigationDirectionPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDirectionPresentationTests.swift; sourceTree = "<group>"; };
 		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
+		581D72C4B38B669FA1A44FB8 /* KaidoDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoDesignSystem.swift; sourceTree = "<group>"; };
 		5849DB86653A0BA14808142B /* SharedRouteFileDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedRouteFileDocument.swift; sourceTree = "<group>"; };
 		585D8C199F1B1DEFBE693839 /* WholeShutoProductModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductModel.swift; sourceTree = "<group>"; };
 		5A14EC675AE55EDC7B937A76 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -263,7 +266,6 @@
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
 		7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModel.swift; sourceTree = "<group>"; };
 		808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		80B26E9619EA66F5E72B0A68 /* kaido-routes-pa-destination */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "kaido-routes-pa-destination"; path = .; sourceTree = SOURCE_ROOT; };
 		81A8B0425C0CC1F8FA065C1E /* ReleasedProductRouteAuthoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductRouteAuthoringView.swift; sourceTree = "<group>"; };
 		840075C8ECA7E7DE38E7CA3C /* RouteAtlasAttributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasAttributionTests.swift; sourceTree = "<group>"; };
 		854053935371D02A8D7FA02C /* ReleasedRouteAtlasOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedRouteAtlasOverlayView.swift; sourceTree = "<group>"; };
@@ -548,6 +550,7 @@
 				2A29BADA2DFB4418389E861A /* InternalLocationCalibrationModel.swift */,
 				2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */,
 				660C84EF22BF710C2FA21214 /* KaidoAccessibility.swift */,
+				581D72C4B38B669FA1A44FB8 /* KaidoDesignSystem.swift */,
 				7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */,
 				DFDC5907A1BC3584C333F793 /* KaidoLanguageSettingsModel.swift */,
 				BDCE7C8BB4AC641AC2D81189 /* KaidoMapPalette.swift */,
@@ -609,7 +612,7 @@
 		B8E1BD3838F91AF3F2A70CE0 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				80B26E9619EA66F5E72B0A68 /* kaido-routes-pa-destination */,
+				265E1263AB30C757BDAEE934 /* design-system-day-night-tokens */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -854,6 +857,7 @@
 				C99DB12D9900D0ED4C6F67B8 /* InternalLocationCalibrationModel.swift in Sources */,
 				2FDD37296E5C36302AAC3131 /* InternalLocationCalibrationView.swift in Sources */,
 				D02C21875A52789DE2EDDBFA /* KaidoAccessibility.swift in Sources */,
+				195F63CF44C83D318E580C8D /* KaidoDesignSystem.swift in Sources */,
 				121F4BE9646F0D2D9455465A /* KaidoInterfaceLocalization.swift in Sources */,
 				50FF65EF256B2837555718F1 /* KaidoLanguageSettingsModel.swift in Sources */,
 				D5FF9F4A29A85F25F01011AF /* KaidoMapPalette.swift in Sources */,

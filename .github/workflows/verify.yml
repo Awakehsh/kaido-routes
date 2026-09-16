@@ -211,6 +211,8 @@ jobs:
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testHatsudaiC1ShowsLocalPairingTariffAndBackAction \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoSettingsSwitchHighwayPreference \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testPAIsSelectedThroughDestinationSearch \
             -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \
             -only-testing:KaidoRoutesAppUITests/RouteExperienceUITests \

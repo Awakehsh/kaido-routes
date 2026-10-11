@@ -452,7 +452,7 @@ struct ShutoJunctionGuidanceTests {
     let route = try ShutoRoutePlanner(database: database).planCircuit(
       circuit: .c1Outer,
       entryFacilityID: "shuto.ic.c1.kyoubashi",
-      exitFacilityID: "shuto.ic.c1.shintomicho",
+      exitFacilityID: "shuto.ic.c1.ginza",
       laps: 1
     )
 

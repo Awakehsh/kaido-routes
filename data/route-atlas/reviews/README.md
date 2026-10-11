@@ -31,5 +31,16 @@ patch names its OSM way evidence and the pairing counts it must reach; replay
 it after the parking reviews with `scripts/apply_facility_candidate_patch.py`,
 which refuses an output whose patched facilities do not pair as reviewed.
 
+The 2026-10-12 facility closure review applies to the 2026-09-14 output (input
+SHA-256 is checked) and records the operator notice of 2026-07-17, with the
+two independent reports used to confirm it while the operator site refused
+scripted fetches: from 2026-10-18 23:00 the C1 新富町 exit is abolished in both
+directions and the 内回り 銀座 entrance closes for about three years. Each
+closure names the closed directions and the closed ramp edges; replay it last
+with `scripts/apply_facility_closure_review.py`, which removes those directions,
+unbinds the closed ramps from every facility that had them as candidates, marks
+a facility left with no open direction `UNAVAILABLE`, and refuses a closure that
+would leave a neighbour without a ramp.
+
 Source review establishes the recorded static path, not current opening status,
 field accuracy or navigation admission for an arbitrary route.

@@ -10,18 +10,18 @@ checked on `2026-07-29`:
 | Official route entries | 26 |
 | Directed graph edges | 24,573 |
 | IC names | 151 |
-| Usable IC geometry matches | 147 / 148 |
+| Usable IC geometry matches | 146 / 147 |
 | Official JCT matches | 39 / 39 |
 | PA entries | 19 |
 | Source-reviewed PA interiors | 19 / 19 |
 | PA stops with supported Shuto entrance/exit tests | 17 / 19 |
 
-The three IC names without routable geometry belong to the officially
-unavailable, long-term-closed Yaesu Route. They remain visible as unavailable
-facts and are never admitted to route search. The one available IC without a
-ramp of its own is the 横浜港北 entry listed under 横浜北西線: the interchange's
-ramps belong to 横浜北線 and bind that route's twin, which pairs with the whole
-network.
+Four unavailable IC names have no routable geometry: the three of the
+long-term-closed Yaesu Route, and the abolished 新富町 exit. They remain
+visible as unavailable facts and are never admitted to route search. The one
+available IC without a ramp of its own is the 横浜港北 entry listed under
+横浜北西線: the interchange's ramps belong to 横浜北線 and bind that route's twin,
+which pairs with the whole network.
 
 The [facility candidate patch](../../data/route-atlas/reviews/README.md) of
 2026-09-14 re-points nine facilities the builder had bound to the wrong ramp
@@ -30,6 +30,14 @@ ramps; 八潮's outbound exit) and unbinds that twin. Before it, each of them
 paired with nothing but itself; after it, each pairs with the network like its
 neighbours, and a planner test keeps every bound facility paired with a
 differently named counterpart.
+
+The [facility closure review](../../data/route-atlas/reviews/README.md) of
+2026-10-12 applies the operator's notice of 2026-07-17 for C1 from 2026-10-18
+23:00: the 新富町 exit is abolished in both directions, and the 内回り 銀座
+entrance closes for about three years (planned until 2029). 新富町 is
+unavailable, its ramp is unbound from 宝町, 京橋 and 銀座, which had it as a
+nearby exit candidate, and 銀座 is entered only toward 外回り. The snapshot has
+no dated availability, so both closures hold for the bundled data as a whole.
 
 All PA interiors are bound to exact ordered source segments as `PARKING`
 edges with no route membership. Route planning traverses an explicitly requested

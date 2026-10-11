@@ -3021,6 +3021,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let expectedProgress = model.progressFraction
     let expectedOccurrenceID = try XCTUnwrap(model.runtimeOccurrenceID)
     XCTAssertEqual(model.selectedRoute?.routePlan, circuitRoute.routePlan)
+    await model.handleScenePhase(.background)
 
     let restored = WholeShutoProductModel(
       database: source.database,
@@ -4348,6 +4349,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
     let savedProgress = model.progressFraction
     let savedCoordinate = model.currentCoordinate
+    await model.handleScenePhase(.background)
 
     let restored = WholeShutoProductModel(
       database: model.database,
@@ -4578,6 +4580,107 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(restored.restoredFromCheckpoint)
     XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
+  }
+
+  func testLargestCatalogCheckpointRoundTripsThroughItsFile()
+    async throws
+  {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let fileURL = directory.appendingPathComponent("checkpoint.json")
+    let laps = ShutoCircuitDefinition.loopLapRange.upperBound
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: laps
+    )
+    let record = Self.savedRouteRecord(
+      circuitRoute.routePlan,
+      templateParameters: [
+        "source": "CIRCUIT",
+        "preference": circuitRoute.preference.rawValue,
+        "circuit_id": ShutoCircuitDefinition.c2InnerWithBayshore.circuitID,
+        "laps": String(laps),
+      ]
+    )
+    let model = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: WholeShutoFileCheckpointStore(fileURL: fileURL)
+    )
+    XCTAssertTrue(
+      model.openSavedRoute(
+        record,
+        origin: ShutoCoordinate(latitude: 35.68, longitude: 139.69)
+      )
+    )
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    model.startNavigationSimulation()
+    _ = await model.pausePlayback()
+    await advance(
+      model,
+      until: { $0.phase == .expressway && $0.progressFraction > 0 },
+      maximumTicks: 1_000
+    )
+    await model.handleScenePhase(.background)
+    let storedBytes = try Data(contentsOf: fileURL).count
+    print(
+      "Whole-Shuto checkpoint for \(laps) C2 laps: \(storedBytes) bytes"
+    )
+
+    let restored = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: WholeShutoFileCheckpointStore(fileURL: fileURL)
+    )
+
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .expressway)
+    XCTAssertEqual(restored.selectedRoute?.routePlan, circuitRoute.routePlan)
+    XCTAssertEqual(restored.circuitLaps, laps)
+    XCTAssertEqual(restored.runtimeOccurrenceID, model.runtimeOccurrenceID)
+    XCTAssertEqual(restored.progressFraction, model.progressFraction)
+    XCTAssertNil(restored.checkpointIssueCode)
+
+    restored.reset()
+    XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+    restored.reset()
+    XCTAssertNil(restored.checkpointIssueCode)
+  }
+
+  func testReplayStepsLeaveTheCheckpointToPauseAndBackground()
+    async throws
+  {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+    _ = await model.pausePlayback()
+    await advance(model, until: { $0.phase == .expressway })
+    await model.handleScenePhase(.background)
+    let savesBeforeSteps = store.saveCount
+
+    for _ in 0..<3 {
+      await model.advanceSimulationForTesting()
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(store.saveCount, savesBeforeSteps)
+
+    await model.handleScenePhase(.background)
+    XCTAssertEqual(store.saveCount, savesBeforeSteps + 1)
+    XCTAssertEqual(
+      store.checkpoint?.progressFraction,
+      model.progressFraction
+    )
+    XCTAssertEqual(
+      store.checkpoint?.runtimeOccurrenceID,
+      model.runtimeOccurrenceID
+    )
   }
 
   func testCheckpointLoadFailureIsSilentlyInvalidated() {

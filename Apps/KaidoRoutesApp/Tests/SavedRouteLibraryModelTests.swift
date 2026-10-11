@@ -220,6 +220,74 @@ final class SavedRouteLibraryModelTests: XCTestCase {
     )
   }
 
+  func testUnreadableLibraryFileIsNeverOverwritten() throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(
+      at: directory,
+      withIntermediateDirectories: true
+    )
+    let store = try FileSavedRouteLibraryStore(directoryURL: directory)
+    let record = SavedRouteRecord(
+      id: "test.saved.existing",
+      displayName: "Existing",
+      savedAt: "2026-07-25T06:30:00+09:00",
+      origin: .authoredHere,
+      document: SharedRouteDocument(
+        evidenceState: .communityCandidate,
+        routePlan: makeRepeatedSavedRoutePlan()
+      )
+    )
+    let corruptRecord = SavedRouteRecord(
+      id: "test.saved.corrupt",
+      displayName: " ",
+      savedAt: record.savedAt,
+      origin: record.origin,
+      document: record.document
+    )
+    let unreadableLibraries = [
+      (
+        try JSONEncoder().encode(
+          SavedRouteLibraryDocument(schemaVersion: "2.0", records: [record])
+        ),
+        "SAVED_ROUTE_LIBRARY_SCHEMA_UNSUPPORTED"
+      ),
+      (
+        try JSONEncoder().encode(
+          SavedRouteLibraryDocument(records: [record, corruptRecord])
+        ),
+        "SAVED_ROUTE_NAME_EMPTY"
+      ),
+    ]
+
+    for (stored, code) in unreadableLibraries {
+      try stored.write(to: store.fileURL)
+      let model = SavedRouteLibraryModel(
+        store: store,
+        foregroundEntries: []
+      )
+      XCTAssertTrue(model.records.isEmpty)
+      XCTAssertEqual(model.lastErrorCode, code)
+
+      model.save(
+        routePlan: makeRepeatedSavedRoutePlan(),
+        displayName: "New route",
+        evidenceState: .communityCandidate
+      )
+      XCTAssertEqual(model.lastErrorCode, code)
+      model.importSharedRoute(
+        try SharedRouteCodec.encode(record.document),
+        suggestedName: "Imported route"
+      )
+
+      XCTAssertEqual(model.lastErrorCode, code)
+      XCTAssertNil(model.lastSavedRecordID)
+      XCTAssertTrue(model.records.isEmpty)
+      XCTAssertEqual(try Data(contentsOf: store.fileURL), stored)
+    }
+  }
+
   func testInvalidImportAndUnknownRecordFailClosed() {
     let store = MemorySavedRouteLibraryStore()
     let model = SavedRouteLibraryModel(

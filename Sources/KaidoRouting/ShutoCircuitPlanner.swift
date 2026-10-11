@@ -605,7 +605,9 @@ extension ShutoRoutePlanner {
     let forward = forwardDistances(from: traversal.finalNode, cost: cost)
     let ranked: [(ShutoNetworkDatabase.Facility, Double)] =
       database.directionalFacilities.compactMap { facility in
-        guard isEligibleExit(facility, for: circuit) else { return nil }
+        guard isEligibleExit(facility, for: circuit),
+          !Self.sharesTollPoint(entryFacility, facility)
+        else { return nil }
         let tail = facility.exitEdgeCandidates.compactMap {
           candidate -> Double? in
           guard let edge = edgesByID[candidate.edgeID],
@@ -625,8 +627,9 @@ extension ShutoRoutePlanner {
   }
 
   /// Exits some directed all-Shuto path reaches after entering at one
-  /// facility, in the same order the caller passes them. An editor that
-  /// offers only these can never draft a pairing `plan` would refuse.
+  /// facility, other than the entrance's own toll point, in the same order
+  /// the caller passes them. An editor that offers only these can never
+  /// draft a pairing `plan` would refuse.
   public func exitCandidates(
     _ candidates: [ShutoNetworkDatabase.Facility],
     reachableAfterEntering entryFacilityID: String
@@ -643,6 +646,7 @@ extension ShutoRoutePlanner {
     }
     return candidates.filter { facility in
       facility.canExit
+        && !Self.sharesTollPoint(entry, facility)
         && facility.exitEdgeCandidates.contains {
           guard let edge = edgesByID[$0.edgeID] else { return false }
           return reachable.contains(edge.fromNodeID)
@@ -678,6 +682,7 @@ extension ShutoRoutePlanner {
     }
     return candidates.filter { facility in
       facility.canEnter
+        && !Self.sharesTollPoint(facility, exit)
         && facility.entryEdgeCandidates.contains {
           guard let edge = edgesByID[$0.edgeID] else { return false }
           return reaching.contains(edge.toNodeID)
@@ -751,18 +756,11 @@ extension ShutoRoutePlanner {
     // Tariff-best exit for a loop: consider the soonest forward exits plus
     // every reachable exit near the entrance — the pairing that keeps the
     // shortest entry-exit path (and therefore the band) small usually sits
-    // right beside the entrance, often far down the forward ranking. A
-    // same-named exit is never recommended: community and operator practice
-    // treats an identical entry/exit name as a pairing to avoid.
-    var candidates: [ShutoNetworkDatabase.Facility] = []
-    for exit in exits.prefix(8)
-    where exit.nameJA != entrance.nameJA {
-      candidates.append(exit)
-    }
+    // right beside the entrance, often far down the forward ranking.
+    var candidates = Array(exits.prefix(8))
     for exit in exits
     where
-      exit.nameJA != entrance.nameJA
-      && Self.distance(entrance.coordinate, exit.coordinate) <= 4_500
+      Self.distance(entrance.coordinate, exit.coordinate) <= 4_500
       && !candidates.contains(where: {
         $0.facilityID == exit.facilityID
       })
@@ -839,6 +837,11 @@ extension ShutoRoutePlanner {
     guard (parking?.isDrivable == true && exitFacility == nil)
       || (parking == nil && exitFacility.map { isEligibleExit($0, for: circuit) } == true)
     else { throw ShutoNetworkError.facilityUnavailable }
+    // Laps never change the fare, so a loop gains nothing by returning to
+    // its own toll point, and that pairing has no fare distance to quote.
+    if let exitFacility, Self.sharesTollPoint(entryFacility, exitFacility) {
+      throw ShutoNetworkError.sharedTollPoint
+    }
 
     let isMember: (ShutoNetworkDatabase.Edge) -> Bool = { edge in
       edge.routeMemberships.contains {

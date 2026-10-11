@@ -72,7 +72,9 @@ struct ShutoAllRouteLiveAdmissionTests {
                   continue
                 }
                 releasedRouteCount += 1
-              } catch ShutoNetworkError.routeUnavailable {
+              } catch ShutoNetworkError.routeUnavailable,
+                ShutoNetworkError.sharedTollPoint
+              {
                 continue
               } catch {
                 failures.append(

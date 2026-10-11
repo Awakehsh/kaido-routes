@@ -448,9 +448,10 @@ final class WholeShutoProductModel: ObservableObject {
     didSet { refreshEntryCandidatesReachingExit() }
   }
   /// The mirror for a driver who fixes the exit first: entrances some
-  /// directed all-Shuto path leads from to the current exit. Only an exact
-  /// custom pairing needs it; an experience's direction-valid entrances all
-  /// reach the same exits once its course completes.
+  /// directed all-Shuto path leads from to the current exit, other than the
+  /// exit's own toll point. An experience's direction-valid entrances all
+  /// reach the same exits once its course completes, so there it rules out
+  /// only the entrances sharing that toll point.
   private var entryCandidatesReachingExit:
     [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var customPreference: ShutoRoutePreference =
@@ -1503,20 +1504,17 @@ final class WholeShutoProductModel: ObservableObject {
   private var customEntryPartition:
     (pairable: [ShutoNetworkDatabase.Facility], unpairable: [ShutoNetworkDatabase.Facility])
   {
-    if editedCircuit != nil {
-      return (
-        pinningSelection(
-          circuitEntranceCandidates,
-          selectedFacilityID: customEntryFacilityID
-        ),
-        []
+    let ranked =
+      editedCircuit != nil
+      ? pinningSelection(
+        circuitEntranceCandidates,
+        selectedFacilityID: customEntryFacilityID
       )
-    }
-    let ranked = rankedCustomFacilities(
-      from: origin?.coordinate,
-      selectedFacilityID: customEntryFacilityID,
-      isEligible: \.canEnter
-    )
+      : rankedCustomFacilities(
+        from: origin?.coordinate,
+        selectedFacilityID: customEntryFacilityID,
+        isEligible: \.canEnter
+      )
     guard customExitFacilityID != nil else { return (ranked, []) }
     let reaching = Set(entryCandidatesReachingExit.map(\.facilityID))
     return (
@@ -6527,8 +6525,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func refreshEntryCandidatesReachingExit() {
-    guard let exitFacilityID = customExitFacilityID, editedCircuit == nil
-    else {
+    guard let exitFacilityID = customExitFacilityID else {
       entryCandidatesReachingExit = []
       return
     }

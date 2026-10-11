@@ -1102,15 +1102,32 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.declareEntry(facilityID: offCourse.facilityID)
     XCTAssertTrue(model.entryIsUnconfirmed)
 
-    let namedEntry = try XCTUnwrap(candidates.first)
+    // The band follows the declaration. The nearest upstream entrance here
+    // is the exit's own IC: one toll point has no fare distance to price,
+    // so there is no band rather than a minimum the operator never charges.
+    let exit = try XCTUnwrap(route.exitFacility)
+    let sharedTollPointEntry = try XCTUnwrap(candidates.first)
+    XCTAssertEqual(sharedTollPointEntry.nameJA, exit.nameJA)
+    model.declareEntry(facilityID: sharedTollPointEntry.facilityID)
+    XCTAssertFalse(model.entryIsUnconfirmed)
+    XCTAssertEqual(
+      model.driveEntryFacility?.facilityID,
+      sharedTollPointEntry.facilityID
+    )
+    XCTAssertNil(model.selectedTariffBand)
+
+    let namedEntry = try XCTUnwrap(
+      candidates.first { $0.nameJA != exit.nameJA }
+    )
     model.declareEntry(facilityID: namedEntry.facilityID)
     XCTAssertFalse(model.entryIsUnconfirmed)
     XCTAssertEqual(model.driveEntryFacility?.facilityID, namedEntry.facilityID)
+    XCTAssertNotNil(model.selectedTariffBand)
     XCTAssertEqual(
       model.selectedTariffBand,
       try model.planner.tariffBand(
         entryFacilityID: namedEntry.facilityID,
-        exitFacilityID: try XCTUnwrap(route.exitFacility).facilityID,
+        exitFacilityID: exit.facilityID,
         evidence: model.activeTariffEvidence
       )
     )
@@ -3353,10 +3370,14 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertTrue(model.editsSelectedCircuit)
     let entryID = try XCTUnwrap(model.customEntryFacilityID)
+    let exitNameJA = try XCTUnwrap(model.customExitFacility?.nameJA)
     XCTAssertEqual(model.customEntryCandidates.first?.facilityID, entryID)
     XCTAssertEqual(
       Set(model.customEntryCandidates.map(\.facilityID)),
-      Set(model.circuitEntranceCandidates.map(\.facilityID))
+      Set(
+        model.circuitEntranceCandidates.filter { $0.nameJA != exitNameJA }
+          .map(\.facilityID)
+      )
     )
     let exits = model.customExitCandidates
     let reachable = Set(
@@ -4077,6 +4098,179 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.customEntryFacilityID, chosen.facilityID)
     XCTAssertNotNil(model.customDraftRoute)
     XCTAssertTrue(model.canApplyCustomRoute)
+  }
+
+  func testCustomEditorNeverDraftsAPairSharingOneTollPoint() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    // Beside the Harumi ramps: on a round trip the driver's own IC is the
+    // exit nearest the origin.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6544, longitude: 139.7827)
+    )
+    model.prepareCustomRouteDraft()
+    XCTAssertFalse(model.editsSelectedCircuit)
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.10.harumi")
+    XCTAssertNotNil(model.customDraftRoute)
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "晴海" })
+    XCTAssertEqual(
+      model.customExitCandidatesNotReachableFromEntry
+        .filter { $0.nameJA == "晴海" }.map(\.facilityID),
+      ["shuto.ic.10.harumi"]
+    )
+
+    // Chosen from a search anyway, the entrance's own IC clears the
+    // entrance instead of drafting the pair.
+    model.selectCustomExit(facilityID: "shuto.ic.10.harumi")
+    XCTAssertEqual(model.customExitFacilityID, "shuto.ic.10.harumi")
+    XCTAssertNil(model.customEntryFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    XCTAssertFalse(model.customEntryCandidates.contains { $0.nameJA == "晴海" })
+
+    // Differently identified ramps of one toll point pair no better, from
+    // either end.
+    model.selectCustomEntry(facilityID: "shuto.ic.k1.daishi")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.k1.daishi")
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "大師" })
+    model.selectCustomExit(facilityID: "shuto.ic.k6.daishi")
+    XCTAssertEqual(model.customExitFacilityID, "shuto.ic.k6.daishi")
+    XCTAssertNil(model.customEntryFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertTrue(
+      model.customEntryCandidatesNotReachingExit.contains {
+        $0.facilityID == "shuto.ic.k1.daishi"
+      }
+    )
+    model.selectCustomEntry(facilityID: "shuto.ic.k1.daishi")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.k1.daishi")
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+  }
+
+  func testCircuitReviewEditorRulesOutEntrancesSharingTheExitTollPoint()
+    async throws
+  {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c1Inner)
+    model.selectCircuitLaps(2)
+    await waitForCircuitPairing(model)
+    let pairedEntry = try XCTUnwrap(
+      model.circuitEntranceCandidates.first {
+        $0.facilityID == model.circuitEntryFacilityID
+      }
+    )
+    XCTAssertFalse(model.circuitExitCandidates.isEmpty)
+    XCTAssertFalse(
+      model.circuitExitCandidates.contains { $0.nameJA == pairedEntry.nameJA }
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    model.prepareCustomRouteDraft()
+    XCTAssertTrue(model.editsSelectedCircuit)
+    let entry = try XCTUnwrap(model.customEntryFacility)
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(
+      model.customExitCandidates.contains { $0.nameJA == entry.nameJA }
+    )
+
+    // Fix an exit that another entrance of the experience shares a toll
+    // point with: that entrance is ruled out the way an unreachable one is.
+    let entrances = model.circuitEntranceCandidates
+    let exit = try XCTUnwrap(
+      model.customExitCandidates.first { exit in
+        entrances.contains { $0.nameJA == exit.nameJA }
+      }
+    )
+    model.selectCustomExit(facilityID: exit.facilityID)
+    XCTAssertEqual(model.customExitFacilityID, exit.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, entry.facilityID)
+    let sharing = Set(
+      entrances.filter { $0.nameJA == exit.nameJA }.map(\.facilityID)
+    )
+    XCTAssertEqual(
+      Set(model.customEntryCandidatesNotReachingExit.map(\.facilityID)),
+      sharing
+    )
+    XCTAssertEqual(
+      Set(model.customEntryCandidates.map(\.facilityID)),
+      Set(entrances.map(\.facilityID)).subtracting(sharing)
+    )
+
+    // Choosing it clears the exit; the exits then follow the new entrance.
+    let chosen = try XCTUnwrap(model.customEntryCandidatesNotReachingExit.first)
+    model.selectCustomEntry(facilityID: chosen.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, chosen.facilityID)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    model.selectCustomExit(facilityID: exit.facilityID)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertFalse(
+      model.customExitCandidates.contains { $0.nameJA == chosen.nameJA }
+    )
+    let next = try XCTUnwrap(model.customExitCandidates.first)
+    model.selectCustomExit(facilityID: next.facilityID)
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, chosen.facilityID)
+    XCTAssertEqual(draft.exitFacility?.facilityID, next.facilityID)
+    XCTAssertEqual(draft.lapBoundaryOccurrenceIndices.count, 3)
+    XCTAssertTrue(model.applyCustomRoute())
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
+  }
+
+  func testDirectionalTourEditorNeverOffersTheEntranceTollPointAsExit()
+    async throws
+  {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // Shinkiba: the westbound Bayshore run passes its own Shinkiba exit.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6471, longitude: 139.8306)
+    )
+    model.selectCircuit(.wanganDaikokuRun)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+    XCTAssertNotNil(model.selectedRoute?.destinationParkingArea)
+
+    // Leaving the PA ending for an exit keeps the tour, so the editor
+    // refines the experience rather than an explicit route.
+    let exits = try await model.journeyExitCandidates()
+    let entry = try XCTUnwrap(model.selectedRoute?.entryFacility)
+    XCTAssertFalse(exits.isEmpty)
+    XCTAssertFalse(exits.contains { $0.nameJA == entry.nameJA })
+    try await model.selectJourneyExit(try XCTUnwrap(exits.first).facilityID)
+    await waitForEndingRoutes(model)
+    model.prepareCustomRouteDraft()
+    XCTAssertTrue(model.editsSelectedCircuit)
+
+    model.selectCustomEntry(facilityID: "shuto.ic.b.shinkiba")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.b.shinkiba")
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "新木場" })
+    model.selectCustomExit(facilityID: "shuto.ic.b.shinkiba")
+    XCTAssertNotEqual(model.customExitFacilityID, "shuto.ic.b.shinkiba")
+    let exit = try XCTUnwrap(model.customExitCandidates.first)
+    model.selectCustomExit(facilityID: exit.facilityID)
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, "shuto.ic.b.shinkiba")
+    XCTAssertEqual(draft.exitFacility?.facilityID, exit.facilityID)
   }
 
   func testCustomRouteReviewCheckpointDoesNotRestoreStaleOrigin() async throws {

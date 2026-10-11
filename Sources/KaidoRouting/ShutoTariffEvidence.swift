@@ -129,6 +129,18 @@ extension ShutoRoutePlanner {
   /// tariff distance.
   private static let tariffDistanceMarginMeters = 500.0
 
+  /// Same-named ramps bill as one toll point. An entry and exit at one toll
+  /// point have no fare distance the toll-point path can price — it
+  /// collapses to the ramps' own few metres while the operator prices such
+  /// a pair over a real distance — so the planner refuses that pairing on
+  /// every surface rather than quote a fare it cannot reproduce.
+  static func sharesTollPoint(
+    _ first: ShutoNetworkDatabase.Facility,
+    _ second: ShutoNetworkDatabase.Facility
+  ) -> Bool {
+    first.nameJA == second.nameJA
+  }
+
   /// Tariff band for one entry/exit pairing under one dated tariff rule.
   /// The fare distance is the shortest DRIVABLE directed path between the
   /// two TOLL POINTS, where same-named ramps bill as one toll point — both
@@ -158,7 +170,8 @@ extension ShutoRoutePlanner {
 
   /// Bands for many exits after one entrance from a single relaxation of
   /// the entrance's toll point, for an exit list that prices every row.
-  /// Exits whose toll point no directed path reaches are absent.
+  /// Exits whose toll point no directed path reaches, or that share the
+  /// entrance's toll point, are absent.
   public func tariffBands(
     entryFacilityID: String,
     exitFacilityIDs: [String],
@@ -187,7 +200,9 @@ extension ShutoRoutePlanner {
     }
     var bands: [String: ShutoTariffBand] = [:]
     for exitFacilityID in exitFacilityIDs {
-      guard let exit = facilitiesByID[exitFacilityID] else { continue }
+      guard let exit = facilitiesByID[exitFacilityID],
+        !Self.sharesTollPoint(entry, exit)
+      else { continue }
       var best: Double?
       for (nodeID, tail) in tollPointTargets(forExitGroupOf: exit) {
         guard let reach = distances[nodeID] else { continue }
@@ -246,7 +261,7 @@ extension ShutoRoutePlanner {
     forEntryGroupOf entry: ShutoNetworkDatabase.Facility
   ) -> [TollPointQueueValue] {
     database.directionalFacilities
-      .filter { $0.nameJA == entry.nameJA && $0.canEnter }
+      .filter { Self.sharesTollPoint($0, entry) && $0.canEnter }
       .flatMap { facility in
         facility.entryEdgeCandidates.compactMap { candidate in
           edgesByID[candidate.edgeID].map {
@@ -266,7 +281,7 @@ extension ShutoRoutePlanner {
   ) -> [Int64: Double] {
     var targets: [Int64: Double] = [:]
     for facility in database.directionalFacilities
-    where facility.nameJA == exit.nameJA && facility.canExit {
+    where Self.sharesTollPoint(facility, exit) && facility.canExit {
       for candidate in facility.exitEdgeCandidates {
         guard let edge = edgesByID[candidate.edgeID] else { continue }
         let tail = candidate.distanceMeters + edge.lengthMeters
@@ -286,7 +301,8 @@ extension ShutoRoutePlanner {
     exitFacilityID: String
   ) -> Double? {
     guard let entry = facilitiesByID[entryFacilityID],
-      let exit = facilitiesByID[exitFacilityID]
+      let exit = facilitiesByID[exitFacilityID],
+      !Self.sharesTollPoint(entry, exit)
     else { return nil }
     let targets = tollPointTargets(forExitGroupOf: exit)
     guard !targets.isEmpty else { return nil }

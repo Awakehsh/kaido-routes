@@ -39,6 +39,10 @@ final class SavedRouteLibraryModel: ObservableObject {
     ((SavedRouteRecord) -> SavedRouteLibraryAvailability)?
   private let recordIDProvider: () -> String
   private let savedAtProvider: () -> String
+  /// Set when the stored library exists but could not be read. Every write
+  /// is refused with this code so an unreadable library is never replaced by
+  /// one built from the empty list this model publishes instead.
+  private var loadErrorCode: String?
 
   init(
     store: (any SavedRouteLibraryStoring)?,
@@ -246,10 +250,11 @@ final class SavedRouteLibraryModel: ObservableObject {
       lastErrorCode = nil
     } catch {
       records = []
-      lastErrorCode = Self.errorCode(
+      loadErrorCode = Self.errorCode(
         error,
         fallback: .loadFailed
       )
+      lastErrorCode = loadErrorCode
     }
   }
 
@@ -262,6 +267,11 @@ final class SavedRouteLibraryModel: ObservableObject {
     store: any SavedRouteLibraryStoring,
     successRecordID: String? = nil
   ) {
+    if let loadErrorCode {
+      lastSavedRecordID = nil
+      lastErrorCode = loadErrorCode
+      return
+    }
     do {
       try store.save(candidate)
       records = candidate.records

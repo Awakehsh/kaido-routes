@@ -19,13 +19,17 @@ final class DriveHistoryStoreTests: XCTestCase {
     XCTAssertEqual(try reopened.load(), [first])
   }
 
-  func testHistoryRejectsARecordWhoseFileIdentityDoesNotMatch() throws {
+  func testABadHistoryFileHidesOnlyItself() throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let kept = try entry(start: 10_000)
+    let store = FileDriveHistoryStore(directory: directory)
+    try store.save(kept)
     try JSONEncoder().encode(entry(start: 1_000))
       .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
-    XCTAssertThrowsError(try FileDriveHistoryStore(directory: directory).load())
+    try Data("not-a-drive".utf8)
+      .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
+    XCTAssertEqual(try store.load(), [kept])
   }
 
   private func entry(start: Int) throws -> DriveHistoryEntry {

@@ -14,10 +14,12 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
     notifications.post(
       name: AVAudioSession.interruptionNotification, object: session,
       userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+    drainMainQueue()
     XCTAssertEqual(events, [.interruptionBegan])
     notifications.post(
       name: AVAudioSession.interruptionNotification, object: session,
       userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue])
+    drainMainQueue()
     XCTAssertEqual(events, [.interruptionBegan, .interruptionEnded])
   }
 
@@ -33,6 +35,7 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
     var events: [GuidanceSpeechOutputEvent] = []
     output.eventHandler = { events.append($0) }
     notifications.post(name: AVAudioSession.mediaServicesWereResetNotification, object: session)
+    drainMainQueue()
     XCTAssertNil(original.delegate)
     XCTAssertTrue(replacement.delegate === output)
     XCTAssertEqual(events, [.interruptionBegan])
@@ -51,7 +54,44 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
         AVAudioSessionRouteChangeReasonKey: AVAudioSession.RouteChangeReason.newDeviceAvailable
           .rawValue
       ])
+    drainMainQueue()
     XCTAssertEqual(events, [.interruptionBegan])
+  }
+
+  @MainActor
+  func testAudioSessionNotificationsPostedOffTheMainThreadAreHandledInOrder() {
+    let notifications = NotificationCenter()
+    let session = AVAudioSession.sharedInstance()
+    let original = AVSpeechSynthesizer()
+    let replacement = AVSpeechSynthesizer()
+    let output = AVSpeechGuidanceOutput(
+      synthesizer: original, audioSession: session,
+      synthesizerFactory: { replacement }, notifications: notifications)
+    var events: [GuidanceSpeechOutputEvent] = []
+    output.eventHandler = { events.append($0) }
+
+    // iOS posts route changes on a secondary thread, e.g. when car Bluetooth connects.
+    let posted = expectation(description: "posted off the main thread")
+    DispatchQueue.global().async {
+      notifications.post(
+        name: AVAudioSession.routeChangeNotification, object: session,
+        userInfo: [
+          AVAudioSessionRouteChangeReasonKey: AVAudioSession.RouteChangeReason.newDeviceAvailable
+            .rawValue
+        ])
+      notifications.post(
+        name: AVAudioSession.interruptionNotification, object: session,
+        userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue])
+      notifications.post(name: AVAudioSession.mediaServicesWereResetNotification, object: session)
+      posted.fulfill()
+    }
+    wait(for: [posted], timeout: 5)
+    drainMainQueue()
+
+    XCTAssertEqual(events, [.interruptionBegan, .interruptionEnded, .interruptionBegan])
+    XCTAssertTrue(output.isInterrupted)
+    XCTAssertNil(original.delegate)
+    XCTAssertTrue(replacement.delegate === output)
   }
 
   func testNavigationProsodyPreservesBluetoothLeadIn() {
@@ -78,5 +118,14 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
       utterance.postUtteranceDelay,
       prosody.postUtteranceDelay
     )
+  }
+
+  /// Runs every main-queue block enqueued before this call, including the
+  /// main-actor hop each audio-session notification handler takes.
+  @MainActor
+  private func drainMainQueue() {
+    let drained = expectation(description: "main queue drained")
+    DispatchQueue.main.async { drained.fulfill() }
+    wait(for: [drained], timeout: 5)
   }
 }

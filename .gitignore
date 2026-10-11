@@ -28,3 +28,6 @@ __pycache__/
 
 # Local agent handoffs (session-specific, never tracked)
 /handoffs/
+
+# Claude Code local session state (worktrees, settings)
+/.claude/

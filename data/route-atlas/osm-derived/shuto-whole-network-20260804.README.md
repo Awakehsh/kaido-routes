@@ -52,8 +52,10 @@ establish current route and directional facility facts; OSM supplies candidate
 geometry and topology. Every usable IC and every official JCT must match or
 generation fails. Each JCT also
 retains the URL and SHA-256 of its current operator detail image without
-redistributing the image. The three unmatched IC facts are the explicitly
-unavailable Yaesu Route facilities and have no routable candidates. The operator
+redistributing the image. The unmatched IC facts are the explicitly
+unavailable Yaesu Route facilities and, after the 2026-10-12 facility closure
+review in `data/route-atlas/reviews/`, the abolished 新富町 exit; none has
+routable candidates. The operator
 fact catalog was re-scraped on 2026-08-04 with zero factual differences against
 the committed 2026-07-29 catalog, which therefore remains the pinned build
 input.

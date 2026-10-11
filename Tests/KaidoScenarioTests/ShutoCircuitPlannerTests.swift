@@ -202,7 +202,7 @@ struct ShutoCircuitPlannerTests {
     let route = try planner.planCircuit(
       circuit: .c1Outer,
       entryFacilityID: "shuto.ic.c1.kyoubashi",
-      exitFacilityID: "shuto.ic.c1.shintomicho",
+      exitFacilityID: "shuto.ic.c1.ginza",
       laps: 1
     )
 
@@ -212,7 +212,74 @@ struct ShutoCircuitPlannerTests {
     #expect(route.routeIDsInOrder.first == "C1")
     #expect(route.routeIDsInOrder.allSatisfy { $0 == "C1" })
     #expect(route.routePlan.entryFacilityID == "shuto.ic.c1.kyoubashi")
-    #expect(route.routePlan.exitFacilityID == "shuto.ic.c1.shintomicho")
+    #expect(route.routePlan.exitFacilityID == "shuto.ic.c1.ginza")
+  }
+
+  @Test("the closed inner 銀座 entrance is never the C1 inner start, and the outer one still is")
+  func honoursTheInnerGinzaEntranceClosure() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    // 482 m from 銀座, which the inner catalog recommended before the
+    // 2026-10-18 closure of its 内回り entrance.
+    let origin = ShutoCoordinate(latitude: 35.6717, longitude: 139.7650)
+
+    let inner = try planner.recommendedCircuitPairing(
+      for: .c1Inner,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    #expect(inner.entrance.facilityID != "shuto.ic.c1.ginza")
+    #expect(
+      !planner.circuitEntranceCandidates(for: .c1Inner, origin: origin)
+        .contains { $0.facilityID == "shuto.ic.c1.ginza" }
+    )
+    #expect(throws: ShutoNetworkError.facilityUnavailable) {
+      _ = try planner.planCircuit(
+        circuit: .c1Inner,
+        entryFacilityID: "shuto.ic.c1.ginza",
+        exitFacilityID: "shuto.ic.c1.shiodome",
+        laps: 1
+      )
+    }
+
+    let outer = try planner.recommendedCircuitPairing(
+      for: .c1Outer,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    #expect(outer.entrance.facilityID == "shuto.ic.c1.ginza")
+    let route = try planner.planCircuit(
+      circuit: .c1Outer,
+      entryFacilityID: "shuto.ic.c1.ginza",
+      exitFacilityID: outer.exit.facilityID,
+      laps: 1
+    )
+    #expect(route.edges.first?.edgeID != "osm.4848936.0.forward")
+    #expect(route.routeIDsInOrder.allSatisfy { $0 == "C1" })
+  }
+
+  @Test("the abolished 新富町 exit is never an exit of either C1 loop")
+  func honoursTheShintomichoExitAbolition() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    for (circuit, entrance) in [
+      (ShutoCircuitDefinition.c1Inner, "shuto.ic.c1.takaracho"),
+      (ShutoCircuitDefinition.c1Outer, "shuto.ic.c1.kyoubashi"),
+    ] {
+      let exits = try planner.circuitExitCandidates(
+        for: circuit,
+        afterEntering: entrance
+      )
+      #expect(!exits.isEmpty)
+      #expect(!exits.contains { $0.facilityID == "shuto.ic.c1.shintomicho" })
+      #expect(throws: ShutoNetworkError.facilityUnavailable) {
+        _ = try planner.planCircuit(
+          circuit: circuit,
+          entryFacilityID: entrance,
+          exitFacilityID: "shuto.ic.c1.shintomicho",
+          laps: 1
+        )
+      }
+    }
   }
 
   @Test("exit candidates rank by forward travel, not geodesic nearness")

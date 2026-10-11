@@ -18,8 +18,8 @@ struct NetworkOverviewLayoutTests {
         }
       }
     )
-    // All 148 available facilities carry their directional facts.
-    #expect(layout.facilityMarks.count == 148)
+    // All 147 available facilities carry their directional facts.
+    #expect(layout.facilityMarks.count == 147)
     let hatsudaiMinami = try #require(
       layout.facilityMarks.first {
         $0.id == "shuto.ic.c2.hatsudaiminami"

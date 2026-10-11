@@ -717,32 +717,42 @@ public final class GuidanceSpeechCoordinator {
       return true
     }
 
+    // The audio-session handlers are nonisolated because iOS posts route
+    // changes on a secondary thread. Each one hops to the main queue
+    // asynchronously: FIFO keeps delivery order, and the posting thread never
+    // waits on main while main may be inside a blocking AVAudioSession call.
     @objc
-    private func handleMediaServicesReset(_ notification: Notification) {
-      interruptionPending = true
-      eventHandler?(.interruptionBegan)
-      synthesizer.delegate = nil
-      identityByUtterance.removeAll()
-      activeUtteranceID = nil
-      synthesizer = synthesizerFactory()
-      synthesizer.delegate = self
-      os_log("Speech output rebuilt after media services reset", log: Self.log, type: .default)
+    private nonisolated func handleMediaServicesReset(_ notification: Notification) {
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        interruptionPending = true
+        eventHandler?(.interruptionBegan)
+        synthesizer.delegate = nil
+        identityByUtterance.removeAll()
+        activeUtteranceID = nil
+        synthesizer = synthesizerFactory()
+        synthesizer.delegate = self
+        os_log("Speech output rebuilt after media services reset", log: Self.log, type: .default)
+      }
     }
 
     @objc
-    private func handleAudioRouteChange(_ notification: Notification) {
+    private nonisolated func handleAudioRouteChange(_ notification: Notification) {
       guard let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
         let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason),
         reason == .oldDeviceUnavailable || reason == .newDeviceAvailable
       else { return }
-      interruptionPending = true
-      eventHandler?(.interruptionBegan)
-      cancelActiveUtterance()
-      os_log("Speech output route changed", log: Self.log, type: .default)
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        interruptionPending = true
+        eventHandler?(.interruptionBegan)
+        cancelActiveUtterance()
+        os_log("Speech output route changed", log: Self.log, type: .default)
+      }
     }
 
     @objc
-    private func handleAudioInterruption(_ notification: Notification) {
+    private nonisolated func handleAudioInterruption(_ notification: Notification) {
       guard
         let rawType = notification.userInfo?[
           AVAudioSessionInterruptionTypeKey
@@ -752,18 +762,21 @@ public final class GuidanceSpeechCoordinator {
         return
       }
 
-      switch type {
-      case .began:
-        os_log("Audio interruption began", log: Self.log, type: .default)
-        interruptionPending = true
-        eventHandler?(.interruptionBegan)
-        cancelActiveUtterance()
-      case .ended:
-        os_log("Audio interruption ended", log: Self.log, type: .default)
-        interruptionPending = false
-        eventHandler?(.interruptionEnded)
-      @unknown default:
-        break
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        switch type {
+        case .began:
+          os_log("Audio interruption began", log: Self.log, type: .default)
+          interruptionPending = true
+          eventHandler?(.interruptionBegan)
+          cancelActiveUtterance()
+        case .ended:
+          os_log("Audio interruption ended", log: Self.log, type: .default)
+          interruptionPending = false
+          eventHandler?(.interruptionEnded)
+        @unknown default:
+          break
+        }
       }
     }
 

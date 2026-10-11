@@ -68,11 +68,13 @@ final class FileDriveHistoryStore: DriveHistoryStoring {
     guard FileManager.default.fileExists(atPath: directory.path) else { return [] }
     return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
       .filter { $0.pathExtension == "json" }
-      .map { url in
-        let entry = try JSONDecoder().decode(DriveHistoryEntry.self, from: Data(contentsOf: url))
-        guard entry.hasValidMeasurements,
+      // One unreadable or invalid file hides only its own drive.
+      .compactMap { url in
+        guard let data = try? Data(contentsOf: url),
+          let entry = try? JSONDecoder().decode(DriveHistoryEntry.self, from: data),
+          entry.hasValidMeasurements,
           url.deletingPathExtension().lastPathComponent == entry.id.uuidString
-        else { throw StoreError.invalidRecord }
+        else { return nil }
         return entry
       }
       .sorted { $0.startedAtMilliseconds > $1.startedAtMilliseconds }

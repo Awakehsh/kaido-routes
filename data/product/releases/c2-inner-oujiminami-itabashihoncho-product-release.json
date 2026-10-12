@@ -42081,12 +42081,12 @@
             "japanese_sign_text" : "中央道・東名",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Keep Right for the C2 Inner Loop",
+                "display_text" : "Ahead: Keep Right for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, keep right for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, keep right for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、右方向を保ち、C2 内回りへ",
@@ -42193,12 +42193,12 @@
             "japanese_sign_text" : "中央道・東名",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Right for the C2 Inner Loop",
+                "display_text" : "Ahead: Branch Right for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "the C2 Inner Loop" : "the C2 Inner Loop"
                 },
-                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, branch right for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, branch right for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、右方向へ分岐し、C2 内回りへ",
@@ -42303,12 +42303,12 @@
             "japanese_sign_text" : "湾岸線",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Continue Straight for the C2 Inner Loop",
+                "display_text" : "Ahead: Continue Straight for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Nishi-shinjuku JCT, continue straight for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Nishi-shinjuku JCT, continue straight for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、C2 内回りへ",
@@ -42411,12 +42411,12 @@
             "japanese_sign_text" : "湾岸線",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "display_text" : "Ahead: Branch Left for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Ohashi JCT, branch left for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Ohashi JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
@@ -42519,12 +42519,12 @@
             "japanese_sign_text" : "東関東道",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for the Bayshore Route eastbound",
+                "display_text" : "Ahead: Branch Left for the Bayshore Route eastbound",
                 "preserved_japanese_sign_text" : "東関東道",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Oi JCT, branch left for the Bayshore Route eastbound"
+                "spoken_text" : "Ahead at Oi JCT, branch left for the Bayshore Route eastbound"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、湾岸線 東行きへ",
@@ -42627,12 +42627,12 @@
             "japanese_sign_text" : "葛西",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 葛西",
+                "display_text" : "Ahead: Stay on the Bayshore Route toward 葛西",
                 "preserved_japanese_sign_text" : "葛西",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Ariake JCT, stay on the Bayshore Route toward 葛西"
+                "spoken_text" : "Ahead at Ariake JCT, stay on the Bayshore Route toward 葛西"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 葛西方面へ",
@@ -42737,12 +42737,12 @@
             "japanese_sign_text" : "浦安",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "display_text" : "Ahead: Stay on the Bayshore Route toward 浦安",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Shinonome JCT, stay on the Bayshore Route toward 浦安"
+                "spoken_text" : "Ahead at Shinonome JCT, stay on the Bayshore Route toward 浦安"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
@@ -42847,12 +42847,12 @@
             "japanese_sign_text" : "浦安",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "display_text" : "Ahead: Stay on the Bayshore Route toward 浦安",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Tatsumi JCT, stay on the Bayshore Route toward 浦安"
+                "spoken_text" : "Ahead at Tatsumi JCT, stay on the Bayshore Route toward 浦安"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
@@ -42957,12 +42957,12 @@
             "japanese_sign_text" : "東北道・常磐道",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "display_text" : "Ahead: Branch Left for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Kasai JCT, branch left for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Kasai JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
@@ -43069,12 +43069,12 @@
             "japanese_sign_text" : "東北道・常磐道",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Continue Straight for Kosuge Junction for the Tohoku or Joban Expressway",
+                "display_text" : "Ahead: Continue Straight for Kosuge Junction for the Tohoku or Joban Expressway",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "Kosuge Junction for the Tohoku or Joban Expressway" : "Kosuge Junction for the Tohoku or Joban Expressway"
                 },
-                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, continue straight for Kosuge Junction for the Tohoku or Joban Expressway"
+                "spoken_text" : "Ahead at Kosuge and Horikiri Junctions, continue straight for Kosuge Junction for the Tohoku or Joban Expressway"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、小菅JCT 東北道・常磐道方面へ",
@@ -43181,12 +43181,12 @@
             "japanese_sign_text" : "東北道・大宮",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Keep Left for the C2 Inner Loop toward the Tohoku Expressway and Omiya",
+                "display_text" : "Ahead: Keep Left for the C2 Inner Loop toward the Tohoku Expressway and Omiya",
                 "preserved_japanese_sign_text" : "東北道・大宮",
                 "spoken_forms" : {
                   "the C2 Inner Loop toward the Tohoku Expressway and Omiya" : "the C2 Inner Loop toward the Tohoku Expressway and Omiya"
                 },
-                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, keep left for the C2 Inner Loop toward the Tohoku Expressway and Omiya"
+                "spoken_text" : "Ahead at Kosuge and Horikiri Junctions, keep left for the C2 Inner Loop toward the Tohoku Expressway and Omiya"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向を保ち、C2 内回り 東北道・大宮方面へ",
@@ -43291,12 +43291,12 @@
             "japanese_sign_text" : "東池袋・東名",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "display_text" : "Ahead: Branch Left for the C2 Inner Loop",
                 "preserved_japanese_sign_text" : "東池袋・東名",
                 "spoken_forms" : {
                   "C2" : "C two"
                 },
-                "spoken_text" : "At the upcoming junction, At Kohoku JCT, branch left for the C2 Inner Loop"
+                "spoken_text" : "Ahead at Kohoku JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
@@ -43399,12 +43399,12 @@
             "japanese_sign_text" : "大宮・関越道",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for Route 5 outbound",
+                "display_text" : "Ahead: Branch Left for Route 5 outbound",
                 "preserved_japanese_sign_text" : "大宮・関越道",
                 "spoken_forms" : {
                   "Route 5 outbound" : "Route 5 outbound"
                 },
-                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, branch left for Route 5 outbound"
+                "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, branch left for Route 5 outbound"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、5 池袋線 下りへ",

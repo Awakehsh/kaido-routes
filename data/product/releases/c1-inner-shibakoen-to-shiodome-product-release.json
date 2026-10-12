@@ -16833,12 +16833,12 @@
             "japanese_sign_text" : "神田橋",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 神田橋",
+                "display_text" : "Ahead: Stay on the Inner Circular Route toward 神田橋",
                 "preserved_japanese_sign_text" : "神田橋",
                 "spoken_forms" : {
                   "Inner Circular Route" : "Inner Circular Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Edobashi JCT, stay on the Inner Circular Route toward 神田橋"
+                "spoken_text" : "Ahead at Edobashi JCT, stay on the Inner Circular Route toward 神田橋"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、都心環状線 神田橋方面へ",
@@ -16943,12 +16943,12 @@
             "japanese_sign_text" : "霞が関",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 霞が関",
+                "display_text" : "Ahead: Stay on the Inner Circular Route toward 霞が関",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "Inner Circular Route" : "Inner Circular Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Takehashi JCT, stay on the Inner Circular Route toward 霞が関"
+                "spoken_text" : "Ahead at Takehashi JCT, stay on the Inner Circular Route toward 霞が関"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
@@ -17053,12 +17053,12 @@
             "japanese_sign_text" : "霞が関",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 霞が関",
+                "display_text" : "Ahead: Stay on the Inner Circular Route toward 霞が関",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "Inner Circular Route" : "Inner Circular Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Miyakezaka JCT, stay on the Inner Circular Route toward 霞が関"
+                "spoken_text" : "Ahead at Miyakezaka JCT, stay on the Inner Circular Route toward 霞が関"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
@@ -17163,12 +17163,12 @@
             "japanese_sign_text" : "芝公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 芝公園",
+                "display_text" : "Ahead: Stay on the Inner Circular Route toward 芝公園",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "Inner Circular Route" : "Inner Circular Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Tanimachi JCT, stay on the Inner Circular Route toward 芝公園"
+                "spoken_text" : "Ahead at Tanimachi JCT, stay on the Inner Circular Route toward 芝公園"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",
@@ -17273,12 +17273,12 @@
             "japanese_sign_text" : "芝公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 芝公園",
+                "display_text" : "Ahead: Stay on the Inner Circular Route toward 芝公園",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "Inner Circular Route" : "Inner Circular Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Ichinohashi JCT, stay on the Inner Circular Route toward 芝公園"
+                "spoken_text" : "Ahead at Ichinohashi JCT, stay on the Inner Circular Route toward 芝公園"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",

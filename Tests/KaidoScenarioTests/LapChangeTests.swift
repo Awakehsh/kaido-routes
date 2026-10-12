@@ -67,6 +67,36 @@ func skipOneLapRefusesOnTheFinalLap() {
   #expect(second.skipOneLap(trigger: "T") == nil)
 }
 
+@Test("A lap change after a PA stop lands on the same road, not at the same offset")
+func lapChangesFollowTheRoadAcrossUnequalLaps() {
+  // The PA stop makes the first lap two occurrences longer: an offset of one
+  // first-lap length from index 4 would land on lap.edge.0 of the third lap,
+  // and the same offset into the last lap would land in the exit tail.
+  var dropping = unequalLapEngine(at: "unequal.occurrence.4")
+  #expect(dropping.skipOneLap(trigger: "DRIVER_DROPPED_ONE_LAP") == "unequal.occurrence.8")
+  #expect(dropping.snapshot.skippedOccurrenceIDs == (5...7).map { "unequal.occurrence.\($0)" })
+
+  var finishing = unequalLapEngine(at: "unequal.occurrence.4")
+  #expect(
+    finishing.skipRemainingLaps(trigger: "DRIVER_FINISHING_CURRENT_LAP")
+      == "unequal.occurrence.12"
+  )
+  #expect(finishing.snapshot.journeyPhase == .strictRoute)
+
+  // From the second lap the laps match again.
+  var later = unequalLapEngine(at: "unequal.occurrence.7")
+  #expect(later.skipOneLap(trigger: "T") == "unequal.occurrence.11")
+}
+
+@Test("No lap is dropped from inside a PA stop the next lap does not make")
+func lapChangesRefuseFromInsideAStopOnlyThisLapMakes() {
+  var engine = unequalLapEngine(at: "unequal.occurrence.2")
+  #expect(engine.skipOneLap(trigger: "DRIVER_DROPPED_ONE_LAP") == nil)
+  #expect(engine.skipRemainingLaps(trigger: "DRIVER_FINISHING_CURRENT_LAP") == nil)
+  #expect(engine.snapshot.currentOccurrenceID == "unequal.occurrence.2")
+  #expect(engine.snapshot.skippedOccurrenceIDs.isEmpty)
+}
+
 @Test("A route without released lap boundaries can never drop a lap")
 func skipOneLapRefusesWithoutReleasedBoundaries() {
   var engine = NavigationEngine(
@@ -218,4 +248,43 @@ private func lapEngine() -> NavigationEngine {
     ),
     initialSnapshot: NavigationSnapshot(journeyPhase: .planning)
   )
+}
+
+/// Three laps where the first carries a two-occurrence PA stop in place of
+/// nothing — lap.edge.0, lap.edge.1, the stop, lap.edge.2, lap.edge.3 — then
+/// two plain laps of four and a two-occurrence exit tail. Boundaries at 0, 6,
+/// 10 and the tail beginning at 14.
+private func unequalLapEngine(at occurrenceID: String) -> NavigationEngine {
+  let entities = [
+    "lap.edge.0", "lap.edge.1", "pa.stop.0", "pa.stop.1", "lap.edge.2", "lap.edge.3",
+    "lap.edge.0", "lap.edge.1", "lap.edge.2", "lap.edge.3",
+    "lap.edge.0", "lap.edge.1", "lap.edge.2", "lap.edge.3",
+    "tail.edge.0", "tail.edge.1",
+  ]
+  let plan = RoutePlan(
+    id: "test.plan.unequal-laps",
+    networkSnapshotID: "test.snapshot.lap",
+    entryFacilityID: "test.entrance.lap",
+    exitFacilityID: "test.exit.lap",
+    recoveryPolicy: .strict,
+    actualDistanceKM: 40,
+    occurrences: entities.enumerated().map { index, entity in
+      RouteOccurrence(
+        id: "unequal.occurrence.\(index)",
+        index: index,
+        kind: entity.hasPrefix("pa.") ? .paVisit : .edge,
+        entityID: entity,
+        parkingAreaID: entity.hasPrefix("pa.") ? "test.pa" : nil
+      )
+    }
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: plan,
+      lapBoundaryOccurrenceIDs: [0, 6, 10, 14].map { "unequal.occurrence.\($0)" }
+    ),
+    initialSnapshot: NavigationSnapshot(journeyPhase: .planning)
+  )
+  engine.enterStrictRoute(firstOccurrenceID: occurrenceID, trigger: "TEST_ENTER")
+  return engine
 }

@@ -22,7 +22,7 @@ enum WholeShutoJourneyPhase:
 
 private enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
-  case rerouting, rejoined, exiting, resting, resumed, arrived
+  case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -48,6 +48,7 @@ private enum WholeShutoJourneyNotice: String {
         "ナビを再開します。位置情報を確認しています。", "导航已恢复，正在确认位置。", "Navigation resumed. Acquiring your position."
       )
     case .arrived: words = ("ルートの走行が完了しました。", "本次路线已完成。", "Your route is complete.")
+    case .lapNotAdded: words = ("周回を追加できませんでした。", "未能增加一圈。", "The lap could not be added.")
     }
     switch locale {
     case .japanese: return words.0
@@ -581,7 +582,17 @@ final class WholeShutoProductModel: ObservableObject {
   /// so both the static inset and the deterministic preview stepping must
   /// target this movement rather than whichever prompt comes first.
   private(set) var junctionPreviewMovementID: String?
-  private var liveDriveSession: ShutoLiveDriveSession?
+  private var liveDriveSession: ShutoLiveDriveSession? {
+    didSet {
+      // A lap swap waits on the session it replaces; any other change of
+      // session ends it.
+      if let pendingLapSwap, pendingLapSwap.replacing !== liveDriveSession {
+        self.pendingLapSwap = nil
+        isChangingLaps = false
+      }
+    }
+  }
+  private var pendingLapSwap: PendingLapSwap?
   private var liveEntryTransitionAdapter: CoreLocationEntryTransitionAdapter?
   private var liveSurfaceEgressAdapter: CoreLocationSurfaceEgressAdapter?
   private var liveNavigationCheckpoint: NavigationSessionCheckpoint?
@@ -2316,17 +2327,20 @@ final class WholeShutoProductModel: ObservableObject {
   ///
   /// A lap the plan does not contain cannot be conjured: `RoutePlan` is
   /// immutable and hash-bound, and its occurrences are laid down one lap at a
-  /// time. So this plans the route again with one more lap, builds its own
-  /// release, and swaps the drive onto it. The car is already on the road, so
-  /// the new session enters through the same driver-declared join that a drive
-  /// started mid-route uses — the matcher still has to place the car itself.
+  /// time. So this plans the route again with one more lap and builds its own
+  /// release. The new plan repeats the current one up to where the car is, so
+  /// its session starts on the strict route at that same occurrence, carrying
+  /// what was driven, skipped and spoken.
   ///
-  /// The current drive keeps running throughout. Nothing is swapped until the
-  /// new release is built and valid, and a failure leaves the drive untouched.
+  /// The current drive keeps running and guiding throughout. The swap waits
+  /// until the new session has placed the car itself, and is dropped if the
+  /// drive leaves the road the two plans share first. Returns whether the
+  /// swap is under way.
   @discardableResult
   func addOneLap() async -> Bool {
     guard isLiveDrive, !isChangingLaps,
       phase == .expressway,
+      runtimeJourneyPhase == .strictRoute,
       let circuit = selectedCircuit,
       circuit.kind == .loop,
       let route = selectedRoute,
@@ -2338,7 +2352,6 @@ final class WholeShutoProductModel: ObservableObject {
       return false
     }
     isChangingLaps = true
-    defer { isChangingLaps = false }
 
     let laps = circuitLaps + 1
     let database = database
@@ -2350,7 +2363,6 @@ final class WholeShutoProductModel: ObservableObject {
         ShutoPlannedRoute,
         WholeShutoLiveJourneyAdmission,
         ShutoPlannedRouteRuntimeAssets,
-        KaidoProductNavigationRuntime,
         [WholeShutoJunctionPrompt],
         ShutoPlannedRoute
       )? in
@@ -2377,26 +2389,28 @@ final class WholeShutoProductModel: ObservableObject {
         guard assets.routePlan == admission.core.selectedRoutePlan else {
           return nil
         }
-        let runtime = try admission.core.makeRuntime()
         let prompts = Self.compileJunctionPrompts(
           database: database,
           route: extended,
           releasedContext: planner.releasedMovementContext
         )
-        return (extended, admission, assets, runtime, prompts, base)
+        return (extended, admission, assets, prompts, base)
       } catch {
         return nil
       }
     }.value
 
-    // The drive kept moving while that was built. Only swap if it is still
-    // the same drive on the same route.
+    // The drive kept moving while that was built. Only prepare the swap if
+    // it is still the same drive on the same route.
     guard let prepared,
       isLiveDrive,
       phase == .expressway,
       selectedRoute == route,
-      circuitLaps == laps - 1
+      circuitLaps == laps - 1,
+      let session = liveDriveSession,
+      let currentAdmission = activeLiveAdmission
     else {
+      isChangingLaps = false
       if prepared == nil {
         failureCode = Self.lapChangeUnavailableCode
       }
@@ -2404,77 +2418,159 @@ final class WholeShutoProductModel: ObservableObject {
     }
 
     do {
-      let session = try ShutoLiveDriveSession(runtime: prepared.3)
-      let entryAdapter = try CoreLocationEntryTransitionAdapter(
-        context: session.entryTransitionAdmissionContext
+      let checkpoint = try await session.makeCheckpoint(
+        savedAtMilliseconds: nowMillisecondsProvider()
       )
-      let egressAdapter = try session.surfaceEgressAdmissionContext.map {
-        try CoreLocationSurfaceEgressAdapter(context: $0)
+      let carried = try checkpoint.carried(
+        from: currentAdmission.core.release,
+        onto: prepared.1.core.release,
+        journeyPlan: prepared.1.core.journeyPlan
+      )
+      let newSession = try ShutoLiveDriveSession(
+        runtime: try prepared.1.core.makeRuntime(checkpoint: carried)
+      )
+      _ = await newSession.start()
+      guard liveDriveSession === session else {
+        isChangingLaps = false
+        return false
       }
-      let observationAdapter = try CoreLocationObservationAdapter(
-        sessionID: prepared.1.core.release.releaseID,
-        simulatedLocationPolicy: .reject,
-        carPlayConnectionContext: .disconnected,
-        sourceEvidenceProvider: liveLocationSourceEvidenceProvider
-      )
-
-      circuitRecommendation = ShutoRouteRecommendation(
+      let currentOccurrences = route.routePlan.occurrences
+      let newOccurrences = prepared.0.routePlan.occurrences
+      pendingLapSwap = PendingLapSwap(
+        replacing: session,
+        session: newSession,
         route: prepared.0,
-        surfaceAccessDistanceMeters: previousRecommendation
-          .surfaceAccessDistanceMeters,
-        surfaceEgressDistanceMeters: previousRecommendation
-          .surfaceEgressDistanceMeters,
-        totalScoreMeters: previousRecommendation.totalScoreMeters
+        baseRoute: prepared.4,
+        admission: prepared.1,
+        assets: prepared.2,
+        prompts: prepared.3,
+        laps: laps,
+        parkingStopIDs: stopIDs,
+        recommendation: ShutoRouteRecommendation(
+          route: prepared.0,
+          surfaceAccessDistanceMeters: previousRecommendation
+            .surfaceAccessDistanceMeters,
+          surfaceEgressDistanceMeters: previousRecommendation
+            .surfaceEgressDistanceMeters,
+          totalScoreMeters: previousRecommendation.totalScoreMeters
+        ),
+        entryAdapter: try CoreLocationEntryTransitionAdapter(
+          context: newSession.entryTransitionAdmissionContext
+        ),
+        egressAdapter: try newSession.surfaceEgressAdmissionContext.map {
+          try CoreLocationSurfaceEgressAdapter(context: $0)
+        },
+        observationAdapter: try CoreLocationObservationAdapter(
+          sessionID: prepared.1.core.release.releaseID,
+          simulatedLocationPolicy: .reject,
+          carPlayConnectionContext: .disconnected,
+          sourceEvidenceProvider: liveLocationSourceEvidenceProvider
+        ),
+        sharedOccurrenceCount: zip(currentOccurrences, newOccurrences)
+          .prefix { $0 == $1 }.count
       )
-      parkingStopSelection = stopIDs.isEmpty ? nil : .init(baseRoutePlan: prepared.5.routePlan, parkingAreaIDs: stopIDs)
-      selectedSavedRouteTemplateParameters = nil
-      circuitLaps = laps
-      runtimeAssets = prepared.2
-      liveDriveSession = session
-      liveEntryTransitionAdapter = entryAdapter
-      liveSurfaceEgressAdapter = egressAdapter
-      liveObservationAdapter = observationAdapter
-      activeLiveAdmission = prepared.1
-      junctionPromptCache = prepared.4
-      junctionPromptCacheRoutePlan = prepared.0.routePlan
-      try configureSpeech(for: prepared.0.routePlan.id)
-
-      // The car is on the expressway, not approaching an entrance, so the
-      // new session opens at the entry boundary and joins from where the
-      // matcher finds it rather than replaying a surface leg.
-      phase = .entryTransition
-      progressFraction = 0
-      matcherConfidence = .low
-      runtimeOccurrenceID = nil
-      runtimeJourneyPhase = nil
-      runtimeRecoveryStatus = nil
-      runtimeRecoveryTargetOccurrenceID = nil
-      runtimeRecoveryDirectedEdgeID = nil
-      runtimeFractionAlongOccurrence = nil
-      liveMatcherWasInTunnel = false
-      clearTunnelEstimate()
-      presentationProjection = nil
-      consumedGuidancePromptIDs = []
-      isStaticJunctionPreview = false
-      failureCode = nil
-      // The drive record is the journey's, not the plan's: the laps already
-      // driven stay on it across the swap.
-      resetRouteJoinOffer()
-      remainingWholeLapsAhead = 0
-
-      let snapshot = await session.start()
-      applyLiveActorSnapshot(snapshot)
-      _ = await session.declareAlreadyOnRoute(
-        atMilliseconds: nowMillisecondsProvider()
-      )
-      routeJoinState = .resolving
-      await captureAndPersistLiveCheckpoint(from: session, force: true)
-      persistCheckpoint()
       return true
     } catch {
+      isChangingLaps = false
       failureCode = Self.lapChangeUnavailableCode
       return false
     }
+  }
+
+  /// A lap added mid-drive, waiting for its own session to place the car on
+  /// the plan the current drive shares with it.
+  private struct PendingLapSwap {
+    let replacing: ShutoLiveDriveSession
+    let session: ShutoLiveDriveSession
+    let route: ShutoPlannedRoute
+    let baseRoute: ShutoPlannedRoute
+    let admission: WholeShutoLiveJourneyAdmission
+    let assets: ShutoPlannedRouteRuntimeAssets
+    let prompts: [WholeShutoJunctionPrompt]
+    let laps: Int
+    let parkingStopIDs: [String]
+    let recommendation: ShutoRouteRecommendation
+    let entryAdapter: CoreLocationEntryTransitionAdapter
+    let egressAdapter: CoreLocationSurfaceEgressAdapter?
+    let observationAdapter: CoreLocationObservationAdapter
+    /// Leading occurrences the two plans have in common. Past them the car
+    /// is on a road only the current plan drives.
+    let sharedOccurrenceCount: Int
+  }
+
+  /// Feeds a pending lap swap the fix the current drive just took, and moves
+  /// the drive onto it once its session has placed the car. The swap is
+  /// dropped once the current drive leaves the shared road or the strict
+  /// route. Returns whether the drive moved onto the new lap count.
+  private func advanceLapSwap(
+    _ pending: PendingLapSwap,
+    with observation: RouteMatcherObservation,
+    driving snapshot: NavigationSnapshot
+  ) async -> Bool {
+    guard snapshot.journeyPhase == .strictRoute else {
+      // Off the strict route the drive's own notice is what the driver
+      // needs; the lap is moot and speaking it would cut that notice off.
+      dropLapSwap(spoken: false)
+      return false
+    }
+    guard (snapshot.currentOccurrenceIndex ?? 0) < pending.sharedOccurrenceCount
+    else {
+      dropLapSwap(spoken: true)
+      return false
+    }
+    do {
+      let update = try await pending.session.observe(observation)
+      guard pendingLapSwap?.session === pending.session,
+        liveDriveSession === pending.replacing,
+        update.navigationSnapshot.journeyPhase == .strictRoute,
+        update.navigationSnapshot.signalReacquisitionStatus == .confirmed
+      else {
+        return false
+      }
+      try configureSpeech(for: pending.route.routePlan.id)
+      circuitRecommendation = pending.recommendation
+      parkingStopSelection =
+        pending.parkingStopIDs.isEmpty
+        ? nil
+        : .init(
+          baseRoutePlan: pending.baseRoute.routePlan,
+          parkingAreaIDs: pending.parkingStopIDs
+        )
+      selectedSavedRouteTemplateParameters = nil
+      circuitLaps = pending.laps
+      runtimeAssets = pending.assets
+      liveEntryTransitionAdapter = pending.entryAdapter
+      liveSurfaceEgressAdapter = pending.egressAdapter
+      liveObservationAdapter = pending.observationAdapter
+      activeLiveAdmission = pending.admission
+      junctionPromptCache = pending.prompts
+      junctionPromptCacheRoutePlan = pending.route.routePlan
+      // The drive record is the journey's, not the plan's: the laps already
+      // driven stay on it across the swap, and so do the cues already given.
+      liveDriveSession = pending.session
+      liveMatcherWasInTunnel = false
+      clearTunnelEstimate()
+      presentationProjection = nil
+      failureCode = nil
+      applyNavigationUpdate(update)
+      await refreshRemainingLaps(from: pending.session)
+      await captureAndPersistLiveCheckpoint(from: pending.session, force: true)
+      persistCheckpoint()
+      return true
+    } catch {
+      dropLapSwap(spoken: true)
+      return false
+    }
+  }
+
+  /// The driver was already told the lap is being added and may not be
+  /// looking at the screen, so a lap that is not added after all is spoken
+  /// unless the drive has more pressing news of its own.
+  private func dropLapSwap(spoken: Bool) {
+    pendingLapSwap = nil
+    isChangingLaps = false
+    failureCode = Self.lapChangeUnavailableCode
+    if spoken { announceJourneyNotice(.lapNotAdded) }
   }
 
   private func refreshRemainingLaps(from session: ShutoLiveDriveSession) async {
@@ -4288,6 +4384,15 @@ final class WholeShutoProductModel: ObservableObject {
           from: update,
           atMilliseconds: observation.receivedAtMilliseconds
         )
+        if let pendingLapSwap,
+          await advanceLapSwap(
+            pendingLapSwap,
+            with: observation,
+            driving: update.navigationSnapshot
+          )
+        {
+          return
+        }
         // The session recognises the exit from where the car went.
         if update.navigationSnapshot.journeyPhase == .exitTransition {
           applyLiveActorSnapshot(update.navigationSnapshot)

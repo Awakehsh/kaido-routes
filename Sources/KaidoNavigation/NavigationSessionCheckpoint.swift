@@ -21,6 +21,7 @@ public enum NavigationSessionCheckpointIssue: Equatable, Hashable, Sendable {
   case invalidEgressState
   case journeyPlanPhaseMismatch
   case destinationRerouteUsed
+  case routePlanDiverges
 
   public var code: String {
     switch self {
@@ -62,6 +63,8 @@ public enum NavigationSessionCheckpointIssue: Equatable, Hashable, Sendable {
       "CHECKPOINT_JOURNEY_PLAN_PHASE_MISMATCH"
     case .destinationRerouteUsed:
       "CHECKPOINT_DESTINATION_REROUTE_FORBIDDEN"
+    case .routePlanDiverges:
+      "CHECKPOINT_ROUTE_PLAN_DIVERGES"
     }
   }
 
@@ -446,6 +449,76 @@ extension NavigationSessionCheckpoint {
     snapshot.finishConfirmationExitFacilityID =
       state.finishConfirmationExitFacilityID
     return snapshot
+  }
+
+  /// The same drive carried onto `target`, whose plan repeats this one
+  /// occurrence for occurrence up to the current position — the plan a lap
+  /// added mid-drive produces. Position, skipped occurrences and the cues
+  /// already given carry over unchanged; a cue the target does not release is
+  /// dropped. Only a drive on the strict route, with no recovery or exit
+  /// under way, can be carried: anything else would move the car somewhere
+  /// the target plan has not proven it is.
+  public func carried(
+    from release: KaidoProductRelease,
+    onto target: KaidoProductRelease,
+    journeyPlan: JourneyPlan
+  ) throws -> NavigationSessionCheckpoint {
+    guard productReleaseID == release.releaseID,
+      routePlanID == release.navigation.bundle.routePlan.id
+    else {
+      throw NavigationSessionCheckpointError.invalid([.identityMismatch("product_release_id")])
+    }
+    guard state.journeyPhase == .strictRoute,
+      state.recovery.status == .inactive,
+      state.egress.status == .inactive
+    else {
+      throw NavigationSessionCheckpointError.invalid([.journeyPlanPhaseMismatch])
+    }
+    let occurrences = release.navigation.bundle.routePlan.occurrences
+    let targetOccurrences = target.navigation.bundle.routePlan.occurrences
+    guard let currentOccurrenceID = state.currentOccurrenceID,
+      let current = occurrences.firstIndex(where: { $0.id == currentOccurrenceID }),
+      current < targetOccurrences.count,
+      Array(occurrences[...current]) == Array(targetOccurrences[...current])
+    else {
+      throw NavigationSessionCheckpointError.invalid([.routePlanDiverges])
+    }
+    let targetPromptIDs = Set(target.navigation.bundle.releasedGuidance.map(\.anchor.promptID))
+    let emittedPromptIDs = state.emittedGuidancePromptIDs.filter(targetPromptIDs.contains)
+    let targetBundle = target.navigation.bundle
+    let carried = NavigationSessionCheckpoint(
+      productReleaseID: target.releaseID,
+      navigationReleaseID: target.navigation.releaseID,
+      journeyPlanID: journeyPlan.id,
+      runtimePolicyID: targetBundle.runtimePolicy.id,
+      networkSnapshotID: targetBundle.networkSnapshot.id,
+      routePlanID: targetBundle.routePlan.id,
+      matcherCorridorID: targetBundle.matcherCorridor.id,
+      savedAtMilliseconds: savedAtMilliseconds,
+      state: NavigationSessionCheckpointState(
+        journeyPhase: state.journeyPhase,
+        lastPhaseTransitionTrigger: state.lastPhaseTransitionTrigger,
+        activeRoutePlanID: targetBundle.routePlan.id,
+        currentOccurrenceID: currentOccurrenceID,
+        skippedOccurrenceIDs: state.skippedOccurrenceIDs,
+        strictRouteAutoCommitAllowed: state.strictRouteAutoCommitAllowed,
+        routeExecutable: state.routeExecutable,
+        routeWarnings: state.routeWarnings,
+        routeBlockingReasons: state.routeBlockingReasons,
+        routeBlockingOccurrenceIDs: state.routeBlockingOccurrenceIDs,
+        lastGuidanceProgressAtMilliseconds: state.lastGuidanceProgressAtMilliseconds,
+        emittedGuidancePromptIDs: emittedPromptIDs,
+        lastGuidancePromptID: emittedPromptIDs.last,
+        prohibitedGuidanceActions: state.prohibitedGuidanceActions,
+        requiresRouteEditingWhileMoving: state.requiresRouteEditingWhileMoving,
+        showsEntryRouteShieldAndDirection: state.showsEntryRouteShieldAndDirection
+      )
+    )
+    let issues = carried.validationIssues(for: target, journeyPlan: journeyPlan)
+    guard issues.isEmpty else {
+      throw NavigationSessionCheckpointError.invalid(issues)
+    }
+    return carried
   }
 
   package var requiresMatcherReacquisition: Bool {

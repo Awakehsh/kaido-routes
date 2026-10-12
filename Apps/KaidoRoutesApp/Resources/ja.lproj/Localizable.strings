@@ -18,7 +18,7 @@
 "No current direction is ready to repeat." = "繰り返せる現在の案内はありません。";
 "Guidance is muted. Navigation continues." = "音声案内を消音しました。ナビは継続します。";
 "Guidance is on." = "音声案内を再開しました。";
-"One lap added." = "1周追加しました。";
+"Adding one lap." = "1周追加しています。";
 "A lap cannot be added at the current position." = "現在の位置では周回を追加できません。";
 "One lap removed." = "1周減らしました。";
 "There is no complete remaining lap to remove." = "減らせる残りの周回はありません。";

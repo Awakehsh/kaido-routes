@@ -58,11 +58,8 @@
       let asked = try #require(
         plan.occurrences.first { $0.index == outcome.fromOccurrenceIndex }
       )
-      // Admitted progress may already have left the PA when the driver asks;
-      // only a request made inside it must be refused.
-      if asked.kind == .paVisit {
-        #expect(outcome.landedOccurrenceID == nil)
-      }
+      #expect(asked.kind == .paVisit)
+      #expect(outcome.landedOccurrenceID == nil)
       #expect(run.wrongCommitCount() == 0)
     }
 

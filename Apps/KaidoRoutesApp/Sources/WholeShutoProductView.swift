@@ -3033,7 +3033,7 @@ struct WholeShutoProductView: View {
       .foregroundStyle(KaidoInk.accentClay)
       .accessibilityElement(children: .combine)
       .accessibilityIdentifier("whole-shuto-driving-failure")
-      .accessibilityValue(failureCode)
+      .kaidoAccessibilityValue(code: failureCode)
     }
   }
 

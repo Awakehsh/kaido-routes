@@ -66,7 +66,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let c2 = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07"
+          == "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07"
       }
     )
     XCTAssertEqual(
@@ -75,13 +75,13 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       c2.release.navigation.bundle.routePlan.exitFacilityID,
-      "shuto.ic.s1.shikahamabashi"
+      "shuto.ic.5.itabashihoncho"
     )
     XCTAssertEqual(
       c2.release.navigation.bundle.routePlan.occurrences.count,
-      2_196
+      1_221
     )
-    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 48)
+    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 26)
     XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
 
     let daikoku = try XCTUnwrap(
@@ -102,7 +102,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
-      14
+      17
     )
     XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
 
@@ -120,11 +120,11 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertEqual(scenic.release.navigation.bundle.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
     XCTAssertEqual(
       scenic.release.navigation.bundle.routePlan.occurrences.count,
-      849
+      852
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
-      17
+      20
     )
     XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }

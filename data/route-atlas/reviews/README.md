@@ -31,5 +31,36 @@ patch names its OSM way evidence and the pairing counts it must reach; replay
 it after the parking reviews with `scripts/apply_facility_candidate_patch.py`,
 which refuses an output whose patched facilities do not pair as reviewed.
 
+The 2026-10-12 facility closure review applies to the 2026-09-14 output (input
+SHA-256 is checked) and records the operator notice of 2026-07-17, with the
+two independent reports used to confirm it while the operator site refused
+scripted fetches: from 2026-10-18 23:00 the C1 新富町 exit is abolished in both
+directions and the 内回り 銀座 entrance closes for about three years. Each
+closure names the closed directions and the closed ramp edges; replay it
+with `scripts/apply_facility_closure_review.py`, which removes those directions,
+unbinds the closed ramps from every facility that had them as candidates, marks
+a facility left with no open direction `UNAVAILABLE`, and refuses a closure that
+would leave a neighbour without a ramp.
+
+The 2026-10-12 topology review applies to the closure output (input SHA-256 is
+checked). It restores carriageway ways the builder left outside the graph
+(Route 1 Haneda southbound's rebuilt section, the start of K3 at 本牧JCT),
+removes construction structures the builder admitted as motorway, and cuts
+the link chains OSM draws straight across a surface road from an exit into an
+entrance. `scripts/build_topology_review.py` reads each named way at the
+version current at the extract's timestamp and the surface roads at each
+crossing; replay with `scripts/apply_topology_review.py`, which refuses a
+restored chain that does not close a carriageway dead end or dead start, a
+removal that is not an admitted construction structure, and a cut that does
+not break the exit-to-entrance continuation it names.
+
+The 2026-10-12 facility candidate patch (schema 1.1) applies to the topology
+output and re-derives every facility's ramps, so that each ramp binds at most
+one interchange name; it also adds the 東銀座 exit and corrects the 大橋JCT
+node list and coordinate. Replay it last with
+`scripts/apply_facility_candidate_patch.py`. The audit exceptions in
+`data/network/shuto-network-audit-exceptions.json` are bound to its output's
+`database_id`.
+
 Source review establishes the recorded static path, not current opening status,
 field accuracy or navigation admission for an arbitrary route.

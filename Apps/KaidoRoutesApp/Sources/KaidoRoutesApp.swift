@@ -10,6 +10,11 @@ import SwiftUI
 struct KaidoRoutesApp: App {
   init() {
     KaidoDriveShortcuts.updateAppShortcutParameters()
+    // The journey checkpoint moved to a file; a pre-launch value left here
+    // would otherwise be loaded with the app's preferences on every launch.
+    UserDefaults.standard.removeObject(
+      forKey: "app.kaidoroutes.whole-shuto.journey-checkpoint"
+    )
     #if DEBUG
       if ProcessInfo.processInfo.arguments.contains(
         "-RESET-NAVIGATION-CHECKPOINT"
@@ -19,7 +24,7 @@ struct KaidoRoutesApp: App {
             .remove()
           try FileC2NavigationSimulationCheckpointStore.applicationSupport()
             .remove()
-          try WholeShutoUserDefaultsCheckpointStore().remove()
+          try WholeShutoFileCheckpointStore().remove()
         } catch {
           preconditionFailure(
             "Failed to reset E2E navigation checkpoint: \(error)"
@@ -29,10 +34,18 @@ struct KaidoRoutesApp: App {
       if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-CORRUPT-CHECKPOINT"
       ) {
-        UserDefaults.standard.set(
-          Data("not-a-checkpoint".utf8),
-          forKey: WholeShutoUserDefaultsCheckpointStore.key
-        )
+        let url = WholeShutoFileCheckpointStore.defaultFileURL
+        do {
+          try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+          )
+          try Data("not-a-checkpoint".utf8).write(to: url)
+        } catch {
+          preconditionFailure(
+            "Failed to write E2E corrupt checkpoint: \(error)"
+          )
+        }
       }
       if ProcessInfo.processInfo.arguments.contains(
         "-RESET-SAVED-ROUTES"
@@ -662,8 +675,7 @@ private struct WholeShutoUnavailableSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     nil
   }

@@ -452,7 +452,7 @@ struct ShutoJunctionGuidanceTests {
     let route = try ShutoRoutePlanner(database: database).planCircuit(
       circuit: .c1Outer,
       entryFacilityID: "shuto.ic.c1.kyoubashi",
-      exitFacilityID: "shuto.ic.c1.shintomicho",
+      exitFacilityID: "shuto.ic.c1.ginza",
       laps: 1
     )
 
@@ -2662,8 +2662,11 @@ struct ShutoJunctionGuidanceTests {
       )
     )
 
+    // 東扇島's own 東行き entrance now reaches 空港中央 directly, so the
+    // pair that once turned back through K6 no longer exercises it; 殿町
+    // leaves K6 for the Bayshore eastbound.
     let route = try ShutoRoutePlanner(database: database).plan(
-      entryFacilityID: "shuto.ic.b.higashiogishima",
+      entryFacilityID: "shuto.ic.k6.tonomachi",
       exitFacilityID: "shuto.ic.b.kukouchuou"
     )
     let movementIDs = ShutoJunctionGuidanceCompiler.compile(

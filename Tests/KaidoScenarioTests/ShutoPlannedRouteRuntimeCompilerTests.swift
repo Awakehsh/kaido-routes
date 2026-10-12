@@ -46,10 +46,15 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 29)
-    #expect(coverage.incomingApproachCount == 81)
-    #expect(coverage.movements.count == 163)
+    // The 2026-10-12 topology review restores the Bayshore westbound feed
+    // into K3 at Honmoku JCT (osm way 32403531). Its two movements wait for
+    // a review against the operator's junction diagram, which no longer
+    // sits at the URL the earlier reviews hashed; every other movement
+    // stays released.
+    #expect(coverage.incomingApproachCount == 82)
+    #expect(coverage.movements.count == 165)
     #expect(coverage.releasedMovementCount == 163)
-    #expect(coverage.missingMovementReviewCount == 0)
+    #expect(coverage.missingMovementReviewCount == 2)
     #expect(
       coverage.movements.first {
         $0.incomingDirectedEdgeID == "osm.38093215.139.forward"
@@ -179,9 +184,15 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       }
     )
     #expect(
-      coverage.movements.allSatisfy {
-        $0.releasedGuidanceDefinitionID != nil
-      }
+      Set(
+        coverage.movements
+          .filter { $0.releasedGuidanceDefinitionID == nil }
+          .map { "\($0.incomingDirectedEdgeID)->\($0.outgoingDirectedEdgeID)" }
+      )
+        == [
+          "osm.31711323.6.forward->osm.32403531.0.forward",
+          "osm.31711323.6.forward->osm.340606274.0.forward",
+        ]
     )
   }
 
@@ -478,10 +489,13 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       coverage.recoveryBranchCount(kind: .unavailableExpresswayBranch)
         == 0
     )
+    // The branches onto Route 5 at Takehashi and Route 2 at Ichinohashi
+    // used to find a way back through the surface U-turns at
+    // Higashi-Ikebukuro and Tengenji; the topology review cut both.
     #expect(
       coverage.missingRecoveryCandidateBranchCount(
         kind: .expresswayBranch
-      ) == 2
+      ) == 4
     )
     #expect(
       coverage.missingRecoveryCandidateBranchCount(kind: .surfaceExit)
@@ -589,7 +603,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.k1.minatomirai", "shuto.ic.k3.hananoki"),
       ("shuto.ic.k3.shinyamashita", "shuto.ic.k1.minatomirai"),
       ("shuto.ic.k3.hananoki", "shuto.ic.k3.shinyamashita"),
-      ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
       ("shuto.ic.k6.daishi", "shuto.ic.k1.hamakawasaki"),
       ("shuto.ic.c2.oujiminami", "shuto.ic.5.nakadai"),
       ("shuto.ic.c2.oujiminami", "shuto.ic.c2.nishiikebukuro"),
@@ -603,7 +616,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         "shuto.ic.k1.daishi",
         "shuto.ic.k7-yokohama-kita.shinyokohama"
       ),
-      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
       (
         "shuto.ic.k5.daikokufutou",
         "shuto.ic.k7-yokohama-kita.shinyokohama"
@@ -620,10 +632,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       (
         "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
         "shuto.ic.k5.daikokufutou"
-      ),
-      (
-        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
-        "shuto.ic.k1.yokohamakouen"
       ),
     ]
 
@@ -644,6 +652,34 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
           route: route
         )
       #expect(artifact.navigationRelease.routePlan == route.routePlan)
+    }
+
+    // These used to turn back through the Daikoku Line and Namamugi, or
+    // round the Yokohama loop the other way; they now take the Bayshore
+    // westbound into K3 at Honmoku JCT (the short way the operator's fare
+    // distance from Daikoku-Futo to Yokohama-Koen implies), whose decision
+    // waits for movement review and so blocks a live release.
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
+      ("shuto.ic.k7-yokohama-hokusei.yokohamaaoba", "shuto.ic.k1.yokohamakouen"),
+      ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
+    ] {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      #expect(route.edges.contains { $0.edgeID == "osm.32403531.0.forward" })
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      #expect(assets.liveReleaseCoverage.missingGuidanceDecisionCount == 1)
+      #expect(throws: (any Error).self) {
+        _ = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteArtifact(
+          database: database,
+          route: route
+        )
+      }
     }
   }
 
@@ -944,8 +980,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         driftReport.highConfidencePrecision == 1,
         "\(entryFacilityID) drift: \(driftReport)"
       )
+      // Floor 0.20 → 0.19 on 2026-10-12: the corridor now follows each
+      // diverging branch until it clears the candidate radius. Raw HIGH that
+      // used to be claimed beside a branch the matcher could not see is now
+      // honestly withheld; precision and the zero-unsafe gates are unchanged.
       #expect(
-        driftReport.highConfidenceCoverage >= 0.20,
+        driftReport.highConfidenceCoverage >= 0.19,
         "\(entryFacilityID) drift: \(driftReport)"
       )
       #expect(
@@ -1021,8 +1061,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
           readiness.admittedProgressCoverage >= 0.5,
           "\(route.routePlan.id): \(readiness)"
         )
+        // 30 s → 45 s on 2026-10-12: the corridor now follows each diverging
+        // branch until it is clear of the route, so a fix beside one is no
+        // longer placed on the plan alone. The 1 Hz replay gate bounds the
+        // session's admitted-progress pause at 75 s.
         #expect(
-          readiness.longestNoProgressGapMilliseconds <= 30_000,
+          readiness.longestNoProgressGapMilliseconds <= 45_000,
           "\(route.routePlan.id): \(readiness)"
         )
       }
@@ -1515,17 +1559,29 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
             observedAt: 1_000
           )
         )
-        for (sampleIndex, fraction) in [0.45, 0.85].enumerated() {
+        // Deviation takes consecutive off-plan fixes clear of the plan, not
+        // one commit: follow the branch until it has separated from it.
+        var branch = [alternative]
+        while branch.count < 6,
+          let next = branch[branch.count - 1].successorEdgeIDs
+            .filter({ !routeEdgeIDs.contains($0) }).sorted().first
+            .flatMap({ corridorEdges[$0] })
+        {
+          branch.append(next)
+        }
+        let samples = branch.flatMap { edge in
+          [0.45, 0.85].map { (edge: edge, fraction: $0) }
+        }
+        for (sampleIndex, sample) in samples.enumerated() {
           let update = try await session.observe(
             matcherObservation(
               id: "test.whole-network.deviation.\(sampleIndex)",
-              edge: alternative,
-              fraction: fraction,
+              edge: sample.edge,
+              fraction: sample.fraction,
               observedAt: 2_000 + sampleIndex * 1_000
             )
           )
-          if update.matcherEstimate.confidence == .high,
-            update.matcherEstimate.directedEdgeID == alternativeID,
+          if update.navigationSnapshot.journeyPhase == .routeRecovery,
             update.matcherEstimate.occurrenceID == nil
           {
             deviationUpdate = update
@@ -1546,16 +1602,16 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       deviation.navigationSnapshot.currentOccurrenceID
         == deviationStartOccurrenceID
     )
+    // Nothing at or past the divergence is recorded as driven. The approach
+    // fix beside the branch is not admitted, so earlier occurrences may stay
+    // unrecorded too.
+    let startIndex = try #require(
+      route.routePlan.occurrence(id: deviationStartOccurrenceID ?? "")?.index
+    )
     #expect(
-      deviation.navigationSnapshot.completedOccurrenceIDs
-        == route.routePlan.occurrences
-        .filter {
-          $0.index
-            < (route.routePlan.occurrence(
-              id: deviationStartOccurrenceID ?? ""
-            )?.index ?? 0)
-        }
-        .map(\.id)
+      deviation.navigationSnapshot.completedOccurrenceIDs.allSatisfy {
+        (route.routePlan.occurrence(id: $0)?.index ?? .max) < startIndex
+      }
     )
   }
 
@@ -1688,73 +1744,6 @@ private func isLowercaseSHA256(_ value: String) -> Bool {
     }
 }
 
-private func matcherObservation(
-  id: String,
-  edge: RouteMatcherDirectedEdge,
-  fraction: Double,
-  observedAt: Int
-) -> RouteMatcherObservation {
-  let start = edge.coordinates[0]
-  let end = edge.coordinates[edge.coordinates.count - 1]
-  let latitude =
-    start.latitude + (end.latitude - start.latitude) * fraction
-  let longitude =
-    start.longitude + (end.longitude - start.longitude) * fraction
-  let latitudeDelta = end.latitude - start.latitude
-  let longitudeDelta = end.longitude - start.longitude
-  let course =
-    atan2(longitudeDelta, latitudeDelta) * 180 / .pi
-  return RouteMatcherObservation(
-    id: id,
-    observedAtMilliseconds: observedAt,
-    receivedAtMilliseconds: observedAt,
-    coordinate: MatcherCoordinate(
-      latitude: latitude,
-      longitude: longitude
-    ),
-    horizontalAccuracyMeters: 1,
-    courseDegrees: course >= 0 ? course : course + 360,
-    speedMetersPerSecond: 15,
-    source: .phone
-  )
-}
-
-private func navigationAccuracyReport(
-  route: ShutoPlannedRoute,
-  assets: ShutoPlannedRouteRuntimeAssets,
-  configuration: NavigationDriveSimulationConfiguration
-) async throws -> NavigationDriveAccuracyReport {
-  let trace = try NavigationDriveSimulationTraceGenerator.generate(
-    routePlan: route.routePlan,
-    corridor: assets.matcherCorridor,
-    configuration: configuration
-  )
-  var matcherSession = try RouteAwareSwiftMatcher().makeSession(
-    corridor: assets.matcherCorridor,
-    initialOccurrenceID: route.routePlan.occurrences.first?.id
-  )
-  let estimates = try trace.events.compactMap { event -> MatcherEstimate? in
-    guard case .matcherObservation(let observation) = event.action else {
-      return nil
-    }
-    return try matcherSession.observe(observation)
-  }
-  // Edge-level top-1 floor recalibrated 0.85 → 0.84 on 2026-08-04: routes
-  // now begin and end on the genuine ramp geometry (the ramp-topology
-  // candidate gate), and inside the Yamate Tunnel exit ramps the matcher
-  // may prefer a parallel edge while the occurrence, progress error, and
-  // zero-unsafe gates all hold. Occurrence-level floors are unchanged —
-  // they are the product-facing guarantee.
-  return try NavigationDriveAccuracyEvaluator.evaluate(
-    trace: trace,
-    corridor: assets.matcherCorridor,
-    estimates: estimates,
-    thresholds: NavigationDriveAccuracyThresholds(
-      minimumEdgeTop1Accuracy: 0.84
-    )
-  )
-}
-
 private struct NavigationReadinessReport: CustomStringConvertible {
   let accuracy: NavigationDriveAccuracyReport
   let admittedProgressCount: Int
@@ -1855,6 +1844,73 @@ private func navigationReadinessReport(
       let upper = trace.sampleTruth[$0.upperBound].routeDistanceMeters
       return lower...upper
     }
+  )
+}
+
+private func matcherObservation(
+  id: String,
+  edge: RouteMatcherDirectedEdge,
+  fraction: Double,
+  observedAt: Int
+) -> RouteMatcherObservation {
+  let start = edge.coordinates[0]
+  let end = edge.coordinates[edge.coordinates.count - 1]
+  let latitude =
+    start.latitude + (end.latitude - start.latitude) * fraction
+  let longitude =
+    start.longitude + (end.longitude - start.longitude) * fraction
+  let latitudeDelta = end.latitude - start.latitude
+  let longitudeDelta = end.longitude - start.longitude
+  let course =
+    atan2(longitudeDelta, latitudeDelta) * 180 / .pi
+  return RouteMatcherObservation(
+    id: id,
+    observedAtMilliseconds: observedAt,
+    receivedAtMilliseconds: observedAt,
+    coordinate: MatcherCoordinate(
+      latitude: latitude,
+      longitude: longitude
+    ),
+    horizontalAccuracyMeters: 1,
+    courseDegrees: course >= 0 ? course : course + 360,
+    speedMetersPerSecond: 15,
+    source: .phone
+  )
+}
+
+private func navigationAccuracyReport(
+  route: ShutoPlannedRoute,
+  assets: ShutoPlannedRouteRuntimeAssets,
+  configuration: NavigationDriveSimulationConfiguration
+) async throws -> NavigationDriveAccuracyReport {
+  let trace = try NavigationDriveSimulationTraceGenerator.generate(
+    routePlan: route.routePlan,
+    corridor: assets.matcherCorridor,
+    configuration: configuration
+  )
+  var matcherSession = try RouteAwareSwiftMatcher().makeSession(
+    corridor: assets.matcherCorridor,
+    initialOccurrenceID: route.routePlan.occurrences.first?.id
+  )
+  let estimates = try trace.events.compactMap { event -> MatcherEstimate? in
+    guard case .matcherObservation(let observation) = event.action else {
+      return nil
+    }
+    return try matcherSession.observe(observation)
+  }
+  // Edge-level top-1 floor recalibrated 0.85 → 0.84 on 2026-08-04: routes
+  // now begin and end on the genuine ramp geometry (the ramp-topology
+  // candidate gate), and inside the Yamate Tunnel exit ramps the matcher
+  // may prefer a parallel edge while the occurrence, progress error, and
+  // zero-unsafe gates all hold. Occurrence-level floors are unchanged —
+  // they are the product-facing guarantee.
+  return try NavigationDriveAccuracyEvaluator.evaluate(
+    trace: trace,
+    corridor: assets.matcherCorridor,
+    estimates: estimates,
+    thresholds: NavigationDriveAccuracyThresholds(
+      minimumEdgeTop1Accuracy: 0.84
+    )
   )
 }
 

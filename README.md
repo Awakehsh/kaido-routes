@@ -128,13 +128,15 @@ Project code is Apache-2.0. The complete database under
 `data/route-atlas/osm-derived/` is an OpenStreetMap derivative distributed under
 ODbL 1.0 with `© OpenStreetMap contributors` attribution. The root licence does
 not relicense that database. [`DATA-LICENSES.md`](DATA-LICENSES.md) accompanies
-the bundled machine-readable database with its attribution, source and direct
-ODbL URI. The immutable bundled Route Atlas attribution
+the bundled machine-readable databases — the whole-Shuto snapshot and the route
+releases derived from it — with their attribution, source and direct ODbL URI.
+The immutable bundled Route Atlas attribution
 catalog remains bound to the retained K7 review bytes. The default
 `shuto-whole-network-20260804` surface independently validates the decoded
-snapshot's OSM attribution and ODbL metadata, then exposes fixed HTTPS source
-and licence links adjacent to the map; it does not rewrite or inherit the K7
-review.
+snapshot's OSM attribution and ODbL metadata, then shows a `© OpenStreetMap`
+credit in a corner of every map that draws the network, linked to the
+OpenStreetMap copyright page; Settings › About this map carries the full
+attribution and the ODbL text. It does not rewrite or inherit the K7 review.
 
 Raw coordinates and personal field traces must not be committed. See
 [PRIVACY.md](PRIVACY.md), the

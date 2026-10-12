@@ -202,7 +202,7 @@ struct ShutoCircuitPlannerTests {
     let route = try planner.planCircuit(
       circuit: .c1Outer,
       entryFacilityID: "shuto.ic.c1.kyoubashi",
-      exitFacilityID: "shuto.ic.c1.shintomicho",
+      exitFacilityID: "shuto.ic.c1.ginza",
       laps: 1
     )
 
@@ -212,7 +212,74 @@ struct ShutoCircuitPlannerTests {
     #expect(route.routeIDsInOrder.first == "C1")
     #expect(route.routeIDsInOrder.allSatisfy { $0 == "C1" })
     #expect(route.routePlan.entryFacilityID == "shuto.ic.c1.kyoubashi")
-    #expect(route.routePlan.exitFacilityID == "shuto.ic.c1.shintomicho")
+    #expect(route.routePlan.exitFacilityID == "shuto.ic.c1.ginza")
+  }
+
+  @Test("the closed inner 銀座 entrance is never the C1 inner start, and the outer one still is")
+  func honoursTheInnerGinzaEntranceClosure() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    // 482 m from 銀座, which the inner catalog recommended before the
+    // 2026-10-18 closure of its 内回り entrance.
+    let origin = ShutoCoordinate(latitude: 35.6717, longitude: 139.7650)
+
+    let inner = try planner.recommendedCircuitPairing(
+      for: .c1Inner,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    #expect(inner.entrance.facilityID != "shuto.ic.c1.ginza")
+    #expect(
+      !planner.circuitEntranceCandidates(for: .c1Inner, origin: origin)
+        .contains { $0.facilityID == "shuto.ic.c1.ginza" }
+    )
+    #expect(throws: ShutoNetworkError.facilityUnavailable) {
+      _ = try planner.planCircuit(
+        circuit: .c1Inner,
+        entryFacilityID: "shuto.ic.c1.ginza",
+        exitFacilityID: "shuto.ic.c1.shiodome",
+        laps: 1
+      )
+    }
+
+    let outer = try planner.recommendedCircuitPairing(
+      for: .c1Outer,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    #expect(outer.entrance.facilityID == "shuto.ic.c1.ginza")
+    let route = try planner.planCircuit(
+      circuit: .c1Outer,
+      entryFacilityID: "shuto.ic.c1.ginza",
+      exitFacilityID: outer.exit.facilityID,
+      laps: 1
+    )
+    #expect(route.edges.first?.edgeID != "osm.4848936.0.forward")
+    #expect(route.routeIDsInOrder.allSatisfy { $0 == "C1" })
+  }
+
+  @Test("the abolished 新富町 exit is never an exit of either C1 loop")
+  func honoursTheShintomichoExitAbolition() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    for (circuit, entrance) in [
+      (ShutoCircuitDefinition.c1Inner, "shuto.ic.c1.takaracho"),
+      (ShutoCircuitDefinition.c1Outer, "shuto.ic.c1.kyoubashi"),
+    ] {
+      let exits = try planner.circuitExitCandidates(
+        for: circuit,
+        afterEntering: entrance
+      )
+      #expect(!exits.isEmpty)
+      #expect(!exits.contains { $0.facilityID == "shuto.ic.c1.shintomicho" })
+      #expect(throws: ShutoNetworkError.facilityUnavailable) {
+        _ = try planner.planCircuit(
+          circuit: circuit,
+          entryFacilityID: entrance,
+          exitFacilityID: "shuto.ic.c1.shintomicho",
+          laps: 1
+        )
+      }
+    }
   }
 
   @Test("exit candidates rank by forward travel, not geodesic nearness")
@@ -243,15 +310,13 @@ struct ShutoCircuitPlannerTests {
     )
 
     #expect(!candidates.isEmpty)
-    // The nearest legal start is the Hatsudai radial entrance, which joins
-    // the inner loop through the all-directions Nishi-Shinjuku JCT; the
-    // loop's own Hatsudai-minami ramp ranks right behind it.
-    #expect(candidates.first?.facilityID == "shuto.ic.4.hatsudai")
-    #expect(
-      candidates.contains {
-        $0.facilityID == "shuto.ic.c2.hatsudaiminami"
-      }
-    )
+    // The nearest legal start is the loop's own Hatsudai-minami ramp. The
+    // Hatsudai radial entrance joins Route 4 down, past the Nishi-Shinjuku
+    // JCT split, so it cannot reach the loop: the operator prices it only
+    // to Hatagaya, Eifuku and Takaido. It used to qualify only because
+    // Hatagaya's up entrance was bound to it.
+    #expect(candidates.first?.facilityID == "shuto.ic.c2.hatsudaiminami")
+    #expect(!candidates.contains { $0.facilityID == "shuto.ic.4.hatsudai" })
     #expect(candidates.allSatisfy { $0.canEnter })
   }
 
@@ -332,7 +397,12 @@ struct ShutoCircuitPlannerTests {
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    // After the parking area the run rejoins the Bayshore westbound, and
+    // the next exit on it is Honmoku-Futo. The Daikoku-Futo exit ramp is
+    // reached from the Daikoku Line before the parking area; the Bayshore
+    // listing of Daikoku-Futo used to be bound to through-lane segments
+    // beside the parking area, which looked like an exit right after it.
+    #expect(pairing.exit.facilityID == "shuto.ic.b.honmakifutou")
 
     let route = try planner.planCircuit(
       circuit: .wanganDaikokuRun,
@@ -346,7 +416,7 @@ struct ShutoCircuitPlannerTests {
     #expect(route.distanceMeters < 45_000)
     #expect(assertContinuity(route.edges))
     // The run leaves the Bayshore for the Daikoku Line to reach the parking
-    // area, then comes back to it for the Daikoku-Futo exit.
+    // area, then comes back to it for the Honmoku-Futo exit.
     #expect(Array(route.routeIDsInOrder.suffix(3)) == ["B", "K5", "B"])
 
     // The parking area is the point of the run: it is driven, not passed.
@@ -358,7 +428,7 @@ struct ShutoCircuitPlannerTests {
     // Driving the parking area is inside the toll domain — the driver has
     // not exited — so the pairing the tariff is quoted for is untouched.
     #expect(parkingVisits.allSatisfy { $0.tollDomainID == "shuto.toll-domain" })
-    #expect(route.exitFacility?.facilityID == "shuto.ic.b.daikokufutou")
+    #expect(route.exitFacility?.facilityID == "shuto.ic.b.honmakifutou")
     // The visit is a contiguous run of occurrences, not scattered edges.
     let visitIndices = parkingVisits.map(\.index)
     #expect(zip(visitIndices, visitIndices.dropFirst()).allSatisfy { $0 + 1 == $1 })
@@ -410,11 +480,16 @@ struct ShutoCircuitPlannerTests {
       for: .daikokuYokohamaLoop,
       origin: origin
     )
-    // The Daikoku-Futo westbound entrance heads away from the cycle toward
-    // the Honmoku dead end; the closure gate must exclude it even though it
-    // is geodesically nearest.
+    // The operator lists Daikoku-Futo under the Bayshore and the Daikoku
+    // Line; both listings are one interchange whose single entrance ramp
+    // joins the Daikoku Line beside the PA. Whichever listing is offered,
+    // the drive starts on that ramp.
+    let daikokuFutoEntrances = entrances.filter { $0.nameJA == "大黒ふ頭" }
+    #expect(!daikokuFutoEntrances.isEmpty)
     #expect(
-      entrances.allSatisfy { $0.facilityID != "shuto.ic.b.daikokufutou" }
+      daikokuFutoEntrances.allSatisfy {
+        $0.entryEdgeCandidates.map(\.edgeID) == ["osm.32592469.0.forward"]
+      }
     )
 
     let pairing = try planner.recommendedCircuitPairing(
@@ -422,11 +497,15 @@ struct ShutoCircuitPlannerTests {
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    // The Daikoku Line entrance right beside the PA is on the cycle and
-    // geodesically nearest; the same-named Bayshore exit is never paired,
-    // so the fare-best exit is Namamugi just off the cycle — the quoted
-    // band never changes with lap count.
-    #expect(pairing.entrance.facilityID == "shuto.ic.k5.daikokufutou")
+    // The Daikoku-Futo entrance right beside the PA is on the cycle and
+    // geodesically nearest; the same-named exit is never paired, so the
+    // fare-best exit lies off the cycle — the quoted band never changes
+    // with lap count.
+    #expect(pairing.entrance.nameJA == "大黒ふ頭")
+    #expect(
+      pairing.entrance.entryEdgeCandidates.map(\.edgeID)
+        == ["osm.32592469.0.forward"]
+    )
     let entranceDistance = try #require(pairing.entranceDistanceMeters)
     #expect(
       ShutoEntranceAccessTier.classify(
@@ -469,7 +548,11 @@ struct ShutoCircuitPlannerTests {
       evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.10.harumi")
-    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    // After the parking area the tour rejoins the Bayshore eastbound and
+    // the first exit on it is Higashi-Ogishima. The Bayshore listing of
+    // Daikoku-Futo used to be bound to through-lane segments beside the
+    // parking area, which looked like an exit there.
+    #expect(pairing.exit.facilityID == "shuto.ic.b.higashiogishima")
 
     let route = try planner.planCircuit(
       circuit: .scenicGrandTour,
@@ -477,7 +560,8 @@ struct ShutoCircuitPlannerTests {
       exitFacilityID: pairing.exit.facilityID,
       laps: 1
     )
-    // Harumi past Haneda and Minato Mirai to Daikoku measures ~41 km.
+    // Harumi past Haneda and Minato Mirai to Daikoku and on to
+    // Higashi-Ogishima measures ~45 km.
     #expect(route.distanceMeters > 30_000)
     #expect(route.distanceMeters < 55_000)
     #expect(assertContinuity(route.edges))
@@ -495,18 +579,20 @@ struct ShutoCircuitPlannerTests {
   func plansShinjukuC1Excursion() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())
 
-    // Shinjuku station area: the radial entrance joins C1 for laps. The
-    // folklore Yoyogi pairing is NOT the answer — the operator fare search
-    // (checked 2026-08-04) prices Shinjuku to Yoyogi at ¥860 because the
-    // return radial is only reachable through a full circuit, so the
-    // honest cheapest exit is an onward C1 exit in the mid bands.
+    // Shinjuku station area: a Route 4 radial entrance joins C1 for laps —
+    // Gaien rather than the Shinjuku ramp beside the station, because it
+    // reaches C1 3 km sooner for 1 km more of surface street. The folklore
+    // Yoyogi pairing is NOT the answer — the operator fare search (checked
+    // 2026-08-04) prices Shinjuku to Yoyogi at ¥860 because the return
+    // radial is only reachable through a full circuit, so the honest
+    // cheapest exit is an onward C1 exit.
     let origin = ShutoCoordinate(latitude: 35.6896, longitude: 139.7006)
     let pairing = try planner.recommendedCircuitPairing(
       for: .c1Inner,
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    #expect(pairing.entrance.facilityID == "shuto.ic.4.shinjuku")
+    #expect(pairing.entrance.facilityID == "shuto.ic.4.gaien")
     #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
     let band = try #require(pairing.tariffBand)
     #expect(band.quotedYen < 700)
@@ -523,6 +609,135 @@ struct ShutoCircuitPlannerTests {
     // Radial approach + two C1 laps + exit tail.
     #expect(route.distanceMeters > 30_000)
     #expect(route.distanceMeters < 60_000)
+  }
+
+  @Test(
+    "a ramp beside the origin never wins on a long off-course approach",
+    arguments: [
+      // 鈴ヶ森 is nearer, but drives 17.6 km of Route 1 and C1 before the
+      // Bayshore westbound begins; 大井南 is already on it.
+      (35.5308, 139.7029, ShutoCircuitDefinition.wanganDaikokuRun,
+       "shuto.ic.b.ooiminami", "shuto.ic.1-haneda.suzugamori", 30_000.0),
+      // 北池袋 reaches C2 only after 17 km of Route 5 and C1.
+      (35.7295, 139.7109, ShutoCircuitDefinition.c2InnerWithBayshore,
+       "shuto.ic.c2.nishiikebukuro", "shuto.ic.5.kitaikebukuro", 70_000.0),
+      // 芝浦 reaches the Daikoku loop only after 30 km of Route 1 and the
+      // Bayshore; 殿町 is on the loop.
+      (35.655, 139.7964, ShutoCircuitDefinition.daikokuYokohamaLoop,
+       "shuto.ic.k6.tonomachi", "shuto.ic.1-haneda.shibaura", 55_000.0),
+      // 勝島 reaches C1 only after 49 km: south to the Bayshore and back.
+      (35.6, 139.743, ShutoCircuitDefinition.c1Inner,
+       "shuto.ic.c2.chukanooiminami", "shuto.ic.1-haneda.katsushima", 25_000.0),
+    ]
+  )
+  func ranksEntrancesByTheDriveToTheCourse(
+    latitude: Double,
+    longitude: Double,
+    circuit: ShutoCircuitDefinition,
+    expectedEntranceID: String,
+    nearerEntranceID: String,
+    maximumMeters: Double
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let origin = ShutoCoordinate(latitude: latitude, longitude: longitude)
+    let candidates = planner.circuitEntranceCandidates(for: circuit, origin: origin)
+    // The nearer ramp stays a legal alternative; it just is not first.
+    #expect(candidates.contains { $0.facilityID == nearerEntranceID })
+    #expect(candidates.first?.facilityID == expectedEntranceID)
+
+    let pairing = try planner.recommendedCircuitPairing(
+      for: circuit,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    let route = try planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+    #expect(route.distanceMeters < maximumMeters)
+  }
+
+  @Test(
+    "a recommended loop joins without a long detour and leaves soon after its final lap",
+    arguments: [
+      // Tokyo Station, Kinshicho and Oi used to quote one C2 lap at 124, 126
+      // and 166 km: the minimum band for an exit back beside the entrance,
+      // which the final lap had just passed. 王子南 drove 111 km the same
+      // way; Oi's C1 approach was 49 km long.
+      ("Tokyo Station", 35.6812, 139.7671), ("Shinjuku", 35.69, 139.7003),
+      ("Oji-minami", 35.755249, 139.742524), ("Kinshicho", 35.6969, 139.8146),
+      ("Oi", 35.6, 139.743), ("Kawasaki", 35.5308, 139.7029),
+    ],
+    [
+      ShutoCircuitDefinition.c1Inner,
+      ShutoCircuitDefinition.c1Outer,
+      ShutoCircuitDefinition.c2InnerWithBayshore,
+    ]
+  )
+  func boundsRecommendedLoopDetours(
+    origin: (name: String, latitude: Double, longitude: Double),
+    circuit: ShutoCircuitDefinition
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let coordinate = ShutoCoordinate(
+      latitude: origin.latitude,
+      longitude: origin.longitude
+    )
+    func pairing(
+      includeConnectingEntrances: Bool
+    ) throws -> ShutoCircuitPairing {
+      let entrance = try #require(
+        planner.circuitEntranceCandidates(
+          for: circuit,
+          origin: coordinate,
+          includeConnectingEntrances: includeConnectingEntrances
+        ).first
+      )
+      return try planner.recommendedCircuitPairing(
+        for: circuit,
+        entranceFacilityID: entrance.facilityID,
+        origin: coordinate,
+        evidence: .etcNormalCarUntil2026September
+      )
+    }
+    func approachAndTail(
+      _ entryFacilityID: String,
+      _ exitFacilityID: String
+    ) throws -> (approach: Double, tail: Double) {
+      let route = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        laps: 1
+      )
+      let marks = route.lapBoundaryOccurrenceIndices
+      let first = try #require(marks.first)
+      let last = try #require(marks.last)
+      return (
+        route.edges[..<first].reduce(0) { $0 + $1.lengthMeters },
+        route.edges[last...].reduce(0) { $0 + $1.lengthMeters }
+      )
+    }
+    let ownRamp = try pairing(includeConnectingEntrances: false)
+    let ownRampDistance = try #require(ownRamp.entranceDistanceMeters)
+    for recommended in [ownRamp, try pairing(includeConnectingEntrances: true)] {
+      let entryID = recommended.entrance.facilityID
+      let soonest = try #require(
+        planner.circuitExitCandidates(for: circuit, afterEntering: entryID).first
+      )
+      let drive = try approachAndTail(entryID, recommended.exit.facilityID)
+      let label = "\(origin.name): \(entryID) → \(recommended.exit.facilityID)"
+      // An expressway approach at most twice the straight line to the
+      // course's own nearest ramp: it has to save surface driving.
+      #expect(drive.approach <= 2 * ownRampDistance + 1_000, "\(label)")
+      // At most one ramp spacing past the first forward exit.
+      #expect(
+        drive.tail <= (try approachAndTail(entryID, soonest.facilityID)).tail + 3_000,
+        "\(label)"
+      )
+    }
   }
 
   @Test("a distant origin retains a direction-valid surface access candidate")
@@ -577,11 +792,19 @@ struct ShutoCircuitPlannerTests {
     let planner = try ShutoRoutePlanner(database: database)
     let exits = database.directionalFacilities.filter(\.canExit)
     let entrances = database.directionalFacilities.filter(\.canEnter)
-    let sampledEntrances = stride(from: 0, to: entrances.count, by: 34)
-      .map { entrances[$0] }
+    // The sample always holds the ramps that share a toll point with a
+    // differently identified ramp, alongside the stride.
+    let sharedTollPointEntrances = entrances.filter { entrance in
+      exits.contains {
+        $0.nameJA == entrance.nameJA && $0.facilityID != entrance.facilityID
+      }
+    }
+    let sampledEntrances =
+      stride(from: 0, to: entrances.count, by: 34).map { entrances[$0] }
+      + sharedTollPointEntrances
     let sampledExits = stride(from: 0, to: exits.count, by: 5)
       .map { exits[$0] }
-    #expect(sampledEntrances.count >= 4 && sampledExits.count >= 25)
+    #expect(sampledEntrances.count >= 8 && sampledExits.count >= 25)
     for entrance in sampledEntrances {
       let reachable = Set(
         planner.exitCandidates(
@@ -590,7 +813,8 @@ struct ShutoCircuitPlannerTests {
         ).map(\.facilityID)
       )
       #expect(!reachable.isEmpty, Comment(rawValue: entrance.facilityID))
-      for exit in sampledExits where exit.facilityID != entrance.facilityID {
+      let sharingTollPoint = exits.filter { $0.nameJA == entrance.nameJA }
+      for exit in sampledExits + sharingTollPoint {
         let plans =
           (try? planner.plan(
             entryFacilityID: entrance.facilityID,
@@ -600,6 +824,9 @@ struct ShutoCircuitPlannerTests {
           plans == reachable.contains(exit.facilityID),
           Comment(rawValue: "\(entrance.facilityID) -> \(exit.facilityID)")
         )
+        if exit.nameJA == entrance.nameJA {
+          #expect(!plans, Comment(rawValue: "\(entrance.facilityID) -> \(exit.facilityID)"))
+        }
       }
     }
     #expect(
@@ -679,6 +906,219 @@ struct ShutoCircuitPlannerTests {
     )
   }
 
+  @Test("reachable entrances are exactly the entrances the planner can pair with an exit")
+  func reachingEntrancesAgreeWithPlanning() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let exits = database.directionalFacilities.filter(\.canExit)
+    let entrances = database.directionalFacilities.filter(\.canEnter)
+    let sharedTollPointExits = exits.filter { exit in
+      entrances.contains {
+        $0.nameJA == exit.nameJA && $0.facilityID != exit.facilityID
+      }
+    }
+    let sampledExits =
+      stride(from: 0, to: exits.count, by: 34).map { exits[$0] }
+      + sharedTollPointExits
+    let sampledEntrances = stride(from: 0, to: entrances.count, by: 5)
+      .map { entrances[$0] }
+    #expect(sampledExits.count >= 8 && sampledEntrances.count >= 25)
+    for exit in sampledExits {
+      let reaching = Set(
+        planner.entryCandidates(entrances, reaching: exit.facilityID)
+          .map(\.facilityID)
+      )
+      #expect(!reaching.isEmpty, Comment(rawValue: exit.facilityID))
+      let sharingTollPoint = entrances.filter { $0.nameJA == exit.nameJA }
+      for entrance in sampledEntrances + sharingTollPoint {
+        let plans =
+          (try? planner.plan(
+            entryFacilityID: entrance.facilityID,
+            exitFacilityID: exit.facilityID
+          )) != nil
+        #expect(
+          plans == reaching.contains(entrance.facilityID),
+          Comment(rawValue: "\(entrance.facilityID) -> \(exit.facilityID)")
+        )
+        if entrance.nameJA == exit.nameJA {
+          #expect(!plans, Comment(rawValue: "\(entrance.facilityID) -> \(exit.facilityID)"))
+        }
+      }
+    }
+  }
+
+  @Test(
+    "an entry and exit sharing a toll point are not plannable as an exact route",
+    arguments: [
+      ("shuto.ic.10.harumi", "shuto.ic.10.harumi"),
+      ("shuto.ic.k1.daishi", "shuto.ic.k6.daishi"),
+      ("shuto.ic.k6.daishi", "shuto.ic.k1.daishi"),
+      ("shuto.ic.b.daikokufutou", "shuto.ic.k5.daikokufutou"),
+      ("shuto.ic.k5.daikokufutou", "shuto.ic.b.daikokufutou"),
+    ]
+  )
+  func refusesSharedTollPointPairs(entryID: String, exitID: String) throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let entry = try #require(
+      database.directionalFacilities.first { $0.facilityID == entryID }
+    )
+    let exit = try #require(
+      database.directionalFacilities.first { $0.facilityID == exitID }
+    )
+    #expect(entry.canEnter && exit.canExit && entry.nameJA == exit.nameJA)
+    // Same-named ramps bill as one toll point, so the toll-point path
+    // between them collapses to the ramps' own length. The pair is not
+    // plannable as an exact entry/exit route, and no surface plans or
+    // prices it.
+    for preference in ShutoRoutePreference.allCases {
+      #expect(throws: ShutoNetworkError.sharedTollPoint) {
+        _ = try planner.plan(
+          entryFacilityID: entryID,
+          exitFacilityID: exitID,
+          preference: preference
+        )
+      }
+    }
+    #expect(throws: (any Error).self) {
+      _ = try planner.tariffBand(
+        entryFacilityID: entryID,
+        exitFacilityID: exitID,
+        evidence: .etcNormalCarFrom2026October
+      )
+    }
+    #expect(
+      planner.tariffBands(
+        entryFacilityID: entryID,
+        exitFacilityIDs: [exitID],
+        evidence: .etcNormalCarFrom2026October
+      ).isEmpty
+    )
+    #expect(
+      planner.exitCandidates([exit], reachableAfterEntering: entryID).isEmpty
+    )
+    #expect(planner.entryCandidates([entry], reaching: exitID).isEmpty)
+    // Destination search from and to the toll point itself.
+    let recommendations = try planner.recommend(
+      from: entry.coordinate,
+      to: exit.coordinate
+    )
+    #expect(!recommendations.isEmpty)
+    #expect(
+      recommendations.allSatisfy {
+        $0.route.entryFacility.nameJA != $0.route.exitFacility?.nameJA
+      }
+    )
+  }
+
+  @Test("a saved plan that enters and exits at one toll point does not restore")
+  func restoreRefusesSharedTollPointPlan() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let harumi = try #require(
+      database.directionalFacilities.first {
+        $0.facilityID == "shuto.ic.10.harumi"
+      }
+    )
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    // Harumi's entrance ramp and its own exit ramp. The planner once
+    // returned them as a 2-edge route, while Harumi was also bound to
+    // ramps that met; the 2026-10-12 facility review left no interchange
+    // whose entrance runs onto its own exit, and restore refuses the pair
+    // on its toll point before it reads any edge.
+    let ramps = try [
+      #require(harumi.entryEdgeCandidates.first.flatMap { edgesByID[$0.edgeID] }),
+      #require(harumi.exitEdgeCandidates.first.flatMap { edgesByID[$0.edgeID] }),
+    ]
+    let routePlan = RoutePlan(
+      id: "shuto.shuto.ic.10.harumi.shuto.ic.10.harumi.recommended",
+      networkSnapshotID: database.networkSnapshotID,
+      entryFacilityID: harumi.facilityID,
+      exitFacilityID: harumi.facilityID,
+      destinationParkingAreaID: nil,
+      recoveryPolicy: .safeRejoin,
+      actualDistanceKM: ramps.reduce(0) { $0 + $1.lengthMeters } / 1_000,
+      occurrences: ramps.enumerated().map { index, edge in
+        RouteOccurrence(
+          id: "shuto.\(index).\(edge.edgeID)",
+          index: index,
+          kind: .edge,
+          entityID: edge.edgeID,
+          tollDomainID: "shuto.toll-domain"
+        )
+      }
+    )
+    #expect(throws: ShutoNetworkError.sharedTollPoint) {
+      _ = try planner.restore(routePlan: routePlan)
+    }
+  }
+
+  @Test(
+    "an experience never exits at its own entrance's toll point",
+    arguments: [
+      (ShutoCircuitDefinition.c1Inner, "shuto.ic.1-haneda.shibaura", "shuto.ic.1-haneda.shibaura"),
+      (ShutoCircuitDefinition.c1Outer, "shuto.ic.2.tengenji", "shuto.ic.2.tengenji"),
+      (ShutoCircuitDefinition.c2InnerWithBayshore, "shuto.ic.1-haneda.kukounishi", "shuto.ic.1-haneda.kukounishi"),
+      (ShutoCircuitDefinition.daikokuYokohamaLoop, "shuto.ic.b.higashiogishima", "shuto.ic.b.higashiogishima"),
+      (ShutoCircuitDefinition.wanganDaikokuRun, "shuto.ic.b.shinkiba", "shuto.ic.b.shinkiba"),
+      (ShutoCircuitDefinition.scenicGrandTour, "shuto.ic.b.kasai", "shuto.ic.b.kasai"),
+    ]
+  )
+  func experiencesRefuseSharedTollPointExits(
+    circuit: ShutoCircuitDefinition,
+    entryID: String,
+    exitID: String
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let laps = circuit.kind == .loop ? 2 : 1
+    let entrance = try #require(
+      planner.circuitEntranceCandidates(for: circuit).first {
+        $0.facilityID == entryID
+      }
+    )
+    let exits = try planner.circuitExitCandidates(
+      for: circuit,
+      afterEntering: entryID
+    )
+    // Back to the entrance's own toll point the toll-point path collapses
+    // to the ramps, so the pair is not plannable as an exact entry/exit
+    // route and the experience offers only exits with their own toll point.
+    #expect(exits.allSatisfy { $0.nameJA != entrance.nameJA })
+    #expect(throws: ShutoNetworkError.sharedTollPoint) {
+      _ = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryID,
+        exitFacilityID: exitID,
+        laps: laps
+      )
+    }
+    // A differently named exit after the same entrance is unaffected.
+    let exit = try #require(exits.first)
+    let route = try planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: entryID,
+      exitFacilityID: exit.facilityID,
+      laps: laps
+    )
+    #expect(route.routePlan.exitFacilityID == exit.facilityID)
+    #expect(assertContinuity(route.edges))
+    #expect(
+      planner.tariffBands(
+        entryFacilityID: entryID,
+        exitFacilityIDs: exits.map(\.facilityID),
+        evidence: .etcNormalCarFrom2026October
+      ).count == exits.count
+    )
+    let pairing = try planner.recommendedCircuitPairing(
+      for: circuit,
+      entranceFacilityID: entryID,
+      evidence: .etcNormalCarFrom2026October
+    )
+    #expect(pairing.exit.nameJA != entrance.nameJA)
+  }
+
   @Test("entrances reaching an exit mirror the exits reachable after each entrance")
   func entryCandidatesMirrorExitCandidates() throws {
     let database = try loadDatabase()
@@ -718,7 +1158,7 @@ struct ShutoCircuitPlannerTests {
     )
   }
 
-  @Test("every direction-valid entrance of an experience reaches the same exits after its course")
+  @Test("every direction-valid entrance of an experience reaches the same exits after its course, less its own toll point")
   func experienceExitsDoNotDependOnTheEntrance() throws {
     let database = try loadDatabase()
     let planner = try ShutoRoutePlanner(database: database)
@@ -728,21 +1168,35 @@ struct ShutoCircuitPlannerTests {
         origin: nil
       )
       #expect(entrances.count >= 10, Comment(rawValue: circuit.circuitID))
-      let exitSets = Set(
-        try entrances.map { entrance in
-          Set(
-            try planner.circuitExitCandidates(
-              for: circuit,
-              afterEntering: entrance.facilityID
-            ).map(\.facilityID)
+      let exitsByEntrance = try entrances.map { entrance in
+        (
+          entrance,
+          try planner.circuitExitCandidates(
+            for: circuit,
+            afterEntering: entrance.facilityID
           )
-        }
-      )
-      #expect(exitSets.count == 1, Comment(rawValue: circuit.circuitID))
-      #expect(
-        exitSets.first?.isEmpty == false,
-        Comment(rawValue: circuit.circuitID)
-      )
+        )
+      }
+      let allExits = exitsByEntrance.reduce(
+        into: [String: ShutoNetworkDatabase.Facility]()
+      ) { result, pair in
+        for exit in pair.1 { result[exit.facilityID] = exit }
+      }
+      #expect(!allExits.isEmpty, Comment(rawValue: circuit.circuitID))
+      // Every entrance reaches the same exits, less the ones sharing its
+      // own toll point.
+      for (entrance, exits) in exitsByEntrance {
+        #expect(
+          Set(exits.map(\.facilityID))
+            == Set(
+              allExits.values.filter {
+                !ShutoRoutePlanner.sharesTollPoint($0, entrance)
+              }
+              .map(\.facilityID)
+            ),
+          Comment(rawValue: "\(circuit.circuitID) \(entrance.facilityID)")
+        )
+      }
     }
   }
 

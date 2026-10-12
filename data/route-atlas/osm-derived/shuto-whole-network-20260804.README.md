@@ -10,9 +10,11 @@ Attribution and licence:
 - <https://www.openstreetmap.org/copyright>
 - <https://opendatacommons.org/licenses/odbl/1-0/>
 
-The database is the default iPhone product graph. It contains 26 official route
-entries, 2,499 selected OSM ways, 24,299 directed edges, 151 operator IC names,
-39 JCTs, and 19 PAs. Its metadata retains the exact parent input, SHA-256,
+The database is the default iPhone product graph: the builder's output with
+the dated reviews in `data/route-atlas/reviews/` replayed in order. It contains
+26 official route entries, 2,540 OSM ways, 24,553 directed edges, 152 IC
+names (the operator catalog's 151 plus the 東銀座 exit a review adds), 39 JCTs,
+and 19 PAs. Its metadata retains the exact parent input, SHA-256,
 snapshot timestamp, builder/version, ODbL identifier, attribution, official
 catalog binding, facility-candidate review binding, graph limitations, and
 bounded gap-connector way IDs.
@@ -52,8 +54,10 @@ establish current route and directional facility facts; OSM supplies candidate
 geometry and topology. Every usable IC and every official JCT must match or
 generation fails. Each JCT also
 retains the URL and SHA-256 of its current operator detail image without
-redistributing the image. The three unmatched IC facts are the explicitly
-unavailable Yaesu Route facilities and have no routable candidates. The operator
+redistributing the image. The unmatched IC facts are the explicitly
+unavailable Yaesu Route facilities and, after the 2026-10-12 facility closure
+review in `data/route-atlas/reviews/`, the abolished 新富町 exit; none has
+routable candidates. The operator
 fact catalog was re-scraped on 2026-08-04 with zero factual differences against
 the committed 2026-07-29 catalog, which therefore remains the pinned build
 input.
@@ -95,7 +99,8 @@ operator map or JCT image assets.
 The Swift decoder preserves the complete source/licence metadata. The default
 map validates the exact bundled database identity, snapshot identity, candidate
 verification state, OSM attribution, and ODbL identifier before exposing the
-network with official OSM copyright and ODbL HTTPS links adjacent to the map.
+network with a corner `© OpenStreetMap` credit linked to the OSM copyright
+page, and the ODbL HTTPS link in Settings › About this map.
 Route-level `official_directions_ja` values come from the official
 directional IC catalog; they are vocabulary constraints only. A direction is
 bound to a JCT edge only by an exact reviewed movement definition and its

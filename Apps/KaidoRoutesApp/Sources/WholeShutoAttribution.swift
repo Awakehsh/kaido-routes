@@ -1,21 +1,24 @@
 import Foundation
 import KaidoRouting
+import SwiftUI
 
 enum WholeShutoAttributionError: Error, Equatable {
-  case invalidNetworkMetadata
   case identityDrift([String])
 }
 
 /// Visible OSM/ODbL attribution derived from the exact bundled whole-Shuto
 /// database metadata. This is deliberately separate from the immutable legacy
 /// Route Atlas catalog reviewed for the retained K7 produced work.
+///
+/// It checks identity only. The database it reads is the one the product
+/// model's planner has already validated.
 struct WholeShutoAttribution: Equatable, Sendable {
   static let resourceName = "shuto-whole-network-20260804"
   // The parking-access review adds the parking-area interiors the network
   // build drops, so the bundled graph is not the unrevised build and does
   // not answer to its identity.
   static let expectedDatabaseID =
-    "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914"
+    "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914+facility-closures-20261012+topology-20261012+facility-candidates-20261012"
   static let expectedNetworkSnapshotID =
     "shuto-official-2026-07-29-osm-2026-08-04"
   static let expectedVerificationState =
@@ -40,12 +43,6 @@ struct WholeShutoAttribution: Equatable, Sendable {
   let navigationAuthority: Bool
 
   init(database: ShutoNetworkDatabase) throws {
-    do {
-      try database.validate()
-    } catch {
-      throw WholeShutoAttributionError.invalidNetworkMetadata
-    }
-
     var issues: [String] = []
     if database.databaseID != Self.expectedDatabaseID {
       issues.append("database identity drift")
@@ -87,5 +84,53 @@ struct WholeShutoAttribution: Equatable, Sendable {
     sourceAccessibilityIdentifier = "route-atlas-attribution-source"
     licenceAccessibilityIdentifier = "route-atlas-attribution-licence"
     navigationAuthority = false
+  }
+}
+
+/// The corner credit every map drawing the OSM-derived network carries, as
+/// the OSMF attribution guideline asks of an interactive map. It links to the
+/// OpenStreetMap copyright page, which states the ODbL terms.
+struct WholeShutoMapCredit: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
+  /// The tap target's height; a map that seats its own marks above the
+  /// credit leaves this much room for it.
+  static let rowHeight: CGFloat = 44
+
+  let attribution: WholeShutoAttribution
+
+  var body: some View {
+    Link(destination: attribution.sourceURL) {
+      Text(verbatim: "© \(attribution.sourceLabel)")
+        .font(.system(size: 9, weight: .medium, design: .rounded))
+        .foregroundStyle(KaidoInk.textSecondary)
+        .padding(.horizontal, 6)
+        .frame(minHeight: 22)
+        .background(KaidoInk.surface.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .frame(minHeight: Self.rowHeight)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .environment(\.colorScheme, .dark)
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: "地図データ、\(attribution.attribution)",
+        simplifiedChinese: "地图数据，\(attribution.attribution)",
+        english: "Map data, \(attribution.attribution)"
+      )
+    )
+    .accessibilityHint(
+      copy.resolve(
+        japanese: "\(attribution.sourceLabel) の著作権とライセンスを開く",
+        simplifiedChinese: "打开 \(attribution.sourceLabel) 版权与许可",
+        english: "Opens \(attribution.sourceLabel) copyright and licence"
+      )
+    )
+    .accessibilityIdentifier("whole-shuto-map-credit")
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }

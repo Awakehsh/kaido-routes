@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class DriveHistoryStoreTests: XCTestCase {
-  func testHistorySurvivesReopeningAndDeletionTargetsOneRecord() throws {
+  func testHistorySurvivesReopeningAndDeletionTargetsOneRecord() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
     let first = try entry(start: 1_000)
@@ -14,18 +14,25 @@ final class DriveHistoryStoreTests: XCTestCase {
     try store.save(first)
     try store.save(second)
     let reopened = FileDriveHistoryStore(directory: directory)
-    XCTAssertEqual(try reopened.load().map(\.id), [second.id, first.id])
+    let reloaded = try await reopened.load()
+    XCTAssertEqual(reloaded.map(\.id), [second.id, first.id])
     try reopened.remove(id: second.id)
-    XCTAssertEqual(try reopened.load(), [first])
+    let afterRemoval = try await reopened.load()
+    XCTAssertEqual(afterRemoval, [first])
   }
 
-  func testHistoryRejectsARecordWhoseFileIdentityDoesNotMatch() throws {
+  func testABadHistoryFileHidesOnlyItself() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let kept = try entry(start: 10_000)
+    let store = FileDriveHistoryStore(directory: directory)
+    try store.save(kept)
     try JSONEncoder().encode(entry(start: 1_000))
       .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
-    XCTAssertThrowsError(try FileDriveHistoryStore(directory: directory).load())
+    try Data("not-a-drive".utf8)
+      .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
+    let loaded = try await store.load()
+    XCTAssertEqual(loaded, [kept])
   }
 
   private func entry(start: Int) throws -> DriveHistoryEntry {

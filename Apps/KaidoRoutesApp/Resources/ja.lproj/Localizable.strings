@@ -30,3 +30,6 @@
 "Finish this lap" = "この周回で終了";
 "Finish this lap, then follow the planned exit and destination." = "この周回を終えたら、予定の出口と目的地へ案内します。";
 "There are no later complete laps to remove at this position." = "この位置では減らせる後続の周回がありません。";
+"Finish at the planned exit" = "予定の出口で終了";
+"Following the planned exit." = "予定の出口へ案内します。";
+"The planned exit is not close enough yet." = "予定の出口はまだ先です。";

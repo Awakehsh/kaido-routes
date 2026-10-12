@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shuto-facility-closure-review-20261012",
+  "checked_at": "2026-10-12",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "input_database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914",
+  "input_database_sha256": "13a2e84394d2a6bf1eb1a238f1a13f48bad61e6c6ebc1affb08dded080394628",
+  "source": {
+    "operator_notice_uri": "https://www.shutoko.jp/control/large-scale/202607_00008",
+    "operator_notice_published_at": "2026-07-17",
+    "operator_notice_access": "shutoko.jp answered HTTP 429 to a scripted fetch on 2026-10-12; the notice's content is taken from the two independent reports below, checked the same day.",
+    "corroborating_uris": [
+      "https://trafficnews.jp/post/689555",
+      "https://jafmate.jp/car/traffic_topics_20260831_1199633.html"
+    ],
+    "finding": "For the 新京橋連結路 and the 築地川区間 renewal, 新富町出口 on C1 is abolished in both 内回り and 外回り, and the 内回り 銀座入口 enters a long-term closure of about three years, both from 2026-10-18 23:00 JST. Neither report closes the 外回り 銀座入口 or any 銀座 exit.",
+    "not_modelled": "The snapshot carries no dated availability, so the closures apply to the whole bundled snapshot rather than from the effective time. The planned 新富町 entrance and the later 京橋入口 (外回り) abolition have no date yet and are not applied."
+  },
+  "closures": [
+    {
+      "facility_id": "shuto.ic.c1.shintomicho",
+      "closed_entrance_directions": [],
+      "closed_exit_directions": ["内回り", "外回り"],
+      "closed_ramp_edge_ids": [
+        "osm.760760233.6.forward",
+        "osm.760760233.11.forward"
+      ],
+      "effective_at": "2026-10-18T23:00:00+09:00",
+      "planned_until": null,
+      "reason": "Abolished. The 新富町出口 ramp (osm ways 172598656 from 内回り and 4848942 from 外回り, merging into 760760233, all name=新富町出口) also binds as a nearby exit candidate of 宝町, 京橋 and 銀座, so it is unbound from every facility.",
+      "evidence": [
+        "https://www.shutoko.jp/control/large-scale/202607_00008",
+        "https://trafficnews.jp/post/689555",
+        "https://jafmate.jp/car/traffic_topics_20260831_1199633.html",
+        "osm way 760760233 name=新富町出口 highway=motorway_link oneway=yes"
+      ]
+    },
+    {
+      "facility_id": "shuto.ic.c1.ginza",
+      "closed_entrance_directions": ["内回り"],
+      "closed_exit_directions": [],
+      "closed_ramp_edge_ids": [
+        "osm.4848936.0.forward"
+      ],
+      "effective_at": "2026-10-18T23:00:00+09:00",
+      "planned_until": "2029",
+      "reason": "Long-term closure of about three years while the retaining wall is rebuilt and the ramp narrowed from two lanes to one. osm way 4848936 (name=銀座入口) is the only entry candidate that joins the 内回り carriageway (osm way 4848937); the 外回り 銀座入口 (osm way 4848922) stays open.",
+      "evidence": [
+        "https://www.shutoko.jp/control/large-scale/202607_00008",
+        "https://trafficnews.jp/post/689555",
+        "https://jafmate.jp/car/traffic_topics_20260831_1199633.html",
+        "osm way 4848936 name=銀座入口 highway=motorway_link oneway=yes"
+      ]
+    }
+  ]
+}

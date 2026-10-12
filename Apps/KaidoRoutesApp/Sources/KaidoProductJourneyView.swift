@@ -2856,9 +2856,13 @@ struct ReviewBoundaryCard: View {
           .foregroundStyle(KaidoTheme.muted)
           .fixedSize(horizontal: false, vertical: true)
 
-        Text(verbatim: code)
-          .font(.system(size: 8, weight: .black, design: .monospaced))
-          .foregroundStyle(color)
+        // The code identifies the boundary for tests and internal review;
+        // a driver reads the title and detail only.
+        #if DEBUG
+          Text(verbatim: code)
+            .font(.system(size: 8, weight: .black, design: .monospaced))
+            .foregroundStyle(color)
+        #endif
       }
 
       Spacer(minLength: 2)

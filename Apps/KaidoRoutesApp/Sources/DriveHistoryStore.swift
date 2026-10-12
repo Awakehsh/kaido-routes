@@ -50,7 +50,9 @@ struct DriveHistoryEntry: Codable, Equatable, Identifiable {
 
 @MainActor
 protocol DriveHistoryStoring {
-  func load() throws -> [DriveHistoryEntry]
+  /// Every entry holds a full route plan, so the whole history is too large
+  /// to read on the main actor.
+  func load() async throws -> [DriveHistoryEntry]
   func save(_ entry: DriveHistoryEntry) throws
   func remove(id: UUID) throws
 }
@@ -64,15 +66,24 @@ final class FileDriveHistoryStore: DriveHistoryStoring {
     self.directory = directory
   }
 
-  func load() throws -> [DriveHistoryEntry] {
+  func load() async throws -> [DriveHistoryEntry] {
+    let directory = directory
+    return try await Task.detached(priority: .userInitiated) {
+      try Self.entries(in: directory)
+    }.value
+  }
+
+  private nonisolated static func entries(in directory: URL) throws -> [DriveHistoryEntry] {
     guard FileManager.default.fileExists(atPath: directory.path) else { return [] }
     return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
       .filter { $0.pathExtension == "json" }
-      .map { url in
-        let entry = try JSONDecoder().decode(DriveHistoryEntry.self, from: Data(contentsOf: url))
-        guard entry.hasValidMeasurements,
+      // One unreadable or invalid file hides only its own drive.
+      .compactMap { url in
+        guard let data = try? Data(contentsOf: url),
+          let entry = try? JSONDecoder().decode(DriveHistoryEntry.self, from: data),
+          entry.hasValidMeasurements,
           url.deletingPathExtension().lastPathComponent == entry.id.uuidString
-        else { throw StoreError.invalidRecord }
+        else { return nil }
         return entry
       }
       .sorted { $0.startedAtMilliseconds > $1.startedAtMilliseconds }

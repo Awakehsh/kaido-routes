@@ -140,16 +140,23 @@ operator's dated revision quotes 32.472 yen/km and a ¥2,130 cap, selected by
 the Japanese calendar day). The folklore radial pairings are dead under the current
 rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
 radial is only reachable through a full circuit — so recommendations never
-repeat that folklore: the exit search covers the soonest forward exits and
-every reachable exit near the entrance, picks the lowest honestly-priced
-band, and never recommends an exit sharing the entrance's name (same-named
-ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
-search confirm across its Bayshore and Daikoku Line ramps). An entrance on
+repeat that folklore: the exit search covers the exits reached within 3 km of
+the soonest one after the final lap and picks the lowest honestly-priced band
+among them, so a cheaper quote never costs another pass of the course.
+Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
+page and fare search confirm across its Bayshore and Daikoku Line ramps, and
+its fare table bills 王子南 with 王子北, 箱崎 with 浜町 and 清洲橋, and 大井南
+with 中環大井南 as one toll point each.
+Between an entrance and an exit at one toll point the planner's toll-point
+path collapses to the ramps themselves, and the editor cannot author the
+turnaround such a trip needs, so that pair is not plannable as an exact
+entry/exit route on any surface; a loop that returns there is refused rather
+than quoted the collapsed minimum band. An entrance on
 a member route must still match the experience's carriageway direction
 (the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
 every anchor in course order. Highway preference defaults to prefer highways;
-avoid when possible limits recommendations to entrances on the chosen course
-and prefers ordinary roads for connecting legs. The pairing appears as one
+avoid when possible limits recommendations to entrances on the chosen course.
+Connecting legs use ordinary roads under either setting. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.
@@ -159,8 +166,10 @@ recommended normally, between 8 and 16 km it carries an explicit far label,
 and longer approaches carry a long-access label. Straight-line distance never
 decides whether the ordinary-road leg is drivable: the bounded surface provider
 must resolve the exact directional ramp, and a missing access route blocks
-review and start. Automatic selection always starts with the nearest reachable,
-direction-valid entrance from the current origin. Navigation authority is
+review and start. Automatic selection always starts with the reachable,
+direction-valid entrance that reaches the course soonest from the current
+origin: straight-line surface access at city speed plus the expressway
+approach to the course at expressway speed. Navigation authority is
 evaluated only after that exact pairing is formed and cannot replace the
 location recommendation with a distant released sample entrance. An explicit
 driver override remains honored and retains its precise release blocker. The
@@ -212,7 +221,8 @@ the leading edge, show direction and straight-line distance, and can be filtered
 by IC name or route shield. Whichever end is fixed constrains the other: with
 an entry chosen the exit list holds only exits some directed all-Shuto path
 reaches from it, and with an exit chosen the entry list holds only entrances
-such a path leads from. A search still shows an IC the other end rules out,
+such a path leads from; neither list holds the other end's own toll point. A
+search still shows an IC the other end rules out,
 marked unreachable; choosing it clears the other end rather than keeping a
 broken draft, and the cleared end is chosen again from the list the new choice
 allows. Empty filters and unavailable origins explain the next action instead
@@ -258,8 +268,10 @@ with a retry message. Required surface legs must resolve before starting.
 End at an expressway exit completes only after the planned exit handoff; it has
 no onward surface leg and never fabricates a return journey. Changing the exit
 replans explicitly: circuit choices retain their course and lap count, while
-custom choices must produce a legal directional route. Invalid exit choices
-leave the existing plan intact. Optional onward guidance starts automatically
+custom choices must produce a legal directional route. A route that is not a
+circuit offers only exits its entrance actually reaches, nearest first to where
+the route now ends; a PA-ended route continuing onward therefore leaves near
+that PA. Invalid exit choices leave the existing plan intact. Optional onward guidance starts automatically
 after the highway segment; the app does not require a destination prompt at the
 exit while driving.
 

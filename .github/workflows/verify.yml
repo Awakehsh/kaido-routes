@@ -83,6 +83,7 @@ jobs:
           set -euo pipefail
           python3 scripts/validate_e2e.py
           python3 scripts/verify_facility_candidate_review.py
+          python3 scripts/audit_shuto_network.py
           python3 -m unittest discover -s scripts/tests
 
       - name: Retained joint product release
@@ -194,6 +195,9 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testMissingAccessStillBlocksAnExitOnlyJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testOnwardDestinationStartsAutomaticallyAfterExit \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCustomRouteFromTheHomeCatalogEndsAtItsExit \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCustomEditorNeverDraftsAPairSharingOneTollPoint \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCircuitReviewEditorRulesOutEntrancesSharingTheExitTollPoint \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDirectionalTourEditorNeverOffersTheEntranceTollPointAsExit \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testFirstLocationPermissionRoundTripStartsTheSameLiveJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testEntryTransitionRequiresOrderedObservationsBeforeExpressway \
@@ -206,6 +210,23 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRejectedRampAdmissionKeepsTheSurfacePositionAvailable \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testPositionLossNoticeStaysSilentInsideTheCooldown \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCoarseFixLetsTheSpokenJunctionCueFinish \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testMutedNoticesAreDroppedRatherThanSpokenOnUnmute \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSiriUnmuteRestoresTheDriversVoiceMode \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testLapSwapKeepsThePositionLossCooldown \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRestingALiveDriveKeepsItsSessionAndResumesInPlace \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRestIsRefusedOnlyWhileAFreshFixShowsMovement \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testAFixInFlightCannotUndoARestOrAnEndedDrive \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSiriResumeReportsAPausedDriveWhenTheAppIsNotInFront \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDriveFailuresReadAsOneDrivingLine \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSurfaceRoutePreferenceDefaultsPersistsAndLeavesConnectingLegsAlone \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testConnectingLegsRequestAndChooseOrdinaryRoads \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCancelledRouteAuthorityResolutionAdmitsNothing \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testReplacedRouteStopsItsLivePreparationAndNeverPublishes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoPlanningLocationTests \
+            -only-testing:KaidoRoutesAppTests/DriveHistoryStoreTests \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoC2RecommendedRouteExposesLiveNavigation \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoLongSurfaceAccessExposesLiveNavigation \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace \
             -only-testing:KaidoRoutesAppTests/WholeShutoPlaceSearchTests \

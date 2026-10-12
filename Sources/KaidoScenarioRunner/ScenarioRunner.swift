@@ -336,11 +336,20 @@ private struct ScenarioHarness {
       observedAtMilliseconds: payload.int("observed_at_ms") ?? event.atMilliseconds,
       receivedAtMilliseconds: payload.int("received_at_ms") ?? event.atMilliseconds,
       directedEdgeID: payload.string("directed_edge_id"),
+      occurrenceID: payload.string("occurrence_id"),
       candidateEdgeIDs: (payload.array("candidate_edge_ids") ?? []).compactMap(
         \.stringValue
       ),
       confidence: payload.string("confidence").flatMap(MatcherConfidence.init(rawValue:))
         ?? .lost,
+      coordinate: payload.object("coordinate").flatMap { coordinate in
+        guard let latitude = coordinate.double("latitude"),
+          let longitude = coordinate.double("longitude")
+        else { return nil }
+        return MatcherCoordinate(latitude: latitude, longitude: longitude)
+      },
+      horizontalAccuracyMeters: payload.double("horizontal_accuracy_meters"),
+      distanceMeters: payload.double("distance_meters"),
       headingErrorDegrees: payload.double("heading_error_degrees"),
       source: evidenceSource,
       isSimulatedBySoftware: payload.bool("is_simulated_by_software") ?? false
@@ -350,16 +359,17 @@ private struct ScenarioHarness {
       journeyPhase: engine.snapshot.journeyPhase
     )
     entryTransitionAdmission = admission
-    if let observation = decision.engineObservation {
-      engine.observeLocation(observation)
+    if decision.status == .progressed {
+      engine.beginEntryTransition()
     }
     if decision.status == .strictRouteEntered,
-      engine.snapshot.journeyPhase != .strictRoute,
-      let firstOccurrenceID = context.entryTransition.firstRouteOccurrenceID
+      let firstOccurrenceID = context.entryTransition.firstRouteOccurrenceID,
+      let reachedOccurrenceID = decision.reachedOccurrenceID
     {
       engine.enterStrictRoute(
         firstOccurrenceID: firstOccurrenceID,
-        trigger: "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY"
+        reachedOccurrenceID: reachedOccurrenceID,
+        trigger: "VERIFIED_ROUTE_HEAD_PROGRESSION"
       )
     }
     adapterObservations["entry_transition.admission.status"] = .string(
@@ -374,10 +384,9 @@ private struct ScenarioHarness {
         forKey: "entry_transition.admission.rejection_reason"
       )
     }
-    if let index = decision.acceptedTransitionEdgeIndex {
-      adapterObservations["entry_transition.admission.accepted_edge_index"] = .integer(
-        index
-      )
+    if let reachedOccurrenceID = decision.reachedOccurrenceID {
+      adapterObservations["entry_transition.admission.reached_occurrence_id"] =
+        .string(reachedOccurrenceID)
     }
   }
 
@@ -666,10 +675,13 @@ private struct ScenarioHarness {
       )
     } catch let error as ShutoNetworkError {
       adapterObservations["circuit_plan.status"] = .string("REJECTED")
-      adapterObservations["circuit_plan.rejection_reason"] = .string(
-        error == .facilityUnavailable
-          ? "FACILITY_UNAVAILABLE" : "ROUTE_UNAVAILABLE"
-      )
+      let reason: String
+      switch error {
+      case .facilityUnavailable: reason = "FACILITY_UNAVAILABLE"
+      case .sharedTollPoint: reason = "SHARED_TOLL_POINT"
+      default: reason = "ROUTE_UNAVAILABLE"
+      }
+      adapterObservations["circuit_plan.rejection_reason"] = .string(reason)
     }
   }
 

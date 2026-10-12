@@ -163,20 +163,35 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     XCTAssertNil(model.presentationProjection)
     XCTAssertEqual(model.presentationState, .awaitingGuidanceFrame)
 
+    // A fix on the approach ramp proves nothing about entry by itself.
     await model.process(
-      [makeLocation(longitude: 139.75925, timestamp: 1_000)],
+      [Self.approachLocation(timestamp: 1_000)],
       receivedAt: Date(timeIntervalSince1970: 1_000)
     )
-    XCTAssertEqual(model.snapshot?.journeyPhase, .entryTransition)
+    XCTAssertEqual(model.snapshot?.journeyPhase, .planning)
     XCTAssertEqual(
       model.inputState,
       .entryUpdated(status: .observing, rejection: nil)
     )
 
     await model.process(
-      [makeLocation(longitude: 139.75975, timestamp: 1_001)],
+      [makeLocation(longitude: 139.7602, timestamp: 1_001)],
       receivedAt: Date(timeIntervalSince1970: 1_001)
     )
+    XCTAssertEqual(model.snapshot?.journeyPhase, .entryTransition)
+    XCTAssertEqual(
+      model.inputState,
+      .entryUpdated(status: .progressed, rejection: nil)
+    )
+
+    // Entry is confirmed once the fixes have followed the route head away
+    // from the approach's straight line.
+    for (longitude, timestamp) in [(139.7604, 1_002.0), (139.7606, 1_003.0)] {
+      await model.process(
+        [makeLocation(longitude: longitude, timestamp: timestamp)],
+        receivedAt: Date(timeIntervalSince1970: timestamp)
+      )
+    }
     XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
     XCTAssertTrue(try XCTUnwrap(model.snapshot).strictRouteAutoCommitAllowed)
     XCTAssertNil(model.presentationProjection)
@@ -186,8 +201,8 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     )
 
     await model.process(
-      [makeLocation(longitude: 139.76025, timestamp: 1_002)],
-      receivedAt: Date(timeIntervalSince1970: 1_002)
+      [makeLocation(longitude: 139.7607, timestamp: 1_004)],
+      receivedAt: Date(timeIntervalSince1970: 1_004)
     )
     guard case .matcherUpdated(let confidence, _) = model.inputState else {
       XCTFail("Expected an atomic matcher update, got \(model.inputState)")
@@ -237,8 +252,8 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     XCTAssertEqual(model.speechStatus, .idle)
 
     await model.process(
-      [makeLocation(longitude: 139.76025, timestamp: 1_003)],
-      receivedAt: Date(timeIntervalSince1970: 1_003)
+      [makeLocation(longitude: 139.7607, timestamp: 1_005)],
+      receivedAt: Date(timeIntervalSince1970: 1_005)
     )
     XCTAssertEqual(speechOutput.commands.count, 1)
     XCTAssertFalse(
@@ -380,11 +395,16 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     )
     await model.activate()
 
+    await model.process(
+      [Self.approachLocation(timestamp: 999)],
+      receivedAt: Date(timeIntervalSince1970: 999)
+    )
     for (longitude, timestamp) in [
-      (139.75925, 1_000.0),
-      (139.75975, 1_001.0),
-      (139.76025, 1_002.0),
-      (139.76025, 1_003.0),
+      (139.7602, 1_000.0),
+      (139.7604, 1_001.0),
+      (139.7606, 1_002.0),
+      (139.7607, 1_003.0),
+      (139.7607, 1_004.0),
     ] {
       await model.process(
         [makeLocation(longitude: longitude, timestamp: timestamp)],
@@ -407,10 +427,15 @@ final class SyntheticProductRuntimeTests: XCTestCase {
       checkpointStore: store
     )
     await initial.activate()
+    await initial.process(
+      [Self.approachLocation(timestamp: 999)],
+      receivedAt: Date(timeIntervalSince1970: 999)
+    )
     for (longitude, timestamp) in [
-      (139.75925, 1_000.0),
-      (139.75975, 1_001.0),
-      (139.76025, 1_002.0),
+      (139.7602, 1_000.0),
+      (139.7604, 1_001.0),
+      (139.7606, 1_002.0),
+      (139.7607, 1_003.0),
     ] {
       await initial.process(
         [makeLocation(longitude: longitude, timestamp: timestamp)],
@@ -545,7 +570,7 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     await model.activate()
 
     await model.process(
-      [makeLocation(longitude: 139.75925, timestamp: 1_000)],
+      [Self.approachLocation(timestamp: 1_000)],
       receivedAt: Date(timeIntervalSince1970: 1_000)
     )
 
@@ -557,6 +582,21 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     )
     XCTAssertEqual(model.snapshot?.journeyPhase, .planning)
     XCTAssertFalse(try XCTUnwrap(model.snapshot).strictRouteAutoCommitAllowed)
+  }
+
+  /// A fix on the synthetic approach ramp, which climbs from the south-west.
+  private static func approachLocation(timestamp: TimeInterval) -> CLLocation {
+    CLLocation(
+      coordinate: CLLocationCoordinate2D(latitude: 35.67925, longitude: 139.7594),
+      altitude: 0,
+      horizontalAccuracy: 5,
+      verticalAccuracy: 5,
+      course: 33,
+      courseAccuracy: 2,
+      speed: 10,
+      speedAccuracy: 1,
+      timestamp: Date(timeIntervalSince1970: timestamp)
+    )
   }
 
   private func makeLocation(

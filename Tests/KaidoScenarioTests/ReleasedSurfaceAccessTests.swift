@@ -726,17 +726,22 @@ func shutoLiveSessionRequiresExactReleasedProductRuntime() async throws {
     )
   )
   #expect(firstEntry.status == .observing)
-  #expect(firstEntry.navigationSnapshot.journeyPhase == .entryTransition)
+  #expect(firstEntry.navigationSnapshot.journeyPhase == .approachToEntry)
   #expect(await session.snapshot == firstEntry.navigationSnapshot)
 
-  let enteredRoute = try await session.observeEntryTransitionEvidence(
-    releasedEntryEvidence(
-      context: entryContext,
-      id: "test.shuto-live.entry.1",
-      at: 2_000,
-      edgeID: entryEdgeIDs[1]
+  var enteredRoute = firstEntry
+  for (offset, longitude) in [139.7603, 139.7605, 139.7607].enumerated() {
+    enteredRoute = try await session.observeEntryTransitionEvidence(
+      releasedEntryEvidence(
+        context: entryContext,
+        id: "test.shuto-live.entry.head.\(offset)",
+        at: 2_000 + offset * 1_000,
+        edgeID: entryContext.firstRouteDirectedEdgeID,
+        occurrenceID: entryContext.entryTransition.firstRouteOccurrenceID,
+        coordinate: MatcherCoordinate(latitude: 35.68, longitude: longitude)
+      )
     )
-  )
+  }
   #expect(enteredRoute.status == .strictRouteEntered)
   #expect(enteredRoute.navigationSnapshot.journeyPhase == .strictRoute)
   #expect(
@@ -753,7 +758,7 @@ func shutoLiveSessionRequiresExactReleasedProductRuntime() async throws {
   let routeUpdate = try await session.observe(
     releasedRouteObservation(
       id: "test.shuto-live.route.0",
-      at: 3_000,
+      at: 5_000,
       edge: firstRouteEdge
     )
   )
@@ -1956,7 +1961,9 @@ private func releasedEntryEvidence(
   context: EntryTransitionAdmissionContext,
   id: String,
   at: Int,
-  edgeID: String
+  edgeID: String,
+  occurrenceID: String? = nil,
+  coordinate: MatcherCoordinate? = nil
 ) -> EntryTransitionEvidence {
   EntryTransitionEvidence(
     context: context,
@@ -1964,8 +1971,12 @@ private func releasedEntryEvidence(
     observedAtMilliseconds: at,
     receivedAtMilliseconds: at,
     directedEdgeID: edgeID,
+    occurrenceID: occurrenceID,
     candidateEdgeIDs: [edgeID],
     confidence: .high,
+    coordinate: coordinate,
+    horizontalAccuracyMeters: coordinate == nil ? nil : 5,
+    distanceMeters: coordinate == nil ? nil : 1,
     headingErrorDegrees: 1,
     isSimulatedBySoftware: false
   )

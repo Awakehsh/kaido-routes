@@ -570,6 +570,7 @@ public enum ShutoNetworkError: Error, Equatable {
   case invalidRouteDirections
   case facilityUnavailable
   case routeUnavailable
+  case sharedTollPoint
 }
 
 public struct ShutoRoutePlanner: Sendable {
@@ -591,7 +592,7 @@ public struct ShutoRoutePlanner: Sendable {
   let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let incomingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
-  let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
+  public let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
 
   public init(database: ShutoNetworkDatabase) throws {
     try database.validate()
@@ -666,6 +667,9 @@ public struct ShutoRoutePlanner: Sendable {
     guard (exitFacility?.canExit == true && parkingArea == nil)
       || (exitFacility == nil && parkingArea?.isDrivable == true) else {
       throw ShutoNetworkError.facilityUnavailable
+    }
+    if let exitFacility, Self.sharesTollPoint(entryFacility, exitFacility) {
+      throw ShutoNetworkError.sharedTollPoint
     }
 
     let movementDefinitionsByID = Dictionary(
@@ -800,6 +804,9 @@ public struct ShutoRoutePlanner: Sendable {
     exitFacility: ShutoNetworkDatabase.Facility,
     preference: ShutoRoutePreference
   ) throws -> ShutoPlannedRoute {
+    guard !Self.sharesTollPoint(entryFacility, exitFacility) else {
+      throw ShutoNetworkError.sharedTollPoint
+    }
     let entryEdges = entryFacility.entryEdgeCandidates.compactMap {
       candidate in
       edgesByID[candidate.edgeID].map {

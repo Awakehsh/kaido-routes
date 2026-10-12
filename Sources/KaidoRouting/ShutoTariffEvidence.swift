@@ -129,17 +129,52 @@ extension ShutoRoutePlanner {
   /// tariff distance.
   private static let tariffDistanceMarginMeters = 500.0
 
+  /// Interchanges the operator bills as one toll point under different
+  /// names. Its 2026-10 fare and distance table
+  /// (https://www.shutoko.jp/ss/2026ryoukin-kaitei/gallery/ryoukin-kaitei_toll_rates.pdf)
+  /// heads one row 王子南王子北, one 箱崎浜町 and one column 箱崎浜町清洲橋,
+  /// and gives 大井南 and 中環大井南 the same fare to every other toll point
+  /// while pricing the pair between them as a turnaround.
+  private static let operatorTollPointNames: [String: String] = [
+    "王子北": "王子南",
+    "浜町": "箱崎",
+    "清洲橋": "箱崎",
+    "中環大井南": "大井南",
+  ]
+
+  /// Same-named ramps, and the interchanges above, bill as one toll point.
+  /// Between an entry and exit at one toll point the toll-point path
+  /// collapses to the ramps' own few metres, so it describes neither the
+  /// trip nor its tariff distance, and the turnaround such a trip needs is
+  /// not something the planner authors. The pair is therefore not
+  /// plannable as an exact entry/exit route, and no surface plans or
+  /// prices it.
+  public static func sharesTollPoint(
+    _ first: ShutoNetworkDatabase.Facility,
+    _ second: ShutoNetworkDatabase.Facility
+  ) -> Bool {
+    tollPointName(first) == tollPointName(second)
+  }
+
+  private static func tollPointName(
+    _ facility: ShutoNetworkDatabase.Facility
+  ) -> String {
+    operatorTollPointNames[facility.nameJA] ?? facility.nameJA
+  }
+
   /// Tariff band for one entry/exit pairing under one dated tariff rule.
   /// The fare distance is the shortest DRIVABLE directed path between the
-  /// two TOLL POINTS, where same-named ramps bill as one toll point — both
-  /// verified against the operator's own fare search on 2026-08-04:
+  /// two TOLL POINTS, where same-named ramps and the interchanges the
+  /// operator bills together are one toll point. The path rule and the
+  /// same-name grouping were verified against the operator's own fare
+  /// search on 2026-08-04:
   /// Hatsudai-minami to Tomigaya quotes the minimum; Shinjuku to Yoyogi —
   /// one kilometer apart on the ground but only connected through a full
   /// C1 circuit — quotes ¥860; and Daikoku-Futo resolves its Bayshore and
   /// Daikoku Line ramps to the single toll point B08, pricing the Namamugi
   /// pairing over the 15 km Bayshore-side path. Direction matters (an
   /// undirected distance under-quotes every turn-back pairing), and the
-  /// toll-point grouping takes the cheapest ramp of each name.
+  /// toll-point grouping takes the cheapest ramp of each toll point.
   public func tariffBand(
     entryFacilityID: String,
     exitFacilityID: String,
@@ -158,7 +193,8 @@ extension ShutoRoutePlanner {
 
   /// Bands for many exits after one entrance from a single relaxation of
   /// the entrance's toll point, for an exit list that prices every row.
-  /// Exits whose toll point no directed path reaches are absent.
+  /// Exits whose toll point no directed path reaches, or that share the
+  /// entrance's toll point, are absent.
   public func tariffBands(
     entryFacilityID: String,
     exitFacilityIDs: [String],
@@ -187,7 +223,9 @@ extension ShutoRoutePlanner {
     }
     var bands: [String: ShutoTariffBand] = [:]
     for exitFacilityID in exitFacilityIDs {
-      guard let exit = facilitiesByID[exitFacilityID] else { continue }
+      guard let exit = facilitiesByID[exitFacilityID],
+        !Self.sharesTollPoint(entry, exit)
+      else { continue }
       var best: Double?
       for (nodeID, tail) in tollPointTargets(forExitGroupOf: exit) {
         guard let reach = distances[nodeID] else { continue }
@@ -246,7 +284,7 @@ extension ShutoRoutePlanner {
     forEntryGroupOf entry: ShutoNetworkDatabase.Facility
   ) -> [TollPointQueueValue] {
     database.directionalFacilities
-      .filter { $0.nameJA == entry.nameJA && $0.canEnter }
+      .filter { Self.sharesTollPoint($0, entry) && $0.canEnter }
       .flatMap { facility in
         facility.entryEdgeCandidates.compactMap { candidate in
           edgesByID[candidate.edgeID].map {
@@ -266,7 +304,7 @@ extension ShutoRoutePlanner {
   ) -> [Int64: Double] {
     var targets: [Int64: Double] = [:]
     for facility in database.directionalFacilities
-    where facility.nameJA == exit.nameJA && facility.canExit {
+    where Self.sharesTollPoint(facility, exit) && facility.canExit {
       for candidate in facility.exitEdgeCandidates {
         guard let edge = edgesByID[candidate.edgeID] else { continue }
         let tail = candidate.distanceMeters + edge.lengthMeters
@@ -286,7 +324,8 @@ extension ShutoRoutePlanner {
     exitFacilityID: String
   ) -> Double? {
     guard let entry = facilitiesByID[entryFacilityID],
-      let exit = facilitiesByID[exitFacilityID]
+      let exit = facilitiesByID[exitFacilityID],
+      !Self.sharesTollPoint(entry, exit)
     else { return nil }
     let targets = tollPointTargets(forExitGroupOf: exit)
     guard !targets.isEmpty else { return nil }

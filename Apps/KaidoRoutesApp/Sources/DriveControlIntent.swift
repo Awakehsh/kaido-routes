@@ -2,7 +2,8 @@ import AppIntents
 import KaidoAppleAdapters
 
 enum DriveControlAction: String, AppEnum {
-  case repeatDirection, mute, unmute, addLap, removeLap, finishLap, rest, resume, endNavigation
+  case repeatDirection, mute, unmute, addLap, removeLap, finishLap, exitAtPlannedExit, rest, resume,
+    endNavigation
 
   static let typeDisplayRepresentation: TypeDisplayRepresentation = "Drive action"
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
@@ -12,6 +13,7 @@ enum DriveControlAction: String, AppEnum {
     .addLap: "Add one lap",
     .removeLap: "Remove one lap",
     .finishLap: "Finish this lap",
+    .exitAtPlannedExit: "Finish at the planned exit",
     .rest: "Take a break",
     .resume: "Resume navigation",
     .endNavigation: "End navigation",
@@ -47,6 +49,9 @@ struct DriveControlIntent: AppIntent {
       if await model.resumeLiveJourney() {
         return .result(dialog: "Navigation resumed. Waiting for a reliable position.")
       }
+      if model.isLiveDrive {
+        return .result(dialog: "Navigation is still paused. Resume it in Kaido Routes.")
+      }
       return .result(dialog: "There is no navigation session ready to resume.")
     }
     guard model.isLiveDrive, model.phase != .completed else {
@@ -64,7 +69,7 @@ struct DriveControlIntent: AppIntent {
       model.setSpeechMode(.muted)
       return .result(dialog: "Guidance is muted. Navigation continues.")
     case .unmute:
-      model.setSpeechMode(.full)
+      model.unmuteSpeech()
       return .result(dialog: "Guidance is on.")
     case .addLap:
       if await model.addOneLap() { return .result(dialog: "One lap added.") }
@@ -77,9 +82,17 @@ struct DriveControlIntent: AppIntent {
         return .result(dialog: "Finish this lap, then follow the planned exit and destination.")
       }
       return .result(dialog: "There are no later complete laps to remove at this position.")
+    case .exitAtPlannedExit:
+      if await model.finishLiveExpressway() {
+        return .result(dialog: "Following the planned exit.")
+      }
+      return .result(dialog: "The planned exit is not close enough yet.")
     case .rest:
       if model.liveLocationState == .resting {
         return .result(dialog: "Navigation is paused for your break.")
+      }
+      guard model.canRestLiveJourney else {
+        return .result(dialog: "A break can start once the car has stopped.")
       }
       if await model.restLiveJourney() {
         return .result(dialog: "Navigation is paused for your break.")

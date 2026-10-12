@@ -1,20 +1,20 @@
 {
   "schema_version": "1.0",
   "id": "KR-S23",
-  "title": "Consecutive route-head evidence enters strict-route mode",
+  "title": "Route-head evidence on the approach line cannot enter strict-route mode",
   "layer": "SIMULATION",
   "tags": [
     "entry",
     "release-identity",
     "core-location",
-    "short-edge"
+    "stacked-road"
   ],
-  "purpose": "Keep a legal entry usable when 1 Hz location fixes cross reviewed micro-edges between samples, while still requiring exact release identity, heading, and consecutive evidence on the first RoutePlan edge.",
+  "purpose": "Keep entry unconfirmed while every route-head fix also lies on the straight line of the approach: geometry cannot tell the ramp from a street beneath it, however many ordered fixes arrive.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
     "limitations": [
-      "Coordinates and evidence values are synthetic; this proves the bounded route-head admission contract, not field accuracy."
+      "Coordinates and evidence values are synthetic; this proves the geometric limit of the entry contract, not field accuracy."
     ],
     "release_blockers": []
   },
@@ -61,8 +61,14 @@
           {
             "directed_edge_id": "test.edge.entry-route-head.surface",
             "coordinates": [
-              { "latitude": 35.6800, "longitude": 139.7590 },
-              { "latitude": 35.6800, "longitude": 139.7591 }
+              {
+                "latitude": 35.68,
+                "longitude": 139.759
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.7591
+              }
             ],
             "successor_edge_ids": [
               "test.edge.entry-route-head.ramp"
@@ -71,8 +77,14 @@
           {
             "directed_edge_id": "test.edge.entry-route-head.ramp",
             "coordinates": [
-              { "latitude": 35.6800, "longitude": 139.7591 },
-              { "latitude": 35.6800, "longitude": 139.7592 }
+              {
+                "latitude": 35.68,
+                "longitude": 139.7591
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.7592
+              }
             ],
             "successor_edge_ids": [
               "test.edge.entry-route-head.mainline"
@@ -81,8 +93,14 @@
           {
             "directed_edge_id": "test.edge.entry-route-head.mainline",
             "coordinates": [
-              { "latitude": 35.6800, "longitude": 139.7592 },
-              { "latitude": 35.6800, "longitude": 139.7600 }
+              {
+                "latitude": 35.68,
+                "longitude": 139.7592
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.76
+              }
             ],
             "successor_edge_ids": []
           }
@@ -115,11 +133,18 @@
       "payload": {
         "observation_id": "entry.route-head.0",
         "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "occurrence_id": "test.occurrence.entry-route-head.first",
         "candidate_edge_ids": [
           "test.edge.entry-route-head.mainline"
         ],
         "confidence": "MEDIUM",
-        "heading_error_degrees": 4,
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7593
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
+        "heading_error_degrees": 3,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
     },
@@ -130,10 +155,61 @@
       "payload": {
         "observation_id": "entry.route-head.1",
         "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "occurrence_id": "test.occurrence.entry-route-head.first",
         "candidate_edge_ids": [
           "test.edge.entry-route-head.mainline"
         ],
         "confidence": "MEDIUM",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7595
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
+        "heading_error_degrees": 3,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "third-route-head-fix",
+      "at_ms": 3000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.route-head.2",
+        "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "occurrence_id": "test.occurrence.entry-route-head.first",
+        "candidate_edge_ids": [
+          "test.edge.entry-route-head.mainline"
+        ],
+        "confidence": "MEDIUM",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7597
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
+        "heading_error_degrees": 3,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "fourth-route-head-fix",
+      "at_ms": 4000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.route-head.3",
+        "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "occurrence_id": "test.occurrence.entry-route-head.first",
+        "candidate_edge_ids": [
+          "test.edge.entry-route-head.mainline"
+        ],
+        "confidence": "MEDIUM",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7599
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
         "heading_error_degrees": 3,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
@@ -141,31 +217,31 @@
   ],
   "then": [
     {
-      "id": "one-fix-cannot-enter",
+      "id": "route-head-progress-observed",
       "after": "first-route-head-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "Route-head progression is recorded as entry evidence."
+    },
+    {
+      "id": "collinear-fixes-cannot-enter",
+      "after": "fourth-route-head-fix",
       "category": "SAFETY",
       "subject": "journey.phase",
       "matcher": "EQUALS",
-      "expected": "APPROACH_TO_ENTRY",
-      "rationale": "One route-head fix cannot authorize entry."
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "Ordered fixes on a route head that never leaves the approach line are equally explained by a street beneath it; entry stays unconfirmed."
     },
     {
-      "id": "consecutive-fixes-enter",
-      "after": "second-route-head-fix",
+      "id": "route-head-reached-is-auditable",
+      "after": "fourth-route-head-fix",
       "category": "NAVIGATION",
-      "subject": "journey.phase",
+      "subject": "entry_transition.admission.reached_occurrence_id",
       "matcher": "EQUALS",
-      "expected": "STRICT_ROUTE",
-      "rationale": "Two consecutive exact route-head fixes bridge micro-edges without weakening release identity or heading gates."
-    },
-    {
-      "id": "route-head-trigger-is-auditable",
-      "after": "second-route-head-fix",
-      "category": "NAVIGATION",
-      "subject": "journey.last_phase_transition.trigger",
-      "matcher": "EQUALS",
-      "expected": "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY",
-      "rationale": "The alternative entry path remains distinguishable in the actor audit state."
+      "expected": "test.occurrence.entry-route-head.first",
+      "rationale": "The evidence records how far it reached without claiming entry."
     }
   ]
 }

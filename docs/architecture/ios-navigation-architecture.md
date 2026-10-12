@@ -2,7 +2,7 @@
 
 **Status:** accepted and implemented for the platform-light core and default
 whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
-with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. The whole-network
+with 26 route entries, 152 IC names, 39 JCTs, and 19 PAs. The whole-network
 browse map marks classic places with licensed photographs and names a
 curated PA set at the default frame, then names those places and every
 bundled PA once pinched in. Its route-first home
@@ -38,7 +38,9 @@ to both the RoutePlan divergence occurrence and the observed directed edge;
 runtime selection refuses a candidate authored for a different branch. Because
 the graph is a planning candidate, compiler output marks those paths unreleased.
 The foreground product release builder may explicitly promote one exact
-in-domain candidate into the release-bound runtime policy; all other deviations
+in-domain candidate into the release-bound runtime policy, and only one whose
+every junction decision after the wrong turn is a released movement binding
+and which never leaves the expressway by an exit ramp; all other deviations
 become unavailable/route-interrupted instead of executing an unreviewed
 movement. The compiler also emits a deterministic
 `ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
@@ -62,8 +64,10 @@ realtime, or field authority.
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
-mainlines, 81 incoming approaches, and 163 candidate incoming/outgoing movement
-pairs. All 163 exact definitions are source-bound and released. The former KK
+mainlines, 82 incoming approaches, and 165 candidate incoming/outgoing movement
+pairs. 163 exact definitions are source-bound and released; the two 本牧JCT
+movements from the start of K3 that the 2026-10-12 topology review restored
+are not yet reviewed. The former KK
 Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and
@@ -85,7 +89,9 @@ authority because most routes do not publish them consistently.
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
 multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
-Core Location lifecycle only for the planning origin. An admitted live drive
+Core Location lifecycle only for the planning origin. It stops updating once a
+fix is within 100 m, or 12 seconds after it starts, and restarts on foreground
+return or an explicit current-location request. An admitted live drive
 starts its separate When In Use session in the foreground and keeps it active
 through screen lock and temporary app switching. It
 cannot create a live navigation session from the candidate graph alone. The
@@ -97,9 +103,15 @@ constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
 boundary adapters, and the observation adapter before attaching the shared
 serial navigation location controller. Device fixes reject invalid, stale,
 future-dated, independently ambiguous, and distributed-build simulated input.
-HIGH remains mandatory at entry/exit, recovery, and completion boundaries;
-between them, MEDIUM estimates may advance only when every candidate is a
-nearby ordered occurrence of the active RoutePlan. The seam cannot mint
+Between the entry and exit boundaries the session admits a fix — raw HIGH, or
+MEDIUM when every candidate is a nearby ordered occurrence of the active
+RoutePlan — only while no reachable off-plan road lies within twice the
+fix's accuracy allowance of the matched edge. A reachable road is a branch
+leaving the plan at or after the last occurrence where the car was matched
+clear of every such branch; a ramp merging into the plan or a stacked road
+the car never left the plan for is geometry, not a place it can be.
+`NavigationSessionUpdate.admittedConfidence` carries that decision, and
+presentation reads it, never the raw matcher value. The seam cannot mint
 `EntryTransitionAdmissionContext`,
 `SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
 hash or a MapKit response. Two consecutive accepted off-route observations may
@@ -139,7 +151,7 @@ transitions silent.
 The default shell persists interface and guidance-voice languages separately,
 preserves Japanese physical sign text and route shields, and exposes geographic
 and whole-route track-map presentations. OSM attribution is a compact
-map-adjacent native credit in the parked chrome and never grants
+corner credit on every map that draws the network and never grants
 navigation authority. The previous C2 and K7
 artifacts remain deterministic regression fixtures, not product coverage limits
 or active delivery tracks.
@@ -415,13 +427,21 @@ or schedule guidance. `CoreLocationEntryTransitionAdapter` instead consumes the
 immutable admission context supplied by `KaidoProductNavigationRuntime`, matches
 against the exact release-bound corridor, and emits a package-only
 `EntryTransitionEvidence`. The actor rejects simulation, stale/replayed or
-receive-reversed observations, release identity drift, independent road
-ambiguity, missing/mismatched heading, and skipped transition edges. Exact HIGH
-ordered transition edges remain sufficient. Because several released ramps are
-shorter than a 1 Hz driving sample, two time-ordered, heading-compatible MEDIUM
-observations over the release-bound transition/route-head chain may instead
-confirm the exact first RoutePlan edge. It restarts route matching at that exact
-first occurrence only after strict-route entry. The current 45-degree
+receive-reversed observations, release identity drift, fixes away from every
+corridor road or resolved to a road the plan does not use, mismatched heading,
+and backward progression. The adapter passes the matcher's own estimate
+unchanged; nothing is relabelled onto the first route edge. Because the
+corridor holds expressway roads only, a street beneath or beside a ramp can
+match the ramp as confidently as the ramp itself, so presence near the ramp is
+never entry. Entry needs at least three ordered, heading-compatible MEDIUM or
+HIGH route-head fixes whose residual fits their accuracy, and a log-likelihood
+ratio of at least 9 that the fixes lie on the route head rather than on the
+straight continuation of the reviewed approach. Only fixes where the two are
+at least 20 m apart are weighed, because correlated GPS error would otherwise
+let one hypothesis drift ahead where they coincide. A route head that never
+leaves its approach line cannot confirm entry. Strict-route navigation starts
+at the occurrence the evidence reached, with the ramp behind it recorded as
+driven, and route matching restarts there. The current 45-degree
 heading and ten-second age gates are conservative implementation thresholds, not
 field-calibrated release values. The Core Location adapter preserves
 `courseAccuracy` and `speedAccuracy` on the matcher observation as well as in
@@ -515,6 +535,16 @@ journey phase; the navigation core never learns about it. The return is
 matcher reacquires from wherever the car actually is, with ordinary recovery
 handling a PA return that lands further along.
 
+Only touch or Siri brings a rested drive back, so rest — button and Siri
+alike — is refused while a fresh fix reports a known speed above 1 m/s. A car
+parked under a PA roof often reports Core Location's negative "unknown" speed
+or no fresh fix at all, and neither refuses it. Rest, reset and End advance the playback generation and a lap swap
+replaces the session; a fix whose actor call outlives either is dropped rather
+than written over the state that replaced it, and a checkpoint captured for a
+session that is no longer live is not persisted. Location starts only from an
+active scene, so a Siri resume that runs before the app is in front reports the
+drive still paused instead of reporting a drive nothing is feeding.
+
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
 definitions, and one fresh resolved occurrence/distance observation. It never
@@ -555,7 +585,12 @@ step. Each identity permits three start attempts, spaced at least two seconds
 apart; a real interruption recovery opens a new attempt opportunity. Output
 occupancy expires after 30 seconds, with a typed timeout status. These are
 delivery bounds for short guidance, not road-authority or acoustic claims.
-The coordinator silences obsolete maneuvers at evidence loss and phase changes.
+The coordinator silences obsolete maneuvers at phase changes, at a genuinely
+stale position, and once the car has left a cue's approach window or its
+movement is skipped. A coarse fix (30 m or more, routine under elevated roads)
+leaves guidance progress unresolved, not contradicted, so a junction cue
+already speaking is allowed to finish: the engine emits each prompt once, and
+cutting it off there would lose it for good.
 Released expressway speech may replace surface speech; surface speech cannot
 replace an active released prompt. Provider text, geometry, and timing remain
 bounded presentation inputs and never create or mutate expressway guidance
@@ -567,7 +602,10 @@ ten seconds old or with at least 30 meters of reported uncertainty, matching the
 existing matcher's stale/low evidence boundaries. Informational start, entry, exit, rerouting, rejoin,
 position-loss/recovery, rest/resume and completion notices use the selected
 voice language, are episode-scoped, and yield to maneuver guidance. A lost
-position produces one notice per outage. MapKit ordinary-road text retains its
+position produces one notice per outage, and the 60-second cooldown belongs to
+the drive, so a lap swap does not reopen it. Muting drops a pending notice and
+a notice raised while muted is not queued, so unmuting never speaks old news.
+MapKit ordinary-road text retains its
 provider language, and the language settings explicitly disclose that boundary.
 For released expressway prompts, the iOS `AVSpeechGuidanceOutput` resolves only
 the requested reviewed locale. Provider surface commands instead retain the
@@ -796,7 +834,7 @@ background. The distributed bundle supplies five
 prebuilt whole-Shuto admissions for deterministic startup: C1 inner from
 Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
-Oji-minami to Shikahamabashi, the Daikoku/Yokohama circuit from
+Oji-minami to Itabashi-honcho, the Daikoku/Yokohama circuit from
 Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
 Daikoku-Futo. The C1 outer circuit from Kyobashi back to Kyobashi resolves
 through the on-device authoring path. For any other exact selected `RoutePlan`,
@@ -810,6 +848,12 @@ another route's road evidence or live-input authority merely because location
 permission or device fixes exist.
 
 Bundled catalog matching and admission construction run off the main actor.
+The verified foreground catalog loads once per process, and the whole-network
+runtime context, with its validation and network hash, is built once per
+product model by the first route that needs it. Junction prompts compile
+against the planner's released movement context. Preparation checks
+cancellation between route reconstruction, release build, and admission, so a
+replaced route stops early; request identity keeps its result from publishing.
 Admission construction validates the immutable release, full selected
 `RoutePlan`, foreground authority, journey composition, and complete navigation
 runtime before exposing foreground input authority. Route selection then
@@ -863,16 +907,30 @@ of being mistaken for a second deviation; reaching the bound target marks the
 bypassed RoutePlan occurrences skipped and returns the actor to strict-route
 navigation. Every recovery candidate must identify an exact divergence
 occurrence and trigger directed edge, begin with that same edge, and rejoin a
-strictly later RoutePlan occurrence. A uniquely matched trigger edge selects
-that candidate directly. If the first branch segments remain geometrically
-ambiguous, a later HIGH observation may select a candidate only when that edge
-belongs to exactly one eligible released recovery path; ambiguous or unknown
-edges remain fail-closed. The App then keeps the live observation stream active,
-projects the current position onto that released path, renders its remaining
-geometry, and clears recovery state only after the actor reaches the bound
-target occurrence. If no released detour exists, the stream remains active and
-an exact HIGH match on a legal later RoutePlan occurrence resumes strict-route
-navigation without inventing a reversal or destination reroute. The release gate additionally requires
+strictly later RoutePlan occurrence. The compiled matcher corridor follows
+every branch leaving the plan until it is 125 m — the widest candidate radius
+plus the widest ambiguity allowance — from every route edge, so a branch
+running beside the plan stays a candidate instead of leaving only the planned
+edge to match. A deviation needs two consecutive fixes, no more than three
+seconds apart, that the matcher places within twice the fix's accuracy on a
+reachable off-plan edge, or on a traversal of the plan more than the
+longitudinal window behind admitted progress, and that lie farther than three
+times the fix's allowance from every road of the plan from that window on and
+from the road its exit leads onto. A fix beyond every corridor road continues
+such a run but cannot start one, and near the exit it continues none. A match
+farther ahead of admitted progress than 40 m/s since that progress, plus
+100 m, is never admitted and restarts the matcher on progress: it is a
+repeated traversal or a misplaced fix, not where the car went. The observed edge maps to its released candidate through the
+candidate's path or, failing that, to the branch's first off-plan edge;
+ambiguous or unknown edges remain fail-closed. The App then keeps the live
+observation stream active, projects the current position onto that released
+path, renders its remaining geometry, and clears recovery state at the first
+admitted position at or past the bound target occurrence. An admitted position
+on the plan before it retracts the deviation without skipping anything. If no
+released detour exists, the stream remains active and an admitted position on a
+legal later RoutePlan occurrence — the earliest traversal of a repeated road
+not yet driven — resumes strict-route navigation without inventing a reversal
+or destination reroute. The release gate additionally requires
 every transition edge to exist in the same matcher corridor and every
 consecutive pair to be an explicit successor. The transition may end
 immediately before the first RoutePlan occurrence or use an exact prefix
@@ -1415,18 +1473,21 @@ That is a development fact, not yet the minimum deployment target.
   near the selected directional ramp. Provider steps remain ordinary-road
   presentation: they cannot mutate the exact `RoutePlan` or grant expressway
   occurrence authority.
-- The persisted connection preference defaults to `PREFER_HIGHWAYS`. Both
-  loops and tours admit nearby connecting-expressway entrances after the same
-  direction and ordered-anchor checks. MapKit allows highways and toll roads
-  on the bounded access/egress legs; among alternatives no more than 15 percent
-  slower than the fastest, capped at eight additional minutes, it prefers the
-  fastest highway alternative. `AVOID_HIGHWAYS` offers entrances on the chosen
-  course and requests highway/toll avoidance for connecting legs. It selects
-  an ordinary-road alternative when one exists, otherwise the available route;
-  avoidance is a preference, not a reachability guarantee. Ordinary alternatives
-  retain the bounded fewer-maneuvers selection. The same preference is captured
-  for access, egress, and live connecting-leg rerouting. Neither setting mutates
-  the selected `RoutePlan`; connecting tolls are outside the Shuto tariff band.
+- The persisted connection preference defaults to `PREFER_HIGHWAYS`. Under
+  it, loops and tours admit nearby connecting-expressway entrances after the
+  same direction and ordered-anchor checks; `AVOID_HIGHWAYS` offers entrances on
+  the chosen course only. The preference chooses entrances and nothing else.
+  Connecting legs never use expressways (owner decision 2026-10-12): an
+  expressway leg would guide through junctions Kaido has not reviewed and add a
+  second toll outside the quoted band. Every MapKit access, egress, and live
+  connecting-leg reroute request therefore avoids highways and tolls, and the
+  resolver selects an ordinary-road alternative when one exists, otherwise the
+  available route. An access leg ends on the entry ramp itself, which MapKit
+  flags as a toll or highway segment even under avoidance: a 2026-10-12 probe
+  of 16 entrances returned only flagged routes for 6 of them, so rejecting
+  flagged routes outright would make those entrances unreachable. Among alternatives no more than 15 percent slower than the
+  fastest, capped at eight additional minutes, it keeps the bounded
+  fewer-maneuvers selection. Neither setting mutates the selected `RoutePlan`.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
   artwork. The internal iPhone renderer now maps normalized path points and
@@ -1673,6 +1734,26 @@ Precompute eligible egress paths for loop occurrences using reverse shortest-pat
 search from exact exit facilities. Runtime `FINISH_DRIVE` selects the next legal
 option consistent with the accepted return policy. It never reverses the graph or
 unlocks an arbitrary exit connector.
+
+`NavigationSession` recognises the released exit itself. Once admitted
+progress, or the matcher's own placement, is within the final 300 m of the
+route, it needs two consecutive accurate fixes, no more than three seconds
+apart, that place the car on the exit side of every road it could have taken
+instead: matched after the plan's last choice of road, or on a road reached
+only through the terminal edge, with no reachable off-plan road within twice
+the fix's allowance; or matching no corridor road at all within the exit's
+coverage, less twice the fix's accuracy. The coverage is read from the
+corridor itself — the nearest point near the exit where it stops following a
+road — and the compiler follows the roads leaving the exit decision until
+300 m from the exit, so a car off all of them there has taken it. The second
+fix must be past the end of the last edge, on its road, or off the corridor;
+the drive then finishes at the terminal occurrence and enters
+`EXIT_TRANSITION`, also from a deviation the exit's own road read as. A 15 m
+terminal edge is crossed between 1 Hz fixes, so the exit is recognised by
+where the car went rather than by one exact match on that edge. Driving on
+past the exit is a deviation and never finishes the journey. The Finish
+control and its Siri action remain a fallback gated on an admitted position
+near the end.
 
 ## Route-aware map matching
 
@@ -2113,8 +2194,10 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto replay uses a separate schema-2.0 app checkpoint. It binds the
-candidate network snapshot, the complete replanned `RoutePlan`, directional
+The whole-Shuto replay uses a separate schema-2.0 app checkpoint, one
+atomically replaced file under Application Support; a nine-lap circuit's
+`RoutePlan` alone is about 1.8 MB, too large for a UserDefaults value. It binds
+the candidate network snapshot, the complete replanned `RoutePlan`, directional
 entry and exit, selected preference, recommendation/custom/circuit selection
 source, circuit identity and lap count when applicable, bounded surface legs,
 phase, map mode, and consumed output prompt IDs. Entry-transition and
@@ -2138,9 +2221,10 @@ entry-transition checkpoint must retain zero route progress and no runtime
 occurrence or fraction. Restoration is paused, discards matcher posterior and
 partial entry continuity, and resumes from the first generated entrance
 observation. An expressway restore resumes at the saved occurrence but admits
-no new progress until another HIGH replay observation. App inactive/background
-cancels replay, stops current speech, and saves consumed prompt IDs so
-reconstruction cannot repeat an admitted command. Any checkpoint marked as live
+no new progress until another HIGH replay observation. Replay steps do not
+write the checkpoint; pausing and App inactive/background do.
+App inactive/background cancels replay, stops current speech, and saves
+consumed prompt IDs so reconstruction cannot repeat an admitted command. Any checkpoint marked as live
 is also returned to parked review with
 `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; the candidate product never
 reconstructs `ShutoLiveDriveSession`. This is replay termination recovery, not
@@ -2165,7 +2249,11 @@ The App's `SavedRouteLibraryModel` uses the pure
 `SHARED_IMPORT` provenance, rename local display metadata, export the exact
 shared document, or delete one stable record. It persists each complete result
 before publishing it to SwiftUI; failed I/O cannot expose an uncommitted
-library. Unsupported schemas are rejected rather than implicitly migrated.
+library. Unsupported schemas are rejected rather than implicitly migrated. A
+stored library that fails to load — unsupported schema, one invalid record, or
+a read error — stays byte-for-byte in place: the model publishes no records and
+refuses every write with the load error code, so a build that can read the file
+recovers every saved route.
 
 The retained release-editor path can reopen a record only after
 `SavedRouteReleaseMatcher` finds exactly one whole-RoutePlan-equal current
@@ -2266,13 +2354,18 @@ bounded role it may own.
 ## Drive controls, history, and shared routes
 
 App Intents expose the foreground live model's existing repeat, speech mode,
-lap, rest, resume, and end actions. Siri returns the current valid instruction
+lap, rest, resume, and end actions. Unmute returns to the voice mode the driver
+had before muting rather than to full guidance. A lap change, exit handoff or
+resume that fails mid-drive is reported as one line on the driving screen, not
+only in the planning dock. Siri returns the current valid instruction
 through its own dialog output. The app does not record microphone input or send
 commands to an application server. Foreground scene registration owns the weak
 model reference; it does not introduce a second navigation session.
 
 Drive history persists aggregate recorded intervals, observed lap splits, and
-the exact planned route locally. A checkpoint may retain the aggregate record
+the exact planned route locally, one file per drive; a file that cannot be read
+or validated hides only its own drive. The history list reads those files off
+the main actor. A checkpoint may retain the aggregate record
 without retaining the last raw speed sample. Rest interrupts speed integration;
 missing samples and skipped planned laps never become recorded driving. The
 existing recording setting also controls collection and history persistence.

@@ -37,7 +37,7 @@ should become scenarios when their layer is built.
 | KR-D27 | A joint product release must declare consistent runtime evidence scope and live-input policy before foreground authority exists | P0 | Seeded |
 | KR-D28 | A Route Atlas release artifact is authored from an evidence-free reviewed draft plus separate topology and layout provenance before the whole gate runs | P0 | Seeded |
 | KR-D29 | Current pre-drive evidence resolves only within one exact product, RoutePlan, vehicle/payment profile, provenance set, and validity window | P0 | Seeded |
-| KR-D30 | Circuit planning assembles entrance approach, repeated laps, and a forward exit as distinct ordered occurrences, and rejects direction-invalid entrances and invalid lap counts | P0 | Seeded |
+| KR-D30 | Circuit planning assembles entrance approach, repeated laps, and a forward exit as distinct ordered occurrences, and rejects direction-invalid entrances, an exit sharing the entrance's toll point, and invalid lap counts | P0 | Seeded |
 
 ## Navigation simulation
 
@@ -61,7 +61,7 @@ should become scenarios when their layer is built.
 | KR-S16 | Incremental matcher evidence requires fresh confirmation and reset cannot move navigation backward | P0 | Seeded |
 | KR-S17 | Fresh resolved progress produces a non-regressing shared frame and one-shot voice emission | P0 | Seeded |
 | KR-S18 | HIGH Swift along-edge progress becomes occurrence-bound distance to a reviewed DecisionZone | P0 | Seeded |
-| KR-S19 | Release-bound multi-edge entrance evidence is required before strict-route admission | P0 | Seeded |
+| KR-S19 | Release-bound ordered route-head evidence past the approach line is required before strict-route admission | P0 | Seeded |
 | KR-S20 | A release-bound surface-egress matcher requires two fresh exact handoff observations before leaving the exit transition | P0 | Seeded |
 | KR-S21 | An exit-only journey completes at its exact released exit handoff without entering surface egress | P0 | Seeded |
 | KR-S22 | A generic whole-route simulation preserves repeated occurrences and requires fresh confirmation after a signal gap | P0 | Seeded |

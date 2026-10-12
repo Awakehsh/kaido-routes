@@ -19,12 +19,10 @@ internal review workbench.
   Mirai, and the Yokohama Bay Bridge. These three Daikoku experiences end
   inside the PA, including completion of the chosen laps on the loop. The driver
   chooses a route, never designs an entrance or exit: selecting an
-  experience derives the pairing automatically (nearest reachable
-  direction-valid entrance, and for loops the exit whose pairing lands in
-  the lowest tariff band), shows it as one factual line with ranked
-  alternatives one disclosure away, offers a 1–9 lap count on loops, plans
-  the experience as one ordered occurrence sequence, and runs it as a round
-  trip through the normal review gate. Tariff bands come from dated ACTIVE
+  experience derives the pairing automatically, shows it as one factual line
+  with ranked alternatives one disclosure away, offers a 1–9 lap count on
+  loops, plans the experience as one ordered occurrence sequence, and runs it
+  as a round trip through the normal review gate. Tariff bands come from dated ACTIVE
   evidence (normal car, ETC): the minimum band is asserted only with a
   distance safety margin, mid-range amounts stay explicit estimates, and
   nothing is shown until a band is computed. Two dated rules are encoded from
@@ -34,13 +32,34 @@ internal review workbench.
   calendar day is the one quoted, so the revision is never shown early and
   takes over on its day without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
-  the band. Destination search remains an optional continuation below the
-  catalog.
+  the band. Same-named ramps bill as one toll point, and so do the
+  interchanges the operator bills together: 王子南 and 王子北; 箱崎, 浜町 and
+  清洲橋; 大井南 and 中環大井南. An entrance and exit
+  sharing one are not plannable as an exact entry/exit route — the
+  planner's toll-point path between them collapses to the ramps
+  themselves — so the catalog, the editor, destination search, and a
+  reopened saved route never form that pair, and a loop leaves at another
+  toll point's exit. Destination search remains an optional
+  continuation below the catalog.
+- The derived pairing takes the reachable direction-valid entrance that
+  reaches the course soonest: the straight line from the origin to the ramp
+  at city speed (~27 km/h, the surface-access tiers' 8 km in 15–20 min) plus,
+  at the 54 km/h expressway reference, the approach the plan drives before
+  its first lap or tour pass. A ramp beside the origin therefore loses to the
+  course's own ramp a few kilometers away when its approach is a long
+  off-course detour, while a short radial approach still wins. For loops the
+  exit is the lowest tariff band among the exits reached within 3 km — one
+  inner-ward ramp spacing — of the soonest exit after the final lap, ties
+  going to the earlier forward exit. An exit back beside the entrance often
+  quotes the minimum band, but after the laps it can be most of another lap
+  away; the recommendation never buys a lower band with a pass the driver
+  did not choose. Tours keep their soonest course exit.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
-  ordered course. Avoid when possible keeps the selected Shuto course but
-  prefers its own entrances and ordinary roads on connecting legs. Connecting
-  tolls are outside the Shuto estimate.
+  ordered course. Avoid when possible keeps the selected Shuto course and its
+  own entrances. Either way the legs to and from the expressway are ordinary
+  roads: MapKit is asked to avoid highways and tolls, so a connecting leg never
+  guides through unreviewed junctions or adds a second toll.
 - PAs appear in destination search alongside other places. Selecting one
   plans its exact directional access and an arrival point on the reviewed
   parking interior. There is no separate stop-selection screen. A PA-ended
@@ -56,7 +75,8 @@ internal review workbench.
   a PA has no exit to keep, so choosing an exit there authors an explicit
   entrance/exit route. A custom pairing constrains
   whichever end the driver fixes first: only exits a directed path reaches
-  from the entry, only entrances a directed path leads from to the exit.
+  from the entry, only entrances a directed path leads from to the exit,
+  and never the other end's own toll point.
   A search still surfaces an IC the other end rules out, marked unreachable;
   choosing it clears the other end rather than drafting a refused pair. When the bounded
   surface provider resolves both ordinary-road legs for every exact candidate,

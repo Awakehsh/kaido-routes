@@ -23,16 +23,60 @@ struct ShutoCircuitProductReleaseBuilderTests {
         == route.edges.count
     )
     #expect(release.navigation.bundle.releasedGuidance.count == 10)
-    #expect(release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1)
-    #expect(
-      release.navigation.bundle.runtimePolicy.recoveryCandidates[0]
-        .triggerDirectedEdgeID == "osm.44804643.0.forward"
+    // The Edobashi detour leaves through the Hakozaki rotary, a movement no
+    // released binding covers, so C1 releases no recovery: a wrong turn
+    // there is the unavailable-recovery state, never an unreviewed detour.
+    #expect(release.navigation.bundle.runtimePolicy.recoveryCandidates.isEmpty)
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
     )
-    #expect(
-      release.navigation.bundle.matcherCorridor.edges.contains {
-        $0.id == "osm.44804643.0.forward"
+    let edobashi = try #require(
+      assets.recoveryCandidates.first {
+        $0.triggerDirectedEdgeID == "osm.44804643.0.forward"
       }
     )
+    #expect(
+      ShutoPlannedRouteRuntimeCompiler.coveredRecoveryCandidates(
+        [edobashi],
+        route: route,
+        database: database
+      ).isEmpty
+    )
+  }
+
+  @Test("every released recovery crosses only released junction movements")
+  func releasedRecoveriesAreCovered() throws {
+    let database = try loadDatabase()
+    typealias Builder = ShutoCircuitProductReleaseBuilder
+    let products = [
+      (try Builder.plannedRoute(database: database), try Builder.buildArtifact(database: database)),
+      (
+        try Builder.plannedWanganRoute(database: database),
+        try Builder.buildWanganArtifact(database: database)
+      ),
+      (try Builder.plannedC2Route(database: database), try Builder.buildC2Artifact(database: database)),
+      (
+        try Builder.plannedDaikokuRoute(database: database),
+        try Builder.buildDaikokuArtifact(database: database)
+      ),
+      (
+        try Builder.plannedScenicRoute(database: database),
+        try Builder.buildScenicArtifact(database: database)
+      ),
+    ]
+    for (route, artifact) in products {
+      let release = try KaidoProductRelease(artifact: artifact)
+      let released = release.navigation.bundle.runtimePolicy.recoveryCandidates
+      #expect(
+        ShutoPlannedRouteRuntimeCompiler.coveredRecoveryCandidates(
+          released,
+          route: route,
+          database: database
+        ) == released,
+        "\(route.routePlan.id)"
+      )
+    }
   }
 
   @Test("Bayshore westbound route builds a second foreground authority")
@@ -49,7 +93,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
     // Arrival in the PA has no return-junction or exit cue.
-    #expect(release.navigation.bundle.releasedGuidance.count == 14)
+    #expect(release.navigation.bundle.releasedGuidance.count == 16)
     // The parking area is driven, and driving it is recorded as such.
     #expect(
       release.navigation.bundle.routePlan.occurrences.contains {
@@ -97,7 +141,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 48)
+    #expect(release.navigation.bundle.releasedGuidance.count == 26)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )
@@ -140,7 +184,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 14)
+    #expect(release.navigation.bundle.releasedGuidance.count == 17)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -162,7 +206,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 17)
+    #expect(release.navigation.bundle.releasedGuidance.count == 20)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -275,7 +319,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
     let route = try ShutoRoutePlanner(database: database).planCircuit(
       circuit: .c1Outer,
       entryFacilityID: "shuto.ic.c1.kyoubashi",
-      exitFacilityID: "shuto.ic.c1.shintomicho",
+      exitFacilityID: "shuto.ic.c1.ginza",
       laps: 1
     )
     let artifact =
@@ -319,9 +363,9 @@ struct ShutoCircuitProductReleaseBuilderTests {
       ),
       (
         appResource:
-          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+          "c2-inner-oujiminami-itabashihoncho-product-release.json",
         trackedResource:
-          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+          "c2-inner-oujiminami-itabashihoncho-product-release.json",
         artifact: try ShutoCircuitProductReleaseBuilder.buildC2Artifact(
           database: database
         )

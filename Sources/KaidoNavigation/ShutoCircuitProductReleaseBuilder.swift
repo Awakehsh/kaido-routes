@@ -48,7 +48,7 @@ public enum ShutoCircuitProductReleaseBuilder {
   public static let c2EntryFacilityID =
     "shuto.ic.c2.oujiminami"
   public static let c2ExitFacilityID =
-    "shuto.ic.s1.shikahamabashi"
+    "shuto.ic.5.itabashihoncho"
   public static let daikokuCircuitID =
     "shuto.circuit.daikoku-yokohama-loop"
   public static let daikokuEntryFacilityID =
@@ -148,7 +148,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     try buildArtifact(
       database: database,
       route: plannedC2Route(database: database),
-      releaseKey: "c2-inner-oujiminami-shikahamabashi",
+      releaseKey: "c2-inner-oujiminami-itabashihoncho",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -323,11 +323,16 @@ public enum ShutoCircuitProductReleaseBuilder {
       releaseKey: releaseKey
     )
     let releaseRecovery = releasedRecovery(
-      assets: assets,
       availableDirectedEdgeIDs:
         runtimeContext?.directedEdgeIDs
         ?? Set(database.edges.map(\.edgeID)),
-      preferredTriggerID: preferredRecoveryTriggerID
+      preferredTriggerID: preferredRecoveryTriggerID,
+      coveredCandidates: ShutoPlannedRouteRuntimeCompiler
+        .coveredRecoveryCandidates(
+          assets.recoveryCandidates,
+          route: route,
+          database: database
+        )
     )
     let entryApproach = try entryApproach(
       route: route,
@@ -545,7 +550,7 @@ public enum ShutoCircuitProductReleaseBuilder {
         .simplifiedChinese: "\(route.entryFacility.nameJA)入口",
         .english: "\(route.entryFacility.nameJA) entrance",
       ]
-    case "c2-inner-oujiminami-shikahamabashi":
+    case "c2-inner-oujiminami-itabashihoncho":
       entranceTitle = [
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "王子南入口",
@@ -691,12 +696,16 @@ public enum ShutoCircuitProductReleaseBuilder {
     )
   }
 
+  /// Promotes at most one compiler recovery candidate, and only one whose
+  /// every junction decision is a released movement binding. When none
+  /// qualifies the release carries no recovery and a wrong turn leads to the
+  /// unavailable-recovery state instead of an unreviewed detour.
   private static func releasedRecovery(
-    assets: ShutoPlannedRouteRuntimeAssets,
     availableDirectedEdgeIDs: Set<String>,
-    preferredTriggerID: String?
+    preferredTriggerID: String?,
+    coveredCandidates: [RecoveryCandidate]
   ) -> RecoveryCandidate? {
-    let available = assets.recoveryCandidates
+    let available = coveredCandidates
       .filter { candidate in
         candidate.recoveryOccurrenceIDs.allSatisfy(
           availableDirectedEdgeIDs.contains

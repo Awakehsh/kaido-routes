@@ -6,6 +6,7 @@ import KaidoPresentation
 import KaidoRouting
 import KaidoSurfaceRouting
 import MapKit
+import Synchronization
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -379,10 +380,237 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testCoarseFixLetsTheSpokenJunctionCueFinish() async throws {
+    let output = SpeechRecoveryAppOutput()
+    let model = try await speechRecoveryModel(output: output)
+    let route = try XCTUnwrap(model.selectedRoute)
+    func isJunctionCue(_ identity: GuidanceSpeechIdentity?) -> Bool {
+      guard let identity else { return false }
+      return identity.anchorID != "PROVIDER_SURFACE_STEP"
+        && identity.anchorID != "JOURNEY_STATUS"
+    }
+    var position = try await driveSpeechRecoveryRoute(model) {
+      isJunctionCue(output.active)
+    }
+    let cue = try XCTUnwrap(output.active)
+    let movementID = try XCTUnwrap(model.presentationProjection?.iPhone.nextMovementOccurrenceID)
+    let movementIndex = try XCTUnwrap(route.routePlan.occurrence(id: movementID)?.index)
+    let stops = output.stopCount
+
+    // Under an elevated road: the same place at 50 m accuracy. Progress is
+    // unresolved, not contradicted, so the cue keeps speaking.
+    position.timestamp += 1_000
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "coarse-cue.coarse", coordinate: position.coordinate,
+        atMilliseconds: position.timestamp, courseDegrees: position.course,
+        speedMetersPerSecond: 18, horizontalAccuracyMeters: 50))
+    XCTAssertEqual(model.matcherConfidence, .low)
+    XCTAssertEqual(output.active, cue)
+    XCTAssertEqual(output.stopCount, stops)
+
+    // Once the car is past the junction the cue describes nothing ahead.
+    for index in position.edgeIndex...min(movementIndex + 1, route.edges.count - 1) {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      for fraction in [0.25, 0.75] {
+        position.timestamp += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "coarse-cue.past.\(position.timestamp)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude + (end.longitude - start.longitude) * fraction),
+            atMilliseconds: position.timestamp,
+            courseDegrees: Self.bearing(from: start, to: end), speedMetersPerSecond: 18))
+      }
+    }
+    XCTAssertNotEqual(output.active, cue)
+    model.reset()
+  }
+
+  func testMutedNoticesAreDroppedRatherThanSpokenOnUnmute() async throws {
+    let suiteName = UUID().uuidString
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    func positionLostCount(_ output: SpeechRecoveryAppOutput) -> Int {
+      output.commands.filter { $0.identity.promptID.contains("positionLost") }.count
+    }
+
+    // A notice raised while muted is not queued for later.
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output, defaults: defaults)
+    var position = try await driveSpeechRecoveryRoute(model) { model.phase == .expressway }
+    model.setSpeechMode(.muted)
+    model.evaluateLiveLocationFreshness(atMilliseconds: position.timestamp + 10_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    model.setSpeechMode(.full)
+    position.timestamp += 11_000
+    // A coarse fix flushes pending notices without announcing a recovery.
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "muted-notice.coarse", coordinate: position.coordinate,
+        atMilliseconds: position.timestamp, courseDegrees: position.course,
+        speedMetersPerSecond: 18, horizontalAccuracyMeters: 50))
+    XCTAssertEqual(positionLostCount(output), 0)
+    model.reset()
+
+    // A notice already waiting when the driver mutes is dropped with it.
+    let interrupted = SpeechRecoveryAppOutput()
+    interrupted.autoFinish = true
+    let second = try await speechRecoveryModel(output: interrupted, defaults: defaults)
+    position = try await driveSpeechRecoveryRoute(second) { second.phase == .expressway }
+    interrupted.eventHandler?(.interruptionBegan)
+    second.evaluateLiveLocationFreshness(atMilliseconds: position.timestamp + 10_000)
+    XCTAssertEqual(positionLostCount(interrupted), 0)
+    second.setSpeechMode(.muted)
+    interrupted.eventHandler?(.interruptionEnded)
+    second.setSpeechMode(.full)
+    position.timestamp += 11_000
+    await second.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "muted-notice.pending", coordinate: position.coordinate,
+        atMilliseconds: position.timestamp, courseDegrees: position.course,
+        speedMetersPerSecond: 18, horizontalAccuracyMeters: 50))
+    XCTAssertEqual(positionLostCount(interrupted), 0)
+    second.reset()
+  }
+
+  func testSiriUnmuteRestoresTheDriversVoiceMode() async throws {
+    let suiteName = UUID().uuidString
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output, defaults: defaults)
+    ActiveDriveControl.model = model
+    defer { ActiveDriveControl.model = nil }
+    model.setSpeechMode(.concise)
+    _ = try await DriveControlIntent(action: .mute).perform()
+    XCTAssertEqual(model.speechMode, .muted)
+    _ = try await DriveControlIntent(action: .unmute).perform()
+    XCTAssertEqual(model.speechMode, .concise)
+    model.reset()
+  }
+
+  func testLapSwapKeepsThePositionLossCooldown() async throws {
+    var nowMilliseconds = 1_000
+    let suiteName = UUID().uuidString
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { nowMilliseconds },
+      driveRecordPreferenceStore: defaults
+    )
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    let route = try XCTUnwrap(model.selectedRoute)
+    if let accessEnd = model.accessRoute?.coordinates.last {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "lap-cooldown.access-end", coordinate: accessEnd, atMilliseconds: nowMilliseconds,
+          courseDegrees: Self.bearing(from: route.coordinates[0], to: route.coordinates[1])))
+    }
+    var index = 0
+    while model.phase != .expressway, index < 40 {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      for fraction in [0.25, 0.75] {
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "lap-cooldown.\(nowMilliseconds)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude + (end.longitude - start.longitude) * fraction),
+            atMilliseconds: nowMilliseconds, courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 18))
+      }
+      index += 1
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    func positionLostCount() -> Int {
+      output.commands.filter { $0.identity.promptID.contains("positionLost") }.count
+    }
+
+    model.evaluateLiveLocationFreshness(atMilliseconds: nowMilliseconds + 10_000)
+    XCTAssertEqual(positionLostCount(), 1)
+    let added = await model.addOneLap()
+    XCTAssertTrue(added, model.failureCode ?? "no failure code")
+    // Still the same loss, twenty seconds later: the new plan is not news.
+    model.evaluateLiveLocationFreshness(atMilliseconds: nowMilliseconds + 20_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(positionLostCount(), 1)
+    model.reset()
+  }
+
+  private struct LiveDrivePosition {
+    var timestamp: Int
+    var edgeIndex: Int
+    var coordinate: ShutoCoordinate
+    var course: Double
+  }
+
+  /// Feeds accurate on-route fixes from the access end, two per plan edge,
+  /// until `isDone` holds.
+  private func driveSpeechRecoveryRoute(
+    _ model: WholeShutoProductModel,
+    speedMetersPerSecond: Double = 18,
+    until isDone: () -> Bool
+  ) async throws -> LiveDrivePosition {
+    let route = try XCTUnwrap(model.selectedRoute)
+    var position = LiveDrivePosition(
+      timestamp: 1_000, edgeIndex: 0,
+      coordinate: try XCTUnwrap(model.accessRoute?.coordinates.last),
+      course: Self.bearing(from: route.coordinates[0], to: route.coordinates[1]))
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "drive.entry", coordinate: position.coordinate,
+        atMilliseconds: position.timestamp, courseDegrees: position.course))
+    for index in route.edges.indices {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      position.edgeIndex = index
+      position.course = Self.bearing(from: start, to: end)
+      for fraction in [0.25, 0.75] {
+        position.timestamp += 1_000
+        position.coordinate = ShutoCoordinate(
+          latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+          longitude: start.longitude + (end.longitude - start.longitude) * fraction)
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "drive.\(position.timestamp)", coordinate: position.coordinate,
+            atMilliseconds: position.timestamp, courseDegrees: position.course,
+            speedMetersPerSecond: speedMetersPerSecond))
+        if isDone() { return position }
+      }
+    }
+    XCTFail("The route ended before the drive reached the expected state")
+    return position
+  }
+
   private func speechRecoveryModel(
     output: SpeechRecoveryAppOutput,
     resolver: any WholeShutoSurfaceRouteResolving = WholeShutoInstructionSurfaceRouteResolver(),
-    guidanceLocale: KaidoReleaseLocale = .english
+    guidanceLocale: KaidoReleaseLocale = .english,
+    defaults: UserDefaults = .standard
   ) async throws -> WholeShutoProductModel {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: resolver, checkpointStore: nil,
@@ -390,7 +618,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       speechOutput: output, nowMillisecondsProvider: { 1_000 },
       languageSelectionProvider: {
         NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: guidanceLocale)
-      })
+      }, driveRecordPreferenceStore: defaults)
     model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6812, longitude: 139.7671))
     model.prepareCustomRouteDraft()
     model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
@@ -469,18 +697,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
 
     XCTAssertEqual(
-      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-        from: [fastest, simpler],
-        preference: .avoidHighways
-      ),
+      WholeShutoMapKitSurfaceRouteResolver.selectRoute(from: [fastest, simpler]),
       simpler
-    )
-    XCTAssertEqual(
-      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-        from: [fastest, simpler],
-        preference: .preferHighways
-      ),
-      fastest
     )
   }
 
@@ -508,8 +726,7 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-        from: [overPercentageLimit, shortFastRoute],
-        preference: .avoidHighways
+        from: [overPercentageLimit, shortFastRoute]
       ),
       shortFastRoute
     )
@@ -524,21 +741,20 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-        from: [overAbsoluteLimit, longFastRoute],
-        preference: .avoidHighways
+        from: [overAbsoluteLimit, longFastRoute]
       ),
       longFastRoute
     )
   }
 
-  func testSurfaceRoutePreferenceDefaultsPersistsAndReplansReview()
+  func testSurfaceRoutePreferenceDefaultsPersistsAndLeavesConnectingLegsAlone()
     async
   {
     let suiteName = "app.kaidoroutes.tests.surface-route-preference"
     let defaults = UserDefaults(suiteName: suiteName)!
     defaults.removePersistentDomain(forName: suiteName)
     defer { defaults.removePersistentDomain(forName: suiteName) }
-    let resolver = WholeShutoPreferenceRecordingSurfaceRouteResolver()
+    let resolver = WholeShutoCountingSurfaceRouteResolver()
     let model = WholeShutoProductModel(
       locationProvider: WholeShutoUnexpectedLocationProvider(),
       surfaceRouteResolver: resolver,
@@ -547,7 +763,6 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
 
     XCTAssertEqual(model.surfaceRoutePreference, .preferHighways)
-    model.setSurfaceRoutePreference(.preferHighways)
     model.selectCurrentOrigin(
       WholeShutoProductModel.previewOrigin.coordinate
     )
@@ -555,23 +770,28 @@ final class WholeShutoProductModelTests: XCTestCase {
       WholeShutoProductModel.previewDestination
     )
     model.planJourney()
-    for _ in 0..<1_000 where model.isPlanning {
+    for _ in 0..<1_000 where model.isPlanning || model.isUpdatingSurfaceRoute {
       await Task.yield()
     }
-
     XCTAssertEqual(model.phase, .review)
-    let plannedPreferences = await resolver.recordedPreferences()
-    XCTAssertFalse(plannedPreferences.isEmpty)
-    XCTAssertTrue(plannedPreferences.allSatisfy { $0 == .preferHighways })
+    let plannedRequests = await resolver.requestCount()
+    XCTAssertGreaterThan(plannedRequests, 0)
 
+    // Connecting legs are ordinary roads under either setting, so changing
+    // it in review has nothing to re-request.
     model.setSurfaceRoutePreference(.avoidHighways)
     for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
       await Task.yield()
     }
-    let replannedPreferences = await resolver.recordedPreferences()
+    let requestsAfterChange = await resolver.requestCount()
+    XCTAssertEqual(requestsAfterChange, plannedRequests)
     XCTAssertEqual(
-      Array(replannedPreferences.suffix(2)),
-      [.avoidHighways, .avoidHighways]
+      WholeShutoProductModel(
+        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+        checkpointStore: nil,
+        driveRecordPreferenceStore: defaults
+      ).surfaceRoutePreference,
+      .avoidHighways
     )
 
     model.setSurfaceRoutePreference(.preferHighways)
@@ -583,19 +803,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(reopened.surfaceRoutePreference, .preferHighways)
   }
 
-  func testHighwayPreferenceReachesMapKitAndUsesBoundedAlternatives() {
+  func testConnectingLegsRequestAndChooseOrdinaryRoads() {
     let origin = WholeShutoProductModel.previewOrigin.coordinate
     let destination = WholeShutoProductModel.previewDestination.coordinate
     let request = WholeShutoMapKitSurfaceRouteResolver.request(
-      from: origin, to: destination, preference: .preferHighways
+      from: origin, to: destination
     )
-    XCTAssertEqual(request.highwayPreference, .any)
-    XCTAssertEqual(request.tollPreference, .any)
-    let avoiding = WholeShutoMapKitSurfaceRouteResolver.request(
-      from: origin, to: destination, preference: .avoidHighways
-    )
-    XCTAssertEqual(avoiding.highwayPreference, .avoid)
-    XCTAssertEqual(avoiding.tollPreference, .avoid)
+    XCTAssertEqual(request.highwayPreference, .avoid)
+    XCTAssertEqual(request.tollPreference, .avoid)
     func route(seconds: Double, highway: Bool) -> WholeShutoSurfaceRoute {
       WholeShutoSurfaceRoute(
         coordinates: [origin, destination], distanceMeters: 8_000,
@@ -604,20 +819,17 @@ final class WholeShutoProductModelTests: XCTestCase {
       )
     }
     let ordinary = route(seconds: 600, highway: false)
-    let highway = route(seconds: 650, highway: true)
-    let detour = route(seconds: 900, highway: true)
+    let fasterHighway = route(seconds: 500, highway: true)
+    let slowerOrdinary = route(seconds: 900, highway: false)
     XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-      from: [ordinary, highway], preference: .preferHighways
-    ), highway)
-    XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-      from: [ordinary, highway], preference: .avoidHighways
+      from: [fasterHighway, ordinary]
     ), ordinary)
     XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-      from: [ordinary, detour], preference: .preferHighways
-    ), ordinary)
+      from: [fasterHighway, slowerOrdinary]
+    ), slowerOrdinary)
     XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
-      from: [highway], preference: .avoidHighways
-    ), highway)
+      from: [fasterHighway]
+    ), fasterHighway)
   }
 
   func testTourHighwayPreferenceRecomputesNearbyConnectingEntrance() async throws {
@@ -765,10 +977,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.ic.c1.kyoubashi"
     )
     XCTAssertTrue(model.startCircuitJourney())
-    for _ in 0..<400
-    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
+    await model.awaitLiveNavigationPreparationForTesting()
 
     XCTAssertEqual(model.phase, .review)
     XCTAssertEqual(
@@ -1102,15 +1311,27 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.declareEntry(facilityID: offCourse.facilityID)
     XCTAssertTrue(model.entryIsUnconfirmed)
 
-    let namedEntry = try XCTUnwrap(candidates.first)
+    // The band follows the declaration. A declarable entrance's ramp lies
+    // on the plan. 銀座, the exit's own IC, was offered here only while it
+    // was also bound to 京橋's entrance ramp, where this drive starts; none
+    // of the entrances offered now shares the exit's toll point.
+    let exit = try XCTUnwrap(route.exitFacility)
+    XCTAssertFalse(
+      candidates.contains { ShutoRoutePlanner.sharesTollPoint($0, exit) }
+    )
+
+    let namedEntry = try XCTUnwrap(
+      candidates.first { !ShutoRoutePlanner.sharesTollPoint($0, exit) }
+    )
     model.declareEntry(facilityID: namedEntry.facilityID)
     XCTAssertFalse(model.entryIsUnconfirmed)
     XCTAssertEqual(model.driveEntryFacility?.facilityID, namedEntry.facilityID)
+    XCTAssertNotNil(model.selectedTariffBand)
     XCTAssertEqual(
       model.selectedTariffBand,
       try model.planner.tariffBand(
         entryFacilityID: namedEntry.facilityID,
-        exitFacilityID: try XCTUnwrap(route.exitFacility).facilityID,
+        exitFacilityID: exit.facilityID,
         evidence: model.activeTariffEvidence
       )
     )
@@ -1214,10 +1435,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotNil(model.circuitEntryFacilityID)
     XCTAssertNotNil(model.circuitExitFacilityID)
     XCTAssertTrue(model.startCircuitJourney())
-    for _ in 0..<400
-    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
+    await model.awaitLiveNavigationPreparationForTesting()
 
     XCTAssertEqual(model.phase, .review)
     XCTAssertNotNil(model.accessRoute)
@@ -1698,9 +1916,20 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.isPlaying)
     _ = try await DriveControlIntent(action: .unmute).perform()
     XCTAssertEqual(model.speechMode, .full)
+    // A break is taken parked. The stop comes after a gap longer than the
+    // record's sample window, so it adds no recorded interval.
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "record.parked",
+        coordinate: midpoint,
+        atMilliseconds: 6_000 + WholeShutoDriveRecord.maximumSampleGapMilliseconds + 1,
+        speedMetersPerSecond: 0
+      )
+    )
     _ = try await DriveControlIntent(action: .rest).perform()
     XCTAssertFalse(model.isPlaying)
-    XCTAssertTrue(try history.load().isEmpty)
+    let historyWhileResting = try await history.load()
+    XCTAssertTrue(historyWhileResting.isEmpty)
     _ = try await DriveControlIntent(action: .resume).perform()
     XCTAssertTrue(model.isPlaying)
     let selectedPlan = try XCTUnwrap(model.selectedRoute?.routePlan)
@@ -1713,7 +1942,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(model.isLiveDrive)
     XCTAssertEqual(model.selectedRoute?.routePlan, selectedPlan)
     XCTAssertEqual(model.origin?.coordinate, midpoint)
-    let saved = try XCTUnwrap(history.load().first)
+    let savedHistory = try await history.load()
+    let saved = try XCTUnwrap(savedHistory.first)
     XCTAssertEqual(saved.recordedDistanceMeters, 75, accuracy: 0.001)
     XCTAssertEqual(saved.recordedDurationMilliseconds, 5_000)
     XCTAssertEqual(saved.averageSpeedMetersPerSecond, 15)
@@ -1768,7 +1998,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       longitude: (start.longitude + end.longitude) / 2
     )
     await model.consumeLiveObservationForTesting(
-      Self.liveLocationEnvelope(id: "rest.midpoint", coordinate: midpoint)
+      Self.liveLocationEnvelope(
+        id: "rest.midpoint", coordinate: midpoint, speedMetersPerSecond: 0
+      )
     )
     XCTAssertEqual(model.liveLocationState, .available)
     let restedProgress = model.progressFraction
@@ -1814,6 +2046,151 @@ final class WholeShutoProductModelTests: XCTestCase {
     let restedInPreview = await model.restLiveJourney()
     XCTAssertFalse(restedInPreview)
     XCTAssertNotEqual(model.liveLocationState, .resting)
+  }
+
+  func testRestIsRefusedOnlyWhileAFreshFixShowsMovement() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output)
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    let midpoint = ShutoCoordinate(
+      latitude: (start.latitude + end.latitude) / 2,
+      longitude: (start.longitude + end.longitude) / 2
+    )
+    ActiveDriveControl.model = model
+    defer { ActiveDriveControl.model = nil }
+    func fix(_ id: String, at milliseconds: Int, speed: Double) async {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: id, coordinate: midpoint, atMilliseconds: milliseconds,
+          speedMetersPerSecond: speed))
+    }
+
+    await fix("rest.moving", at: 2_000, speed: 12)
+    XCTAssertFalse(model.canRestLiveJourney)
+    let restedWhileMoving = await model.restLiveJourney()
+    XCTAssertFalse(restedWhileMoving)
+    _ = try await DriveControlIntent(action: .rest).perform()
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertNotEqual(model.liveLocationState, .resting)
+
+    // Parked under a PA roof Core Location often cannot measure speed; its
+    // negative "unknown" value is not evidence of movement.
+    await fix("rest.unknown-speed", at: 3_000, speed: -1)
+    XCTAssertTrue(model.canRestLiveJourney)
+
+    // Nor is a moving fix that has gone stale.
+    await fix("rest.moving-again", at: 4_000, speed: 12)
+    XCTAssertFalse(model.canRestLiveJourney)
+    model.evaluateLiveLocationFreshness(atMilliseconds: 4_000 + 10_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertTrue(model.canRestLiveJourney)
+
+    await fix("rest.stopped", at: 15_000, speed: 0.3)
+    XCTAssertTrue(model.canRestLiveJourney)
+    await fix("rest.unknown-at-pa", at: 16_000, speed: -1)
+    _ = try await DriveControlIntent(action: .rest).perform()
+    XCTAssertEqual(model.liveLocationState, .resting)
+    XCTAssertFalse(model.isPlaying)
+    model.reset()
+  }
+
+  func testAFixInFlightCannotUndoARestOrAnEndedDrive() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output)
+    let position = try await driveSpeechRecoveryRoute(model) { model.phase == .expressway }
+    func stationaryFix(
+      _ model: WholeShutoProductModel, _ id: String, at stop: LiveDrivePosition,
+      plus milliseconds: Int
+    ) async {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: id, coordinate: stop.coordinate, atMilliseconds: stop.timestamp + milliseconds,
+          courseDegrees: stop.course, speedMetersPerSecond: 0))
+    }
+    await stationaryFix(model, "late.stopped", at: position, plus: 1_000)
+
+    // The fix is already inside the navigation actor when the driver rests.
+    let lateBeforeRest = Task { await stationaryFix(model, "late.rest", at: position, plus: 2_000) }
+    await Task.yield()
+    let rested = await model.restLiveJourney()
+    await lateBeforeRest.value
+    XCTAssertTrue(rested)
+    XCTAssertEqual(model.liveLocationState, .resting)
+    XCTAssertFalse(model.isPlaying)
+    model.reset()
+
+    let ended = try await speechRecoveryModel(output: SpeechRecoveryAppOutput())
+    let endPosition = try await driveSpeechRecoveryRoute(ended) { ended.phase == .expressway }
+    let lateBeforeEnd = Task { await stationaryFix(ended, "late.end", at: endPosition, plus: 1_000) }
+    await Task.yield()
+    ended.reset()
+    await lateBeforeEnd.value
+    XCTAssertFalse(ended.isLiveDrive)
+    XCTAssertEqual(ended.liveLocationState, .inactive)
+    XCTAssertNil(ended.matcherConfidence)
+    XCTAssertNil(ended.presentationProjection)
+  }
+
+  func testSiriResumeReportsAPausedDriveWhenTheAppIsNotInFront() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output)
+    let start = try XCTUnwrap(model.accessRoute?.coordinates.first)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "resume.parked", coordinate: start, atMilliseconds: 2_000,
+        speedMetersPerSecond: 0))
+    let rested = await model.restLiveJourney()
+    XCTAssertTrue(rested)
+
+    // Siri runs the intent before the scene is active: location cannot start.
+    await model.handleScenePhase(.background)
+    let resumedBehind = await model.resumeLiveJourney()
+    XCTAssertFalse(resumedBehind)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.liveLocationState, .resumeRequired)
+
+    await model.handleScenePhase(.active)
+    let resumedInFront = await model.resumeLiveJourney()
+    XCTAssertTrue(resumedInFront)
+    XCTAssertTrue(model.isPlaying)
+    model.reset()
+  }
+
+  func testDriveFailuresReadAsOneDrivingLine() {
+    for locale in KaidoReleaseLocale.allCases {
+      let lap = WholeShutoDrivingFailure.message(for: "LAP_CHANGE_UNAVAILABLE", locale: locale)
+      XCTAssertNotNil(lap)
+      XCTAssertEqual(
+        WholeShutoDrivingFailure.message(
+          for: WholeShutoProductModel.lapChangeUnavailableCode, locale: locale),
+        lap)
+      let messages = [
+        lap,
+        WholeShutoDrivingFailure.message(
+          for: "WHOLE_SHUTO_EXIT_HANDOFF_UNCONFIRMED", locale: locale),
+        WholeShutoDrivingFailure.message(
+          for: WholeShutoProductModel.liveNavigationRuntimeInvalidCode, locale: locale),
+        WholeShutoDrivingFailure.message(
+          for: "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID", locale: locale),
+      ]
+      XCTAssertEqual(Set(messages.compactMap { $0 }).count, 4)
+      for message in messages.compactMap({ $0 }) {
+        XCTAssertFalse(message.contains("\n"))
+        XCTAssertFalse(message.contains("首都高"))
+      }
+      // A failed fix is the position line's to report, not a banner.
+      XCTAssertNil(
+        WholeShutoDrivingFailure.message(
+          for: "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED", locale: locale))
+    }
+    XCTAssertEqual(
+      WholeShutoDrivingFailure.message(for: "LAP_CHANGE_UNAVAILABLE", locale: .english),
+      "Lap change unavailable")
   }
 
   func testLiveSurfaceAccessReroutesAfterTwoConsecutiveOffRouteFixes()
@@ -1963,8 +2340,10 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
     )
     model.prepareCustomRouteDraft()
-    model.selectCustomEntry(facilityID: "shuto.ic.b.rinkaihukutoshin")
-    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    // The released detour must leave the plan by more than GPS error; the
+    // Rinkai-fukutoshin run's only one is a slip road within 14 m of it.
+    model.selectCustomEntry(facilityID: "shuto.ic.b.shinkiba")
+    model.selectCustomExit(facilityID: "shuto.ic.b.ooi")
     XCTAssertTrue(model.applyCustomRoute())
     for _ in 0..<300
     where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
@@ -2026,7 +2405,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2070,7 +2452,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2102,9 +2487,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
     XCTAssertTrue(observedActiveRecovery)
 
+    // Where the detour merges back it still runs within GPS error of the
+    // plan, so the rejoin is admitted once the car is clear of it.
     for occurrence in corridorOccurrences
     where occurrence.index >= target.index
-      && occurrence.index < target.index + 2
+      && occurrence.index < target.index + 8
     {
       let edge = try XCTUnwrap(corridorEdges[occurrence.directedEdgeID])
       let start = try XCTUnwrap(edge.coordinates.first)
@@ -2117,7 +2504,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2150,6 +2540,227 @@ final class WholeShutoProductModelTests: XCTestCase {
       target.index
     )
     model.reset()
+  }
+
+  func testUnadmittedFreshFixesHoldTheMarkerWithoutWeakTextOrVoice()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(clock: clock, output: output)
+    let model = drive.model
+    var points = Self.corridorFixPoints(release: drive.release)[...]
+    func feed(accuracy: Double) async throws {
+      let point = try XCTUnwrap(points.popFirst())
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "holding.\(clock.milliseconds)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees,
+          horizontalAccuracyMeters: accuracy
+        )
+      )
+    }
+    func notices() -> Int {
+      output.commands.filter { $0.identity.anchorID == "JOURNEY_STATUS" }.count
+    }
+
+    for _ in 0..<200
+    where model.phase != .expressway || model.matcherConfidence != .high {
+      try await feed(accuracy: 5)
+    }
+    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertFalse(model.isHoldingLivePosition)
+    let positionState = model.positionState
+    let noticeCount = notices()
+
+    // Coarse on-route fixes are fresh and usable but never admitted.
+    for second in 1...5 {
+      try await feed(accuracy: 40)
+      XCTAssertNotEqual(model.matcherConfidence, .high)
+      XCTAssertEqual(model.isHoldingLivePosition, second >= 5, "second \(second)")
+    }
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertEqual(model.positionState, positionState)
+    XCTAssertTrue(model.hasCurrentGuidancePosition)
+    XCTAssertEqual(notices(), noticeCount)
+
+    for _ in 0..<30 where model.matcherConfidence != .high {
+      try await feed(accuracy: 5)
+    }
+    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertFalse(model.isHoldingLivePosition)
+    XCTAssertEqual(notices(), noticeCount)
+    model.reset()
+  }
+
+  func testRouteRecoveryOffTheCorridorKeepsFreshFixesUsable()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    // A released detour that leaves the plan by more than GPS error.
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.b.shinkiba",
+      exitFacilityID: "shuto.ic.b.ooi"
+    )
+    let model = drive.model
+    let recovery = try XCTUnwrap(
+      drive.release.navigation.bundle.runtimePolicy.recoveryCandidates.first
+    )
+    let divergence = try XCTUnwrap(
+      drive.route.routePlan.occurrence(id: recovery.divergenceOccurrenceID)
+    )
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: drive.release.navigation.bundle.matcherCorridor
+        .edges.map { ($0.id, $0) }
+    )
+    let points =
+      Self.corridorFixPoints(release: drive.release) {
+        $0.index < divergence.index
+      }
+      + recovery.recoveryOccurrenceIDs.compactMap { corridorEdges[$0] }
+      .flatMap(Self.edgeFixPoints)
+    var reachedRecovery = false
+    for point in points {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "recovery-lost.\(clock.milliseconds)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees
+        )
+      )
+      if model.runtimeJourneyPhase == .routeRecovery {
+        reachedRecovery = true
+        break
+      }
+    }
+    XCTAssertTrue(reachedRecovery)
+    let last = try XCTUnwrap(points.last?.coordinate)
+    func notices(_ fragment: String) -> Int {
+      output.commands.filter { $0.identity.promptID.contains(fragment) }.count
+    }
+
+    // Two kilometres from every corridor road: the matcher is lost, but the
+    // fixes are fresh, so the drive is off the plan, not out of position.
+    let away = ShutoCoordinate(
+      latitude: last.latitude + 0.018,
+      longitude: last.longitude
+    )
+    for _ in 0..<15 {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "recovery-lost.away.\(clock.milliseconds)",
+          coordinate: away,
+          atMilliseconds: clock.milliseconds
+        )
+      )
+    }
+    XCTAssertEqual(model.runtimeJourneyPhase, .routeRecovery)
+    XCTAssertEqual(model.liveLocationState, .available)
+    model.evaluateLiveLocationFreshness(atMilliseconds: clock.milliseconds)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(notices("positionLost"), 0)
+
+    // Without any fix, the drive still goes stale.
+    model.evaluateLiveLocationFreshness(
+      atMilliseconds: clock.milliseconds + 11_000
+    )
+    XCTAssertEqual(model.liveLocationState, .stale)
+    model.reset()
+  }
+
+  /// A started live Bayshore drive (Rinkai-fukutoshin to Daikoku-futou unless
+  /// told otherwise), with the
+  /// release it runs, so a test can place fixes on exact corridor edges.
+  private func bayshoreLiveDrive(
+    clock: LiveTestClock,
+    output: any GuidanceSpeechOutput,
+    entryFacilityID: String = "shuto.ic.b.rinkaihukutoshin",
+    exitFacilityID: String = "shuto.ic.b.daikokufutou"
+  ) async throws -> (
+    model: WholeShutoProductModel,
+    route: ShutoPlannedRoute,
+    release: KaidoProductRelease
+  ) {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { clock.milliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: entryFacilityID)
+    model.selectCustomExit(facilityID: exitFacilityID)
+    XCTAssertTrue(model.applyCustomRoute())
+    await model.awaitLiveNavigationPreparationForTesting()
+    XCTAssertTrue(
+      model.canStartLiveNavigation,
+      model.liveNavigationBlockerCode ?? "no blocker code"
+    )
+    let route = try XCTUnwrap(model.selectedRoute)
+    let release =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+          database: model.database
+        ),
+        route: route
+      )
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let accessEnd = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "bayshore.access-end",
+        coordinate: accessEnd,
+        atMilliseconds: clock.milliseconds,
+        courseDegrees: Self.bearing(
+          from: route.coordinates[0],
+          to: route.coordinates[1]
+        )
+      )
+    )
+    return (model, route, release)
+  }
+
+  /// Two fixes per RoutePlan occurrence, a quarter and three quarters along.
+  private static func corridorFixPoints(
+    release: KaidoProductRelease,
+    where includes: (RouteMatcherOccurrence) -> Bool = { _ in true }
+  ) -> [(coordinate: ShutoCoordinate, courseDegrees: Double)] {
+    let corridor = release.navigation.bundle.matcherCorridor
+    let edges = Dictionary(
+      uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) }
+    )
+    return corridor.occurrences.sorted { $0.index < $1.index }
+      .filter(includes)
+      .compactMap { edges[$0.directedEdgeID] }
+      .flatMap(edgeFixPoints)
+  }
+
+  private static func edgeFixPoints(
+    _ edge: RouteMatcherDirectedEdge
+  ) -> [(coordinate: ShutoCoordinate, courseDegrees: Double)] {
+    guard let first = edge.coordinates.first, let last = edge.coordinates.last
+    else { return [] }
+    let start = ShutoCoordinate(latitude: first.latitude, longitude: first.longitude)
+    let end = ShutoCoordinate(latitude: last.latitude, longitude: last.longitude)
+    return [0.25, 0.75].map {
+      (interpolate(from: start, to: end, fraction: $0), bearing(from: start, to: end))
+    }
   }
 
   func testLiveTunnelGapCoastsPresentationWithoutAdvancingAuthority()
@@ -2452,6 +3063,54 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testCancelledRouteAuthorityResolutionAdmitsNothing() async throws {
+    let database = try WholeShutoNetworkCatalog.bundled()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.k1.yokohamakouen",
+      exitFacilityID: "shuto.ic.k7-yokohama-hokusei.yokohamaaoba"
+    )
+    let authority = try WholeShutoRouteReleaseAuthority(database: database)
+
+    let resolution = await Task.detached {
+      withUnsafeCurrentTask { $0?.cancel() }
+      return authority.resolve(route: route)
+    }.value
+
+    guard case .unavailable = resolution else {
+      return XCTFail("A replaced route must not finish building its release")
+    }
+  }
+
+  func testReplacedRouteStopsItsLivePreparationAndNeverPublishes()
+    async throws
+  {
+    let hold = FirstAdmissionHold()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveJourneyAdmissionResolver: { hold.resolve($0) }
+    )
+    model.preparePreviewJourney()
+    XCTAssertGreaterThan(model.recommendations.count, 1)
+    let firstRoute = try XCTUnwrap(model.selectedRoute)
+
+    model.selectRecommendation(at: 1)
+    XCTAssertNotEqual(model.selectedRoute, firstRoute)
+    for _ in 0..<200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !hold.firstFinished
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertTrue(hold.firstFinished)
+    XCTAssertTrue(hold.firstSawCancellation)
+    XCTAssertEqual(
+      model.liveNavigationBlockerCode,
+      FirstAdmissionHold.laterRouteCode
+    )
+  }
+
   func testOnDeviceRouteAuthorityAdmitsRinkaiToHatsudaiWithoutPredecessor()
     throws
   {
@@ -2660,7 +3319,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       route.routePlan.id,
       "shuto.shuto.ic.c1.ginza.shuto.ic.k1.yokohamakouen.recommended"
     )
-    XCTAssertEqual(route.routePlan.occurrences.count, 789)
+    // 789 before the 2026-10-12 facility review: 銀座 and 横浜公園 now start
+    // and end on their own ramps.
+    XCTAssertEqual(route.routePlan.occurrences.count, 706)
     XCTAssertEqual(
       source.savedRouteTemplateParameters,
       [
@@ -3021,6 +3682,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let expectedProgress = model.progressFraction
     let expectedOccurrenceID = try XCTUnwrap(model.runtimeOccurrenceID)
     XCTAssertEqual(model.selectedRoute?.routePlan, circuitRoute.routePlan)
+    await model.handleScenePhase(.background)
 
     let restored = WholeShutoProductModel(
       database: source.database,
@@ -3058,12 +3720,13 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.circuit.c2-inner-bayshore"
     )
     XCTAssertEqual(model.circuitLaps, 1)
-    // The nearest legal start is the Hatsudai radial entrance joining the
-    // loop through the all-directions Nishi-Shinjuku JCT; the exit is
-    // derived too — the driver never assembles a pairing.
+    // The nearest legal start is the loop's own Hatsudai-minami ramp; the
+    // exit is derived too — the driver never assembles a pairing. The
+    // Hatsudai radial entrance serves only Route 4 down and cannot reach
+    // the loop; it qualified only while Hatagaya's up ramp was bound to it.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.c2.hatsudaiminami"
     )
     XCTAssertNotNil(model.circuitExitFacilityID)
     XCTAssertEqual(model.circuitPairingBand?.quotedYen, 300)
@@ -3074,7 +3737,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
-  func testReleasedC1CatalogStillRecommendsHatsudaiFromHatsudai() async {
+  func testReleasedC1CatalogRecommendsTheNearbyRoute4RampFromHatsudai() async {
     let suiteName = UUID().uuidString
     let defaults = UserDefaults(suiteName: suiteName)!
     defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -3090,16 +3753,22 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCircuit(.c1Inner)
     await waitForCircuitPairing(model)
 
+    // Yoyogi, 0.7 km away, joins C1 after 5.3 km of Route 4. Hatsudai-minami
+    // is nearer but reaches C1 only after 8.9 km of C2 and Route 4, and its
+    // minimum-band exit back at Tomigaya sat 40 km past the lap. The Route 4
+    // Hatsudai entrance serves only the down carriageway, away from C1.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.4.yoyogi"
     )
     XCTAssertNotEqual(
       model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.entryFacilityID
     )
-    XCTAssertNotNil(model.circuitExitFacilityID)
-    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
+    // The first C1 exit after the lap; no cheaper exit lies within one ramp
+    // spacing of it.
+    XCTAssertEqual(model.circuitExitFacilityID, "shuto.ic.c1.kasumigaseki")
+    XCTAssertEqual(model.circuitPairingBand, .estimated(yen: 390))
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.phase, .review)
@@ -3312,7 +3981,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertGreaterThan(route.distanceMeters, 100_000)
     XCTAssertEqual(
       route.routePlan.entryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.c2.hatsudaiminami"
     )
     XCTAssertEqual(
       Set(route.routePlan.occurrences.map(\.id)).count,
@@ -3352,10 +4021,14 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertTrue(model.editsSelectedCircuit)
     let entryID = try XCTUnwrap(model.customEntryFacilityID)
+    let exitNameJA = try XCTUnwrap(model.customExitFacility?.nameJA)
     XCTAssertEqual(model.customEntryCandidates.first?.facilityID, entryID)
     XCTAssertEqual(
       Set(model.customEntryCandidates.map(\.facilityID)),
-      Set(model.circuitEntranceCandidates.map(\.facilityID))
+      Set(
+        model.circuitEntranceCandidates.filter { $0.nameJA != exitNameJA }
+          .map(\.facilityID)
+      )
     )
     let exits = model.customExitCandidates
     let reachable = Set(
@@ -4078,6 +4751,179 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.canApplyCustomRoute)
   }
 
+  func testCustomEditorNeverDraftsAPairSharingOneTollPoint() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    // Beside the Harumi ramps: on a round trip the driver's own IC is the
+    // exit nearest the origin.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6544, longitude: 139.7827)
+    )
+    model.prepareCustomRouteDraft()
+    XCTAssertFalse(model.editsSelectedCircuit)
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.10.harumi")
+    XCTAssertNotNil(model.customDraftRoute)
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "晴海" })
+    XCTAssertEqual(
+      model.customExitCandidatesNotReachableFromEntry
+        .filter { $0.nameJA == "晴海" }.map(\.facilityID),
+      ["shuto.ic.10.harumi"]
+    )
+
+    // Chosen from a search anyway, the entrance's own IC clears the
+    // entrance instead of drafting the pair.
+    model.selectCustomExit(facilityID: "shuto.ic.10.harumi")
+    XCTAssertEqual(model.customExitFacilityID, "shuto.ic.10.harumi")
+    XCTAssertNil(model.customEntryFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    XCTAssertFalse(model.customEntryCandidates.contains { $0.nameJA == "晴海" })
+
+    // Differently identified ramps of one toll point are no more plannable
+    // as a pair, from either end.
+    model.selectCustomEntry(facilityID: "shuto.ic.k1.daishi")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.k1.daishi")
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "大師" })
+    model.selectCustomExit(facilityID: "shuto.ic.k6.daishi")
+    XCTAssertEqual(model.customExitFacilityID, "shuto.ic.k6.daishi")
+    XCTAssertNil(model.customEntryFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertTrue(
+      model.customEntryCandidatesNotReachingExit.contains {
+        $0.facilityID == "shuto.ic.k1.daishi"
+      }
+    )
+    model.selectCustomEntry(facilityID: "shuto.ic.k1.daishi")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.k1.daishi")
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+  }
+
+  func testCircuitReviewEditorRulesOutEntrancesSharingTheExitTollPoint()
+    async throws
+  {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c1Inner)
+    model.selectCircuitLaps(2)
+    await waitForCircuitPairing(model)
+    let pairedEntry = try XCTUnwrap(
+      model.circuitEntranceCandidates.first {
+        $0.facilityID == model.circuitEntryFacilityID
+      }
+    )
+    XCTAssertFalse(model.circuitExitCandidates.isEmpty)
+    XCTAssertFalse(
+      model.circuitExitCandidates.contains { $0.nameJA == pairedEntry.nameJA }
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    model.prepareCustomRouteDraft()
+    XCTAssertTrue(model.editsSelectedCircuit)
+    let entry = try XCTUnwrap(model.customEntryFacility)
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(
+      model.customExitCandidates.contains { $0.nameJA == entry.nameJA }
+    )
+
+    // Fix an exit that another entrance of the experience shares a toll
+    // point with: that entrance is ruled out the way an unreachable one is.
+    let entrances = model.circuitEntranceCandidates
+    let exit = try XCTUnwrap(
+      model.customExitCandidates.first { exit in
+        entrances.contains { $0.nameJA == exit.nameJA }
+      }
+    )
+    model.selectCustomExit(facilityID: exit.facilityID)
+    XCTAssertEqual(model.customExitFacilityID, exit.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, entry.facilityID)
+    let sharing = Set(
+      entrances.filter { $0.nameJA == exit.nameJA }.map(\.facilityID)
+    )
+    XCTAssertEqual(
+      Set(model.customEntryCandidatesNotReachingExit.map(\.facilityID)),
+      sharing
+    )
+    XCTAssertEqual(
+      Set(model.customEntryCandidates.map(\.facilityID)),
+      Set(entrances.map(\.facilityID)).subtracting(sharing)
+    )
+
+    // Choosing it clears the exit; the exits then follow the new entrance.
+    let chosen = try XCTUnwrap(model.customEntryCandidatesNotReachingExit.first)
+    model.selectCustomEntry(facilityID: chosen.facilityID)
+    XCTAssertEqual(model.customEntryFacilityID, chosen.facilityID)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    XCTAssertFalse(model.canApplyCustomRoute)
+    model.selectCustomExit(facilityID: exit.facilityID)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertFalse(
+      model.customExitCandidates.contains { $0.nameJA == chosen.nameJA }
+    )
+    let next = try XCTUnwrap(model.customExitCandidates.first)
+    model.selectCustomExit(facilityID: next.facilityID)
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, chosen.facilityID)
+    XCTAssertEqual(draft.exitFacility?.facilityID, next.facilityID)
+    XCTAssertEqual(draft.lapBoundaryOccurrenceIndices.count, 3)
+    XCTAssertTrue(model.applyCustomRoute())
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
+  }
+
+  func testDirectionalTourEditorNeverOffersTheEntranceTollPointAsExit()
+    async throws
+  {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // Shinkiba: the westbound Bayshore run passes its own Shinkiba exit.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6471, longitude: 139.8306)
+    )
+    model.selectCircuit(.wanganDaikokuRun)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+    XCTAssertNotNil(model.selectedRoute?.destinationParkingArea)
+
+    // Leaving the PA ending for an exit keeps the tour, so the editor
+    // refines the experience rather than an explicit route.
+    let exits = try await model.journeyExitCandidates()
+    let entry = try XCTUnwrap(model.selectedRoute?.entryFacility)
+    XCTAssertFalse(exits.isEmpty)
+    XCTAssertFalse(exits.contains { $0.nameJA == entry.nameJA })
+    try await model.selectJourneyExit(try XCTUnwrap(exits.first).facilityID)
+    await waitForEndingRoutes(model)
+    model.prepareCustomRouteDraft()
+    XCTAssertTrue(model.editsSelectedCircuit)
+
+    model.selectCustomEntry(facilityID: "shuto.ic.b.shinkiba")
+    XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.b.shinkiba")
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "新木場" })
+    model.selectCustomExit(facilityID: "shuto.ic.b.shinkiba")
+    XCTAssertNotEqual(model.customExitFacilityID, "shuto.ic.b.shinkiba")
+    let exit = try XCTUnwrap(model.customExitCandidates.first)
+    model.selectCustomExit(facilityID: exit.facilityID)
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, "shuto.ic.b.shinkiba")
+    XCTAssertEqual(draft.exitFacility?.facilityID, exit.facilityID)
+  }
+
   func testCustomRouteReviewCheckpointDoesNotRestoreStaleOrigin() async throws {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(
@@ -4348,6 +5194,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
     let savedProgress = model.progressFraction
     let savedCoordinate = model.currentCoordinate
+    await model.handleScenePhase(.background)
 
     let restored = WholeShutoProductModel(
       database: model.database,
@@ -4578,6 +5425,107 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(restored.restoredFromCheckpoint)
     XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
+  }
+
+  func testLargestCatalogCheckpointRoundTripsThroughItsFile()
+    async throws
+  {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let fileURL = directory.appendingPathComponent("checkpoint.json")
+    let laps = ShutoCircuitDefinition.loopLapRange.upperBound
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: laps
+    )
+    let record = Self.savedRouteRecord(
+      circuitRoute.routePlan,
+      templateParameters: [
+        "source": "CIRCUIT",
+        "preference": circuitRoute.preference.rawValue,
+        "circuit_id": ShutoCircuitDefinition.c2InnerWithBayshore.circuitID,
+        "laps": String(laps),
+      ]
+    )
+    let model = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: WholeShutoFileCheckpointStore(fileURL: fileURL)
+    )
+    XCTAssertTrue(
+      model.openSavedRoute(
+        record,
+        origin: ShutoCoordinate(latitude: 35.68, longitude: 139.69)
+      )
+    )
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    model.startNavigationSimulation()
+    _ = await model.pausePlayback()
+    await advance(
+      model,
+      until: { $0.phase == .expressway && $0.progressFraction > 0 },
+      maximumTicks: 1_000
+    )
+    await model.handleScenePhase(.background)
+    let storedBytes = try Data(contentsOf: fileURL).count
+    print(
+      "Whole-Shuto checkpoint for \(laps) C2 laps: \(storedBytes) bytes"
+    )
+
+    let restored = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: WholeShutoFileCheckpointStore(fileURL: fileURL)
+    )
+
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .expressway)
+    XCTAssertEqual(restored.selectedRoute?.routePlan, circuitRoute.routePlan)
+    XCTAssertEqual(restored.circuitLaps, laps)
+    XCTAssertEqual(restored.runtimeOccurrenceID, model.runtimeOccurrenceID)
+    XCTAssertEqual(restored.progressFraction, model.progressFraction)
+    XCTAssertNil(restored.checkpointIssueCode)
+
+    restored.reset()
+    XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+    restored.reset()
+    XCTAssertNil(restored.checkpointIssueCode)
+  }
+
+  func testReplayStepsLeaveTheCheckpointToPauseAndBackground()
+    async throws
+  {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+    _ = await model.pausePlayback()
+    await advance(model, until: { $0.phase == .expressway })
+    await model.handleScenePhase(.background)
+    let savesBeforeSteps = store.saveCount
+
+    for _ in 0..<3 {
+      await model.advanceSimulationForTesting()
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(store.saveCount, savesBeforeSteps)
+
+    await model.handleScenePhase(.background)
+    XCTAssertEqual(store.saveCount, savesBeforeSteps + 1)
+    XCTAssertEqual(
+      store.checkpoint?.progressFraction,
+      model.progressFraction
+    )
+    XCTAssertEqual(
+      store.checkpoint?.runtimeOccurrenceID,
+      model.runtimeOccurrenceID
+    )
   }
 
   func testCheckpointLoadFailureIsSilentlyInvalidated() {
@@ -4972,18 +5920,23 @@ final class WholeShutoProductModelTests: XCTestCase {
     let didReachJunction = await model.advanceSimulationToJunctionPreview()
     XCTAssertTrue(didReachJunction)
 
+    // Oi's long approach edge now carries a 900 m preparation cue, so the
+    // first cue the preview reaches is the preparation.
     let projection = try XCTUnwrap(model.presentationProjection)
     let command = try XCTUnwrap(output.commands.only)
     XCTAssertEqual(projection.interfaceLocale, .english)
     XCTAssertEqual(projection.iPhone.localizedDecisionPointName, "Oi JCT")
     XCTAssertEqual(
       projection.iPhone.localizedDisplayText,
-      "Branch left for the C2 Outer Loop"
+      "At the upcoming junction, Branch left for the C2 Outer Loop"
     )
     XCTAssertEqual(projection.iPhone.japaneseSignText, "東名・中央道")
     XCTAssertEqual(projection.carPlay.japaneseSignText, "東名・中央道")
     XCTAssertEqual(projection.voice.locale, .simplifiedChinese)
-    XCTAssertEqual(projection.voice.spokenText, "在大井枢纽向左分岔，驶入 C2 外环")
+    XCTAssertEqual(
+      projection.voice.spokenText,
+      "前方分岔，在大井枢纽向左分岔，驶入 C2 外环"
+    )
     XCTAssertEqual(command.languageCode, "zh-CN")
     XCTAssertEqual(command.spokenText, projection.voice.spokenText)
     XCTAssertTrue(command.synthesisText.contains("C 二"))
@@ -5022,7 +5975,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     atMilliseconds: Int = 1_000,
     courseDegrees: Double = 90,
     courseAccuracyDegrees: Double? = nil,
-    speedMetersPerSecond: Double = 10
+    speedMetersPerSecond: Double = 10,
+    horizontalAccuracyMeters: Double = 5
   ) -> CoreLocationObservationEnvelope {
     CoreLocationObservationEnvelope(
       observation: RouteMatcherObservation(
@@ -5033,7 +5987,7 @@ final class WholeShutoProductModelTests: XCTestCase {
           latitude: coordinate.latitude,
           longitude: coordinate.longitude
         ),
-        horizontalAccuracyMeters: 5,
+        horizontalAccuracyMeters: horizontalAccuracyMeters,
         courseDegrees: courseDegrees,
         courseAccuracyDegrees: courseAccuracyDegrees,
         speedMetersPerSecond: speedMetersPerSecond,
@@ -5066,6 +6020,23 @@ final class WholeShutoProductModelTests: XCTestCase {
       - sin(startLatitude) * cos(endLatitude) * cos(longitudeDelta)
     let degrees = atan2(y, x) * 180 / .pi
     return degrees >= 0 ? degrees : degrees + 360
+  }
+
+  /// Fractions along an edge at which a car at highway speed reports a
+  /// 1 Hz fix: never more than 25 m apart, so a long edge is not crossed in
+  /// one second.
+  private static func oneHertzFractions(
+    from start: ShutoCoordinate,
+    to end: ShutoCoordinate
+  ) -> [Double] {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    let meters = hypot(
+      (end.latitude - start.latitude) * metersPerDegree,
+      (end.longitude - start.longitude) * metersPerDegree
+        * cos(start.latitude * .pi / 180)
+    )
+    let count = max(2, Int((meters / 25).rounded(.up)))
+    return (0..<count).map { (Double($0) + 0.5) / Double(count) }
   }
 
   private static func interpolate(
@@ -5173,8 +6144,7 @@ private actor WholeShutoOutOfOrderSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     let isSlow = destination == slowEntry || origin == slowExit
     let delay: UInt64 = isSlow ? 180_000_000 : 20_000_000
@@ -5202,8 +6172,7 @@ private actor WholeShutoRecoveringSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     guard isAvailable else { return nil }
     return WholeShutoSurfaceRoute(
@@ -5224,12 +6193,11 @@ private actor WholeShutoRecoverableSurfaceRouteResolver: WholeShutoSurfaceRouteR
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     guard !unavailable else { return nil }
     return await WholeShutoInstructionSurfaceRouteResolver().route(
-      from: origin, to: destination, preference: preference
+      from: origin, to: destination
     )
   }
 }
@@ -5239,8 +6207,7 @@ private struct WholeShutoInstructionSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     WholeShutoSurfaceRoute(
       coordinates: [origin, destination],
@@ -5263,8 +6230,7 @@ private struct WholeShutoMultiStepSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     WholeShutoSurfaceRoute(
       coordinates: [origin, destination],
@@ -5302,8 +6268,7 @@ private actor WholeShutoRankingSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     let isPreferredLeg =
       destination == preferredEntry || origin == preferredExit
@@ -5371,8 +6336,7 @@ private actor WholeShutoPartiallyUnavailableChoiceResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     guard destination != unavailableEntry else {
       return nil
@@ -5386,35 +6350,25 @@ private actor WholeShutoPartiallyUnavailableChoiceResolver:
   }
 }
 
-private actor WholeShutoPreferenceRecordingSurfaceRouteResolver:
+private actor WholeShutoCountingSurfaceRouteResolver:
   WholeShutoSurfaceRouteResolving
 {
-  private var preferences: [WholeShutoSurfaceRoutePreference] = []
+  private var requests = 0
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
-  ) async -> WholeShutoSurfaceRoute? {
-    preferences.append(preference)
-    return makeRoute(from: origin, to: destination)
-  }
-
-  func recordedPreferences() -> [WholeShutoSurfaceRoutePreference] {
-    preferences
-  }
-
-  private func makeRoute(
-    from origin: ShutoCoordinate,
     to destination: ShutoCoordinate
-  ) -> WholeShutoSurfaceRoute {
-    WholeShutoSurfaceRoute(
+  ) async -> WholeShutoSurfaceRoute? {
+    requests += 1
+    return WholeShutoSurfaceRoute(
       coordinates: [origin, destination],
       distanceMeters: 1_000,
       expectedTravelTimeSeconds: 120,
       instructions: ["Continue"]
     )
   }
+
+  func requestCount() -> Int { requests }
 }
 
 @MainActor
@@ -5611,8 +6565,7 @@ private final class SpeechRecoveryAppOutput: GuidanceSpeechOutput {
 }
 private struct SpeechRecoveryShortStepResolver: WholeShutoSurfaceRouteResolving {
   func route(
-    from origin: ShutoCoordinate, to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
+    from origin: ShutoCoordinate, to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     WholeShutoSurfaceRoute(
       coordinates: [origin, destination], distanceMeters: 1_200,
@@ -5627,6 +6580,10 @@ private struct SpeechRecoveryShortStepResolver: WholeShutoSurfaceRouteResolving 
 }
 
 @MainActor
+
+private final class LiveTestClock: @unchecked Sendable {
+  var milliseconds = 1_000
+}
 
 private final class WholeShutoRecordingSpeechOutput:
   GuidanceSpeechOutput
@@ -5655,9 +6612,49 @@ private actor WholeShutoGatedSurfaceRouteResolver: WholeShutoSurfaceRouteResolvi
     for request in requests { request.resume() }
   }
 
-  func route(from origin: ShutoCoordinate, to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference) async -> WholeShutoSurfaceRoute? {
+  func route(from origin: ShutoCoordinate, to destination: ShutoCoordinate) async
+    -> WholeShutoSurfaceRoute?
+  {
     if !isReleased { await withCheckedContinuation { pending.append($0) } }
-    return await WholeShutoPreviewSurfaceRouteResolver().route(from: origin, to: destination, preference: preference)
+    return await WholeShutoPreviewSurfaceRouteResolver().route(from: origin, to: destination)
+  }
+}
+
+/// Holds the first route's admission until the model cancels it, and answers
+/// every later route at once.
+private final class FirstAdmissionHold: Sendable {
+  static let firstRouteCode = "TEST_FIRST_ROUTE"
+  static let laterRouteCode = "TEST_LATER_ROUTE"
+  private struct State {
+    var firstRoutePlanID: String?
+    var firstFinished = false
+    var firstSawCancellation = false
+  }
+  private let state = Mutex(State())
+
+  var firstFinished: Bool { state.withLock { $0.firstFinished } }
+  var firstSawCancellation: Bool { state.withLock { $0.firstSawCancellation } }
+
+  func resolve(
+    _ route: ShutoPlannedRoute
+  ) -> WholeShutoLiveJourneyAdmissionResolution {
+    let isFirst = state.withLock { state in
+      if state.firstRoutePlanID == nil {
+        state.firstRoutePlanID = route.routePlan.id
+        return true
+      }
+      return false
+    }
+    guard isFirst else { return .unavailable(Self.laterRouteCode) }
+    let deadline = Date().addingTimeInterval(10)
+    while !Task.isCancelled, Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.005)
+    }
+    let cancelled = Task.isCancelled
+    state.withLock { state in
+      state.firstFinished = true
+      state.firstSawCancellation = cancelled
+    }
+    return .unavailable(Self.firstRouteCode)
   }
 }

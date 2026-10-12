@@ -272,47 +272,96 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
-  /// The Oi JCT Bayshore-eastbound movements were reviewed on 2026-09-08,
-  /// after the bundled releases' date. A route through them is authored on
-  /// the device, so its release is dated by that evidence; before, it was
-  /// refused as evidence after release and the route lost live navigation.
-  @Test("an on-device release through later evidence is dated by it")
-  func datesOnDeviceReleaseByItsNewestEvidence() throws {
+  /// The pairing recommendations that lost live navigation because the Oi
+  /// JCT Bayshore-eastbound movements were reviewed on 2026-09-08, after the
+  /// bundled releases' date: measured on main after #45 and #48 through the
+  /// same on-device build WholeShutoRouteReleaseAuthority makes.
+  static let oiEvidenceRecommendations: [(
+    origin: String, circuit: ShutoCircuitDefinition, entry: String, exit: String,
+    oiOutgoingEdgeID: String
+  )] = [
+    ("Haneda", .c1Inner, "b.kukouchuou", "c1.shiodome", oiToC2Outer),
+    ("Haneda", .c2InnerWithBayshore, "1-haneda.kukounishi", "10.toyosu", oiStaysOnB),
+    ("Kawasaki", .c1Inner, "k1.daishi", "c1.shiodome", oiToC2Outer),
+    ("Kawasaki", .c2InnerWithBayshore, "k1.daishi", "10.toyosu", oiStaysOnB),
+    ("Yokohama Station", .c1Inner, "k1.higashikanagawa", "c1.shiodome", oiToC2Outer),
+    ("Minatomirai", .c1Inner, "k1.minatomirai", "c1.shiodome", oiToC2Outer),
+    ("Daikoku PA", .c1Inner, "b.daikokufutou", "c1.shiodome", oiToC2Outer),
+    ("Daikoku PA", .c2InnerWithBayshore, "k1.shioiri", "10.toyosu", oiStaysOnB),
+    ("Shin-Yokohama", .c1Inner, "k7-yokohama-kita.baba", "c1.shiodome", oiToC2Outer),
+    ("Shin-Yokohama", .c2InnerWithBayshore, "k1.shioiri", "10.toyosu", oiStaysOnB),
+    ("Wangan-Kanpachi ramp", .c1Inner, "b.kukouchuou", "c1.shiodome", oiToC2Outer),
+    ("Wangan-Kanpachi ramp", .c2InnerWithBayshore, "1-haneda.kukounishi", "10.toyosu", oiStaysOnB),
+  ]
+  static let oiIncomingEdgeID = "osm.1059139534.2.forward"
+  static let oiToC2Outer = "osm.4854099.0.forward"
+  static let oiStaysOnB = "osm.1059139534.3.forward"
+
+  /// An on-device release is dated by the newest evidence it binds; before,
+  /// these were refused as evidence after release.
+  @Test(
+    "pairings through the Oi eastbound movements build a live release",
+    arguments: 0..<12
+  )
+  func oiEvidenceRecommendationBuilds(index: Int) throws {
+    let recommendation = Self.oiEvidenceRecommendations[index]
     let database = try loadDatabase()
-    let planner = try ShutoRoutePlanner(database: database)
-    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
-      database: database
+    let route = try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: recommendation.circuit,
+      entryFacilityID: "shuto.ic.\(recommendation.entry)",
+      exitFacilityID: "shuto.ic.\(recommendation.exit)",
+      laps: 1
     )
-    let facilities = database.directionalFacilities.sorted {
-      $0.facilityID < $1.facilityID
+    #expect(
+      zip(route.edges, route.edges.dropFirst()).contains {
+        $0.edgeID == Self.oiIncomingEdgeID
+          && $1.edgeID == recommendation.oiOutgoingEdgeID
+      },
+      "\(recommendation.origin)"
+    )
+
+    let product =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteProduct(
+        context: ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+
+    #expect(product.release.releasedAt == "2026-09-08T00:00:00+09:00")
+    #expect(product.release.releaseID.hasSuffix(".2026-09-07"))
+    #expect(product.release.foregroundLiveInputAuthority != nil)
+  }
+
+  @Test("the bundled releases keep their identities and date")
+  func bundledReleasesKeepTheirIdentities() throws {
+    let directory = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .appendingPathComponent("data/product/releases")
+    let releases = try FileManager.default.contentsOfDirectory(
+      at: directory,
+      includingPropertiesForKeys: nil
+    ).filter {
+      $0.lastPathComponent.hasSuffix("-product-release.json")
+        && !$0.lastPathComponent.hasPrefix("k7-")
+    }.map {
+      try KaidoProductReleaseArtifactCodec.decode(Data(contentsOf: $0))
     }
-    let route = try #require(
-      facilities.filter(\.canEnter).lazy.flatMap { entry in
-        facilities.filter(\.canExit).lazy.compactMap { exit in
-          try? planner.plan(
-            entryFacilityID: entry.facilityID,
-            exitFacilityID: exit.facilityID
-          )
-        }
-      }.first { route in
-        route.edges.contains { $0.edgeID == "osm.1059139534.2.forward" }
+    #expect(
+      Set(releases.map(\.releaseID)) == [
+        "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07",
+        "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07",
+        "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07",
+        "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07",
+        "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07",
+      ]
+    )
+    #expect(
+      releases.allSatisfy {
+        $0.releasedAt == ShutoCircuitProductReleaseBuilder.releasedAt
       }
     )
-
-    let release =
-      try ShutoCircuitProductReleaseBuilder
-      .buildPlannedRouteRelease(context: context, route: route)
-
-    #expect(release.releasedAt == "2026-09-08T00:00:00+09:00")
-    #expect(release.navigation.releasedAt == "2026-09-08T00:00:00+09:00")
-    #expect(release.releaseID.hasSuffix(".2026-09-07"))
-    #expect(release.foregroundLiveInputAuthority != nil)
-    let bundled = try KaidoProductRelease(
-      artifact: ShutoCircuitProductReleaseBuilder.buildWanganArtifact(
-        database: database
-      )
-    )
-    #expect(bundled.releasedAt == ShutoCircuitProductReleaseBuilder.releasedAt)
   }
 
   @Test("a direct route without a later safe rejoin still builds honestly")

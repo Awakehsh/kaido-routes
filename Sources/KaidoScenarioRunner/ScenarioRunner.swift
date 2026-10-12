@@ -666,10 +666,13 @@ private struct ScenarioHarness {
       )
     } catch let error as ShutoNetworkError {
       adapterObservations["circuit_plan.status"] = .string("REJECTED")
-      adapterObservations["circuit_plan.rejection_reason"] = .string(
-        error == .facilityUnavailable
-          ? "FACILITY_UNAVAILABLE" : "ROUTE_UNAVAILABLE"
-      )
+      let reason: String
+      switch error {
+      case .facilityUnavailable: reason = "FACILITY_UNAVAILABLE"
+      case .sharedTollPoint: reason = "SHARED_TOLL_POINT"
+      default: reason = "ROUTE_UNAVAILABLE"
+      }
+      adapterObservations["circuit_plan.rejection_reason"] = .string(reason)
     }
   }
 

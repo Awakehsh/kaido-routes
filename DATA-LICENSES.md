@@ -21,6 +21,22 @@ The derivative database itself is included in this application bundle as
 repository's Apache-2.0 license applies to project code and does not relicense
 this database.
 
+## Bundled route releases
+
+Each released route bundled with the app carries route geometry, directed
+graph edges and matcher corridors extracted from the whole-Shuto database
+above. These files are derivative databases of it and are made available
+under the same ODbL 1.0 terms, attribution and source snapshot:
+
+- `c1-inner-shibakoen-shiodome-product-release.json`
+- `wangan-westbound-chidoricho-daikoku-pa-product-release.json`
+- `c2-inner-oujiminami-shikahamabashi-product-release.json`
+- `daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json`
+- `scenic-harumi-daikoku-pa-product-release.json`
+
+Their build and validation commands:
+<https://github.com/Awakehsh/kaido-routes/blob/main/docs/contributing/product-release-authoring.md>
+
 ## Bundled place photographs
 
 The whole-network map pins for classic Shuto-visible places are cropped

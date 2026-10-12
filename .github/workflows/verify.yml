@@ -193,6 +193,9 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testMissingAccessStillBlocksAnExitOnlyJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testOnwardDestinationStartsAutomaticallyAfterExit \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCustomRouteFromTheHomeCatalogEndsAtItsExit \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCustomEditorNeverDraftsAPairSharingOneTollPoint \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCircuitReviewEditorRulesOutEntrancesSharingTheExitTollPoint \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDirectionalTourEditorNeverOffersTheEntranceTollPointAsExit \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testFirstLocationPermissionRoundTripStartsTheSameLiveJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testEntryTransitionRequiresOrderedObservationsBeforeExpressway \

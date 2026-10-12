@@ -1,4 +1,5 @@
 import KaidoDomain
+import KaidoRouting
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -49,6 +50,34 @@ final class KaidoLanguageSettingsModelTests: XCTestCase {
     XCTAssertEqual(model.guidanceVoiceLocale, .japanese)
     XCTAssertEqual(store.guidanceVoiceLocale(), .japanese)
     XCTAssertNil(store.interfaceLocale())
+  }
+
+  func testUnsetInterfaceLanguageNamesTheOriginInTheDeviceLanguage() {
+    let key = "app.kaidoroutes.language.interface"
+    let defaults = UserDefaults.standard
+    let stored = defaults.string(forKey: key)
+    defer { defaults.set(stored, forKey: key) }
+    defaults.removeObject(forKey: key)
+
+    let deviceLocale = KaidoReleaseLocale.matchingPreferredLanguage(
+      Locale.preferredLanguages
+    )
+    XCTAssertEqual(
+      WholeShutoProductModel.storedLanguageSelection().interfaceLocale,
+      deviceLocale
+    )
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6586, longitude: 139.7454)
+    )
+    XCTAssertEqual(
+      model.origin?.title,
+      KaidoInterfaceText(locale: deviceLocale).resolve(
+        japanese: "現在地",
+        simplifiedChinese: "当前位置",
+        english: "Current location"
+      )
+    )
   }
 
   func testUserDefaultsStoreRejectsUnknownPersistedLocales() {

@@ -34,8 +34,13 @@ internal review workbench.
   calendar day is the one quoted, so the revision is never shown early and
   takes over on its day without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
-  the band. Destination search remains an optional continuation below the
-  catalog.
+  the band. Same-named ramps bill as one toll point. An entrance and exit
+  sharing one are not plannable as an exact entry/exit route — the
+  planner's toll-point path between them collapses to the ramps
+  themselves — so the catalog, the editor, destination search, and a
+  reopened saved route never form that pair, and a loop leaves at a
+  differently named exit. Destination search remains an optional
+  continuation below the catalog.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
   ordered course. Avoid when possible keeps the selected Shuto course but
@@ -56,7 +61,8 @@ internal review workbench.
   a PA has no exit to keep, so choosing an exit there authors an explicit
   entrance/exit route. A custom pairing constrains
   whichever end the driver fixes first: only exits a directed path reaches
-  from the entry, only entrances a directed path leads from to the exit.
+  from the entry, only entrances a directed path leads from to the exit,
+  and never the other end's own toll point.
   A search still surfaces an IC the other end rules out, marked unreachable;
   choosing it clears the other end rather than drafting a refused pair. When the bounded
   surface provider resolves both ordinary-road legs for every exact candidate,

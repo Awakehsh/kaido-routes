@@ -9,17 +9,42 @@ struct WholeShutoPlaceSuggestion: Equatable, Identifiable {
   let title: String
   let subtitle: String
   let isShutoFacility: Bool
+  /// Sign-text directions a Shuto facility admits. They stay Japanese; the
+  /// entrance and exit words around them follow the interface language.
+  let entranceDirections: [String]
+  let exitDirections: [String]
 
   init(
     id: String,
     title: String,
     subtitle: String,
-    isShutoFacility: Bool = false
+    isShutoFacility: Bool = false,
+    entranceDirections: [String] = [],
+    exitDirections: [String] = []
   ) {
     self.id = id
     self.title = title
     self.subtitle = subtitle
     self.isShutoFacility = isShutoFacility
+    self.entranceDirections = entranceDirections
+    self.exitDirections = exitDirections
+  }
+
+  func displaySubtitle(_ copy: KaidoInterfaceText) -> String {
+    var parts = subtitle.isEmpty ? [] : [subtitle]
+    if !entranceDirections.isEmpty {
+      parts.append(
+        copy.resolve(japanese: "入口", simplifiedChinese: "入口", english: "Entry")
+          + " " + entranceDirections.joined(separator: " / ")
+      )
+    }
+    if !exitDirections.isEmpty {
+      parts.append(
+        copy.resolve(japanese: "出口", simplifiedChinese: "出口", english: "Exit")
+          + " " + exitDirections.joined(separator: " / ")
+      )
+    }
+    return parts.joined(separator: " · ")
   }
 }
 

@@ -4,7 +4,7 @@
   "title": "Circuit planning repeats laps as distinct occurrences",
   "layer": "DOMAIN",
   "tags": ["circuit", "loop", "occurrence", "planning"],
-  "purpose": "A circuit plan must assemble entrance approach, N complete loops, and a forward exit as one continuous ordered occurrence sequence, keep repeated edges as distinct occurrences, and reject direction-invalid entrances and invalid lap counts instead of silently accepting them.",
+  "purpose": "A circuit plan must assemble entrance approach, N complete loops, and a forward exit as one continuous ordered occurrence sequence, keep repeated edges as distinct occurrences, and reject direction-invalid entrances, an exit sharing the entrance's toll point, and invalid lap counts instead of silently accepting them.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
@@ -87,6 +87,7 @@
           { "node_id": 107, "latitude": 35.009, "longitude": 139.0 },
           { "node_id": 108, "latitude": 35.009, "longitude": 139.011 },
           { "node_id": 201, "latitude": 35.001, "longitude": 139.0125 },
+          { "node_id": 202, "latitude": 35.0095, "longitude": 139.0125 },
           { "node_id": 301, "latitude": 34.9895, "longitude": 139.0002 }
         ],
         "ways": [],
@@ -207,6 +208,17 @@
             "route_memberships": []
           },
           {
+            "edge_id": "test.edge.east-exit-ramp",
+            "from_node_id": 108,
+            "to_node_id": 202,
+            "way_id": 0,
+            "segment_index": 0,
+            "kind": "LINK",
+            "direction": "forward",
+            "length_meters": 150.0,
+            "route_memberships": []
+          },
+          {
             "edge_id": "test.edge.exit-ramp",
             "from_node_id": 103,
             "to_node_id": 301,
@@ -222,7 +234,7 @@
           {
             "facility_id": "test.ic.loop-east-entry",
             "route_id": "test.route.loop",
-            "name_ja": "テスト東入口",
+            "name_ja": "テスト東",
             "reading_ja": "てすとひがし",
             "coordinate": { "latitude": 35.001, "longitude": 139.0125 },
             "entrance_directions": ["TEST_INNER"],
@@ -234,6 +246,22 @@
               { "edge_id": "test.edge.entry-ramp", "distance_meters": 5.0 }
             ],
             "exit_edge_candidates": []
+          },
+          {
+            "facility_id": "test.ic.loop-east-exit",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト東",
+            "reading_ja": "てすとひがし",
+            "coordinate": { "latitude": 35.0095, "longitude": 139.0125 },
+            "entrance_directions": [],
+            "exit_directions": ["TEST_INNER"],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [],
+            "exit_edge_candidates": [
+              { "edge_id": "test.edge.east-exit-ramp", "distance_meters": 5.0 }
+            ]
           },
           {
             "facility_id": "test.ic.loop-south-exit",
@@ -334,6 +362,16 @@
         "exit_facility_id": "test.ic.loop-south-exit",
         "laps": 0
       }
+    },
+    {
+      "id": "reject-shared-toll-point-exit",
+      "at_ms": 3000,
+      "type": "CIRCUIT_PLAN_REQUESTED",
+      "payload": {
+        "entry_facility_id": "test.ic.loop-east-entry",
+        "exit_facility_id": "test.ic.loop-east-exit",
+        "laps": 2
+      }
     }
   ],
   "then": [
@@ -408,6 +446,24 @@
       "matcher": "EQUALS",
       "expected": "INVALID_LAP_COUNT",
       "rationale": "Lap count is a bounded first-class parameter."
+    },
+    {
+      "id": "shared-toll-point-exit-rejected",
+      "after": "reject-shared-toll-point-exit",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "Same-named ramps bill as one toll point; whatever the lap count, an exit at the entrance's own toll point is not plannable as an exact entry/exit route."
+    },
+    {
+      "id": "shared-toll-point-exit-reason",
+      "after": "reject-shared-toll-point-exit",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "SHARED_TOLL_POINT",
+      "rationale": "The refusal names the shared toll point rather than an unreachable route."
     }
   ]
 }

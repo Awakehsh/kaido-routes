@@ -295,37 +295,46 @@ protocol WholeShutoJourneyCheckpointStoring: AnyObject {
   func remove() throws
 }
 
+/// One atomically replaced file in Application Support. A checkpoint carries
+/// the whole RoutePlan, about 1.8 MB for nine C2 laps, which is too large for
+/// a UserDefaults value.
 @MainActor
-final class WholeShutoUserDefaultsCheckpointStore:
+final class WholeShutoFileCheckpointStore:
   WholeShutoJourneyCheckpointStoring
 {
-  static let key = "app.kaidoroutes.whole-shuto.journey-checkpoint"
+  static let defaultFileURL = URL.applicationSupportDirectory
+    .appendingPathComponent("KaidoRoutes", isDirectory: true)
+    .appendingPathComponent("whole-shuto-journey-checkpoint.json")
 
-  private let defaults: UserDefaults
+  private let fileURL: URL
 
-  init(defaults: UserDefaults = .standard) {
-    self.defaults = defaults
+  init(fileURL: URL = defaultFileURL) {
+    self.fileURL = fileURL
   }
 
   func load() throws -> WholeShutoJourneyCheckpoint? {
-    guard let data = defaults.data(forKey: Self.key) else {
+    guard FileManager.default.fileExists(atPath: fileURL.path) else {
       return nil
     }
     return try JSONDecoder().decode(
       WholeShutoJourneyCheckpoint.self,
-      from: data
+      from: Data(contentsOf: fileURL)
     )
   }
 
   func save(_ checkpoint: WholeShutoJourneyCheckpoint) throws {
-    defaults.set(
-      try JSONEncoder().encode(checkpoint),
-      forKey: Self.key
+    try FileManager.default.createDirectory(
+      at: fileURL.deletingLastPathComponent(),
+      withIntermediateDirectories: true
     )
+    try JSONEncoder().encode(checkpoint).write(to: fileURL, options: .atomic)
   }
 
   func remove() throws {
-    defaults.removeObject(forKey: Self.key)
+    guard FileManager.default.fileExists(atPath: fileURL.path) else {
+      return
+    }
+    try FileManager.default.removeItem(at: fileURL)
   }
 }
 
@@ -439,9 +448,10 @@ final class WholeShutoProductModel: ObservableObject {
     didSet { refreshEntryCandidatesReachingExit() }
   }
   /// The mirror for a driver who fixes the exit first: entrances some
-  /// directed all-Shuto path leads from to the current exit. Only an exact
-  /// custom pairing needs it; an experience's direction-valid entrances all
-  /// reach the same exits once its course completes.
+  /// directed all-Shuto path leads from to the current exit, other than the
+  /// exit's own toll point. An experience's direction-valid entrances all
+  /// reach the same exits once its course completes, so there it rules out
+  /// only the entrances sharing that toll point.
   private var entryCandidatesReachingExit:
     [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var customPreference: ShutoRoutePreference =
@@ -658,7 +668,7 @@ final class WholeShutoProductModel: ObservableObject {
     surfaceRouteResolver: any WholeShutoSurfaceRouteResolving =
       WholeShutoMapKitSurfaceRouteResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
-      WholeShutoUserDefaultsCheckpointStore(),
+      WholeShutoFileCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission] = [],
     liveJourneyAdmissionResolver:
@@ -1187,11 +1197,13 @@ final class WholeShutoProductModel: ObservableObject {
     activeSurfaceStep?.instruction
   }
 
+  /// The settings model owns the first-launch defaults, so an unset language
+  /// resolves here exactly as the interface does.
   static func storedLanguageSelection() -> NavigationLanguageSelection {
-    let settings = UserDefaultsKaidoLanguagePreferenceStore()
+    let settings = KaidoLanguageSettingsModel()
     return NavigationLanguageSelection(
-      interfaceLocale: settings.interfaceLocale() ?? .simplifiedChinese,
-      guidanceVoiceLocale: settings.guidanceVoiceLocale() ?? .japanese
+      interfaceLocale: settings.interfaceLocale,
+      guidanceVoiceLocale: settings.guidanceVoiceLocale
     )
   }
 
@@ -1494,20 +1506,17 @@ final class WholeShutoProductModel: ObservableObject {
   private var customEntryPartition:
     (pairable: [ShutoNetworkDatabase.Facility], unpairable: [ShutoNetworkDatabase.Facility])
   {
-    if editedCircuit != nil {
-      return (
-        pinningSelection(
-          circuitEntranceCandidates,
-          selectedFacilityID: customEntryFacilityID
-        ),
-        []
+    let ranked =
+      editedCircuit != nil
+      ? pinningSelection(
+        circuitEntranceCandidates,
+        selectedFacilityID: customEntryFacilityID
       )
-    }
-    let ranked = rankedCustomFacilities(
-      from: origin?.coordinate,
-      selectedFacilityID: customEntryFacilityID,
-      isEligible: \.canEnter
-    )
+      : rankedCustomFacilities(
+        from: origin?.coordinate,
+        selectedFacilityID: customEntryFacilityID,
+        isEligible: \.canEnter
+      )
     guard customExitFacilityID != nil else { return (ranked, []) }
     let reaching = Set(entryCandidatesReachingExit.map(\.facilityID))
     return (
@@ -4186,7 +4195,7 @@ final class WholeShutoProductModel: ObservableObject {
         }
       case .expressway:
         let update = try await session.observe(observation)
-        applyNavigationUpdate(update, persistsCheckpoint: false)
+        applyNavigationUpdate(update)
         if phase == .completed { return }
         await synchronizeLiveTunnelState(
           from: update.matcherEstimate,
@@ -5145,10 +5154,8 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     progressFraction = min(1, progressFraction + increment)
-    guard progressFraction >= 1 else {
-      persistCheckpoint()
-      return
-    }
+    // Like observation replay, a surface step is saved on pause or background.
+    guard progressFraction >= 1 else { return }
     progressFraction = 0
     switch phase {
     case .surfaceAccess:
@@ -5264,10 +5271,9 @@ final class WholeShutoProductModel: ObservableObject {
   /// Applies actor-owned progress and guidance for labeled replay. A future
   /// release-backed live composition may reuse this projection only after its
   /// provenance-bearing observations pass the release admission boundary.
-  private func applyNavigationUpdate(
-    _ update: NavigationSessionUpdate,
-    persistsCheckpoint: Bool = true
-  ) {
+  /// No step writes the checkpoint: replay saves when it pauses or the app
+  /// leaves the foreground, and a live drive on its own five-second cadence.
+  private func applyNavigationUpdate(_ update: NavigationSessionUpdate) {
     let wasRecovering = runtimeRecoveryStatus == .active
     if update.guidanceProgressState != .resolved {
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
@@ -5301,17 +5307,14 @@ final class WholeShutoProductModel: ObservableObject {
         update.navigationSnapshot.recovery.status == .active
       {
         updateReleasedRecoveryPosition(from: update.matcherEstimate)
-        if persistsCheckpoint { persistCheckpoint() }
         return
       }
       runtimeRecoveryDirectedEdgeID = nil
-      if persistsCheckpoint { persistCheckpoint() }
       return
     }
     runtimeRecoveryDirectedEdgeID = nil
     if phase == .entryTransition {
       guard update.navigationSnapshot.journeyPhase == .strictRoute else {
-        if persistsCheckpoint { persistCheckpoint() }
         return
       }
       resetRouteJoinOffer()
@@ -5340,7 +5343,6 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeFractionAlongOccurrence =
       progress.fractionAlongOccurrence
     runtimeCoordinate = progress.coordinate
-    if persistsCheckpoint { persistCheckpoint() }
   }
 
   private func configureSpeech(for routePlanID: String) throws {
@@ -6525,8 +6527,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func refreshEntryCandidatesReachingExit() {
-    guard let exitFacilityID = customExitFacilityID, editedCircuit == nil
-    else {
+    guard let exitFacilityID = customExitFacilityID else {
       entryCandidatesReachingExit = []
       return
     }

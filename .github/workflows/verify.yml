@@ -92,12 +92,26 @@ jobs:
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
+  # Unit tests and UI journeys run as parallel jobs. Each builds for itself:
+  # handing the build products to the other job would cost an upload and a
+  # download on the critical path, while a second build costs only runner
+  # time.
   app:
-    name: iPhone app unit and journey smoke
+    name: iPhone app ${{ matrix.suite }}
     needs: changes
     if: needs.changes.outputs.verification-required == 'true'
     runs-on: macos-15
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: unit tests
+            slug: unit
+            test-target: KaidoRoutesAppTests
+          - suite: UI journeys
+            slug: ui
+            test-target: KaidoRoutesAppUITests
     steps:
       - uses: actions/checkout@v7
 
@@ -110,6 +124,7 @@ jobs:
           xcodebuild -version
 
       - name: Every App test belongs to a test plan
+        if: matrix.slug == 'unit'
         run: python3 scripts/check_app_test_plans.py
 
       - name: Generate the app project
@@ -156,42 +171,102 @@ jobs:
           echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
           echo "device-state=$DEVICE_STATE" >> "$GITHUB_OUTPUT"
 
-      - name: App tests in the Verify test plan
+      - name: Build for testing while the simulator boots
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
           DEVICE_STATE: ${{ steps.simulator.outputs.device-state }}
         run: |
           set -euo pipefail
+          # The build targets a generic simulator, so it never waits on the
+          # booting device; tests run on that device in the next step.
           (
             set -euo pipefail
+            echo "Simulator boot started"
             if [[ "$DEVICE_STATE" != "Booted" ]]; then
               xcrun simctl boot "$DEVICE_ID"
             fi
-            xcrun simctl bootstatus "$DEVICE_ID"
+            xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
             xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
             xcrun simctl ui "$DEVICE_ID" content_size large
+            echo "Simulator ready"
           ) &
           SIMULATOR_PID=$!
-          xcodebuild test \
+          xcodebuild build-for-testing \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -testPlan Verify \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-build.log"
+          echo "Build finished"
+          wait "$SIMULATOR_PID"
+
+      - name: Verify test plan (${{ matrix.suite }})
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
+          TEST_TARGET: ${{ matrix.test-target }}
+        run: |
+          set -euo pipefail
+          xcodebuild test-without-building \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -testPlan Verify \
             -destination "id=$DEVICE_ID" \
-            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-critical.xcresult" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:"$TEST_TARGET" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
-          wait "$SIMULATOR_PID"
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-test.log"
+
+      # TEMPORARY (measurement for the CI split; removed before merge).
+      - name: Phase timings
+        if: always()
+        run: |
+          xcrun xcresulttool get log --path "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
+            --type action --compact | python3 -c '
+          import json, sys
+          def walk(node, depth=0):
+              if depth < 3:
+                  print("  " * depth + node.get("title", "")[:80],
+                        round(node.get("duration") or 0, 1))
+              for child in node.get("subsections", [])[:12]:
+                  walk(child, depth + 1)
+          walk(json.load(sys.stdin))
+          '
+
+      # TEMPORARY (measurement): what handing build products between jobs costs.
+      - name: Upload build products (measurement)
+        if: matrix.slug == 'unit'
+        uses: actions/upload-artifact@v7
+        with:
+          name: products-measurement-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/DerivedData/Build/Products
+          retention-days: 1
 
       - name: Upload App test diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: kaido-app-diagnostics-${{ github.run_attempt }}
+          name: kaido-app-${{ matrix.slug }}-diagnostics-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/KaidoRoutesApp-critical.log
-            ${{ runner.temp }}/KaidoRoutesApp-critical.xcresult
+            ${{ runner.temp }}/KaidoRoutesApp-build.log
+            ${{ runner.temp }}/KaidoRoutesApp-test.log
+            ${{ runner.temp }}/KaidoRoutesApp.xcresult
           if-no-files-found: warn
           retention-days: 7
+
+  # TEMPORARY (measurement): download cost of the build products.
+  products-download-measurement:
+    needs: app
+    runs-on: macos-15
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: products-measurement-${{ github.run_attempt }}
+          path: products
+      - run: du -sh products
 
   gate:
     name: Verification gate

@@ -892,15 +892,28 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       let template = commit.frameTemplate
       var preparationContent: [KaidoReleaseLocale: LocalizedGuidanceContent] = [:]
       for (locale, original) in template.presentationSource.localizedContent {
-        let prefix: String
+        let displayText: String
+        let spokenText: String
         switch locale {
-        case .japanese: prefix = "この先の分岐で、"
-        case .simplifiedChinese: prefix = "前方分岔，"
-        case .english: prefix = "At the upcoming junction, "
+        case .japanese:
+          displayText = "この先の分岐で、" + original.displayText
+          spokenText = "この先の分岐で、" + original.spokenText
+        case .simplifiedChinese:
+          displayText = "前方分岔，" + original.displayText
+          spokenText = "前方分岔，" + original.spokenText
+        case .english:
+          // The commit cue already says where ("At Edobashi JCT, stay on…"),
+          // so preparation announces it ahead instead of prefixing a second
+          // place phrase.
+          displayText = "Ahead: " + original.displayText
+          spokenText =
+            original.spokenText.hasPrefix("At ")
+            ? "Ahead at " + original.spokenText.dropFirst("At ".count)
+            : "Ahead: " + original.spokenText
         }
         preparationContent[locale] = LocalizedGuidanceContent(
-          displayText: prefix + original.displayText,
-          spokenText: prefix + original.spokenText,
+          displayText: displayText,
+          spokenText: spokenText,
           spokenForms: original.spokenForms,
           preservedJapaneseSignText: original.preservedJapaneseSignText
         )

@@ -235,7 +235,8 @@ public enum ShutoCircuitProductReleaseBuilder {
       route: route,
       releaseKey: plannedRouteReleaseKey(route.routePlan),
       preferredRecoveryTriggerID: nil,
-      runtimeContext: context
+      runtimeContext: context,
+      datesReleaseByEvidence: true
     )
   }
 
@@ -264,7 +265,8 @@ public enum ShutoCircuitProductReleaseBuilder {
       preferredRecoveryTriggerID: nil,
       runtimeContext: context,
       runtimeAssets: runtimeAssets,
-      validatesProduct: false
+      validatesProduct: false,
+      datesReleaseByEvidence: true
     )
     return try ShutoPlannedRouteProductBuild(
       release: KaidoProductRelease(artifact: artifact),
@@ -291,7 +293,8 @@ public enum ShutoCircuitProductReleaseBuilder {
     preferredRecoveryTriggerID: String?,
     runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext? = nil,
     runtimeAssets: ShutoPlannedRouteRuntimeAssets? = nil,
-    validatesProduct: Bool = true
+    validatesProduct: Bool = true,
+    datesReleaseByEvidence: Bool = false
   ) throws -> KaidoProductReleaseArtifact {
     let assets =
       try runtimeAssets
@@ -384,6 +387,36 @@ public enum ShutoCircuitProductReleaseBuilder {
       database: database,
       movements: reviewedMovements
     )
+    let navigationAssetEvidence = navigationEvidence(
+      editorCatalogID: editor.catalogID,
+      presentationCatalogID: editor.presentation.id,
+      runtimePolicy: runtimePolicy,
+      corridor: corridor,
+      decisionZones: assets.decisionZones,
+      guidance: assets.releasedGuidance,
+      movements: reviewedMovements
+    )
+    let atlasArtifact = try routeAtlasArtifact(
+      database: database,
+      route: route,
+      networkSnapshot: networkSnapshot,
+      releaseKey: releaseKey
+    )
+    // A release authored for an arbitrary planned route binds whatever
+    // reviewed evidence that route crosses, so it cannot predate the newest
+    // of it. The bundled releases keep their reviewed date and identities.
+    let evidenceDates =
+      navigationSources.references.map(\.checkedAt)
+      + navigationAssetEvidence.map(\.checkedAt)
+      + atlasArtifact.sourceRegistry.references.map(\.checkedAt)
+      + [
+        atlasArtifact.topologySlice.evidence.checkedAt,
+        atlasArtifact.definition.evidence.checkedAt,
+      ]
+    let releasedAt =
+      datesReleaseByEvidence
+      ? "\(max(evidenceDates.max() ?? releaseDate, releaseDate))T00:00:00+09:00"
+      : Self.releasedAt
     let navigationArtifact = NavigationReleaseArtifact(
       releaseID: "shutoko.navigation.\(releaseKey).2026-09-07",
       releasedAt: releasedAt,
@@ -391,27 +424,13 @@ public enum ShutoCircuitProductReleaseBuilder {
       networkSnapshot: networkSnapshot,
       routePlan: route.routePlan,
       sourceRegistry: navigationSources,
-      assetEvidence: navigationEvidence(
-        editorCatalogID: editor.catalogID,
-        presentationCatalogID: editor.presentation.id,
-        runtimePolicy: runtimePolicy,
-        corridor: corridor,
-        decisionZones: assets.decisionZones,
-        guidance: assets.releasedGuidance,
-        movements: reviewedMovements
-      ),
+      assetEvidence: navigationAssetEvidence,
       editorCatalog: editor.catalog,
       editorPresentationCatalog: editor.presentation,
       runtimePolicy: runtimePolicy,
       matcherCorridor: corridor,
       decisionZones: assets.decisionZones,
       releasedGuidance: assets.releasedGuidance
-    )
-    let atlasArtifact = try routeAtlasArtifact(
-      database: database,
-      route: route,
-      networkSnapshot: networkSnapshot,
-      releaseKey: releaseKey
     )
     let product = KaidoProductReleaseArtifact(
       releaseID: "shutoko.product.\(releaseKey).2026-09-07",

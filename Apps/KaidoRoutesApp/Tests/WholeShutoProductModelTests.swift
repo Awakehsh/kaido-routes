@@ -6061,7 +6061,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(projection.iPhone.localizedDecisionPointName, "Oi JCT")
     XCTAssertEqual(
       projection.iPhone.localizedDisplayText,
-      "At the upcoming junction, Branch left for the C2 Outer Loop"
+      "Ahead: Branch left for the C2 Outer Loop"
     )
     XCTAssertEqual(projection.iPhone.japaneseSignText, "東名・中央道")
     XCTAssertEqual(projection.carPlay.japaneseSignText, "東名・中央道")

@@ -272,6 +272,49 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  /// The Oi JCT Bayshore-eastbound movements were reviewed on 2026-09-08,
+  /// after the bundled releases' date. A route through them is authored on
+  /// the device, so its release is dated by that evidence; before, it was
+  /// refused as evidence after release and the route lost live navigation.
+  @Test("an on-device release through later evidence is dated by it")
+  func datesOnDeviceReleaseByItsNewestEvidence() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+    let facilities = database.directionalFacilities.sorted {
+      $0.facilityID < $1.facilityID
+    }
+    let route = try #require(
+      facilities.filter(\.canEnter).lazy.flatMap { entry in
+        facilities.filter(\.canExit).lazy.compactMap { exit in
+          try? planner.plan(
+            entryFacilityID: entry.facilityID,
+            exitFacilityID: exit.facilityID
+          )
+        }
+      }.first { route in
+        route.edges.contains { $0.edgeID == "osm.1059139534.2.forward" }
+      }
+    )
+
+    let release =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteRelease(context: context, route: route)
+
+    #expect(release.releasedAt == "2026-09-08T00:00:00+09:00")
+    #expect(release.navigation.releasedAt == "2026-09-08T00:00:00+09:00")
+    #expect(release.releaseID.hasSuffix(".2026-09-07"))
+    #expect(release.foregroundLiveInputAuthority != nil)
+    let bundled = try KaidoProductRelease(
+      artifact: ShutoCircuitProductReleaseBuilder.buildWanganArtifact(
+        database: database
+      )
+    )
+    #expect(bundled.releasedAt == ShutoCircuitProductReleaseBuilder.releasedAt)
+  }
+
   @Test("a direct route without a later safe rejoin still builds honestly")
   func buildsDirectRouteWithoutInventingRecovery() throws {
     let database = try loadDatabase()

@@ -26622,12 +26622,12 @@
             "japanese_sign_text" : "横浜",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Right for the Bayshore Route toward Yokohama",
+                "display_text" : "Ahead: Branch Right for the Bayshore Route toward Yokohama",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "the Bayshore Route toward Yokohama" : "the Bayshore Route toward Yokohama"
                 },
-                "spoken_text" : "At the upcoming junction, At Shinonome JCT, branch right for the Bayshore Route toward Yokohama"
+                "spoken_text" : "Ahead at Shinonome JCT, branch right for the Bayshore Route toward Yokohama"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、右方向へ分岐し、湾岸線 横浜方面へ",
@@ -26728,12 +26728,12 @@
             "japanese_sign_text" : "横浜",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "display_text" : "Ahead: Stay on the Bayshore Route toward 横浜",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Ariake JCT, stay on the Bayshore Route toward 横浜"
+                "spoken_text" : "Ahead at Ariake JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
@@ -26838,12 +26838,12 @@
             "japanese_sign_text" : "横浜",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "display_text" : "Ahead: Stay on the Bayshore Route toward 横浜",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Oi JCT, stay on the Bayshore Route toward 横浜"
+                "spoken_text" : "Ahead at Oi JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
@@ -26948,12 +26948,12 @@
             "japanese_sign_text" : "横浜公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Right for Yokohama-koen",
+                "display_text" : "Ahead: Branch Right for Yokohama-koen",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "Yokohama-koen" : "Yokohama-koen"
                 },
-                "spoken_text" : "At the upcoming junction, At Tokai JCT, branch right for Yokohama-koen"
+                "spoken_text" : "Ahead at Tokai JCT, branch right for Yokohama-koen"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、右方向へ分岐し、横浜公園方面へ",
@@ -27056,12 +27056,12 @@
             "japanese_sign_text" : "横浜公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Keep Left for Route K1 toward Yokohama-koen",
+                "display_text" : "Ahead: Keep Left for Route K1 toward Yokohama-koen",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "Route K1 toward Yokohama-koen" : "Route K1 toward Yokohama-koen"
                 },
-                "spoken_text" : "At the upcoming junction, At Daishi JCT, keep left for Route K1 toward Yokohama-koen"
+                "spoken_text" : "Ahead at Daishi JCT, keep left for Route K1 toward Yokohama-koen"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向を保ち、K1 横羽線 横浜公園方面へ",
@@ -27162,12 +27162,12 @@
             "japanese_sign_text" : "横浜公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Keep Right At The First Fork, Then Keep Right Again for Route K1 toward Yokohama-koen",
+                "display_text" : "Ahead: Keep Right At The First Fork, Then Keep Right Again for Route K1 toward Yokohama-koen",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "Route K1 toward Yokohama-koen" : "Route K1 toward Yokohama-koen"
                 },
-                "spoken_text" : "At the upcoming junction, At Namamugi JCT, keep right at the first fork, then keep right again for Route K1 toward Yokohama-koen"
+                "spoken_text" : "Ahead at Namamugi JCT, keep right at the first fork, then keep right again for Route K1 toward Yokohama-koen"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、最初の分岐で右方向を保ち、続く分岐でも右方向を保ち、K1 横羽線 横浜公園方面へ",
@@ -27268,12 +27268,12 @@
             "japanese_sign_text" : "横浜公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Keep Left for Route K1 toward Yokohama-koen",
+                "display_text" : "Ahead: Keep Left for Route K1 toward Yokohama-koen",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "Route K1 toward Yokohama-koen" : "Route K1 toward Yokohama-koen"
                 },
-                "spoken_text" : "At the upcoming junction, At Kinko JCT, keep left for Route K1 toward Yokohama-koen"
+                "spoken_text" : "Ahead at Kinko JCT, keep left for Route K1 toward Yokohama-koen"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向を保ち、K1 横羽線 横浜公園方面へ",
@@ -27374,12 +27374,12 @@
             "japanese_sign_text" : "湾岸線",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for Route K3 toward the Bayshore Route",
+                "display_text" : "Ahead: Branch Left for Route K3 toward the Bayshore Route",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "Route K3 toward the Bayshore Route" : "Route K3 toward the Bayshore Route"
                 },
-                "spoken_text" : "At the upcoming junction, At Ishikawacho JCT, branch left for Route K3 toward the Bayshore Route"
+                "spoken_text" : "Ahead at Ishikawacho JCT, branch left for Route K3 toward the Bayshore Route"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、K3 狩場線 湾岸線方面へ",
@@ -27482,12 +27482,12 @@
             "japanese_sign_text" : "空港中央・大黒ふ頭",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Continue Straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
+                "display_text" : "Ahead: Continue Straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
                 "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
                   "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo" : "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo"
                 },
-                "spoken_text" : "At the upcoming junction, At Honmoku JCT, continue straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo"
+                "spoken_text" : "Ahead at Honmoku JCT, continue straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
@@ -27590,12 +27590,12 @@
             "japanese_sign_text" : "東名",
             "localized_content" : {
               "en" : {
-                "display_text" : "At the upcoming junction, Branch Left for Route K5 toward the Tomei Expressway",
+                "display_text" : "Ahead: Branch Left for Route K5 toward the Tomei Expressway",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "Route K5 toward the Tomei Expressway" : "Route K5 toward the Tomei Expressway"
                 },
-                "spoken_text" : "At the upcoming junction, At Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
+                "spoken_text" : "Ahead at Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
               },
               "ja-JP" : {
                 "display_text" : "この先の分岐で、左方向へ分岐し、K5 大黒線 東名方面へ",

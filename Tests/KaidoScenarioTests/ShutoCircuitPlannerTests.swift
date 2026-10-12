@@ -800,7 +800,7 @@ struct ShutoCircuitPlannerTests {
   }
 
   @Test(
-    "an entry and exit sharing a toll point never pair",
+    "an entry and exit sharing a toll point are not plannable as an exact route",
     arguments: [
       ("shuto.ic.10.harumi", "shuto.ic.10.harumi"),
       ("shuto.ic.k1.daishi", "shuto.ic.k6.daishi"),
@@ -819,9 +819,10 @@ struct ShutoCircuitPlannerTests {
       database.directionalFacilities.first { $0.facilityID == exitID }
     )
     #expect(entry.canEnter && exit.canExit && entry.nameJA == exit.nameJA)
-    // Same-named ramps bill as one toll point, so the toll-point fare path
-    // between them is only the ramps' own length; the operator prices such
-    // a pair over a real distance. No surface may plan or price it.
+    // Same-named ramps bill as one toll point, so the toll-point path
+    // between them collapses to the ramps' own length. The pair is not
+    // plannable as an exact entry/exit route, and no surface plans or
+    // prices it.
     for preference in ShutoRoutePreference.allCases {
       #expect(throws: ShutoNetworkError.sharedTollPoint) {
         _ = try planner.plan(
@@ -937,10 +938,9 @@ struct ShutoCircuitPlannerTests {
       for: circuit,
       afterEntering: entryID
     )
-    // The tariff prices the shortest all-Shuto path between two toll
-    // points, and laps never change it; from a toll point back to itself
-    // there is no such path to price, so the experience offers only exits
-    // with their own toll point.
+    // Back to the entrance's own toll point the toll-point path collapses
+    // to the ramps, so the pair is not plannable as an exact entry/exit
+    // route and the experience offers only exits with their own toll point.
     #expect(exits.allSatisfy { $0.nameJA != entrance.nameJA })
     #expect(throws: ShutoNetworkError.sharedTollPoint) {
       _ = try planner.planCircuit(

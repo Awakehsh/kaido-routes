@@ -143,11 +143,12 @@ radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the soonest forward exits and
 every reachable exit near the entrance, and picks the lowest honestly-priced
 band. Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
-page and fare search confirm across its Bayshore and Daikoku Line ramps, so
-the shortest path from a toll point back to itself has no length the dated
-rule can price; the planner therefore never pairs an entrance with an exit
-sharing its name, on any surface, and a loop that returns there is refused
-rather than quoted the minimum band. An entrance on
+page and fare search confirm across its Bayshore and Daikoku Line ramps.
+Between an entrance and an exit at one toll point the planner's toll-point
+path collapses to the ramps themselves, and the editor cannot author the
+turnaround such a trip needs, so that pair is not plannable as an exact
+entry/exit route on any surface; a loop that returns there is refused rather
+than quoted the collapsed minimum band. An entrance on
 a member route must still match the experience's carriageway direction
 (the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
 every anchor in course order. Highway preference defaults to prefer highways;

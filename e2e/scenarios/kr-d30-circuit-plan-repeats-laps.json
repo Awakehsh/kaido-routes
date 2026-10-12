@@ -454,7 +454,7 @@
       "subject": "circuit_plan.status",
       "matcher": "EQUALS",
       "expected": "REJECTED",
-      "rationale": "Same-named ramps bill as one toll point, and laps never change the fare, so returning to the entrance's own toll point is not a pairing the tariff can price."
+      "rationale": "Same-named ramps bill as one toll point; whatever the lap count, an exit at the entrance's own toll point is not plannable as an exact entry/exit route."
     },
     {
       "id": "shared-toll-point-exit-reason",

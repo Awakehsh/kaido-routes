@@ -7,6 +7,7 @@
     }
   ],
   "defaultOptions" : {
+    "codeCoverage" : false,
     "targetForVariableExpansion" : {
       "containerPath" : "container:KaidoRoutesApp.xcodeproj",
       "identifier" : "77490D08B862452A4A0A6606",

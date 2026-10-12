@@ -816,7 +816,7 @@ background. The distributed bundle supplies five
 prebuilt whole-Shuto admissions for deterministic startup: C1 inner from
 Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
-Oji-minami to Shikahamabashi, the Daikoku/Yokohama circuit from
+Oji-minami to Itabashi-honcho, the Daikoku/Yokohama circuit from
 Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
 Daikoku-Futo. The C1 outer circuit from Kyobashi back to Kyobashi resolves
 through the on-device authoring path. For any other exact selected `RoutePlan`,

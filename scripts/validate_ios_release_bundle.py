@@ -85,22 +85,22 @@ WANGAN_ENTRY_FACILITY_ID = "shuto.ic.b.chidoricho"
 WANGAN_EXIT_FACILITY_ID = None
 WANGAN_ROUTE_OCCURRENCE_COUNT = 441
 C2_PRODUCT_RELEASE_RESOURCE = (
-    "c2-inner-oujiminami-shikahamabashi-product-release.json"
+    "c2-inner-oujiminami-itabashihoncho-product-release.json"
 )
 C2_PRODUCT_RELEASE_SOURCE = (
     "data/product/releases/"
-    "c2-inner-oujiminami-shikahamabashi-product-release.json"
+    "c2-inner-oujiminami-itabashihoncho-product-release.json"
 )
 C2_PRODUCT_RELEASE_ID = (
-    "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07"
+    "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07"
 )
 C2_ROUTE_PLAN_ID = (
     "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami."
-    "shuto.ic.s1.shikahamabashi.x1.recommended"
+    "shuto.ic.5.itabashihoncho.x1.recommended"
 )
 C2_ENTRY_FACILITY_ID = "shuto.ic.c2.oujiminami"
-C2_EXIT_FACILITY_ID = "shuto.ic.s1.shikahamabashi"
-C2_ROUTE_OCCURRENCE_COUNT = 2_196
+C2_EXIT_FACILITY_ID = "shuto.ic.5.itabashihoncho"
+C2_ROUTE_OCCURRENCE_COUNT = 1_221
 DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
     "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"
 )

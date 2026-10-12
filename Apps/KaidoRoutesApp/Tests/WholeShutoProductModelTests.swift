@@ -3458,7 +3458,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
-  func testReleasedC1CatalogStillRecommendsHatsudaiFromHatsudai() async {
+  func testReleasedC1CatalogRecommendsTheNearbyRoute4RampFromHatsudai() async {
     let suiteName = UUID().uuidString
     let defaults = UserDefaults(suiteName: suiteName)!
     defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -3474,19 +3474,22 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCircuit(.c1Inner)
     await waitForCircuitPairing(model)
 
-    // Hatsudai-minami, not the Route 4 Hatsudai entrance: that one serves
-    // only the down carriageway, away from C1, and was recommended only
-    // while Hatagaya's up ramp was bound to it.
+    // Yoyogi, 0.7 km away, joins C1 after 5.3 km of Route 4. Hatsudai-minami
+    // is nearer but reaches C1 only after 8.9 km of C2 and Route 4, and its
+    // minimum-band exit back at Tomigaya sat 40 km past the lap. The Route 4
+    // Hatsudai entrance serves only the down carriageway, away from C1.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.c2.hatsudaiminami"
+      "shuto.ic.4.yoyogi"
     )
     XCTAssertNotEqual(
       model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.entryFacilityID
     )
-    XCTAssertNotNil(model.circuitExitFacilityID)
-    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
+    // The first C1 exit after the lap; no cheaper exit lies within one ramp
+    // spacing of it.
+    XCTAssertEqual(model.circuitExitFacilityID, "shuto.ic.c1.kasumigaseki")
+    XCTAssertEqual(model.circuitPairingBand, .estimated(yen: 390))
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.phase, .review)

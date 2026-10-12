@@ -50,14 +50,14 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var c2InnerOujiminamiShikahamabashi: AppBundleProductReleaseDescriptor {
+  static var c2InnerOujiminamiItabashihoncho: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
-      resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
+      resourceName: "c2-inner-oujiminami-itabashihoncho-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "fc7399b8b1f9bb93ea6ff79cb2e0530e2ad2743bd208eb9be42bdd05f8cefa8f",
+        "4611d5064a3299bd8a901abf20232807490b1dd62a7cd954e2a57537ea074bb7",
       expectedReleaseID:
-        "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07",
+        "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07",
       role: .foregroundNavigation
     )
   }
@@ -258,7 +258,7 @@ enum BundledProductReleaseCatalogLoader {
   static let foregroundManifest: [BundledProductReleaseDescriptor] = [
     .c1InnerShibakoenShiodome,
     .wanganWestboundChidorichoDaikokuPA,
-    .c2InnerOujiminamiShikahamabashi,
+    .c2InnerOujiminamiItabashihoncho,
     .daikokuYokohamaWangankanpachiDaikokuPA,
     .scenicHarumiDaikokuPA,
   ]

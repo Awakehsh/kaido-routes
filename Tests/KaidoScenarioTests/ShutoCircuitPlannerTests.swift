@@ -579,18 +579,20 @@ struct ShutoCircuitPlannerTests {
   func plansShinjukuC1Excursion() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())
 
-    // Shinjuku station area: the radial entrance joins C1 for laps. The
-    // folklore Yoyogi pairing is NOT the answer — the operator fare search
-    // (checked 2026-08-04) prices Shinjuku to Yoyogi at ¥860 because the
-    // return radial is only reachable through a full circuit, so the
-    // honest cheapest exit is an onward C1 exit in the mid bands.
+    // Shinjuku station area: a Route 4 radial entrance joins C1 for laps —
+    // Gaien rather than the Shinjuku ramp beside the station, because it
+    // reaches C1 3 km sooner for 1 km more of surface street. The folklore
+    // Yoyogi pairing is NOT the answer — the operator fare search (checked
+    // 2026-08-04) prices Shinjuku to Yoyogi at ¥860 because the return
+    // radial is only reachable through a full circuit, so the honest
+    // cheapest exit is an onward C1 exit.
     let origin = ShutoCoordinate(latitude: 35.6896, longitude: 139.7006)
     let pairing = try planner.recommendedCircuitPairing(
       for: .c1Inner,
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    #expect(pairing.entrance.facilityID == "shuto.ic.4.shinjuku")
+    #expect(pairing.entrance.facilityID == "shuto.ic.4.gaien")
     #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
     let band = try #require(pairing.tariffBand)
     #expect(band.quotedYen < 700)
@@ -607,6 +609,135 @@ struct ShutoCircuitPlannerTests {
     // Radial approach + two C1 laps + exit tail.
     #expect(route.distanceMeters > 30_000)
     #expect(route.distanceMeters < 60_000)
+  }
+
+  @Test(
+    "a ramp beside the origin never wins on a long off-course approach",
+    arguments: [
+      // 鈴ヶ森 is nearer, but drives 17.6 km of Route 1 and C1 before the
+      // Bayshore westbound begins; 大井南 is already on it.
+      (35.5308, 139.7029, ShutoCircuitDefinition.wanganDaikokuRun,
+       "shuto.ic.b.ooiminami", "shuto.ic.1-haneda.suzugamori", 30_000.0),
+      // 北池袋 reaches C2 only after 17 km of Route 5 and C1.
+      (35.7295, 139.7109, ShutoCircuitDefinition.c2InnerWithBayshore,
+       "shuto.ic.c2.nishiikebukuro", "shuto.ic.5.kitaikebukuro", 70_000.0),
+      // 芝浦 reaches the Daikoku loop only after 30 km of Route 1 and the
+      // Bayshore; 殿町 is on the loop.
+      (35.655, 139.7964, ShutoCircuitDefinition.daikokuYokohamaLoop,
+       "shuto.ic.k6.tonomachi", "shuto.ic.1-haneda.shibaura", 55_000.0),
+      // 勝島 reaches C1 only after 49 km: south to the Bayshore and back.
+      (35.6, 139.743, ShutoCircuitDefinition.c1Inner,
+       "shuto.ic.c2.chukanooiminami", "shuto.ic.1-haneda.katsushima", 25_000.0),
+    ]
+  )
+  func ranksEntrancesByTheDriveToTheCourse(
+    latitude: Double,
+    longitude: Double,
+    circuit: ShutoCircuitDefinition,
+    expectedEntranceID: String,
+    nearerEntranceID: String,
+    maximumMeters: Double
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let origin = ShutoCoordinate(latitude: latitude, longitude: longitude)
+    let candidates = planner.circuitEntranceCandidates(for: circuit, origin: origin)
+    // The nearer ramp stays a legal alternative; it just is not first.
+    #expect(candidates.contains { $0.facilityID == nearerEntranceID })
+    #expect(candidates.first?.facilityID == expectedEntranceID)
+
+    let pairing = try planner.recommendedCircuitPairing(
+      for: circuit,
+      origin: origin,
+      evidence: .etcNormalCarUntil2026September
+    )
+    let route = try planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+    #expect(route.distanceMeters < maximumMeters)
+  }
+
+  @Test(
+    "a recommended loop joins without a long detour and leaves soon after its final lap",
+    arguments: [
+      // Tokyo Station, Kinshicho and Oi used to quote one C2 lap at 124, 126
+      // and 166 km: the minimum band for an exit back beside the entrance,
+      // which the final lap had just passed. 王子南 drove 111 km the same
+      // way; Oi's C1 approach was 49 km long.
+      ("Tokyo Station", 35.6812, 139.7671), ("Shinjuku", 35.69, 139.7003),
+      ("Oji-minami", 35.755249, 139.742524), ("Kinshicho", 35.6969, 139.8146),
+      ("Oi", 35.6, 139.743), ("Kawasaki", 35.5308, 139.7029),
+    ],
+    [
+      ShutoCircuitDefinition.c1Inner,
+      ShutoCircuitDefinition.c1Outer,
+      ShutoCircuitDefinition.c2InnerWithBayshore,
+    ]
+  )
+  func boundsRecommendedLoopDetours(
+    origin: (name: String, latitude: Double, longitude: Double),
+    circuit: ShutoCircuitDefinition
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let coordinate = ShutoCoordinate(
+      latitude: origin.latitude,
+      longitude: origin.longitude
+    )
+    func pairing(
+      includeConnectingEntrances: Bool
+    ) throws -> ShutoCircuitPairing {
+      let entrance = try #require(
+        planner.circuitEntranceCandidates(
+          for: circuit,
+          origin: coordinate,
+          includeConnectingEntrances: includeConnectingEntrances
+        ).first
+      )
+      return try planner.recommendedCircuitPairing(
+        for: circuit,
+        entranceFacilityID: entrance.facilityID,
+        origin: coordinate,
+        evidence: .etcNormalCarUntil2026September
+      )
+    }
+    func approachAndTail(
+      _ entryFacilityID: String,
+      _ exitFacilityID: String
+    ) throws -> (approach: Double, tail: Double) {
+      let route = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        laps: 1
+      )
+      let marks = route.lapBoundaryOccurrenceIndices
+      let first = try #require(marks.first)
+      let last = try #require(marks.last)
+      return (
+        route.edges[..<first].reduce(0) { $0 + $1.lengthMeters },
+        route.edges[last...].reduce(0) { $0 + $1.lengthMeters }
+      )
+    }
+    let ownRamp = try pairing(includeConnectingEntrances: false)
+    let ownRampDistance = try #require(ownRamp.entranceDistanceMeters)
+    for recommended in [ownRamp, try pairing(includeConnectingEntrances: true)] {
+      let entryID = recommended.entrance.facilityID
+      let soonest = try #require(
+        planner.circuitExitCandidates(for: circuit, afterEntering: entryID).first
+      )
+      let drive = try approachAndTail(entryID, recommended.exit.facilityID)
+      let label = "\(origin.name): \(entryID) → \(recommended.exit.facilityID)"
+      // An expressway approach at most twice the straight line to the
+      // course's own nearest ramp: it has to save surface driving.
+      #expect(drive.approach <= 2 * ownRampDistance + 1_000, "\(label)")
+      // At most one ramp spacing past the first forward exit.
+      #expect(
+        drive.tail <= (try approachAndTail(entryID, soonest.facilityID)).tail + 3_000,
+        "\(label)"
+      )
+    }
   }
 
   @Test("a distant origin retains a direction-valid surface access candidate")

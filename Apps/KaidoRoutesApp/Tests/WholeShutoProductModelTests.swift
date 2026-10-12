@@ -765,10 +765,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.ic.c1.kyoubashi"
     )
     XCTAssertTrue(model.startCircuitJourney())
-    for _ in 0..<400
-    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
+    await model.awaitLiveNavigationPreparationForTesting()
 
     XCTAssertEqual(model.phase, .review)
     XCTAssertEqual(
@@ -1231,10 +1228,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotNil(model.circuitEntryFacilityID)
     XCTAssertNotNil(model.circuitExitFacilityID)
     XCTAssertTrue(model.startCircuitJourney())
-    for _ in 0..<400
-    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
+    await model.awaitLiveNavigationPreparationForTesting()
 
     XCTAssertEqual(model.phase, .review)
     XCTAssertNotNil(model.accessRoute)
@@ -2167,6 +2161,218 @@ final class WholeShutoProductModelTests: XCTestCase {
       target.index
     )
     model.reset()
+  }
+
+  func testUnadmittedFreshFixesHoldTheMarkerWithoutWeakTextOrVoice()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(clock: clock, output: output)
+    let model = drive.model
+    var points = Self.corridorFixPoints(release: drive.release)[...]
+    func feed(accuracy: Double) async throws {
+      let point = try XCTUnwrap(points.popFirst())
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "holding.\(clock.milliseconds)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees,
+          horizontalAccuracyMeters: accuracy
+        )
+      )
+    }
+    func notices() -> Int {
+      output.commands.filter { $0.identity.anchorID == "JOURNEY_STATUS" }.count
+    }
+
+    for _ in 0..<200
+    where model.phase != .expressway || model.matcherConfidence != .high {
+      try await feed(accuracy: 5)
+    }
+    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertFalse(model.isHoldingLivePosition)
+    let positionState = model.positionState
+    let noticeCount = notices()
+
+    // Coarse on-route fixes are fresh and usable but never admitted.
+    for second in 1...5 {
+      try await feed(accuracy: 40)
+      XCTAssertNotEqual(model.matcherConfidence, .high)
+      XCTAssertEqual(model.isHoldingLivePosition, second >= 5, "second \(second)")
+    }
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertEqual(model.positionState, positionState)
+    XCTAssertTrue(model.hasCurrentGuidancePosition)
+    XCTAssertEqual(notices(), noticeCount)
+
+    for _ in 0..<30 where model.matcherConfidence != .high {
+      try await feed(accuracy: 5)
+    }
+    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertFalse(model.isHoldingLivePosition)
+    XCTAssertEqual(notices(), noticeCount)
+    model.reset()
+  }
+
+  func testRouteRecoveryOffTheCorridorKeepsFreshFixesUsable()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(clock: clock, output: output)
+    let model = drive.model
+    let recovery = try XCTUnwrap(
+      drive.release.navigation.bundle.runtimePolicy.recoveryCandidates.first
+    )
+    let divergence = try XCTUnwrap(
+      drive.route.routePlan.occurrence(id: recovery.divergenceOccurrenceID)
+    )
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: drive.release.navigation.bundle.matcherCorridor
+        .edges.map { ($0.id, $0) }
+    )
+    let points =
+      Self.corridorFixPoints(release: drive.release) {
+        $0.index < divergence.index
+      }
+      + recovery.recoveryOccurrenceIDs.compactMap { corridorEdges[$0] }
+      .flatMap(Self.edgeFixPoints)
+    var reachedRecovery = false
+    for point in points {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "recovery-lost.\(clock.milliseconds)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees
+        )
+      )
+      if model.runtimeJourneyPhase == .routeRecovery {
+        reachedRecovery = true
+        break
+      }
+    }
+    XCTAssertTrue(reachedRecovery)
+    let last = try XCTUnwrap(points.last?.coordinate)
+    func notices(_ fragment: String) -> Int {
+      output.commands.filter { $0.identity.promptID.contains(fragment) }.count
+    }
+
+    // Two kilometres from every corridor road: the matcher is lost, but the
+    // fixes are fresh, so the drive is off the plan, not out of position.
+    let away = ShutoCoordinate(
+      latitude: last.latitude + 0.018,
+      longitude: last.longitude
+    )
+    for _ in 0..<15 {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "recovery-lost.away.\(clock.milliseconds)",
+          coordinate: away,
+          atMilliseconds: clock.milliseconds
+        )
+      )
+    }
+    XCTAssertEqual(model.runtimeJourneyPhase, .routeRecovery)
+    XCTAssertEqual(model.liveLocationState, .available)
+    model.evaluateLiveLocationFreshness(atMilliseconds: clock.milliseconds)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(notices("positionLost"), 0)
+
+    // Without any fix, the drive still goes stale.
+    model.evaluateLiveLocationFreshness(
+      atMilliseconds: clock.milliseconds + 11_000
+    )
+    XCTAssertEqual(model.liveLocationState, .stale)
+    model.reset()
+  }
+
+  /// A started live drive from Rinkai-fukutoshin to Daikoku-futou, with the
+  /// release it runs, so a test can place fixes on exact corridor edges.
+  private func bayshoreLiveDrive(
+    clock: LiveTestClock,
+    output: any GuidanceSpeechOutput
+  ) async throws -> (
+    model: WholeShutoProductModel,
+    route: ShutoPlannedRoute,
+    release: KaidoProductRelease
+  ) {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { clock.milliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.rinkaihukutoshin")
+    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    XCTAssertTrue(model.applyCustomRoute())
+    await model.awaitLiveNavigationPreparationForTesting()
+    XCTAssertTrue(
+      model.canStartLiveNavigation,
+      model.liveNavigationBlockerCode ?? "no blocker code"
+    )
+    let route = try XCTUnwrap(model.selectedRoute)
+    let release =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+          database: model.database
+        ),
+        route: route
+      )
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let accessEnd = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "bayshore.access-end",
+        coordinate: accessEnd,
+        atMilliseconds: clock.milliseconds,
+        courseDegrees: Self.bearing(
+          from: route.coordinates[0],
+          to: route.coordinates[1]
+        )
+      )
+    )
+    return (model, route, release)
+  }
+
+  /// Two fixes per RoutePlan occurrence, a quarter and three quarters along.
+  private static func corridorFixPoints(
+    release: KaidoProductRelease,
+    where includes: (RouteMatcherOccurrence) -> Bool = { _ in true }
+  ) -> [(coordinate: ShutoCoordinate, courseDegrees: Double)] {
+    let corridor = release.navigation.bundle.matcherCorridor
+    let edges = Dictionary(
+      uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) }
+    )
+    return corridor.occurrences.sorted { $0.index < $1.index }
+      .filter(includes)
+      .compactMap { edges[$0.directedEdgeID] }
+      .flatMap(edgeFixPoints)
+  }
+
+  private static func edgeFixPoints(
+    _ edge: RouteMatcherDirectedEdge
+  ) -> [(coordinate: ShutoCoordinate, courseDegrees: Double)] {
+    guard let first = edge.coordinates.first, let last = edge.coordinates.last
+    else { return [] }
+    let start = ShutoCoordinate(latitude: first.latitude, longitude: first.longitude)
+    let end = ShutoCoordinate(latitude: last.latitude, longitude: last.longitude)
+    return [0.25, 0.75].map {
+      (interpolate(from: start, to: end, fraction: $0), bearing(from: start, to: end))
+    }
   }
 
   func testLiveTunnelGapCoastsPresentationWithoutAdvancingAuthority()
@@ -5324,7 +5530,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     atMilliseconds: Int = 1_000,
     courseDegrees: Double = 90,
     courseAccuracyDegrees: Double? = nil,
-    speedMetersPerSecond: Double = 10
+    speedMetersPerSecond: Double = 10,
+    horizontalAccuracyMeters: Double = 5
   ) -> CoreLocationObservationEnvelope {
     CoreLocationObservationEnvelope(
       observation: RouteMatcherObservation(
@@ -5335,7 +5542,7 @@ final class WholeShutoProductModelTests: XCTestCase {
           latitude: coordinate.latitude,
           longitude: coordinate.longitude
         ),
-        horizontalAccuracyMeters: 5,
+        horizontalAccuracyMeters: horizontalAccuracyMeters,
         courseDegrees: courseDegrees,
         courseAccuracyDegrees: courseAccuracyDegrees,
         speedMetersPerSecond: speedMetersPerSecond,
@@ -5929,6 +6136,10 @@ private struct SpeechRecoveryShortStepResolver: WholeShutoSurfaceRouteResolving 
 }
 
 @MainActor
+
+private final class LiveTestClock: @unchecked Sendable {
+  var milliseconds = 1_000
+}
 
 private final class WholeShutoRecordingSpeechOutput:
   GuidanceSpeechOutput

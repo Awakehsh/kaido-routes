@@ -524,6 +524,11 @@ final class WholeShutoProductModel: ObservableObject {
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
   @Published private(set) var tunnelEstimatedProgressFraction: Double?
   @Published private(set) var tunnelEstimateUncertaintyMeters: Double?
+  /// Fresh expressway fixes keep arriving but none has been admitted for a
+  /// few seconds, so the marker stands where the car was last placed. Only
+  /// the marker's appearance reads this: the fixes are not stale, so no text
+  /// or voice calls the position weak.
+  @Published private(set) var isHoldingLivePosition = false
 
   let database: ShutoNetworkDatabase
   let planner: ShutoRoutePlanner
@@ -621,6 +626,8 @@ final class WholeShutoProductModel: ObservableObject {
   /// positioning — label and voice — is measured from this, never from a
   /// single weak or ambiguous fix.
   private var lastUsableLiveObservationAtMilliseconds: Int?
+  private var lastAdmittedLiveFixAtMilliseconds: Int?
+  static let livePositionHoldingMilliseconds = 5_000
   @Published private var liveVehicleCourseDegrees: Double?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
@@ -3918,6 +3925,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
+    lastAdmittedLiveFixAtMilliseconds = nil
+    isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     resetDriveEntry()
@@ -4019,6 +4028,8 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
+      lastAdmittedLiveFixAtMilliseconds = nil
+      isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       failureCode = nil
 
@@ -4209,13 +4220,21 @@ final class WholeShutoProductModel: ObservableObject {
         let update = try await session.observe(observation)
         applyNavigationUpdate(update)
         if phase == .completed { return }
-        if update.matcherEstimate.confidence == .lost {
+        // Off the plan the car has left the corridor by definition: a fresh
+        // fix there is still a usable one, not a lost position.
+        if update.matcherEstimate.confidence == .lost,
+          update.navigationSnapshot.journeyPhase != .routeRecovery
+        {
           evaluateLiveLocationFreshness(
             atMilliseconds: observation.receivedAtMilliseconds
           )
         } else {
           markLiveFixUsable(atMilliseconds: observation.receivedAtMilliseconds)
         }
+        updateLivePositionHolding(
+          from: update,
+          atMilliseconds: observation.receivedAtMilliseconds
+        )
         // The session recognises the exit from where the car went.
         if update.navigationSnapshot.journeyPhase == .exitTransition {
           applyLiveActorSnapshot(update.navigationSnapshot)
@@ -4399,6 +4418,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
+    lastAdmittedLiveFixAtMilliseconds = nil
+    isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     matcherConfidence = .low
     clearTunnelEstimate()
@@ -4465,6 +4486,8 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
+      lastAdmittedLiveFixAtMilliseconds = nil
+      isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       matcherConfidence = .low
       clearTunnelEstimate()
@@ -4739,6 +4762,20 @@ final class WholeShutoProductModel: ObservableObject {
     tick()
   }
 
+  /// Awaits the surface routing and live-runtime preparation already in
+  /// flight, including preparation one of them starts on completion, so a
+  /// test asserts their outcome rather than a wall-clock budget.
+  func awaitLiveNavigationPreparationForTesting() async {
+    var awaited: [Task<Void, Never>] = []
+    while let task = [surfaceRouteTask, liveAdmissionTask, liveRuntimeAssetsTask]
+      .compactMap({ $0 })
+      .first(where: { !awaited.contains($0) })
+    {
+      await task.value
+      awaited.append(task)
+    }
+  }
+
   func advanceSimulationForTesting() async {
     guard phase != .planning, phase != .review, phase != .completed else {
       return
@@ -4879,6 +4916,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
+    lastAdmittedLiveFixAtMilliseconds = nil
+    isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     lastSurfaceRerouteAttemptAtMilliseconds = nil
@@ -5990,6 +6029,27 @@ final class WholeShutoProductModel: ObservableObject {
       failureCode = Self.checkpointRuntimeInvalidCode
       checkpointIssueCode = Self.checkpointRuntimeInvalidCode
     }
+  }
+
+  /// Evaluated on each expressway fix; fixes arrive at about 1 Hz, so the
+  /// marker changes within a second of the threshold without a timer.
+  private func updateLivePositionHolding(
+    from update: NavigationSessionUpdate,
+    atMilliseconds milliseconds: Int
+  ) {
+    guard update.navigationSnapshot.journeyPhase == .strictRoute else {
+      lastAdmittedLiveFixAtMilliseconds = nil
+      isHoldingLivePosition = false
+      return
+    }
+    let admitted = update.admittedConfidence == .high
+    if admitted || lastAdmittedLiveFixAtMilliseconds == nil {
+      lastAdmittedLiveFixAtMilliseconds = milliseconds
+    }
+    isHoldingLivePosition =
+      !admitted
+      && milliseconds - (lastAdmittedLiveFixAtMilliseconds ?? milliseconds)
+        >= Self.livePositionHoldingMilliseconds
   }
 
   private func markLiveFixUsable(atMilliseconds milliseconds: Int) {

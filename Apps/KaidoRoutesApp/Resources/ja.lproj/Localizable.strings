@@ -33,3 +33,6 @@
 "Finish at the planned exit" = "予定の出口で終了";
 "Following the planned exit." = "予定の出口へ案内します。";
 "The planned exit is not close enough yet." = "予定の出口はまだ先です。";
+"Join the route here" = "ここからルートに合流";
+"Joining the route. Confirming the position." = "ルートに合流します。位置を確認しています。";
+"The route cannot be joined from this position." = "この位置からはルートに合流できません。";

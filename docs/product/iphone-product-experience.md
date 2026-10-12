@@ -309,7 +309,8 @@ before they can occupy the same replaceable boundary.
 ## Plan
 
 Siri and Shortcuts expose bounded drive actions: repeat the current direction,
-mute/unmute guidance, add/remove a lap, take a break, resume, and end navigation.
+mute/unmute guidance, join the route where the "already on the expressway"
+control is offered, add/remove a lap, take a break, resume, and end navigation.
 Each action uses the active App session and its existing guards. Ending guidance
 requires confirmation and rechecks that the same session is still active. It is
 distinct from choosing an earlier exit. Siri reads repeat text through its own

@@ -2507,10 +2507,15 @@ final class WholeShutoProductModel: ObservableObject {
     with observation: RouteMatcherObservation,
     driving snapshot: NavigationSnapshot
   ) async -> Bool {
-    guard snapshot.journeyPhase == .strictRoute,
-      (snapshot.currentOccurrenceIndex ?? 0) < pending.sharedOccurrenceCount
+    guard snapshot.journeyPhase == .strictRoute else {
+      // Off the strict route the drive's own notice is what the driver
+      // needs; the lap is moot and speaking it would cut that notice off.
+      dropLapSwap(spoken: false)
+      return false
+    }
+    guard (snapshot.currentOccurrenceIndex ?? 0) < pending.sharedOccurrenceCount
     else {
-      dropLapSwap()
+      dropLapSwap(spoken: true)
       return false
     }
     do {
@@ -2553,18 +2558,19 @@ final class WholeShutoProductModel: ObservableObject {
       persistCheckpoint()
       return true
     } catch {
-      dropLapSwap()
+      dropLapSwap(spoken: true)
       return false
     }
   }
 
   /// The driver was already told the lap is being added and may not be
-  /// looking at the screen, so a lap that is not added after all is spoken.
-  private func dropLapSwap() {
+  /// looking at the screen, so a lap that is not added after all is spoken
+  /// unless the drive has more pressing news of its own.
+  private func dropLapSwap(spoken: Bool) {
     pendingLapSwap = nil
     isChangingLaps = false
     failureCode = Self.lapChangeUnavailableCode
-    announceJourneyNotice(.lapNotAdded)
+    if spoken { announceJourneyNotice(.lapNotAdded) }
   }
 
   private func refreshRemainingLaps(from session: ShutoLiveDriveSession) async {

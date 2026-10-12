@@ -1490,6 +1490,102 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testLeavingTheRouteWithALapPendingSpeaksOnlyTheRouteNotice() async throws {
+    var nowMilliseconds = 1_000
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { nowMilliseconds },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      }
+    )
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    model.selectCircuitLaps(2)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    let route = try XCTUnwrap(model.selectedRoute)
+    let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+      context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: model.database),
+      route: route
+    )
+    let firstLap = route.lapBoundaryOccurrenceIndices[0]..<route.lapBoundaryOccurrenceIndices[1]
+    // A released detour off the first lap, so the drive enters recovery
+    // with a rejoin to announce.
+    let recovery = try XCTUnwrap(
+      release.navigation.bundle.runtimePolicy.recoveryCandidates.first {
+        guard let index = route.routePlan.occurrence(id: $0.divergenceOccurrenceID)?.index
+        else { return false }
+        return firstLap.contains(index) && index > firstLap.lowerBound + 20
+      }
+    )
+    let divergence = try XCTUnwrap(route.routePlan.occurrence(id: recovery.divergenceOccurrenceID))
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: release.navigation.bundle.matcherCorridor.edges.map { ($0.id, $0) }
+    )
+    func drive(_ edgeID: String, label: String) async throws {
+      let edge = try XCTUnwrap(corridorEdges[edgeID])
+      let start = try XCTUnwrap(edge.coordinates.first)
+      let end = try XCTUnwrap(edge.coordinates.last)
+      let startCoordinate = ShutoCoordinate(latitude: start.latitude, longitude: start.longitude)
+      let endCoordinate = ShutoCoordinate(latitude: end.latitude, longitude: end.longitude)
+      for fraction in Self.oneHertzFractions(from: startCoordinate, to: endCoordinate) {
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "lap-recovery.\(label).\(fraction)",
+            coordinate: Self.interpolate(from: startCoordinate, to: endCoordinate, fraction: fraction),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(from: startCoordinate, to: endCoordinate)))
+      }
+    }
+    if let accessEnd = model.accessRoute?.coordinates.last {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "lap-recovery.access-end", coordinate: accessEnd, atMilliseconds: nowMilliseconds,
+          courseDegrees: Self.bearing(from: route.coordinates[0], to: route.coordinates[1])))
+    }
+    for occurrence in release.navigation.bundle.matcherCorridor.occurrences.sorted(by: { $0.index < $1.index })
+    where occurrence.index < divergence.index {
+      try await drive(occurrence.directedEdgeID, label: "route.\(occurrence.index)")
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.runtimeJourneyPhase, .strictRoute)
+
+    let added = await model.addOneLap()
+    XCTAssertTrue(added, model.failureCode ?? "no failure code")
+    XCTAssertTrue(model.isChangingLaps)
+    for edgeID in recovery.recoveryOccurrenceIDs where model.runtimeRecoveryStatus != .active {
+      try await drive(edgeID, label: "detour.\(edgeID)")
+    }
+    XCTAssertEqual(model.runtimeRecoveryStatus, .active)
+    XCTAssertFalse(model.isChangingLaps)
+    XCTAssertEqual(model.circuitLaps, 2)
+    XCTAssertEqual(model.selectedRoute?.routePlan, route.routePlan)
+    // The screen still says the lap was not added; the voice says only
+    // what the drive is doing about the route.
+    XCTAssertEqual(model.failureCode, WholeShutoProductModel.lapChangeUnavailableCode)
+    XCTAssertEqual(
+      output.commands.filter { $0.identity.promptID.hasPrefix("journey.rerouting.") }.map(\.spokenText),
+      ["Rechecking the route."]
+    )
+    XCTAssertFalse(output.commands.contains { $0.identity.promptID.contains("lapNotAdded") })
+    model.reset()
+  }
+
   func testRouteJoinIsOfferedOnlyWhereTheMatcherHoldsTheRoute() async throws {
     var nowMilliseconds = 1_000
     let history = MemoryDriveHistoryStore()

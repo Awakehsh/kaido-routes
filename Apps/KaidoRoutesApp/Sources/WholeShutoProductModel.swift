@@ -768,7 +768,9 @@ final class WholeShutoProductModel: ObservableObject {
     let planner = planner
     let database = database
     circuitThumbnailTask?.cancel()
-    circuitThumbnailTask = Task.detached(priority: .utility) { [weak self] in
+    // The cards are the first screen's content, not deferrable housekeeping:
+    // at utility priority a saturated CPU held them back for 50 s.
+    circuitThumbnailTask = Task.detached(priority: .userInitiated) { [weak self] in
       var previews: [String: WholeShutoCircuitPreview] = [:]
       for circuit in ShutoCircuitDefinition.bundled {
         guard !Task.isCancelled else { return }

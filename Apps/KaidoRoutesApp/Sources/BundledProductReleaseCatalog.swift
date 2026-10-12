@@ -19,7 +19,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "synthetic-product-runtime-preview",
       resourceExtension: "json",
       expectedSHA256:
-        "8b430013a5e17de53914bbcf6f336e01a8a0a044472e0d089bb75da6f74aca34",
+        "71c8d5a55988005eb290947b6e39778c66868c3cc3be82d01c9e9abf494fbd51",
       expectedReleaseID: "preview.synthetic.product-release.v1",
       role: .demoOnly
     )
@@ -30,7 +30,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c1-inner-shibakoen-shiodome-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "2ff19ea69f82db8a5bc30d9d688cf55edf71c6ea24a12071de89df437950e605",
+        "fd84c989556c8bedac477c3cb4aca3a3d4ced7ed923d945ff010559fbace4842",
       expectedReleaseID:
         "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07",
       role: .foregroundNavigation
@@ -43,7 +43,7 @@ extension AppBundleProductReleaseDescriptor {
         "wangan-westbound-chidoricho-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "f5e80289490ebad2902c2d5b0de14fa54fc7bebbb80e893144ff7e9147840533",
+        "d3595bba86f6ca646bec56dbc240bacb02e0cdc595eb2c570ddff7bb4aaa0461",
       expectedReleaseID:
         "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "fc7399b8b1f9bb93ea6ff79cb2e0530e2ad2743bd208eb9be42bdd05f8cefa8f",
+        "d0cbe686d32bc1a1acb853f9c1149e82b59d4d147b81b6b6d6d1e2bb336b5190",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07",
       role: .foregroundNavigation
@@ -68,7 +68,7 @@ extension AppBundleProductReleaseDescriptor {
         "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "902afc8e3875e960c8685315256e27b901467f4962124aa3f914bcd3fede657a",
+        "46ba7de8026f8406272741b00cc932181dbe4514f84ae90bcfaf76731f7a5ea2",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
@@ -80,7 +80,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "scenic-harumi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "d117e0c4aa0845f65f193a34ff8fc49ac76ef6a8c1d015002390c57a3cf7c88b",
+        "01839bb0c23fc4ca107cc4bfce77a6525c5a04858938dd0046219976b4a48f15",
       expectedReleaseID:
         "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation

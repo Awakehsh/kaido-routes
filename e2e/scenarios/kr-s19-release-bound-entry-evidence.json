@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "id": "KR-S19",
-  "title": "Only ordered release-bound entry evidence enters strict-route mode",
+  "title": "Only ordered release-bound route-head evidence enters strict-route mode",
   "layer": "SIMULATION",
   "tags": [
     "entry",
@@ -9,7 +9,7 @@
     "core-location",
     "fail-closed"
   ],
-  "purpose": "Keep ordinary or malformed location evidence from entering the RoutePlan until a non-simulated, exact-identity, ordered transition sequence reaches its first occurrence.",
+  "purpose": "Keep ordinary or malformed location evidence from entering the RoutePlan until non-simulated, exact-identity fixes progress along the route head beyond the straight line of the approach, where a street beneath the ramp would no longer follow.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
@@ -62,12 +62,12 @@
             "directed_edge_id": "test.edge.entry-admission.surface",
             "coordinates": [
               {
-                "latitude": 35.6800,
-                "longitude": 139.7590
+                "latitude": 35.679,
+                "longitude": 139.7592
               },
               {
-                "latitude": 35.6800,
-                "longitude": 139.7595
+                "latitude": 35.6795,
+                "longitude": 139.7596
               }
             ],
             "successor_edge_ids": [
@@ -78,12 +78,12 @@
             "directed_edge_id": "test.edge.entry-admission.ramp",
             "coordinates": [
               {
-                "latitude": 35.6800,
-                "longitude": 139.7595
+                "latitude": 35.6795,
+                "longitude": 139.7596
               },
               {
-                "latitude": 35.6800,
-                "longitude": 139.7600
+                "latitude": 35.68,
+                "longitude": 139.76
               }
             ],
             "successor_edge_ids": [
@@ -94,12 +94,12 @@
             "directed_edge_id": "test.edge.entry-admission.mainline",
             "coordinates": [
               {
-                "latitude": 35.6800,
-                "longitude": 139.7600
+                "latitude": 35.68,
+                "longitude": 139.76
               },
               {
-                "latitude": 35.6800,
-                "longitude": 139.7610
+                "latitude": 35.68,
+                "longitude": 139.762
               }
             ],
             "successor_edge_ids": []
@@ -127,26 +127,11 @@
       "payload": {}
     },
     {
-      "id": "final-edge-skipped-to",
+      "id": "surface-edge-observed",
       "at_ms": 1000,
       "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
       "payload": {
         "observation_id": "entry.0",
-        "directed_edge_id": "test.edge.entry-admission.ramp",
-        "candidate_edge_ids": [
-          "test.edge.entry-admission.ramp"
-        ],
-        "confidence": "HIGH",
-        "heading_error_degrees": 1,
-        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
-      }
-    },
-    {
-      "id": "surface-edge-observed",
-      "at_ms": 2000,
-      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
-      "payload": {
-        "observation_id": "entry.1",
         "directed_edge_id": "test.edge.entry-admission.surface",
         "candidate_edge_ids": [
           "test.edge.entry-admission.surface"
@@ -157,48 +142,113 @@
       }
     },
     {
-      "id": "simulated-ramp-observed",
-      "at_ms": 3000,
+      "id": "simulated-head-observed",
+      "at_ms": 2000,
       "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
       "payload": {
-        "observation_id": "entry.2",
-        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "observation_id": "entry.1",
+        "directed_edge_id": "test.edge.entry-admission.mainline",
+        "occurrence_id": "test.occurrence.entry-admission.first",
         "candidate_edge_ids": [
-          "test.edge.entry-admission.ramp"
+          "test.edge.entry-admission.mainline"
         ],
         "confidence": "HIGH",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7603
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
         "heading_error_degrees": 1,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER",
         "is_simulated_by_software": true
       }
     },
     {
-      "id": "identity-drifted-ramp-observed",
+      "id": "identity-drifted-head-observed",
+      "at_ms": 3000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.2",
+        "directed_edge_id": "test.edge.entry-admission.mainline",
+        "occurrence_id": "test.occurrence.entry-admission.first",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.mainline"
+        ],
+        "confidence": "HIGH",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7603
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER",
+        "product_release_id": "test.product-release.other"
+      }
+    },
+    {
+      "id": "first-head-observed",
       "at_ms": 4000,
       "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
       "payload": {
-        "product_release_id": "test.product-release.other",
         "observation_id": "entry.3",
-        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "directed_edge_id": "test.edge.entry-admission.mainline",
+        "occurrence_id": "test.occurrence.entry-admission.first",
         "candidate_edge_ids": [
-          "test.edge.entry-admission.ramp"
+          "test.edge.entry-admission.mainline"
         ],
         "confidence": "HIGH",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7603
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
         "heading_error_degrees": 1,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
     },
     {
-      "id": "released-ramp-observed",
+      "id": "second-head-observed",
       "at_ms": 5000,
       "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
       "payload": {
         "observation_id": "entry.4",
-        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "directed_edge_id": "test.edge.entry-admission.mainline",
+        "occurrence_id": "test.occurrence.entry-admission.first",
         "candidate_edge_ids": [
-          "test.edge.entry-admission.ramp"
+          "test.edge.entry-admission.mainline"
         ],
         "confidence": "HIGH",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7605
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "third-head-observed",
+      "at_ms": 6000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.5",
+        "directed_edge_id": "test.edge.entry-admission.mainline",
+        "occurrence_id": "test.occurrence.entry-admission.first",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.mainline"
+        ],
+        "confidence": "HIGH",
+        "coordinate": {
+          "latitude": 35.68,
+          "longitude": 139.7607
+        },
+        "horizontal_accuracy_meters": 5,
+        "distance_meters": 1,
         "heading_error_degrees": 1,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
@@ -206,26 +256,17 @@
   ],
   "then": [
     {
-      "id": "skipped-edge-rejected",
-      "after": "final-edge-skipped-to",
-      "category": "SAFETY",
-      "subject": "entry_transition.admission.rejection_reason",
-      "matcher": "EQUALS",
-      "expected": "OUT_OF_ORDER_ENTRY_EDGE",
-      "rationale": "A later transition edge cannot seed continuity."
-    },
-    {
-      "id": "first-edge-remains-transition",
+      "id": "approach-fix-is-not-entry",
       "after": "surface-edge-observed",
-      "category": "NAVIGATION",
+      "category": "SAFETY",
       "subject": "journey.phase",
       "matcher": "EQUALS",
-      "expected": "ENTRY_TRANSITION",
-      "rationale": "The first reviewed edge starts evidence collection but cannot enter strict mode."
+      "expected": "APPROACH_TO_ENTRY",
+      "rationale": "A fix on the approach, where a surface street could lie beneath, proves nothing about entry."
     },
     {
       "id": "simulated-evidence-rejected",
-      "after": "simulated-ramp-observed",
+      "after": "simulated-head-observed",
       "category": "SAFETY",
       "subject": "entry_transition.admission.rejection_reason",
       "matcher": "EQUALS",
@@ -234,7 +275,7 @@
     },
     {
       "id": "release-drift-rejected",
-      "after": "identity-drifted-ramp-observed",
+      "after": "identity-drifted-head-observed",
       "category": "SAFETY",
       "subject": "entry_transition.admission.rejection_reason",
       "matcher": "EQUALS",
@@ -242,31 +283,40 @@
       "rationale": "Evidence from another product release cannot enter this RoutePlan."
     },
     {
-      "id": "exact-sequence-enters-strict-route",
-      "after": "released-ramp-observed",
+      "id": "route-head-starts-transition",
+      "after": "first-head-observed",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "Route-head progression starts entry evidence but one fix cannot enter strict mode."
+    },
+    {
+      "id": "ordered-progression-enters-strict-route",
+      "after": "third-head-observed",
       "category": "NAVIGATION",
       "subject": "journey.phase",
       "matcher": "EQUALS",
       "expected": "STRICT_ROUTE",
-      "rationale": "Only the complete exact-identity, non-simulated, ordered sequence authorizes entry."
+      "rationale": "Exact-identity, non-simulated fixes that followed the route head away from the approach line authorize entry."
     },
     {
       "id": "entry-trigger-is-auditable",
-      "after": "released-ramp-observed",
+      "after": "third-head-observed",
       "category": "NAVIGATION",
       "subject": "journey.last_phase_transition.trigger",
       "matcher": "EQUALS",
-      "expected": "VERIFIED_ENTRY_CONTINUITY",
-      "rationale": "The existing engine transition trigger remains the final audit value."
+      "expected": "VERIFIED_ROUTE_HEAD_PROGRESSION",
+      "rationale": "Route-head entry stays distinguishable in the actor audit state."
     },
     {
       "id": "first-occurrence-selected",
-      "after": "released-ramp-observed",
+      "after": "third-head-observed",
       "category": "DOMAIN",
       "subject": "navigation.current_occurrence_id",
       "matcher": "EQUALS",
       "expected": "test.occurrence.entry-admission.first",
-      "rationale": "Entry commits only to the exact first occurrence in the released RoutePlan."
+      "rationale": "Entry commits only to the occurrence the evidence reached in the released RoutePlan."
     }
   ]
 }

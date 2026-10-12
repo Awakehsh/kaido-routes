@@ -26,10 +26,35 @@ public enum GuidanceFramePlanner {
     definitions: [ReleasedGuidanceDefinition],
     observation: GuidanceProgressObservation
   ) -> GuidancePlanningResult {
+    plan(
+      snapshot: snapshot,
+      routePlan: routePlan,
+      occurrencePositions: nil,
+      definitions: definitions,
+      observation: observation
+    )
+  }
+
+  /// `occurrencePositions` maps occurrence IDs to their position in
+  /// `routePlan.occurrences`; a caller planning every fix for one plan passes
+  /// it so a long plan is not searched linearly per definition.
+  package static func plan(
+    snapshot: NavigationSnapshot,
+    routePlan: RoutePlan?,
+    occurrencePositions: [String: Int]?,
+    definitions: [ReleasedGuidanceDefinition],
+    observation: GuidanceProgressObservation
+  ) -> GuidancePlanningResult {
+    guard let routePlan else {
+      return GuidancePlanningResult(status: .invalidDefinition)
+    }
+    let lookup = OccurrenceLookup(
+      routePlan: routePlan,
+      positions: occurrencePositions
+    )
     guard observation.distanceToDecisionPointMeters.isFinite,
       observation.distanceToDecisionPointMeters >= 0,
-      let routePlan,
-      definitionsAreValid(definitions, for: routePlan)
+      definitionsAreValid(definitions, for: routePlan, lookup: lookup)
     else {
       return GuidancePlanningResult(status: .invalidDefinition)
     }
@@ -42,7 +67,7 @@ public enum GuidanceFramePlanner {
     }
 
     let currentDefinitions = applicableDefinitions(
-      definitions, routePlan: routePlan, occurrenceID: observation.occurrenceID
+      definitions, lookup: lookup, occurrenceID: observation.occurrenceID
     )
     guard !currentDefinitions.isEmpty else {
       return GuidancePlanningResult(status: .noReleasedDefinition)
@@ -107,32 +132,33 @@ public enum GuidanceFramePlanner {
     }
   }
 
-  static func applicableDefinitions(
+  private static func applicableDefinitions(
     _ definitions: [ReleasedGuidanceDefinition],
-    routePlan: RoutePlan,
+    lookup: OccurrenceLookup,
     occurrenceID: String
   ) -> [ReleasedGuidanceDefinition] {
-    guard let current = routePlan.occurrence(id: occurrenceID) else { return [] }
+    guard let current = lookup.occurrence(id: occurrenceID) else { return [] }
     let upcoming = definitions.filter { definition in
-      guard let anchor = routePlan.occurrence(id: definition.anchor.occurrenceID),
-        let movement = routePlan.occurrence(id: definition.frameTemplate.movementOccurrenceID)
+      guard let anchor = lookup.occurrence(id: definition.anchor.occurrenceID),
+        let movement = lookup.occurrence(id: definition.frameTemplate.movementOccurrenceID)
       else { return false }
       return anchor.index <= current.index
         && (current.index < movement.index || anchor.id == current.id)
     }
     guard
       let nearestIndex = upcoming.compactMap({
-        routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index
+        lookup.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index
       }).min()
     else { return [] }
     return upcoming.filter {
-      routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index == nearestIndex
+      lookup.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index == nearestIndex
     }
   }
 
   private static func definitionsAreValid(
     _ definitions: [ReleasedGuidanceDefinition],
-    for routePlan: RoutePlan
+    for routePlan: RoutePlan,
+    lookup: OccurrenceLookup
   ) -> Bool {
     guard !definitions.isEmpty else { return true }
     var anchorKeys: Set<AnchorKey> = []
@@ -148,8 +174,8 @@ public enum GuidanceFramePlanner {
         !normalized(anchor.promptID).isEmpty,
         definition.triggerDistanceMeters.isFinite,
         definition.triggerDistanceMeters >= 0,
-        let anchorOccurrence = routePlan.occurrence(id: anchor.occurrenceID),
-        let movementOccurrence = routePlan.occurrence(id: template.movementOccurrenceID),
+        let anchorOccurrence = lookup.occurrence(id: anchor.occurrenceID),
+        let movementOccurrence = lookup.occurrence(id: template.movementOccurrenceID),
         movementOccurrence.kind == .junctionMovement,
         movementOccurrence.index >= anchorOccurrence.index
       else {
@@ -200,6 +226,16 @@ public enum GuidanceFramePlanner {
 
   private static func normalized(_ value: String) -> String {
     value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
+private struct OccurrenceLookup {
+  let routePlan: RoutePlan
+  let positions: [String: Int]?
+
+  func occurrence(id: String) -> RouteOccurrence? {
+    guard let positions else { return routePlan.occurrence(id: id) }
+    return positions[id].map { routePlan.occurrences[$0] }
   }
 }
 

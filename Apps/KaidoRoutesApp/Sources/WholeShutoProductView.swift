@@ -744,7 +744,7 @@ struct WholeShutoProductView: View {
     case .tunnelEstimated, .networkDegraded, .routeInterrupted:
       return true
     default:
-      return false
+      return model.isHoldingLivePosition
     }
   }
 
@@ -7027,6 +7027,7 @@ private struct WholeShutoGeographicMap: View {
             .foregroundStyle(
               model.positionState == .tunnelEstimated
                 || model.positionState == .routeInterrupted
+                || model.isHoldingLivePosition
                 ? KaidoInk.accentWarm : KaidoInk.accentCool
             )
             .rotationEffect(

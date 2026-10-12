@@ -47,6 +47,9 @@ struct DriveControlIntent: AppIntent {
       if await model.resumeLiveJourney() {
         return .result(dialog: "Navigation resumed. Waiting for a reliable position.")
       }
+      if model.isLiveDrive {
+        return .result(dialog: "Navigation is still paused. Resume it in Kaido Routes.")
+      }
       return .result(dialog: "There is no navigation session ready to resume.")
     }
     guard model.isLiveDrive, model.phase != .completed else {
@@ -64,7 +67,7 @@ struct DriveControlIntent: AppIntent {
       model.setSpeechMode(.muted)
       return .result(dialog: "Guidance is muted. Navigation continues.")
     case .unmute:
-      model.setSpeechMode(.full)
+      model.unmuteSpeech()
       return .result(dialog: "Guidance is on.")
     case .addLap:
       if await model.addOneLap() { return .result(dialog: "One lap added.") }
@@ -80,6 +83,9 @@ struct DriveControlIntent: AppIntent {
     case .rest:
       if model.liveLocationState == .resting {
         return .result(dialog: "Navigation is paused for your break.")
+      }
+      guard model.canRestLiveJourney else {
+        return .result(dialog: "A break can start once the car has stopped.")
       }
       if await model.restLiveJourney() {
         return .result(dialog: "Navigation is paused for your break.")

@@ -515,6 +515,16 @@ journey phase; the navigation core never learns about it. The return is
 matcher reacquires from wherever the car actually is, with ordinary recovery
 handling a PA return that lands further along.
 
+Only touch or Siri brings a rested drive back, so rest — button and Siri
+alike — is refused while a fresh fix reports a known speed above 1 m/s. A car
+parked under a PA roof often reports Core Location's negative "unknown" speed
+or no fresh fix at all, and neither refuses it. Rest, reset and End advance the playback generation and a lap swap
+replaces the session; a fix whose actor call outlives either is dropped rather
+than written over the state that replaced it, and a checkpoint captured for a
+session that is no longer live is not persisted. Location starts only from an
+active scene, so a Siri resume that runs before the app is in front reports the
+drive still paused instead of reporting a drive nothing is feeding.
+
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
 definitions, and one fresh resolved occurrence/distance observation. It never
@@ -555,7 +565,12 @@ step. Each identity permits three start attempts, spaced at least two seconds
 apart; a real interruption recovery opens a new attempt opportunity. Output
 occupancy expires after 30 seconds, with a typed timeout status. These are
 delivery bounds for short guidance, not road-authority or acoustic claims.
-The coordinator silences obsolete maneuvers at evidence loss and phase changes.
+The coordinator silences obsolete maneuvers at phase changes, at a genuinely
+stale position, and once the car has left a cue's approach window or its
+movement is skipped. A coarse fix (30 m or more, routine under elevated roads)
+leaves guidance progress unresolved, not contradicted, so a junction cue
+already speaking is allowed to finish: the engine emits each prompt once, and
+cutting it off there would lose it for good.
 Released expressway speech may replace surface speech; surface speech cannot
 replace an active released prompt. Provider text, geometry, and timing remain
 bounded presentation inputs and never create or mutate expressway guidance
@@ -567,7 +582,10 @@ ten seconds old or with at least 30 meters of reported uncertainty, matching the
 existing matcher's stale/low evidence boundaries. Informational start, entry, exit, rerouting, rejoin,
 position-loss/recovery, rest/resume and completion notices use the selected
 voice language, are episode-scoped, and yield to maneuver guidance. A lost
-position produces one notice per outage. MapKit ordinary-road text retains its
+position produces one notice per outage, and the 60-second cooldown belongs to
+the drive, so a lap swap does not reopen it. Muting drops a pending notice and
+a notice raised while muted is not queued, so unmuting never speaks old news.
+MapKit ordinary-road text retains its
 provider language, and the language settings explicitly disclose that boundary.
 For released expressway prompts, the iOS `AVSpeechGuidanceOutput` resolves only
 the requested reviewed locale. Provider surface commands instead retain the
@@ -1415,18 +1433,21 @@ That is a development fact, not yet the minimum deployment target.
   near the selected directional ramp. Provider steps remain ordinary-road
   presentation: they cannot mutate the exact `RoutePlan` or grant expressway
   occurrence authority.
-- The persisted connection preference defaults to `PREFER_HIGHWAYS`. Both
-  loops and tours admit nearby connecting-expressway entrances after the same
-  direction and ordered-anchor checks. MapKit allows highways and toll roads
-  on the bounded access/egress legs; among alternatives no more than 15 percent
-  slower than the fastest, capped at eight additional minutes, it prefers the
-  fastest highway alternative. `AVOID_HIGHWAYS` offers entrances on the chosen
-  course and requests highway/toll avoidance for connecting legs. It selects
-  an ordinary-road alternative when one exists, otherwise the available route;
-  avoidance is a preference, not a reachability guarantee. Ordinary alternatives
-  retain the bounded fewer-maneuvers selection. The same preference is captured
-  for access, egress, and live connecting-leg rerouting. Neither setting mutates
-  the selected `RoutePlan`; connecting tolls are outside the Shuto tariff band.
+- The persisted connection preference defaults to `PREFER_HIGHWAYS`. Under
+  it, loops and tours admit nearby connecting-expressway entrances after the
+  same direction and ordered-anchor checks; `AVOID_HIGHWAYS` offers entrances on
+  the chosen course only. The preference chooses entrances and nothing else.
+  Connecting legs never use expressways (owner decision 2026-10-12): an
+  expressway leg would guide through junctions Kaido has not reviewed and add a
+  second toll outside the quoted band. Every MapKit access, egress, and live
+  connecting-leg reroute request therefore avoids highways and tolls, and the
+  resolver selects an ordinary-road alternative when one exists, otherwise the
+  available route. An access leg ends on the entry ramp itself, which MapKit
+  flags as a toll or highway segment even under avoidance: a 2026-10-12 probe
+  of 16 entrances returned only flagged routes for 6 of them, so rejecting
+  flagged routes outright would make those entrances unreachable. Among alternatives no more than 15 percent slower than the
+  fastest, capped at eight additional minutes, it keeps the bounded
+  fewer-maneuvers selection. Neither setting mutates the selected `RoutePlan`.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
   artwork. The internal iPhone renderer now maps normalized path points and
@@ -2273,7 +2294,10 @@ bounded role it may own.
 ## Drive controls, history, and shared routes
 
 App Intents expose the foreground live model's existing repeat, speech mode,
-lap, rest, resume, and end actions. Siri returns the current valid instruction
+lap, rest, resume, and end actions. Unmute returns to the voice mode the driver
+had before muting rather than to full guidance. A lap change, exit handoff or
+resume that fails mid-drive is reported as one line on the driving screen, not
+only in the planning dock. Siri returns the current valid instruction
 through its own dialog output. The app does not record microphone input or send
 commands to an application server. Foreground scene registration owns the weak
 model reference; it does not introduce a second navigation session.

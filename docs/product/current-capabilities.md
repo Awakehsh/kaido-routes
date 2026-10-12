@@ -43,9 +43,10 @@ internal review workbench.
   continuation below the catalog.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
-  ordered course. Avoid when possible keeps the selected Shuto course but
-  prefers its own entrances and ordinary roads on connecting legs. Connecting
-  tolls are outside the Shuto estimate.
+  ordered course. Avoid when possible keeps the selected Shuto course and its
+  own entrances. Either way the legs to and from the expressway are ordinary
+  roads: MapKit is asked to avoid highways and tolls, so a connecting leg never
+  guides through unreviewed junctions or adds a second toll.
 - PAs appear in destination search alongside other places. Selecting one
   plans its exact directional access and an arrival point on the reviewed
   parking interior. There is no separate stop-selection screen. A PA-ended

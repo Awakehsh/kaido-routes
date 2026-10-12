@@ -10,11 +10,13 @@ enum WholeShutoSurfaceRoutePreference:
   case avoidHighways = "AVOID_HIGHWAYS"
 }
 
+/// Resolves a connecting leg to or from the expressway. Connecting legs stay
+/// on ordinary roads: an expressway leg would guide through junctions Kaido
+/// has not reviewed and add a second toll outside the quoted band.
 protocol WholeShutoSurfaceRouteResolving: Sendable {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute?
 }
 
@@ -42,8 +44,7 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
   func evaluate(
     recommendations: [ShutoRouteRecommendation],
     origin: ShutoCoordinate,
-    destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference = .preferHighways
+    destination: ShutoCoordinate
   ) async -> WholeShutoRouteChoiceEvaluation {
     var surfaceRoutesByRoutePlanID: [
       String: WholeShutoRouteChoiceSurfaceRoutes
@@ -56,16 +57,8 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
         ?? recommendation.route.entryFacility.coordinate
       let exit = recommendation.route.coordinates.last
         ?? recommendation.route.destinationCoordinate
-      async let access = resolver.route(
-        from: origin,
-        to: entry,
-        preference: preference
-      )
-      async let egress = resolver.route(
-        from: exit,
-        to: destination,
-        preference: preference
-      )
+      async let access = resolver.route(from: origin, to: entry)
+      async let egress = resolver.route(from: exit, to: destination)
       let routes = await (access, egress)
       if let accessRoute = routes.0, let egressRoute = routes.1 {
         surfaceRoutesByRoutePlanID[recommendation.route.routePlan.id] =
@@ -141,19 +134,13 @@ struct WholeShutoMapKitSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
-    let request = Self.request(from: origin, to: destination, preference: preference)
+    let request = Self.request(from: origin, to: destination)
     do {
       let response = try await MKDirections(request: request).calculate()
       let surfaceRoutes = response.routes.compactMap(Self.surfaceRoute)
-      guard
-        let route = Self.selectRoute(
-          from: surfaceRoutes,
-          preference: preference
-        )
-      else {
+      guard let route = Self.selectRoute(from: surfaceRoutes) else {
         Self.logger.error("MapKit returned no automobile route")
         return nil
       }
@@ -169,33 +156,30 @@ struct WholeShutoMapKitSurfaceRouteResolver:
 
   static func request(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) -> MKDirections.Request {
     let request = MKDirections.Request()
     request.source = Self.mapItem(origin)
     request.destination = Self.mapItem(destination)
     request.transportType = .automobile
     request.requestsAlternateRoutes = true
-    request.highwayPreference = preference == .avoidHighways ? .avoid : .any
-    request.tollPreference = preference == .avoidHighways ? .avoid : .any
+    request.highwayPreference = .avoid
+    request.tollPreference = .avoid
     return request
   }
 
   static func selectRoute(
-    from routes: [WholeShutoSurfaceRoute],
-    preference: WholeShutoSurfaceRoutePreference
+    from routes: [WholeShutoSurfaceRoute]
   ) -> WholeShutoSurfaceRoute? {
-    let preferredRoutes: [WholeShutoSurfaceRoute]
-    if preference == .avoidHighways {
-      let ordinaryRoads = routes.filter { $0.hasHighways != true && $0.hasTolls != true }
-      preferredRoutes = ordinaryRoads.isEmpty ? routes : ordinaryRoads
-    } else {
-      preferredRoutes = routes
-    }
+    // An access leg ends on the entry ramp itself, which MapKit flags as a
+    // toll or highway segment even under avoidance (6 of 16 sampled
+    // entrances, 2026-10-12). A flagged route is kept only when MapKit
+    // returned nothing else; otherwise those entrances would be unreachable.
+    let ordinaryRoads = routes.filter { $0.hasHighways != true && $0.hasTolls != true }
+    let preferredRoutes = ordinaryRoads.isEmpty ? routes : ordinaryRoads
     guard let fastest = preferredRoutes.min(by: isFaster) else { return nil }
 
-    // A highway preference must not turn a short connection into a long detour.
+    // A simpler route must not turn a short connection into a long detour.
     let allowedDetour = min(
       fastest.expectedTravelTimeSeconds
         * maximumPreferenceDetourFraction,
@@ -204,9 +188,6 @@ struct WholeShutoMapKitSurfaceRouteResolver:
     let eligible = preferredRoutes.filter {
       $0.expectedTravelTimeSeconds
         <= fastest.expectedTravelTimeSeconds + allowedDetour
-    }
-    if preference == .preferHighways {
-      return eligible.filter { $0.hasHighways == true }.min(by: isFaster) ?? fastest
     }
     // MapKit exposes no road width; fewer maneuvers only suggest a simpler route.
     return eligible.min(by: isMoreMajorRoadLike) ?? fastest
@@ -339,8 +320,7 @@ struct WholeShutoPreviewSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate,
-    preference _: WholeShutoSurfaceRoutePreference
+    to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute? {
     let distance = CLLocation(
       latitude: origin.latitude,

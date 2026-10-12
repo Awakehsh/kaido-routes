@@ -22,6 +22,44 @@ enum WholeShutoIdleTimerPolicy {
   }
 }
 
+/// One driving-screen line for an action that failed mid-drive. The planning
+/// dock's messages describe route search, not a drive in progress.
+enum WholeShutoDrivingFailure {
+  static func message(for code: String, locale: KaidoReleaseLocale) -> String? {
+    let copy = KaidoInterfaceText(locale: locale)
+    switch code {
+    case "LAP_CHANGE_UNAVAILABLE", WholeShutoProductModel.lapChangeUnavailableCode:
+      return copy.resolve(
+        japanese: "周回を変更できません",
+        simplifiedChinese: "无法更改圈数",
+        english: "Lap change unavailable"
+      )
+    case "WHOLE_SHUTO_EXIT_HANDOFF_UNCONFIRMED":
+      return copy.resolve(
+        japanese: "出口案内に切り替えられません",
+        simplifiedChinese: "无法切换到出口导航",
+        english: "Exit guidance unavailable"
+      )
+    case WholeShutoProductModel.liveNavigationRuntimeInvalidCode:
+      return copy.resolve(
+        japanese: "ナビを続行できません",
+        simplifiedChinese: "无法继续导航",
+        english: "Navigation can't continue"
+      )
+    // The position status line already reports a failed fix; a banner
+    // would turn one bad sample into an alarm.
+    case "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED":
+      return nil
+    default:
+      return copy.resolve(
+        japanese: "ナビを再開できません",
+        simplifiedChinese: "无法恢复导航",
+        english: "Navigation could not resume"
+      )
+    }
+  }
+}
+
 struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -2975,6 +3013,30 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// A lap change, exit handoff, or resume that fails mid-drive reports it
+  /// where the driver is looking, in the planning banner's style.
+  @ViewBuilder
+  private var drivingFailureBanner: some View {
+    if model.isLiveDrive, let failureCode = model.failureCode,
+      let message = WholeShutoDrivingFailure.message(
+        for: failureCode, locale: languageSettings.interfaceLocale
+      )
+    {
+      HStack(spacing: 7) {
+        Image(systemName: "exclamationmark.triangle.fill")
+        Text(message)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+        Spacer(minLength: 0)
+      }
+      .font(.system(size: 10, weight: .bold))
+      .foregroundStyle(KaidoInk.accentClay)
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("whole-shuto-driving-failure")
+      .kaidoAccessibilityValue(code: failureCode)
+    }
+  }
+
   private func routeField(
     symbol: String,
     tint: Color,
@@ -3567,6 +3629,7 @@ struct WholeShutoProductView: View {
 
   private var drivingDock: some View {
     VStack(spacing: 8) {
+      drivingFailureBanner
       routeJoinBanner
       lapChangeControls
       drivingDockControls
@@ -3923,7 +3986,7 @@ struct WholeShutoProductView: View {
         .accessibilityIdentifier("whole-shuto-finish-expressway")
       }
 
-      if model.isLiveDrive, model.isPlaying {
+      if model.canRestLiveJourney {
         Button {
           Task { _ = await model.restLiveJourney() }
         } label: {
@@ -7778,17 +7841,14 @@ private struct WholeShutoSettingsView: View {
           Text(
             model.surfaceRoutePreference == .avoidHighways
               ? copy.resolve(
-                japanese:
-                  "選んだルート以外は、できるだけ一般道へ。",
-                simplifiedChinese:
-                  "保留所选路线，接驳尽量走普通道路。",
-                english:
-                  "Keep your route; prefer local roads for connections."
+                japanese: "選んだルート上の入口から。入口までは一般道。",
+                simplifiedChinese: "从所选路线上的入口上高速，接驳走普通道路。",
+                english: "Entrances on your route; local roads to reach them."
               )
               : copy.resolve(
-                japanese: "近くの入口から高速道路へ。追加料金は別途。",
-                simplifiedChinese: "优先就近上高速，额外通行费另计。",
-                english: "Prefer a nearby highway entrance. Extra tolls may apply."
+                japanese: "近くの高速入口から。入口までは一般道。",
+                simplifiedChinese: "从附近的高速入口上高速，接驳走普通道路。",
+                english: "Nearest highway entrance; local roads to reach it."
               )
           )
         }

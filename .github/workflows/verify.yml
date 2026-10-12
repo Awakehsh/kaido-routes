@@ -9,9 +9,11 @@ on:
 permissions:
   contents: read
 
+# A newer push supersedes an unfinished pull-request run. Every main commit
+# gets its own group so none is cancelled or replaced while queued.
 concurrency:
-  group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  group: verify-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App Store Connect export and upload for `xcodebuild -exportArchive`.
+  No teamID: the export uses the team the archive was signed with
+  (KAIDO_DEVELOPMENT_TEAM in the git-ignored Signing.local.xcconfig).
+  Xcode must not renumber the build that validate_ios_release_bundle.py checked.
+-->
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>upload</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+</dict>
+</plist>

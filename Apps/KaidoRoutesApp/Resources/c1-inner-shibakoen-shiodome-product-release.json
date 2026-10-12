@@ -16841,22 +16841,22 @@
                 "spoken_text" : "Ahead at Edobashi JCT, stay on the Inner Circular Route toward 神田橋"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、都心環状線 神田橋方面へ",
+                "display_text" : "この先、分岐せず、都心環状線 神田橋方面へ",
                 "preserved_japanese_sign_text" : "神田橋",
                 "spoken_forms" : {
                   "江戸橋" : "えどばし",
                   "神田橋" : "かんだばし",
                   "都心環状線" : "としんかんじょうせん"
                 },
-                "spoken_text" : "この先の分岐で、江戸橋ジャンクションは分岐せず、都心環状線 神田橋方面へ進んでください"
+                "spoken_text" : "この先、江戸橋ジャンクションは分岐せず、都心環状線 神田橋方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 神田橋 方向",
+                "display_text" : "前方，不要分岔，沿都心环状线前往 神田橋 方向",
                 "preserved_japanese_sign_text" : "神田橋",
                 "spoken_forms" : {
                   "神田橋" : "神田橋"
                 },
-                "spoken_text" : "前方分岔，在江户桥 JCT不要分岔，沿都心环状线继续前往 神田橋 方向"
+                "spoken_text" : "前方，在江户桥 JCT不要分岔，沿都心环状线继续前往 神田橋 方向"
               }
             },
             "route_shields" : [
@@ -16951,22 +16951,22 @@
                 "spoken_text" : "Ahead at Takehashi JCT, stay on the Inner Circular Route toward 霞が関"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
+                "display_text" : "この先、分岐せず、都心環状線 霞が関方面へ",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "竹橋" : "たけはし",
                   "都心環状線" : "としんかんじょうせん",
                   "霞が関" : "かすみがせき"
                 },
-                "spoken_text" : "この先の分岐で、竹橋ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
+                "spoken_text" : "この先、竹橋ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 霞が関 方向",
+                "display_text" : "前方，不要分岔，沿都心环状线前往 霞が関 方向",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "霞が関" : "霞が関"
                 },
-                "spoken_text" : "前方分岔，在竹桥 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
+                "spoken_text" : "前方，在竹桥 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
               }
             },
             "route_shields" : [
@@ -17061,22 +17061,22 @@
                 "spoken_text" : "Ahead at Miyakezaka JCT, stay on the Inner Circular Route toward 霞が関"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
+                "display_text" : "この先、分岐せず、都心環状線 霞が関方面へ",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "三宅坂" : "みやけざか",
                   "都心環状線" : "としんかんじょうせん",
                   "霞が関" : "かすみがせき"
                 },
-                "spoken_text" : "この先の分岐で、三宅坂ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
+                "spoken_text" : "この先、三宅坂ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 霞が関 方向",
+                "display_text" : "前方，不要分岔，沿都心环状线前往 霞が関 方向",
                 "preserved_japanese_sign_text" : "霞が関",
                 "spoken_forms" : {
                   "霞が関" : "霞が関"
                 },
-                "spoken_text" : "前方分岔，在三宅坂 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
+                "spoken_text" : "前方，在三宅坂 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
               }
             },
             "route_shields" : [
@@ -17171,22 +17171,22 @@
                 "spoken_text" : "Ahead at Tanimachi JCT, stay on the Inner Circular Route toward 芝公園"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",
+                "display_text" : "この先、分岐せず、都心環状線 芝公園方面へ",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "芝公園" : "しばこうえん",
                   "谷町" : "たにまち",
                   "都心環状線" : "としんかんじょうせん"
                 },
-                "spoken_text" : "この先の分岐で、谷町ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
+                "spoken_text" : "この先、谷町ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 芝公園 方向",
+                "display_text" : "前方，不要分岔，沿都心环状线前往 芝公園 方向",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "芝公園" : "芝公園"
                 },
-                "spoken_text" : "前方分岔，在谷町 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
+                "spoken_text" : "前方，在谷町 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
               }
             },
             "route_shields" : [
@@ -17281,22 +17281,22 @@
                 "spoken_text" : "Ahead at Ichinohashi JCT, stay on the Inner Circular Route toward 芝公園"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",
+                "display_text" : "この先、分岐せず、都心環状線 芝公園方面へ",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "一ノ橋" : "いちのはし",
                   "芝公園" : "しばこうえん",
                   "都心環状線" : "としんかんじょうせん"
                 },
-                "spoken_text" : "この先の分岐で、一ノ橋ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
+                "spoken_text" : "この先、一ノ橋ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 芝公園 方向",
+                "display_text" : "前方，不要分岔，沿都心环状线前往 芝公園 方向",
                 "preserved_japanese_sign_text" : "芝公園",
                 "spoken_forms" : {
                   "芝公園" : "芝公園"
                 },
-                "spoken_text" : "前方分岔，在一之桥 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
+                "spoken_text" : "前方，在一之桥 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
               }
             },
             "route_shields" : [

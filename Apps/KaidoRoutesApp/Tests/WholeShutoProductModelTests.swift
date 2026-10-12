@@ -6364,7 +6364,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(projection.voice.locale, .simplifiedChinese)
     XCTAssertEqual(
       projection.voice.spokenText,
-      "前方分岔，在大井枢纽向左分岔，驶入 C2 外环"
+      "前方，在大井枢纽向左分岔，驶入 C2 外环"
     )
     XCTAssertEqual(command.languageCode, "zh-CN")
     XCTAssertEqual(command.spokenText, projection.voice.spokenText)

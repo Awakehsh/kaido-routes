@@ -22,12 +22,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The primary leg runs the whole Full test plan: every App unit
-          # and UI test that runs on a simulator.
-          - label: primary
+          # The Full plan on the primary simulator runs as three parallel
+          # legs: the unit tests, and the UI tests dealt by name into two
+          # shards so a new UI test lands in one without being listed.
+          - label: primary-unit
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
             content_size: large
-            test_scope: ""
+            test_scope: KaidoRoutesAppTests
+          - label: primary-ui-1
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+            content_size: large
+            test_scope: KaidoRoutesAppUITests
+            shard: 1/2
+          - label: primary-ui-2
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+            content_size: large
+            test_scope: KaidoRoutesAppUITests
+            shard: 2/2
           - label: ios18-unit
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro
             runtime_prefix: com.apple.CoreSimulator.SimRuntime.iOS-18-
@@ -57,10 +68,9 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Boot the qualification simulator
+      - name: Select the qualification simulator
         id: simulator
         env:
-          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
           TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
           TARGET_RUNTIME_PREFIX: ${{ matrix.runtime_prefix }}
         run: |
@@ -95,32 +105,75 @@ jobs:
           IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID <<< "$SELECTION"
           echo "Selected $DEVICE_NAME on $RUNTIME_ID"
           echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID"
-          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-          xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
 
-      - name: App qualification
+      - name: Build for testing while the simulator boots
         env:
-          TEST_SCOPE: ${{ matrix.test_scope }}
+          DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
+          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
         run: |
           set -euo pipefail
-          test_scope_arguments=()
-          while IFS= read -r test_scope; do
-            if [[ -n "$test_scope" ]]; then
-              test_scope_arguments+=("-only-testing:$test_scope")
-            fi
-          done <<< "$TEST_SCOPE"
-          # The runner's /bin/bash 3.2 treats an empty array as unbound
-          # under `set -u`, so the primary leg's empty scope expands to
-          # nothing through `${array[@]+...}`.
-          xcodebuild test \
+          # The build targets a generic simulator, so it never waits on the
+          # booting device; tests run on that device in the next step.
+          (
+            set -euo pipefail
+            echo "Simulator boot started"
+            xcrun simctl boot "$DEVICE_ID"
+            xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
+            xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+            xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
+            echo "Simulator ready"
+          ) &
+          SIMULATOR_PID=$!
+          xcodebuild build-for-testing \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -testPlan Full \
-            -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-build.log"
+          echo "Build finished"
+          wait "$SIMULATOR_PID"
+
+      - name: App qualification
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
+          TEST_SCOPE: ${{ matrix.test_scope }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          test_selection=("-only-testing:$TEST_SCOPE")
+          if [[ -n "$SHARD" ]]; then
+            xcodebuild test-without-building \
+              -project KaidoRoutesApp.xcodeproj \
+              -scheme KaidoRoutesApp \
+              -testPlan Full \
+              -destination "id=$DEVICE_ID" \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              -only-testing:"$TEST_SCOPE" \
+              -enumerate-tests \
+              -test-enumeration-style flat \
+              -test-enumeration-format json \
+              -test-enumeration-output-path "$RUNNER_TEMP/enabled-tests.json" \
+              CODE_SIGNING_ALLOWED=NO
+            python3 scripts/app_test_shard.py \
+              "$RUNNER_TEMP/enabled-tests.json" "$SHARD" \
+              > "$RUNNER_TEMP/shard-selection.txt"
+            test_selection=()
+            while IFS= read -r argument; do
+              test_selection+=("$argument")
+            done < "$RUNNER_TEMP/shard-selection.txt"
+            echo "Shard $SHARD runs ${#test_selection[@]} tests"
+          fi
+          xcodebuild test-without-building \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -testPlan Full \
+            -destination "id=$DEVICE_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
-            ${test_scope_arguments[@]+"${test_scope_arguments[@]}"} \
+            "${test_selection[@]}" \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log"
 
@@ -131,6 +184,7 @@ jobs:
           name: >-
             kaido-qualification-${{ matrix.label }}-diagnostics-${{ github.run_attempt }}
           path: |
+            ${{ runner.temp }}/KaidoRoutesApp-build.log
             ${{ runner.temp }}/KaidoRoutesApp-xcodebuild.log
             ${{ runner.temp }}/KaidoRoutesApp.xcresult
           if-no-files-found: warn

@@ -132,12 +132,30 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Select the primary simulator
+      - name: Build for testing, then boot the simulator alongside it
         id: simulator
         env:
           TARGET_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
         run: |
           set -euo pipefail
+          BUILD_LOG="$RUNNER_TEMP/KaidoRoutesApp-build.log"
+          xcodebuild build-for-testing \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -testPlan Verify \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            > "$BUILD_LOG" 2>&1 &
+          BUILD_PID=$!
+          # EXPERIMENT: a starting xcodebuild waits while CoreSimulator boots
+          # a device, so touch CoreSimulator only once the build is planned.
+          until grep -q '^ComputeTargetDependencyGraph' "$BUILD_LOG" \
+            || ! kill -0 "$BUILD_PID" 2>/dev/null; do
+            sleep 2
+          done
+          echo "Build planned; selecting the simulator"
           SELECTION=$(xcrun simctl list devices available -j | python3 -c '
           import json, os, sys
           devices = json.load(sys.stdin)["devices"]
@@ -169,39 +187,18 @@ jobs:
             <<< "$SELECTION"
           echo "Selected $DEVICE_NAME on $RUNTIME_ID ($DEVICE_STATE)"
           echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
-          echo "device-state=$DEVICE_STATE" >> "$GITHUB_OUTPUT"
-
-      - name: Build for testing while the simulator boots
-        env:
-          DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
-          DEVICE_STATE: ${{ steps.simulator.outputs.device-state }}
-        run: |
-          set -euo pipefail
-          # The build targets a generic simulator, so it never waits on the
-          # booting device; tests run on that device in the next step.
-          (
-            set -euo pipefail
-            echo "Simulator boot started"
-            if [[ "$DEVICE_STATE" != "Booted" ]]; then
-              xcrun simctl boot "$DEVICE_ID"
-            fi
-            xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
-            xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-            xcrun simctl ui "$DEVICE_ID" content_size large
-            echo "Simulator ready"
-          ) &
-          SIMULATOR_PID=$!
-          xcodebuild build-for-testing \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -testPlan Verify \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            ARCHS=arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-build.log"
-          echo "Build finished"
-          wait "$SIMULATOR_PID"
+          if [[ "$DEVICE_STATE" != "Booted" ]]; then
+            xcrun simctl boot "$DEVICE_ID"
+          fi
+          xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
+          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+          xcrun simctl ui "$DEVICE_ID" content_size large
+          echo "Simulator ready"
+          BUILD_STATUS=0
+          wait "$BUILD_PID" || BUILD_STATUS=$?
+          echo "Build finished ($BUILD_STATUS)"
+          cat "$BUILD_LOG"
+          exit "$BUILD_STATUS"
 
       - name: Verify test plan (${{ matrix.suite }})
         env:

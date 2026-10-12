@@ -76,8 +76,8 @@
           {
             "highway": "tertiary",
             "name": "補助第177号線",
-            "timestamp": "2026-04-17T19:48:43Z",
-            "version": 12,
+            "timestamp": "2026-10-12T09:55:35Z",
+            "version": 13,
             "way_id": 259869191
           }
         ]
@@ -470,6 +470,93 @@
           }
         ]
       }
+    },
+    {
+      "continuations": [
+        [
+          "osm.82596771.0.forward",
+          "osm.82596773.0.forward"
+        ],
+        [
+          "osm.82596774.0.forward",
+          "osm.38093184.0.forward"
+        ],
+        [
+          "osm.82596771.0.forward",
+          "osm.38093184.0.forward"
+        ],
+        [
+          "osm.82596774.0.forward",
+          "osm.82596773.0.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        448040999,
+        448040555,
+        448041000
+      ],
+      "facility_ids": [
+        "shuto.ic.k1.daishi",
+        "shuto.ic.k6.daishi"
+      ],
+      "interchange": "大師",
+      "reason": "K1/K6: the 大師 exits (from K6 下り, and from K1 上り through 大師JCT) and the 大師 entrance (through its toll booth at node 8932187572) both meet 大師道 at the signalised 大師ジャンクション junction. OSM draws one motorway_link chain across 大師道 through median node 3817775787, so the graph let a route or fare path turn K6 下り back to K6 上り, or K1 上り back to K1 下り, without leaving the toll road. The exit side is cut through to 大師道 westbound at node 448041000, so the entrance from 大師道 stays and no exit ends in the median.",
+      "removed_edge_ids": [
+        "osm.1189558672.0.forward",
+        "osm.1189558679.0.forward",
+        "osm.1189558679.1.forward",
+        "osm.1189558679.2.forward"
+      ],
+      "surface_ways": {
+        "448040555": [
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2023-07-14T06:04:34Z",
+            "version": 5,
+            "way_id": 964191632
+          },
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2024-08-30T02:24:46Z",
+            "version": 1,
+            "way_id": 1312132484
+          }
+        ],
+        "448040999": [
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2023-07-14T06:04:34Z",
+            "version": 5,
+            "way_id": 964191632
+          },
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2023-07-14T06:04:34Z",
+            "version": 1,
+            "way_id": 1189558673
+          }
+        ],
+        "448041000": [
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2024-08-30T02:24:46Z",
+            "version": 2,
+            "way_id": 1189558676
+          },
+          {
+            "highway": "trunk",
+            "name": "大師道",
+            "timestamp": "2023-07-14T06:04:34Z",
+            "version": 1,
+            "way_id": 1189558677
+          }
+        ]
+      }
     }
   ],
   "input_database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914+facility-closures-20261012",
@@ -530,11 +617,11 @@
   "source": {
     "api": "https://api.openstreetmap.org/api/0.6",
     "attribution": "© OpenStreetMap contributors",
-    "finding": "Route 1 Haneda southbound stopped at node 579720094 and resumed 1.8 km later at node 36719722. The two OSM ways that carry the carriageway between them opened on 2025-10-29 and are not members of route relation 4256244, and together they exceed the builder's 1 km gap-connector limit. The relation still lists the provisional structure southbound traffic left on that date; it is tagged highway=construction, the builder admitted it as motorway, and in the graph it is a northbound chain that nothing enters or leaves. K3 likewise began from nothing at Honmoku JCT: the one way that feeds it from the Bayshore is outside relation 4259160. Separately, nine interchanges join an exit ramp to an entrance ramp across the surface road they both meet, as one motorway_link chain; six of those turn traffic back in the opposite direction.",
+    "finding": "Route 1 Haneda southbound stopped at node 579720094 and resumed 1.8 km later at node 36719722. The two OSM ways that carry the carriageway between them opened on 2025-10-29 and are not members of route relation 4256244, and together they exceed the builder's 1 km gap-connector limit. The relation still lists the provisional structure southbound traffic left on that date; it is tagged highway=construction, the builder admitted it as motorway, and in the graph it is a northbound chain that nothing enters or leaves. K3 likewise began from nothing at Honmoku JCT: the one way that feeds it from the Bayshore is outside relation 4259160. Separately, ten interchanges join an exit ramp to an entrance ramp across the surface road they both meet, as one motorway_link chain; seven of those turn traffic back in the opposite direction.",
     "licence": "ODbL-1.0",
     "licence_uri": "https://opendatacommons.org/licenses/odbl/1-0/",
     "method": "Mainline dead ends and dead starts of the snapshot graph, then the OSM ways at those nodes read from the OSM API at the versions current at the pinned extract's timestamp; operator notice confirmed by two independent reports because shutoko.jp answers HTTP 429 to scripted fetches. Surface crossings: link paths from an interchange-named exit diverge back onto a carriageway, with the OSM surface roads at the crossing nodes read from the OSM API.",
-    "read_at": "2026-10-12T08:29:54+09:00",
+    "read_at": "2026-10-12T21:14:39+09:00",
     "versions_current_at": "2026-08-04T20:20:51Z"
   },
   "unbound_candidates": [
@@ -561,6 +648,11 @@
     {
       "edge_id": "osm.106629706.2.forward",
       "facility_id": "shuto.ic.s1.shingou",
+      "side": "exit"
+    },
+    {
+      "edge_id": "osm.1189558679.2.forward",
+      "facility_id": "shuto.ic.k6.daishi",
       "side": "exit"
     }
   ],

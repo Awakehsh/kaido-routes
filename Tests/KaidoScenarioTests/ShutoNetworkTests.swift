@@ -22,8 +22,8 @@ struct ShutoNetworkTests {
     )
     #expect(database.parkingAreas.count == 19)
     // The 2026-10-12 topology review restores 15 carriageway edges and
-    // removes 15 out-of-service and 20 surface-crossing edges.
-    #expect(database.edges.count == 24_553)
+    // removes 15 out-of-service and 24 surface-crossing edges.
+    #expect(database.edges.count == 24_549)
     #expect(database.parkingAreas.allSatisfy { $0.isDrivable })
     let edgesByID = Dictionary(uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) })
     for parkingArea in database.parkingAreas {

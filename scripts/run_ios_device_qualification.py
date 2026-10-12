@@ -34,7 +34,7 @@ WANGAN_PRODUCT_RELEASE_RESOURCE = (
     "wangan-westbound-chidoricho-daikoku-pa-product-release.json"
 )
 C2_PRODUCT_RELEASE_RESOURCE = (
-    "c2-inner-oujiminami-shikahamabashi-product-release.json"
+    "c2-inner-oujiminami-itabashihoncho-product-release.json"
 )
 DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
     "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"

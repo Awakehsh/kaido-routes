@@ -216,7 +216,9 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   /// Yokohama-side loop around Daikoku, in the carriageway direction the
   /// snapshot's junction movements support: Bayshore westbound into Daikoku,
   /// the Daikoku Line up to Namamugi, the Yokohane Line up to Daishi, and
-  /// the Kawasaki Line back down to the Bayshore at Kawasaki-Ukishima.
+  /// the Kawasaki Line back to the Bayshore at Kawasaki-Ukishima. The
+  /// operator signs the Kawasaki Line's Daishi-to-Ukishima carriageway 上り:
+  /// both its entrances (大師, 殿町) are 上り and lead toward Ukishima.
   public static let daikokuYokohamaLoop = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.daikoku-yokohama-loop",
     displayNameJA: "大黒周回（湾岸・大黒・横羽・川崎）",
@@ -231,7 +233,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       "B": "西行き",
       "K1": "上り",
       "K5": "上り",
-      "K6": "下り",
+      "K6": "上り",
     ],
     // K1 exits stay unmapped: the snapshot's directed graph at Ishikawacho
     // and Namamugi is verified complete against upstream OSM (2026-08-10),
@@ -242,7 +244,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     // would be wrong, so only Bayshore/Kawasaki exits are offered.
     exitDirectionsByRouteID: [
       "B": "西行き",
-      "K6": "下り",
+      "K6": "上り",
     ],
     anchors: [
       .facility("shuto.ic.k1.asada"),
@@ -388,6 +390,18 @@ extension ShutoRoutePlanner {
   /// reachability check; the pairing UI never needs more alternatives.
   private static let entranceCandidateLimit = 16
 
+  /// An expressway approach meter against a straight-line surface meter
+  /// when ranking entrances by time to the course: the product's expressway
+  /// reference is 54 km/h (catalog card, drive preview) and its surface
+  /// access reference ~27 km/h (8 km in 15–20 min, `ShutoEntranceAccessTier`).
+  private static let approachMeterWeight = 0.5
+
+  /// How far past the soonest exit after the final lap a loop's recommended
+  /// exit may sit: one inner-ward ramp spacing (1–3 km, see
+  /// `ShutoEntranceAccessTier`), enough to reach the next exit or two for a
+  /// lower band, never another pass of the course.
+  private static let exitTariffSearchMeters = 3_000.0
+
   private struct CircuitQueueValue: Comparable {
     let cost: Double
     let nodeID: Int64
@@ -445,10 +459,13 @@ extension ShutoRoutePlanner {
   }
 
   /// Direction-valid entrances that can actually reach every anchor of the
-  /// experience, nearest-first from an origin. The reachability gate runs on
-  /// the nearest `entranceCandidateLimit` candidates plus every direction-valid
-  /// member-route entrance, so a distant origin never loses the route's own
-  /// ramps behind nearer radial approaches.
+  /// experience, ranked from an origin by the time to reach the course: the
+  /// straight line to the ramp at city speed plus, at expressway speed, the
+  /// approach the plan drives before its first lap or tour pass. The
+  /// reachability gate runs on the nearest `entranceCandidateLimit`
+  /// candidates plus every direction-valid member-route entrance, so a
+  /// distant origin never loses the route's own ramps behind nearer radial
+  /// approaches.
   public func circuitEntranceCandidates(
     for circuit: ShutoCircuitDefinition,
     origin: ShutoCoordinate? = nil,
@@ -491,14 +508,18 @@ extension ShutoRoutePlanner {
       circuit.memberRouteIDs.contains($0.routeID)
         && !candidateIDs.contains($0.facilityID)
     }
-    return candidates.filter { entrance in
+    let reachable = candidates.compactMap {
+      entrance -> (
+        ShutoNetworkDatabase.Facility,
+        [(edges: [ShutoNetworkDatabase.Edge], target: Int64)]
+      )? in
       let approaches = circuitApproaches(
         entryFacility: entrance,
         isMember: isMember,
         cost: cost,
         viability: &viability
       )
-      return approaches.contains { approach in
+      let admitted = approaches.contains { approach in
         let forward = forwardDistances(
           from: approach.target,
           cost: cost
@@ -570,7 +591,35 @@ extension ShutoRoutePlanner {
         }
         return true
       }
+      return admitted ? (entrance, approaches) : nil
     }
+    guard let origin else { return reachable.map(\.0) }
+    // The gates measure from where the approach joins the course, so a ramp
+    // beside the origin passes them even with an 18 km off-course approach,
+    // and straight-line nearness alone would then outrank the course's own
+    // ramp a few kilometers away.
+    return reachable.compactMap { entrance, approaches -> (ShutoNetworkDatabase.Facility, Double)? in
+      guard
+        let traversal = try? shortestTraversal(
+          circuit: circuit,
+          approaches: approaches,
+          anchorSets: anchorSets,
+          cost: cost
+        )
+      else { return nil }
+      let approachMeters = (traversal.approachEdges + traversal.entryEdges)
+        .reduce(0) { $0 + $1.lengthMeters }
+      return (
+        entrance,
+        Self.distance(origin, entrance.coordinate)
+          + approachMeters * Self.approachMeterWeight
+      )
+    }
+    .sorted {
+      if $0.1 != $1.1 { return $0.1 < $1.1 }
+      return $0.0.facilityID < $1.0.facilityID
+    }
+    .map(\.0)
   }
 
   /// Direction-valid exits ranked by forward travel distance after the
@@ -581,6 +630,16 @@ extension ShutoRoutePlanner {
     for circuit: ShutoCircuitDefinition,
     afterEntering entryFacilityID: String
   ) throws -> [ShutoNetworkDatabase.Facility] {
+    try circuitExitTails(for: circuit, afterEntering: entryFacilityID)
+      .map(\.facility)
+  }
+
+  /// `circuitExitCandidates` in the same order, each with the meters its
+  /// exit tail drives after the body.
+  private func circuitExitTails(
+    for circuit: ShutoCircuitDefinition,
+    afterEntering entryFacilityID: String
+  ) throws -> [(facility: ShutoNetworkDatabase.Facility, meters: Double)] {
     guard let entryFacility = facilitiesByID[entryFacilityID],
       isEligibleEntrance(entryFacility, for: circuit)
     else {
@@ -602,28 +661,31 @@ extension ShutoRoutePlanner {
       cost: cost,
       viability: &viability
     )
-    let forward = forwardDistances(from: traversal.finalNode, cost: cost)
-    let ranked: [(ShutoNetworkDatabase.Facility, Double)] =
+    let forward = forwardReach(from: traversal.finalNode, cost: cost)
+    let ranked: [(ShutoNetworkDatabase.Facility, cost: Double, meters: Double)] =
       database.directionalFacilities.compactMap { facility in
         guard isEligibleExit(facility, for: circuit),
           !Self.sharesTollPoint(entryFacility, facility)
         else { return nil }
         let tail = facility.exitEdgeCandidates.compactMap {
-          candidate -> Double? in
+          candidate -> (cost: Double, meters: Double)? in
           guard let edge = edgesByID[candidate.edgeID],
             let reach = forward[edge.fromNodeID]
           else { return nil }
-          return reach + candidate.distanceMeters
-        }.min()
-        return tail.map { (facility, $0) }
+          return (
+            reach.cost + candidate.distanceMeters,
+            reach.meters + edge.lengthMeters
+          )
+        }.min { $0.cost < $1.cost }
+        return tail.map { (facility, $0.cost, $0.meters) }
       }
     return
       ranked
       .sorted {
-        if $0.1 != $1.1 { return $0.1 < $1.1 }
+        if $0.cost != $1.cost { return $0.cost < $1.cost }
         return $0.0.facilityID < $1.0.facilityID
       }
-      .map(\.0)
+      .map { ($0.0, $0.meters) }
   }
 
   /// Exits some directed all-Shuto path reaches after entering at one
@@ -690,9 +752,10 @@ extension ShutoRoutePlanner {
     }
   }
 
-  /// The derived pairing an experience card shows: nearest reachable
-  /// entrance, and — for loops — the exit whose pairing lands in the lowest
-  /// tariff band, tie-broken by shortest forward travel. Tours keep their
+  /// The derived pairing an experience card shows: the reachable entrance
+  /// that reaches the course soonest, and — for loops — the exit whose
+  /// pairing lands in the lowest tariff band among those reached soon after
+  /// the final lap, tie-broken by forward travel. Tours keep their
   /// forward-ranked course exit.
   public func recommendedCircuitPairing(
     for circuit: ShutoCircuitDefinition,
@@ -731,11 +794,11 @@ extension ShutoRoutePlanner {
     let entranceDistance = origin.map {
       Self.distance($0, entrance.coordinate)
     }
-    let exits = try circuitExitCandidates(
+    let exits = try circuitExitTails(
       for: circuit,
       afterEntering: entrance.facilityID
     )
-    guard let leading = exits.first else {
+    guard let leading = exits.first?.facility else {
       throw ShutoNetworkError.routeUnavailable
     }
     guard let evidence, circuit.kind == .loop else {
@@ -753,40 +816,29 @@ extension ShutoRoutePlanner {
         entranceDistanceMeters: entranceDistance
       )
     }
-    // Tariff-best exit for a loop: consider the soonest forward exits plus
-    // every reachable exit near the entrance — the pairing that keeps the
-    // shortest entry-exit path (and therefore the band) small usually sits
-    // right beside the entrance, often far down the forward ranking.
-    var candidates = Array(exits.prefix(8))
-    for exit in exits
-    where
-      Self.distance(entrance.coordinate, exit.coordinate) <= 4_500
-      && !candidates.contains(where: {
-        $0.facilityID == exit.facilityID
-      })
-    {
-      candidates.append(exit)
+    // Tariff-best exit for a loop, among the exits within one ramp spacing
+    // of the soonest exit after the final lap. The band prices the shortest
+    // entry-exit path, so an exit beside the entrance often quotes the
+    // minimum — but after the laps it can be most of another lap away, and
+    // no fare saving is worth driving a pass the driver did not choose.
+    let soonest = exits.map(\.meters).min()!
+    let candidates = exits.filter {
+      $0.meters <= soonest + Self.exitTariffSearchMeters
     }
     var best: (
       facility: ShutoNetworkDatabase.Facility,
-      band: ShutoTariffBand,
-      rank: Int
+      band: ShutoTariffBand
     )?
-    for (rank, exit) in candidates.enumerated() {
+    for exit in candidates {
       guard
         let band = try? tariffBand(
           entryFacilityID: entrance.facilityID,
-          exitFacilityID: exit.facilityID,
+          exitFacilityID: exit.facility.facilityID,
           evidence: evidence
         )
       else { continue }
-      let isBetter =
-        best == nil
-        || band.quotedYen < best!.band.quotedYen
-        || (band.quotedYen == best!.band.quotedYen
-          && rank < best!.rank)
-      if isBetter {
-        best = (exit, band, rank)
+      if best == nil || band.quotedYen < best!.band.quotedYen {
+        best = (exit.facility, band)
       }
     }
     guard let best else {
@@ -992,7 +1044,20 @@ extension ShutoRoutePlanner {
       isMember: isMember,
       viability: &viability
     )
+    return try shortestTraversal(
+      circuit: circuit,
+      approaches: approaches,
+      anchorSets: anchorSets,
+      cost: cost
+    )
+  }
 
+  private func shortestTraversal(
+    circuit: ShutoCircuitDefinition,
+    approaches: [(edges: [ShutoNetworkDatabase.Edge], target: Int64)],
+    anchorSets: [Set<Int64>],
+    cost: (ShutoNetworkDatabase.Edge) -> Double
+  ) throws -> CircuitTraversal {
     var best: CircuitTraversal?
     var bestMeters = Double.infinity
     for approach in approaches {
@@ -1404,8 +1469,8 @@ extension ShutoRoutePlanner {
     return nil
   }
 
-  /// Full relaxation from one node; used to discover anchor travel order,
-  /// rank exits, and gate entrance reachability.
+  /// Full relaxation from one node; used to discover anchor travel order
+  /// and gate entrance reachability.
   private func forwardDistances(
     from node: Int64,
     cost: (ShutoNetworkDatabase.Edge) -> Double
@@ -1427,6 +1492,33 @@ extension ShutoRoutePlanner {
       }
     }
     return distances
+  }
+
+  /// `forwardDistances` that also keeps the meters driven along each
+  /// cheapest path: exits rank by cost, but the driver covers meters.
+  private func forwardReach(
+    from node: Int64,
+    cost: (ShutoNetworkDatabase.Edge) -> Double
+  ) -> [Int64: (cost: Double, meters: Double)] {
+    var reach: [Int64: (cost: Double, meters: Double)] = [node: (0, 0)]
+    var queue = MinHeap<CircuitQueueValue>()
+    queue.insert(CircuitQueueValue(cost: 0, nodeID: node))
+    while let current = queue.removeMinimum() {
+      guard let settled = reach[current.nodeID],
+        current.cost == settled.cost
+      else { continue }
+      for edge in outgoingEdges[current.nodeID, default: []] {
+        let candidate = current.cost + cost(edge)
+        if candidate >= reach[edge.toNodeID]?.cost ?? .infinity {
+          continue
+        }
+        reach[edge.toNodeID] = (candidate, settled.meters + edge.lengthMeters)
+        queue.insert(
+          CircuitQueueValue(cost: candidate, nodeID: edge.toNodeID)
+        )
+      }
+    }
+    return reach
   }
 
   /// Nodes near a coordinate that carry a member mainline edge and keep the

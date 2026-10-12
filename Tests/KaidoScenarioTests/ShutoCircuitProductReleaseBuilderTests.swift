@@ -141,7 +141,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 48)
+    #expect(release.navigation.bundle.releasedGuidance.count == 26)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )
@@ -363,9 +363,9 @@ struct ShutoCircuitProductReleaseBuilderTests {
       ),
       (
         appResource:
-          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+          "c2-inner-oujiminami-itabashihoncho-product-release.json",
         trackedResource:
-          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+          "c2-inner-oujiminami-itabashihoncho-product-release.json",
         artifact: try ShutoCircuitProductReleaseBuilder.buildC2Artifact(
           database: database
         )

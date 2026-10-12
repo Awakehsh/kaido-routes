@@ -485,11 +485,22 @@
 
     // MARK: Replay
 
+    /// The planned drive with the occurrences after `from` up to `to` never
+    /// driven: what the car does when the driver drops the laps between two
+    /// traversals of the same road.
+    func plannedLegs(skippingAfter from: Int, through to: Int) -> [ReplayGateLeg] {
+      plannedLegs().filter { leg in
+        guard case .occurrence(let index) = leg.kind else { return true }
+        return index <= from || index > to
+      }
+    }
+
     func run(
       legs: [ReplayGateLeg],
       seed: UInt64,
       noise: ReplayGateNoiseModel = .urban,
-      tunnelOutage: ReplayGateTunnelOutage = .none
+      tunnelOutage: ReplayGateTunnelOutage = .none,
+      lapChange: ReplayGateLapChange? = nil
     ) async throws -> ReplayGateRun {
       let truth = ReplayGateTruthSampler.sample(legs: legs, gate: self)
       let runtime = try KaidoProductNavigationRuntime(
@@ -519,7 +530,22 @@
         }
       )
       var isInTunnel = false
+      var lapChangeOutcome: ReplayGateLapChangeOutcome?
       for (second, point) in truth.enumerated() {
+        if let lapChange, lapChangeOutcome == nil,
+          let current = await session.snapshot.currentOccurrenceIndex,
+          current >= lapChange.afterOccurrenceIndex
+        {
+          let landed: String?
+          switch lapChange.action {
+          case .dropOneLap: landed = await session.skipOneLap()
+          case .finishCurrentLap: landed = try await session.skipRemainingLaps()
+          }
+          lapChangeOutcome = ReplayGateLapChangeOutcome(
+            fromOccurrenceIndex: current,
+            landedOccurrenceID: landed
+          )
+        }
         if point.isUnderCover, tunnelOutage == .noFixes {
           let snapshot = await session.snapshot
           records.append(
@@ -623,7 +649,12 @@
         )
         if after.journeyPhase == .completed { break }
       }
-      return ReplayGateRun(gate: self, records: records, truthCount: truth.count)
+      return ReplayGateRun(
+        gate: self,
+        records: records,
+        truthCount: truth.count,
+        lapChangeOutcome: lapChangeOutcome
+      )
     }
 
   }
@@ -939,10 +970,27 @@
     let emittedMovementOccurrenceIDs: [String]
   }
 
+  /// A lap change the driver asks for once admitted progress reaches an
+  /// occurrence.
+  struct ReplayGateLapChange: Sendable {
+    enum Action: Sendable {
+      case dropOneLap
+      case finishCurrentLap
+    }
+    let action: Action
+    let afterOccurrenceIndex: Int
+  }
+
+  struct ReplayGateLapChangeOutcome: Sendable {
+    let fromOccurrenceIndex: Int
+    let landedOccurrenceID: String?
+  }
+
   struct ReplayGateRun {
     let gate: LiveNavigationReplayGate
     let records: [ReplayGateFixRecord]
     let truthCount: Int
+    var lapChangeOutcome: ReplayGateLapChangeOutcome? = nil
 
     var entryRecord: ReplayGateFixRecord? {
       records.first { $0.phase == .strictRoute }

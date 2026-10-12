@@ -496,7 +496,8 @@ unconfirmed: the review names no entrance, the toll row shows only the cap
 entrance), and the drive record is saved as "入口未確認". Parked at the end,
 the driver may name the entrance from the ones whose ramp lands on a plan
 edge ahead of the joined occurrence; the band and the record follow. Ramp
-entry, and a lap added after ramp entry, never trigger this. A declaration the matcher cannot honor lapses and the App
+entry never triggers this, and neither does an added lap, which carries the
+drive over rather than joining again. A declaration the matcher cannot honor lapses and the App
 says so. KR-S24 executes the positive and fail-closed paths.
 
 The join is deterministic policy only. Whether a declared join lands on the
@@ -507,21 +508,30 @@ directions are not symmetric. Dropping one moves inside the plan the drive is
 already running: `ReleasedNavigationRuntimePolicy` now carries
 `lapBoundaryOccurrenceIDs` — `n` laps as `n + 1` marks, validated to resolve in
 the plan and strictly increase — and `NavigationEngine.skipOneLap` uses them to
-find the occurrence exactly one lap ahead. The App asks; it never names the
-target, so it cannot ask the drive to jump somewhere the release did not
-describe. The lap passed over is recorded as skipped, and the transition is
-stamped `DRIVER_DROPPED_ONE_LAP`. A route without laps carries no marks at
+find the same road in the next lap: the occurrence of the same movement or
+edge, at the same rank among that road's occurrences in its own lap. Laps are
+not equal in length once a PA stop sits in one of them, so a fixed offset would
+land on the wrong road. A road the next lap does not drive — the inside of a PA
+stop only this lap makes — has no counterpart, and the request is refused. The
+App asks; it never names the target, so it cannot ask the drive to jump
+somewhere the release did not describe. The lap passed over is recorded as
+skipped, and the transition is stamped `DRIVER_DROPPED_ONE_LAP`. A route without laps carries no marks at
 all, and the key is absent from its encoded policy rather than empty, so
 released artifacts for routes that never had laps stay byte-identical.
 
 Adding a lap cannot move inside the plan, because `RoutePlan` is immutable and
 its occurrences are laid down one lap at a time. `addOneLap` therefore plans
-the route again with one more lap, builds its own release, and swaps the drive
-onto it while the current drive keeps running; nothing is swapped until the new
-release is built and valid. The car is already on the road, so the new session
-opens at the entry boundary and enters through the same driver-declared join a
-drive started mid-route uses. The drive record survives the swap; the plan does
-not.
+the route again with one more lap and builds its own release. That plan repeats
+the current one occurrence for occurrence up to where the drive is, so
+`NavigationSessionCheckpoint.carried(from:onto:journeyPlan:)` moves the current
+checkpoint onto it unchanged — same occurrence, strict route, what was driven,
+skipped and spoken — and refuses outside the strict route or where the two
+plans part. The new session restores from that checkpoint and must place the car
+itself, through the same post-restore reacquisition a relaunch uses. Until it
+has, the current drive keeps taking every fix and guiding, and the new session
+sees the same fixes; the swap is dropped if the drive leaves the shared road or
+the strict route first. Any failure leaves the current drive as it was. The
+drive record and the cues already given survive the swap; the plan does not.
 
 A drive can also be put down for a break. A car parked at a PA leaves the route
 corridor — PA access and return are directional facilities, not RoutePlan
@@ -2395,8 +2405,8 @@ projection.
 
 ## Finish-current-lap action
 
-The engine selects the equivalent position in the final released lap and records
-one skipped occurrence range. Intermediate lap copies are never published as
+The engine selects the same road in the final released lap, by the same rule as
+dropping one lap, and records one skipped occurrence range. Intermediate lap copies are never published as
 visited positions. NavigationSession stages this update, restarts its matcher at
 the selected occurrence, and commits the engine change together. The App cannot
 name a different target occurrence or exit.

@@ -511,83 +511,82 @@ public struct NavigationEngine: Sendable {
 
   /// Drops one whole lap of a loop the driver chose not to complete.
   ///
-  /// The target is not the caller's to name. It is the occurrence exactly one
-  /// lap ahead of the current one, measured against the released lap
-  /// boundaries, so the App can ask for a lap to be dropped but can never ask
-  /// the drive to jump somewhere the release did not describe. The dropped
-  /// lap is recorded as skipped: it was not driven.
+  /// The target is not the caller's to name. It is the same road one lap
+  /// ahead, measured against the released lap boundaries, so the App can ask
+  /// for a lap to be dropped but can never ask the drive to jump somewhere
+  /// the release did not describe. The dropped lap is recorded as skipped: it
+  /// was not driven.
   ///
   /// Returns the occurrence the drive moved to, or `nil` when there is no
-  /// whole lap left ahead to drop.
+  /// whole lap left ahead to drop or the next lap does not drive the current
+  /// road — as when the car is inside a PA stop only this lap makes.
   @discardableResult
   package mutating func skipOneLap(trigger: String) -> String? {
-    guard snapshot.journeyPhase == .strictRoute,
-      let routePlan = configuration.routePlan,
-      let currentIndex = snapshot.currentOccurrenceIndex
+    guard let laps = lapRanges(),
+      let lap = laps.firstIndex(where: { $0.contains(snapshot.currentOccurrenceIndex ?? -1) }),
+      lap + 1 < laps.count
     else {
       return nil
     }
+    return skip(toSameRoadIn: laps[lap + 1], from: laps[lap], trigger: trigger)
+  }
+
+  /// Retains the current partial lap and the released exit tail in one change.
+  /// Intermediate lap copies are skipped, never published as visited positions.
+  /// Like `skipOneLap`, it lands on the same road in the last lap and refuses
+  /// when that lap does not drive it.
+  @discardableResult
+  package mutating func skipRemainingLaps(trigger: String) -> String? {
+    guard let laps = lapRanges(),
+      let lap = laps.firstIndex(where: { $0.contains(snapshot.currentOccurrenceIndex ?? -1) }),
+      lap + 1 < laps.count
+    else { return nil }
+    return skip(toSameRoadIn: laps[laps.count - 1], from: laps[lap], trigger: trigger)
+  }
+
+  /// The occurrence ranges of the released laps, while the strict route is
+  /// being driven.
+  private func lapRanges() -> [Range<Int>]? {
+    guard snapshot.journeyPhase == .strictRoute,
+      let routePlan = configuration.routePlan
+    else { return nil }
     let boundaries = configuration.lapBoundaryOccurrenceIDs.compactMap {
       routePlan.occurrence(id: $0)?.index
     }
     guard boundaries.count == configuration.lapBoundaryOccurrenceIDs.count,
       boundaries.count >= 2
-    else {
-      return nil
-    }
-    // The lap being driven, and the one lap that must still lie ahead of it
-    // for there to be anything to drop.
-    guard let lap = boundaries.indices.dropLast().last(where: {
-      currentIndex >= boundaries[$0] && currentIndex < boundaries[$0 + 1]
-    }),
-      lap + 2 < boundaries.count
-    else {
-      return nil
-    }
-    let targetIndex = currentIndex + (boundaries[lap + 1] - boundaries[lap])
-    guard let target = routePlan.occurrences.first(where: {
-      $0.index == targetIndex
-    }) else {
-      return nil
-    }
-    for occurrence in routePlan.occurrences
-    where occurrence.index > currentIndex && occurrence.index < targetIndex {
-      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
-    }
-    snapshot.lastPhaseTransitionTrigger = trigger
-    advance(to: target.id)
-    return target.id
+    else { return nil }
+    return zip(boundaries, boundaries.dropFirst()).map { $0..<$1 }
   }
 
-  /// Retains the current partial lap and the released exit tail in one change.
-  /// Intermediate lap copies are skipped, never published as visited positions.
-  @discardableResult
-  package mutating func skipRemainingLaps(trigger: String) -> String? {
-    guard snapshot.journeyPhase == .strictRoute,
-      let routePlan = configuration.routePlan,
-      let currentIndex = snapshot.currentOccurrenceIndex
+  /// Moves to the occurrence in `target` that drives the current road: the
+  /// same entity at the same rank among that entity's occurrences in its lap.
+  /// Laps differ in length once a PA stop sits in one of them, so an index
+  /// offset would land on another road.
+  private mutating func skip(
+    toSameRoadIn target: Range<Int>,
+    from lap: Range<Int>,
+    trigger: String
+  ) -> String? {
+    guard let routePlan = configuration.routePlan,
+      let currentIndex = snapshot.currentOccurrenceIndex,
+      let current = routePlan.occurrences.first(where: { $0.index == currentIndex })
     else { return nil }
-    let boundaries = configuration.lapBoundaryOccurrenceIDs.compactMap {
-      routePlan.occurrence(id: $0)?.index
+    let rank = routePlan.occurrences.count {
+      lap.contains($0.index) && $0.index < currentIndex && $0.entityID == current.entityID
     }
-    guard boundaries.count == configuration.lapBoundaryOccurrenceIDs.count,
-      boundaries.count >= 3,
-      let lap = boundaries.indices.dropLast().last(where: {
-        currentIndex >= boundaries[$0] && currentIndex < boundaries[$0 + 1]
-      }), lap < boundaries.count - 2
-    else { return nil }
-    let offset = currentIndex - boundaries[lap]
-    let targetIndex = boundaries[boundaries.count - 2] + offset
-    guard targetIndex < boundaries.last!,
-      let target = routePlan.occurrences.first(where: { $0.index == targetIndex })
-    else { return nil }
+    let sameRoad = routePlan.occurrences.filter {
+      target.contains($0.index) && $0.entityID == current.entityID
+    }
+    guard sameRoad.indices.contains(rank) else { return nil }
+    let destination = sameRoad[rank]
     for occurrence in routePlan.occurrences
-    where occurrence.index > currentIndex && occurrence.index < targetIndex {
+    where occurrence.index > currentIndex && occurrence.index < destination.index {
       appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
     }
     snapshot.lastPhaseTransitionTrigger = trigger
-    advance(to: target.id)
-    return target.id
+    advance(to: destination.id)
+    return destination.id
   }
 
   package mutating func activateSurfaceEgress() {
@@ -936,8 +935,11 @@ public struct NavigationEngine: Sendable {
     }
     snapshot.currentOccurrenceID = target.id
     snapshot.currentOccurrenceIndex = target.index
+    // A dropped lap leaves hundreds of skipped occurrences; this runs on
+    // every admitted fix.
+    let skipped = Set(snapshot.skippedOccurrenceIDs)
     snapshot.completedOccurrenceIDs = routePlan.occurrences
-      .filter { $0.index < target.index && !snapshot.skippedOccurrenceIDs.contains($0.id) }
+      .filter { $0.index < target.index && !skipped.contains($0.id) }
       .map(\.id)
     refreshPendingOccurrences()
   }
@@ -959,10 +961,10 @@ public struct NavigationEngine: Sendable {
       return
     }
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
+    let skipped = Set(snapshot.skippedOccurrenceIDs)
     snapshot.pendingOccurrenceIDs = routePlan.occurrences
       .filter { occurrence in
-        occurrence.index >= currentIndex
-          && !snapshot.skippedOccurrenceIDs.contains(occurrence.id)
+        occurrence.index >= currentIndex && !skipped.contains(occurrence.id)
       }
       .map(\.id)
   }

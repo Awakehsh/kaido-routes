@@ -105,6 +105,11 @@ public struct ShutoJunctionMovementDefinition:
 }
 
 public enum ShutoJunctionMovementCatalog {
+  // The movement builders stay out of line. Inlined into the one-time
+  // initializer of `released`, their collection-building loops multiply into
+  // one function that the optimizer's per-loop COW array pass takes over ten
+  // minutes to compile.
+  @inline(never)
   private static func c2InnerMovement(
     id: String,
     junctionID: String,
@@ -216,6 +221,7 @@ public enum ShutoJunctionMovementCatalog {
     )
   }
 
+  @inline(never)
   private static func reviewedMovement(
     id: String,
     junctionID: String,

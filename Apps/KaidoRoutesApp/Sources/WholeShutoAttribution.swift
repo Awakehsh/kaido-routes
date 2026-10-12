@@ -1,5 +1,6 @@
 import Foundation
 import KaidoRouting
+import SwiftUI
 
 enum WholeShutoAttributionError: Error, Equatable {
   case invalidNetworkMetadata
@@ -87,5 +88,53 @@ struct WholeShutoAttribution: Equatable, Sendable {
     sourceAccessibilityIdentifier = "route-atlas-attribution-source"
     licenceAccessibilityIdentifier = "route-atlas-attribution-licence"
     navigationAuthority = false
+  }
+}
+
+/// The corner credit every map drawing the OSM-derived network carries, as
+/// the OSMF attribution guideline asks of an interactive map. It links to the
+/// OpenStreetMap copyright page, which states the ODbL terms.
+struct WholeShutoMapCredit: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
+  /// The tap target's height; a map that seats its own marks above the
+  /// credit leaves this much room for it.
+  static let rowHeight: CGFloat = 44
+
+  let attribution: WholeShutoAttribution
+
+  var body: some View {
+    Link(destination: attribution.sourceURL) {
+      Text(verbatim: "© \(attribution.sourceLabel)")
+        .font(.system(size: 9, weight: .medium, design: .rounded))
+        .foregroundStyle(KaidoInk.textSecondary)
+        .padding(.horizontal, 6)
+        .frame(minHeight: 22)
+        .background(KaidoInk.surface.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .frame(minHeight: Self.rowHeight)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .environment(\.colorScheme, .dark)
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: "地図データ、\(attribution.attribution)",
+        simplifiedChinese: "地图数据，\(attribution.attribution)",
+        english: "Map data, \(attribution.attribution)"
+      )
+    )
+    .accessibilityHint(
+      copy.resolve(
+        japanese: "\(attribution.sourceLabel) の著作権とライセンスを開く",
+        simplifiedChinese: "打开 \(attribution.sourceLabel) 版权与许可",
+        english: "Opens \(attribution.sourceLabel) copyright and licence"
+      )
+    )
+    .accessibilityIdentifier("whole-shuto-map-credit")
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }

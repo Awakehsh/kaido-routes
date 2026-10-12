@@ -63,6 +63,8 @@ struct WholeShutoProductView: View {
   @State private var trackMapZoom = 1.0
   @State private var trackMapPan = CGSize.zero
   @State private var trackMapUserAdjustedViewport = false
+  @State private var portraitTopBarHeight: CGFloat = 0
+  @State private var portraitDockHeight: CGFloat = 0
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
   @State private var planningSearchField: WholeShutoPlanningField?
 
@@ -281,27 +283,16 @@ struct WholeShutoProductView: View {
     in database: ShutoNetworkDatabase
   ) -> [(WholeShutoPlaceSuggestion, WholeShutoPlace)] {
     database.directionalFacilities.map { facility in
-      var accessRoles: [String] = []
-      if facility.canEnter {
-        accessRoles.append(
-          "入口 \(facility.entranceDirections.joined(separator: " / "))"
-        )
-      }
-      if facility.canExit {
-        accessRoles.append(
-          "出口 \(facility.exitDirections.joined(separator: " / "))"
-        )
-      }
-      let accessText = accessRoles.isEmpty
-        ? ""
-        : " · \(accessRoles.joined(separator: " · "))"
       let title = "\(facility.nameJA) IC"
       return (
         WholeShutoPlaceSuggestion(
           id: "shuto-facility:\(facility.facilityID)",
           title: title,
-          subtitle: "\(shieldLabel(facility.routeID))\(accessText)",
-          isShutoFacility: true
+          subtitle: shieldLabel(facility.routeID),
+          isShutoFacility: true,
+          entranceDirections:
+            facility.canEnter ? facility.entranceDirections : [],
+          exitDirections: facility.canExit ? facility.exitDirections : []
         ),
         WholeShutoPlace(title: title, coordinate: facility.coordinate)
       )
@@ -326,8 +317,21 @@ struct WholeShutoProductView: View {
   private var portraitLayout: some View {
     GeometryReader { geometry in
       ZStack {
-        map
-          .ignoresSafeArea()
+        // The chrome covers the map's head and foot. MapKit frames its camera
+        // between them and seats its logo and Legal link above the dock and
+        // the OSM credit row. The scrolling layouts cover the map instead,
+        // and their stale measurements must not inset it.
+        let topChrome = portraitDockFramesMap ? portraitTopBarHeight : 0
+        let bottomChrome = portraitDockFramesMap ? portraitDockHeight : 0
+        map(
+          topInset: topChrome + geometry.safeAreaInsets.top,
+          bottomInset: bottomChrome + geometry.safeAreaInsets.bottom
+            + WholeShutoMapCredit.rowHeight
+        )
+        .ignoresSafeArea()
+        .overlay(alignment: .bottomLeading) {
+          mapCredit(bottomPadding: bottomChrome)
+        }
 
         if usesExpandedTextLayout && !isDriving
           && model.phase != .completed
@@ -345,6 +349,9 @@ struct WholeShutoProductView: View {
         } else {
           VStack(spacing: 0) {
             topBar
+              .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                portraitTopBarHeight = $0
+              }
             if showsDestinationComposer && !isDriving
               && model.phase != .completed
             {
@@ -357,18 +364,23 @@ struct WholeShutoProductView: View {
               .scrollDismissesKeyboard(.interactively)
             } else {
               Spacer(minLength: 0)
-              if !isDriving, model.phase != .completed {
-                if isPlanningDockExpanded {
-                  ScrollView {
+              Group {
+                if !isDriving, model.phase != .completed {
+                  if isPlanningDockExpanded {
+                    ScrollView {
+                      dockContent
+                    }
+                    .scrollIndicators(.hidden)
+                    .frame(maxHeight: geometry.size.height / 2)
+                  } else {
                     dockContent
                   }
-                  .scrollIndicators(.hidden)
-                  .frame(maxHeight: geometry.size.height / 2)
                 } else {
                   dockContent
                 }
-              } else {
-                dockContent
+              }
+              .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                portraitDockHeight = $0
               }
             }
           }
@@ -396,6 +408,13 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// Whether the portrait layout parks the dock at the foot of the map
+  /// rather than scrolling the whole planning surface over it.
+  private var portraitDockFramesMap: Bool {
+    isDriving || model.phase == .completed
+      || !(usesExpandedTextLayout || showsDestinationComposer)
+  }
+
   /// Landscape: a fixed instrument column carries the title, guidance
   /// banner, and dock; the map owns the remaining width at full height.
   private var landscapeLayout: some View {
@@ -416,23 +435,33 @@ struct WholeShutoProductView: View {
       .frame(width: 384)
       .background(KaidoInk.surface)
 
-      ZStack {
-        map
-          .ignoresSafeArea(edges: [.top, .bottom, .trailing])
+      GeometryReader { geometry in
+        // No chrome sits over this map, so the inset that lifts MapKit's marks
+        // above the credit row is mirrored at the top to keep the follow
+        // camera where the full-height map put it.
+        let markInset = geometry.safeAreaInsets.bottom
+          + WholeShutoMapCredit.rowHeight
+        ZStack {
+          map(topInset: markInset, bottomInset: markInset)
+            .ignoresSafeArea(edges: [.top, .bottom, .trailing])
+            .overlay(alignment: .bottomLeading) {
+              mapCredit(bottomPadding: 0)
+            }
 
-        if let prompt = model.activeJunctionInsetPrompt {
-          VStack {
-            Spacer()
-            WholeShutoJunctionInset(
-              prompt: prompt,
-              distanceText:
-                model.distanceToNextReviewedJunctionMeters.map(distanceLabel)
-            )
-              .padding(.horizontal, 14)
-              .padding(.bottom, 16)
-              .transition(.move(edge: .bottom).combined(with: .opacity))
+          if let prompt = model.activeJunctionInsetPrompt {
+            VStack {
+              Spacer()
+              WholeShutoJunctionInset(
+                prompt: prompt,
+                distanceText:
+                  model.distanceToNextReviewedJunctionMeters.map(distanceLabel)
+              )
+                .padding(.horizontal, 14)
+                .padding(.bottom, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            .allowsHitTesting(false)
           }
-          .allowsHitTesting(false)
         }
       }
     }
@@ -530,11 +559,20 @@ struct WholeShutoProductView: View {
     .background(KaidoInk.surfacePanel)
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("whole-shuto-checkpoint-issue")
-    .accessibilityValue(code)
+    .kaidoAccessibilityValue(code: code)
+  }
+
+  /// An overlay of the map, so the credit never takes part in sizing the
+  /// screen's layout when the keyboard shortens it. It keeps to the safe
+  /// area, so the padding counts only the chrome above it.
+  private func mapCredit(bottomPadding: CGFloat) -> some View {
+    WholeShutoMapCredit(attribution: wholeShutoAttribution)
+      .padding(.leading, 10)
+      .padding(.bottom, bottomPadding)
   }
 
   @ViewBuilder
-  private var map: some View {
+  private func map(topInset: CGFloat, bottomInset: CGFloat) -> some View {
     if model.mapMode == .network {
       if let layout = model.trackMapLayout,
         let route = model.selectedRoute
@@ -580,6 +618,8 @@ struct WholeShutoProductView: View {
         followsRoute: $geographicFollowsRoute,
         lastStableHeadingDegrees: $lastStableGeographicHeadingDegrees
       )
+      .safeAreaPadding(.top, topInset)
+      .safeAreaPadding(.bottom, bottomInset)
     }
   }
 
@@ -635,9 +675,13 @@ struct WholeShutoProductView: View {
   }
 
   private var networkOverviewInitialZoom: Double {
-    ProcessInfo.processInfo.arguments.contains(
-      "-WHOLE-SHUTO-NETWORK-DETAIL-ZOOM"
-    ) ? 2.6 : 1
+    #if DEBUG
+      ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-NETWORK-DETAIL-ZOOM"
+      ) ? 2.6 : 1
+    #else
+      1
+    #endif
   }
 
   private var isTrackMapPositionEstimated: Bool {
@@ -2665,7 +2709,13 @@ struct WholeShutoProductView: View {
                       .foregroundStyle(KaidoInk.textPrimary)
                       .lineLimit(1)
                     if suggestion.isShutoFacility {
-                      Text("EXPWY")
+                      Text(
+                        copy.resolve(
+                          japanese: "高速",
+                          simplifiedChinese: "高速",
+                          english: "EXPWY"
+                        )
+                      )
                         .font(.system(size: 8, weight: .black, design: .rounded))
                         .foregroundStyle(KaidoInk.surface)
                         .padding(.horizontal, 5)
@@ -2674,8 +2724,8 @@ struct WholeShutoProductView: View {
                         .clipShape(Capsule())
                     }
                   }
-                  if !suggestion.subtitle.isEmpty {
-                    Text(suggestion.subtitle)
+                  if !suggestion.displaySubtitle(copy).isEmpty {
+                    Text(suggestion.displaySubtitle(copy))
                       .font(.system(size: 9, weight: .medium))
                       .foregroundStyle(KaidoInk.textQuiet)
                       .lineLimit(1)
@@ -2693,9 +2743,9 @@ struct WholeShutoProductView: View {
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
-              suggestion.subtitle.isEmpty
+              suggestion.displaySubtitle(copy).isEmpty
                 ? suggestion.title
-                : "\(suggestion.title), \(suggestion.subtitle)"
+                : "\(suggestion.title), \(suggestion.displaySubtitle(copy))"
             )
             .accessibilityIdentifier(
               "whole-shuto-place-suggestion-\(suggestion.id)"
@@ -3134,7 +3184,7 @@ struct WholeShutoProductView: View {
       .clipShape(RoundedRectangle(cornerRadius: 10))
       .accessibilityElement(children: .combine)
       .accessibilityIdentifier("whole-shuto-surface-route-status")
-      .accessibilityValue("RESOLVING")
+      .kaidoAccessibilityValue(code: "RESOLVING")
     } else if !model.isJourneyReadyForPreview {
       HStack(spacing: 10) {
         Image(systemName: "exclamationmark.triangle.fill")
@@ -3191,7 +3241,7 @@ struct WholeShutoProductView: View {
       }
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("whole-shuto-surface-route-status")
-      .accessibilityValue("UNAVAILABLE")
+      .kaidoAccessibilityValue(code: "UNAVAILABLE")
     } else {
       Button {
         showsJourneyReview = true
@@ -3569,7 +3619,7 @@ struct WholeShutoProductView: View {
       }
       .buttonStyle(.plain)
       .accessibilityIdentifier("whole-shuto-route-join")
-      .accessibilityValue(model.routeJoinState.rawValue)
+      .kaidoAccessibilityValue(code: model.routeJoinState.rawValue)
     case .resolving:
       HStack(spacing: 8) {
         ProgressView()
@@ -3592,7 +3642,7 @@ struct WholeShutoProductView: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       .accessibilityElement(children: .combine)
       .accessibilityIdentifier("whole-shuto-route-join")
-      .accessibilityValue(model.routeJoinState.rawValue)
+      .kaidoAccessibilityValue(code: model.routeJoinState.rawValue)
     }
   }
 
@@ -3818,8 +3868,8 @@ struct WholeShutoProductView: View {
             .font(.system(size: 11, weight: .black, design: .rounded))
             .foregroundStyle(positionStatusColor)
             .accessibilityIdentifier("whole-shuto-position-state")
-            .accessibilityValue(
-              model.isLiveDrive
+            .kaidoAccessibilityValue(
+              code: model.isLiveDrive
                 ? model.liveLocationState.rawValue
                 : model.positionState.rawValue
             )
@@ -3950,7 +4000,7 @@ struct WholeShutoProductView: View {
           )
       )
       .accessibilityIdentifier("whole-shuto-preview-playback")
-      .accessibilityValue(model.isPlaying ? "PLAYING" : "PAUSED")
+      .kaidoAccessibilityValue(code: model.isPlaying ? "PLAYING" : "PAUSED")
       }
     }
   }
@@ -5570,8 +5620,8 @@ private struct WholeShutoCustomRouteSheet: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("whole-shuto-custom-route-preview")
-    .accessibilityValue(
-      model.customDraftRoute == nil ? "UNAVAILABLE" : "AVAILABLE"
+    .kaidoAccessibilityValue(
+      code: model.customDraftRoute == nil ? "UNAVAILABLE" : "AVAILABLE"
     )
   }
 
@@ -6262,7 +6312,13 @@ private struct WholeShutoNetworkDiagram: View {
     }
     .overlay(alignment: .bottomTrailing) {
       VStack(alignment: .trailing, spacing: 2) {
-        Text("NETWORK")
+        Text(
+          copy.resolve(
+            japanese: "路線網",
+            simplifiedChinese: "路网",
+            english: "NETWORK"
+          )
+        )
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .tracking(0.8)
         Text(
@@ -6956,8 +7012,8 @@ private struct WholeShutoGeographicMap: View {
       )
     }
     .accessibilityIdentifier("whole-shuto-geographic-map")
-    .accessibilityValue(
-      !followsRoute
+    .kaidoAccessibilityValue(
+      code: !followsRoute
         ? "FREE"
         : model.navigationHeadingDegrees == nil
           ? "FOLLOWING_NORTH_UP_NO_HEADING"
@@ -6999,7 +7055,7 @@ private struct WholeShutoGeographicMap: View {
             )
         )
         .accessibilityIdentifier("whole-shuto-route-following-control")
-        .accessibilityValue(followsRoute ? "FOLLOWING" : "FREE")
+        .kaidoAccessibilityValue(code: followsRoute ? "FOLLOWING" : "FREE")
         .padding(.trailing, 14)
       }
     }
@@ -7765,9 +7821,9 @@ private struct WholeShutoSettingsView: View {
           )
         }
 
-        // The map surface carries no source mark, so the required OSM
-        // attribution and its licence text live here. Each limitation is a
-        // scannable field rather than a paragraph a driver has to read.
+        // The map carries a short OSM credit; the full attribution and its
+        // licence text live here. Each limitation is a scannable field
+        // rather than a paragraph a driver has to read.
         Section {
           Link(destination: attribution.sourceURL) {
             Label(attribution.attribution, systemImage: "map")
@@ -7810,9 +7866,9 @@ private struct WholeShutoSettingsView: View {
               english: "Data"
             ),
             value: copy.resolve(
-              japanese: "事業者公式 · OSM 形状候補",
-              simplifiedChinese: "运营方官方 · OSM 几何候选",
-              english: "Operator official · OSM geometry"
+              japanese: "事業者データ · OSM 形状候補",
+              simplifiedChinese: "运营方数据 · OSM 几何候选",
+              english: "Operator data · OSM geometry"
             )
           )
 
@@ -7846,6 +7902,16 @@ private struct WholeShutoSettingsView: View {
               english: "About this map"
             )
           )
+        } footer: {
+          Text(
+            copy.resolve(
+              japanese: "首都高速道路株式会社の提携・承認を受けたアプリではありません。",
+              simplifiedChinese: "本应用与首都高速道路株式会社无关联，亦未获其认可。",
+              english:
+                "Not affiliated with or endorsed by Metropolitan Expressway Company Limited."
+            )
+          )
+          .accessibilityIdentifier("whole-shuto-non-affiliation")
         }
 
         Section {
@@ -7856,9 +7922,9 @@ private struct WholeShutoSettingsView: View {
               english: "Location"
             ),
             value: copy.resolve(
-              japanese: "この端末のみ",
-              simplifiedChinese: "仅本机处理",
-              english: "On this device"
+              japanese: "Kaido へ送信なし · 経路と検索は Apple マップ",
+              simplifiedChinese: "不发送给 Kaido · 路线与搜索经 Apple 地图",
+              english: "Not sent to Kaido · Apple Maps for routes and search"
             )
           )
           .accessibilityElement(children: .combine)

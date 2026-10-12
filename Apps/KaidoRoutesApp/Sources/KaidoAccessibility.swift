@@ -44,3 +44,17 @@ enum KaidoAccessibilityLayoutPolicy {
     mode(for: dynamicTypeSize) == .accessibility ? 1 : 2
   }
 }
+
+extension View {
+  /// Machine state for UI tests. Debug builds expose `code` as the
+  /// accessibility value so tests assert state whatever the interface
+  /// language; a Release build exposes only `spoken`, so VoiceOver never
+  /// reads a test code.
+  func kaidoAccessibilityValue(code: String, spoken: String = "") -> some View {
+    #if DEBUG
+      accessibilityValue(code)
+    #else
+      accessibilityValue(spoken)
+    #endif
+  }
+}

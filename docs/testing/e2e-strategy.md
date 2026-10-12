@@ -63,26 +63,52 @@ remain bound to the exact catalog and implementation bytes that were reviewed;
 whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
-The per-change `verify/app` job runs 11 critical App unit classes, six
-whole-Shuto App-model journeys, and one route-selection-to-live-navigation UI
-smoke in one xcodebuild session on the newest iPhone 17 Pro Simulator. Simulator
-boot and location injection run alongside the test build. The complete 33-pair
-foreground-product matrix stays in the deterministic compiler suite instead of
-being repeated through the asynchronous App model.
+App tests are selected by Xcode test plans under
+`Apps/KaidoRoutesApp/TestPlans/`, never by a hand-maintained
+`-only-testing` list:
+
+| Plan | Runs in | Contents |
+|---|---|---|
+| `Verify` | every `verify/app` run | every App unit test, plus five listed UI journeys |
+| `Full` (scheme default) | `iOS qualification` | every App unit and UI test |
+| `PhysicalAudio` | `KaidoRoutesPhysicalAudioQualification` scheme | the real-audio tests only |
+
+A plan includes each test target whole and names only what it skips, so a new
+test runs without anyone listing it. `Verify` and `Full` skip
+`PhysicalAudioQualification*` because those tests need a connected phone's
+real audio route. `Verify` lists its UI journeys instead, because each costs
+about half a minute of a 30-minute job: the recommended C2 circuit and an
+exact custom route each reaching live navigation, the Daikoku PA ending, the
+Hatsudai local pairing and tariff band, and the deterministic review
+accessibility audit. Every other UI test runs in `Full`.
+`scripts/check_app_test_plans.py`, the first step of `verify/app`, fails when
+an App test runs in no plan or a plan names a test that no longer exists,
+because xcodebuild silently ignores such an entry.
+
+`verify/app` runs `Verify` in one xcodebuild session on the newest iPhone 17
+Pro Simulator, with simulator boot and location injection alongside the test
+build. The complete 33-pair foreground-product matrix stays in the
+deterministic compiler suite instead of being repeated through the
+asynchronous App model.
 Documentation-only changes stop after the lightweight `verify/changes` path
 classification. Failed App runs retain raw xcodebuild logs and `.xcresult`
 bundles.
 
-After the same commit passes `verify`, manually trigger the
-`iOS qualification` workflow for the intentionally slower gates: every default
-silent App unit test, the focused five-journey primary suite, iPhone SE
-accessibility audits at Large and AX5, and a validated unsigned Release archive. It uploads the exact
+UI tests share one app container, and a launch argument only overrides what
+that launch reads. Every UI test therefore launches through `launchSilently()`,
+which passes the Debug-only `-RESET-APP-STATE`: before reading anything, the
+app removes its preferences domain and its Application Support files
+(checkpoints, saved routes, drive history). A relaunch that proves something
+survives passes `keepingAppState: true`.
+
+`iOS qualification` runs the intentionally slower gates nightly on `main`,
+and manually once the same commit passes `verify`: the `Full` plan, the App
+unit tests on iOS 18, iPhone SE accessibility audits at Large and AX5, and a
+validated unsigned Release archive. It uploads the exact
 archive as a short-lived artifact, but it does not claim signing,
 installation, road, acoustic, CarPlay, TestFlight, or App Store evidence.
 Physical-device qualification remains a separate local workflow because it
-requires the connected authorized phone and private output. Real audio tests
-are excluded from every default scheme and run only through the explicit
-`KaidoRoutesPhysicalAudioQualification` scheme.
+requires the connected authorized phone and private output.
 
 ## Portable scenario envelope
 

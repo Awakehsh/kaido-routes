@@ -177,14 +177,12 @@ schemes:
       config: Debug
     test:
       config: Debug
-      targets:
-        - name: KaidoRoutesAppTests
-          skippedTests:
-            - PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()
-            - PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
-        - name: KaidoRoutesAppUITests
-          skippedTests:
-            - PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
+      # Each plan includes its test targets whole and lists what it skips;
+      # scripts/check_app_test_plans.py fails when a test runs in no plan.
+      testPlans:
+        - path: Apps/KaidoRoutesApp/TestPlans/Full.xctestplan
+          defaultPlan: true
+        - path: Apps/KaidoRoutesApp/TestPlans/Verify.xctestplan
     archive:
       config: Release
 
@@ -215,13 +213,7 @@ schemes:
           - test
     test:
       config: Debug
-      targets:
-        - name: KaidoRoutesAppTests
-          selectedTests:
-            - PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()
-            - PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
-        - name: KaidoRoutesAppUITests
-          selectedTests:
-            - PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
+      testPlans:
+        - path: Apps/KaidoRoutesApp/TestPlans/PhysicalAudio.xctestplan
     run:
       config: Debug

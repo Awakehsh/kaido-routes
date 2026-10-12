@@ -6,7 +6,6 @@ final class RouteExperienceUITests: XCTestCase {
     for appearance in ["day", "night"] {
       let app = XCUIApplication()
       app.launchArguments = [
-        "-RESET-NAVIGATION-CHECKPOINT",
         "-app.kaidoroutes.language.interface", "en",
         "-app.kaidoroutes.map.appearance", appearance,
       ]

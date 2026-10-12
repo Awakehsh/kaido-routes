@@ -90,8 +90,8 @@ genuinely changed, change the scenario and say so.
   merge, so an outside pull request is reviewed before it lands whether or not
   a GitHub rule demands an approval.
 - Arm `gh pr merge --auto --squash --delete-branch` and move on rather than
-  watching the run. The iPhone job takes roughly eight minutes, most of it
-  compiling and exercising the simulator.
+  watching the run. The iPhone job takes roughly 20 to 25 minutes, most of
+  it compiling and running every App unit test on the simulator.
 
 ## Evidence, data, and licensing
 

@@ -22,16 +22,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The primary leg runs the whole Full test plan: every App unit
+          # and UI test that runs on a simulator.
           - label: primary
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
             content_size: large
-            test_scope: |-
-              KaidoRoutesAppTests
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDefaultLaunchMakesWholeShutoMapTheProduct
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoArrivalHasOneClearFinishAction
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation
+            test_scope: ""
           - label: ios18-unit
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro
             runtime_prefix: com.apple.CoreSimulator.SimRuntime.iOS-18-
@@ -104,7 +100,7 @@ jobs:
           xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
           xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
 
-      - name: Focused App qualification
+      - name: App qualification
         env:
           TEST_SCOPE: ${{ matrix.test_scope }}
         run: |
@@ -115,12 +111,16 @@ jobs:
               test_scope_arguments+=("-only-testing:$test_scope")
             fi
           done <<< "$TEST_SCOPE"
+          # The runner's /bin/bash 3.2 treats an empty array as unbound
+          # under `set -u`, so the primary leg's empty scope expands to
+          # nothing through `${array[@]+...}`.
           xcodebuild test \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
+            -testPlan Full \
             -destination "id=${{ steps.simulator.outputs.device-id }}" \
             -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
-            "${test_scope_arguments[@]}" \
+            ${test_scope_arguments[@]+"${test_scope_arguments[@]}"} \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log"
 

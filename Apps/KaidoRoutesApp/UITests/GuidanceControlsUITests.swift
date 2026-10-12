@@ -5,7 +5,6 @@ final class GuidanceControlsUITests: XCTestCase {
   func testParkedVoiceSettingsExposeVolumeAndSilentAudition() {
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface", "en",
       "-app.kaidoroutes.guidance.mode", "FULL",
     ]

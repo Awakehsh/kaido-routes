@@ -16,6 +16,25 @@ struct KaidoRoutesApp: App {
       forKey: "app.kaidoroutes.whole-shuto.journey-checkpoint"
     )
     #if DEBUG
+      // UI tests share one app container, and a launch argument only
+      // overrides what a launch reads: a preference or file one test writes
+      // would otherwise decide what the next test sees.
+      if ProcessInfo.processInfo.arguments.contains("-RESET-APP-STATE") {
+        UserDefaults.standard.removePersistentDomain(
+          forName: Bundle.main.bundleIdentifier!
+        )
+        do {
+          if FileManager.default.fileExists(
+            atPath: URL.applicationSupportDirectory.path
+          ) {
+            try FileManager.default.removeItem(
+              at: URL.applicationSupportDirectory
+            )
+          }
+        } catch {
+          preconditionFailure("Failed to reset E2E app state: \(error)")
+        }
+      }
       if ProcessInfo.processInfo.arguments.contains(
         "-RESET-NAVIGATION-CHECKPOINT"
       ) {
@@ -44,19 +63,6 @@ struct KaidoRoutesApp: App {
         } catch {
           preconditionFailure(
             "Failed to write E2E corrupt checkpoint: \(error)"
-          )
-        }
-      }
-      if ProcessInfo.processInfo.arguments.contains(
-        "-RESET-SAVED-ROUTES"
-      ) {
-        do {
-          try FileSavedRouteLibraryStore.applicationSupport().save(
-            SavedRouteLibraryDocument(records: [])
-          )
-        } catch {
-          preconditionFailure(
-            "Failed to reset E2E saved routes: \(error)"
           )
         }
       }

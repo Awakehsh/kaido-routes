@@ -1150,7 +1150,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				EXCLUDED_SOURCE_FILE_NAMES = "c2-b-20260729-geographic-route.json k7-aoba-kohoku-product-release.json k7-aoba-to-kohoku-pre-drive-evidence.json k7-northwest-260721-directed-database.json k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json k7-northwest-up-schematic-layout-candidate.svg route-atlas-attribution-catalog.json shuto-route-atlas-recognition-reference.svg synthetic-product-runtime-preview.json";
 				INFOPLIST_FILE = Apps/KaidoRoutesApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

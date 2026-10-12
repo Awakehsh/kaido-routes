@@ -345,6 +345,97 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testRampReachedBeforeTheSurfaceLegEndsJoinsWithoutRerouting() async throws {
+    // The provider's leg ends 670 m from where the ramp really is, as an
+    // entrance coordinate can: the car reaches the ramp while the leg still
+    // has distance to run.
+    let resolver = CountingSurfaceRouteResolver(endOffsetDegreesNorth: 0.006)
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output, resolver: resolver)
+    let route = try XCTUnwrap(model.selectedRoute)
+    let accessEnd = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    XCTAssertGreaterThan(
+      CLLocation(latitude: accessEnd.latitude, longitude: accessEnd.longitude)
+        .distance(
+          from: CLLocation(
+            latitude: route.coordinates[0].latitude,
+            longitude: route.coordinates[0].longitude)),
+      WholeShutoProductModel.surfaceEntryTransitionRadiusMeters * 5)
+    let requestsBeforeRamp = await resolver.requestCount
+
+    var timestamp = 1_000
+    drive: for index in route.edges.indices {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      for fraction in [0.25, 0.75] {
+        timestamp += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "early-ramp.\(timestamp)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude + (end.longitude - start.longitude) * fraction),
+            atMilliseconds: timestamp, courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 18))
+        XCTAssertFalse(model.isReroutingSurfaceRoute)
+        if model.phase == .expressway { break drive }
+      }
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.runtimeJourneyPhase, .strictRoute)
+    let requestsAfterJoin = await resolver.requestCount
+    XCTAssertEqual(requestsAfterJoin, requestsBeforeRamp)
+    model.reset()
+  }
+
+  func testStreetGoingStraightPastTheEntranceKeepsSurfaceGuidance() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output)
+    let route = try XCTUnwrap(model.selectedRoute)
+    let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+      context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: model.database),
+      route: route)
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: release.navigation.bundle.matcherCorridor.edges.map { ($0.id, $0) })
+    let approachEdgeID = try XCTUnwrap(
+      release.navigation.bundle.runtimePolicy.entryTransition.directedEdgeIDs.first)
+    let approach = try XCTUnwrap(corridorEdges[approachEdgeID]?.coordinates)
+    let start = ShutoCoordinate(latitude: approach[0].latitude, longitude: approach[0].longitude)
+    let course = Self.bearing(
+      from: start,
+      to: ShutoCoordinate(latitude: approach[1].latitude, longitude: approach[1].longitude))
+    // The straight continuation of the reviewed approach: the street under
+    // or beside the ramp, never the ramp itself.
+    let metersPerDegree = 111_320.0
+    for step in 0..<80 {
+      let meters = Double(step) * 15
+      let coordinate = ShutoCoordinate(
+        latitude: start.latitude + meters * cos(course * .pi / 180) / metersPerDegree,
+        longitude: start.longitude
+          + meters * sin(course * .pi / 180)
+          / (metersPerDegree * cos(start.latitude * .pi / 180)))
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "straight-street.\(step)", coordinate: coordinate,
+          atMilliseconds: 2_000 + step * 1_000, courseDegrees: course,
+          speedMetersPerSecond: 15))
+      XCTAssertNotEqual(model.phase, .expressway, "step \(step)")
+      XCTAssertNotEqual(model.runtimeJourneyPhase, .strictRoute, "step \(step)")
+    }
+    // Where the approach road and the ramp coincide the drive hands over to
+    // the entrance; once the street has left every corridor road the
+    // ordinary-road leg is back, rerouted to the entrance ahead.
+    for _ in 0..<100 where model.isReroutingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertNil(model.runtimeOccurrenceID)
+    XCTAssertEqual(model.activeSurfaceInstruction, "Continue on local road")
+    model.reset()
+  }
+
   func testPositionLossNoticeStaysSilentInsideTheCooldown() async throws {
     let output = SpeechRecoveryAppOutput()
     output.autoFinish = true
@@ -1150,6 +1241,56 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.phase, .entryTransition)
     XCTAssertEqual(model.routeJoinState, .resolving)
 
+    model.reset()
+  }
+
+  func testJoinRouteIntentDeclaresOnlyWhereTheJoinIsOffered() async throws {
+    var nowMilliseconds = 1_000
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      nowMillisecondsProvider: { nowMilliseconds }
+    )
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await model.awaitLiveNavigationPreparationForTesting()
+    let route = try XCTUnwrap(model.selectedRoute)
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    ActiveDriveControl.model = model
+    defer { ActiveDriveControl.model = nil }
+
+    // Nothing offered yet: Siri cannot declare what the in-app control
+    // would not show.
+    _ = try await DriveControlIntent(action: .joinRoute).perform()
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+
+    let deepEdgeIndex = route.edges.count / 2
+    for step in 0..<12 where model.routeJoinState != .offered {
+      let index = deepEdgeIndex + step / 2
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      let fraction = step % 2 == 0 ? 0.25 : 0.75
+      nowMilliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "join-intent.\(step)",
+          coordinate: ShutoCoordinate(
+            latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+            longitude: start.longitude + (end.longitude - start.longitude) * fraction),
+          atMilliseconds: nowMilliseconds, courseDegrees: Self.bearing(from: start, to: end),
+          speedMetersPerSecond: 18))
+    }
+    XCTAssertEqual(model.routeJoinState, .offered)
+
+    _ = try await DriveControlIntent(action: .joinRoute).perform()
+    XCTAssertEqual(model.phase, .entryTransition)
+    XCTAssertEqual(model.routeJoinState, .resolving)
     model.reset()
   }
 
@@ -6563,6 +6704,28 @@ private final class SpeechRecoveryAppOutput: GuidanceSpeechOutput {
     active = nil
   }
 }
+/// The instruction resolver's leg, ending `endOffsetDegreesNorth` away from
+/// the requested destination, counting every request it answers.
+private actor CountingSurfaceRouteResolver: WholeShutoSurfaceRouteResolving {
+  private let endOffsetDegreesNorth: Double
+  private(set) var requestCount = 0
+
+  init(endOffsetDegreesNorth: Double) {
+    self.endOffsetDegreesNorth = endOffsetDegreesNorth
+  }
+
+  func route(
+    from origin: ShutoCoordinate, to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    requestCount += 1
+    return await WholeShutoInstructionSurfaceRouteResolver().route(
+      from: origin,
+      to: ShutoCoordinate(
+        latitude: destination.latitude + endOffsetDegreesNorth,
+        longitude: destination.longitude))
+  }
+}
+
 private struct SpeechRecoveryShortStepResolver: WholeShutoSurfaceRouteResolving {
   func route(
     from origin: ShutoCoordinate, to destination: ShutoCoordinate

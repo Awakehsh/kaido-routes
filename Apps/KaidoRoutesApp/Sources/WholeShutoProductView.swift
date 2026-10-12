@@ -60,6 +60,20 @@ enum WholeShutoDrivingFailure {
   }
 }
 
+/// Builds the product model for the first StateObject that asks for it.
+/// SwiftUI evaluates those autoclosures only when the view is first
+/// installed, so re-creating the root view does not decode the network again.
+@MainActor
+private final class WholeShutoLazyProductModel {
+  private let injected: WholeShutoProductModel?
+  private(set) lazy var value: WholeShutoProductModel =
+    injected ?? WholeShutoForegroundReleaseFactory.makeModel()
+
+  init(_ injected: WholeShutoProductModel?) {
+    self.injected = injected
+  }
+}
+
 struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -71,7 +85,6 @@ struct WholeShutoProductView: View {
   @StateObject private var planningLocation: WholeShutoPlanningLocationController
   @StateObject private var placeSearch: WholeShutoPlaceSearchController
   @StateObject private var savedRoutes: SavedRouteLibraryModel
-  private let wholeShutoAttribution: WholeShutoAttribution
   @State private var showsSettings = false
   @State private var showsRouteCustomization = false
   @State private var showsJourneyReview = false
@@ -113,11 +126,8 @@ struct WholeShutoProductView: View {
     placeSearch: WholeShutoPlaceSearchController? = nil,
     savedRoutes: SavedRouteLibraryModel? = nil
   ) {
-    let resolvedModel =
-      model ?? WholeShutoForegroundReleaseFactory.makeModel()
-    _model = StateObject(
-      wrappedValue: resolvedModel
-    )
+    let resolvedModel = WholeShutoLazyProductModel(model)
+    _model = StateObject(wrappedValue: resolvedModel.value)
     _languageSettings = StateObject(
       wrappedValue: languageSettings ?? KaidoLanguageSettingsModel()
     )
@@ -129,7 +139,9 @@ struct WholeShutoProductView: View {
       wrappedValue:
         placeSearch
         ?? WholeShutoPlaceSearchController(
-          localPlaces: Self.localSearchPlaces(in: resolvedModel.database)
+          localPlaces: Self.localSearchPlaces(
+            in: resolvedModel.value.database
+          )
         )
     )
     _savedRoutes = StateObject(
@@ -138,20 +150,12 @@ struct WholeShutoProductView: View {
         ?? SavedRouteLibraryModel(
           store: try? FileSavedRouteLibraryStore.applicationSupport(),
           foregroundEntries: [],
-          availabilityResolver: { [weak resolvedModel] record in
-            resolvedModel?.savedRouteAvailability(record) ?? .unavailable
+          availabilityResolver: {
+            [weak availabilityModel = resolvedModel.value] record in
+            availabilityModel?.savedRouteAvailability(record) ?? .unavailable
           }
         )
     )
-    do {
-      wholeShutoAttribution = try WholeShutoAttribution(
-        database: resolvedModel.database
-      )
-    } catch {
-      preconditionFailure(
-        "Invalid whole-Shuto attribution catalog: \(error)"
-      )
-    }
   }
 
   var body: some View {
@@ -315,6 +319,19 @@ struct WholeShutoProductView: View {
 
   private var isLandscape: Bool {
     verticalSizeClass == .compact
+  }
+
+  /// Derived from the model on use rather than stored by `init`, which SwiftUI
+  /// may run again for the same installed view. It compares identity fields
+  /// only, so drawing it with the map costs nothing measurable.
+  private var wholeShutoAttribution: WholeShutoAttribution {
+    do {
+      return try WholeShutoAttribution(database: model.database)
+    } catch {
+      preconditionFailure(
+        "Invalid whole-Shuto attribution catalog: \(error)"
+      )
+    }
   }
 
   static func localSearchPlaces(

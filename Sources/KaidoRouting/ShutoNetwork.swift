@@ -592,7 +592,7 @@ public struct ShutoRoutePlanner: Sendable {
   let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let incomingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
-  let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
+  public let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
 
   public init(database: ShutoNetworkDatabase) throws {
     try database.validate()

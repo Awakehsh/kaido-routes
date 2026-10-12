@@ -3,13 +3,15 @@ import KaidoRouting
 import SwiftUI
 
 enum WholeShutoAttributionError: Error, Equatable {
-  case invalidNetworkMetadata
   case identityDrift([String])
 }
 
 /// Visible OSM/ODbL attribution derived from the exact bundled whole-Shuto
 /// database metadata. This is deliberately separate from the immutable legacy
 /// Route Atlas catalog reviewed for the retained K7 produced work.
+///
+/// It checks identity only. The database it reads is the one the product
+/// model's planner has already validated.
 struct WholeShutoAttribution: Equatable, Sendable {
   static let resourceName = "shuto-whole-network-20260804"
   // The parking-access review adds the parking-area interiors the network
@@ -41,12 +43,6 @@ struct WholeShutoAttribution: Equatable, Sendable {
   let navigationAuthority: Bool
 
   init(database: ShutoNetworkDatabase) throws {
-    do {
-      try database.validate()
-    } catch {
-      throw WholeShutoAttributionError.invalidNetworkMetadata
-    }
-
     var issues: [String] = []
     if database.databaseID != Self.expectedDatabaseID {
       issues.append("database identity drift")

@@ -219,6 +219,12 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDriveFailuresReadAsOneDrivingLine \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSurfaceRoutePreferenceDefaultsPersistsAndLeavesConnectingLegsAlone \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testConnectingLegsRequestAndChooseOrdinaryRoads \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCancelledRouteAuthorityResolutionAdmitsNothing \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testReplacedRouteStopsItsLivePreparationAndNeverPublishes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoPlanningLocationTests \
+            -only-testing:KaidoRoutesAppTests/DriveHistoryStoreTests \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoC2RecommendedRouteExposesLiveNavigation \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoLongSurfaceAccessExposesLiveNavigation \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace \
             -only-testing:KaidoRoutesAppTests/WholeShutoPlaceSearchTests \

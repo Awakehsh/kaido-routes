@@ -69,7 +69,7 @@ App tests are selected by Xcode test plans under
 
 | Plan | Runs in | Contents |
 |---|---|---|
-| `Verify` | every `verify/app` run | every App unit test, plus five listed UI journeys |
+| `Verify` | every `verify/app` run | every App unit test, plus 14 listed UI journeys |
 | `Full` (scheme default) | `iOS qualification` | every App unit and UI test |
 | `PhysicalAudio` | `KaidoRoutesPhysicalAudioQualification` scheme | the real-audio tests only |
 
@@ -77,16 +77,25 @@ A plan includes each test target whole and names only what it skips, so a new
 test runs without anyone listing it. `Verify` and `Full` skip
 `PhysicalAudioQualification*` because those tests need a connected phone's
 real audio route. `Verify` lists its UI journeys instead, because each costs
-about half a minute of a 30-minute job: the recommended C2 circuit and an
-exact custom route each reaching live navigation, the Daikoku PA ending, the
-Hatsudai local pairing and tariff band, and the deterministic review
-accessibility audit. Every other UI test runs in `Full`.
+20–40 seconds on a CI runner and the list is sized so the UI job takes about
+as long as the unit job. They cover route selection to live navigation (the
+recommended C2 circuit, an exact custom route, a long surface access), the
+Daikoku PA ending and a PA chosen through search, the Hatsudai local pairing
+and tariff band, journey endings and onward destinations, place search, a
+denied location permission, the highway preference, the day and night
+catalog, and two accessibility checks. Every other UI test runs in `Full`;
+the default-home accessibility audit stays there because it has timed out
+on a loaded runner.
 `scripts/check_app_test_plans.py`, the first step of `verify/app`, fails when
 an App test runs in no plan or a plan names a test that no longer exists,
 because xcodebuild silently ignores such an entry.
 
-`verify/app` runs `Verify` in one xcodebuild session on the newest iPhone 17
-Pro Simulator, with simulator boot and location injection alongside the test
+`verify/app` runs `Verify` as two parallel jobs on the newest iPhone 17 Pro
+Simulator, one for the unit target and one for the UI target, each through
+`scripts/build_and_boot_for_ci.py` and then `test-without-building`. The script
+builds for a generic simulator and boots the device only once xcodebuild has
+planned the build: a starting xcodebuild waits while CoreSimulator boots a
+device, so booting first, or alongside a starting build, only delays the
 build. The complete 33-pair foreground-product matrix stays in the
 deterministic compiler suite instead of being repeated through the
 asynchronous App model.
@@ -104,7 +113,10 @@ survives passes `keepingAppState: true`.
 `iOS qualification` runs the intentionally slower gates nightly on `main`,
 and manually once the same commit passes `verify`: the `Full` plan, the App
 unit tests on iOS 18, iPhone SE accessibility audits at Large and AX5, and a
-validated unsigned Release archive. It uploads the exact
+validated unsigned Release archive. `Full` runs on the primary simulator as
+three parallel legs: the unit target, and the UI target dealt by name into two
+shards by `scripts/app_test_shard.py`, so a new UI test lands in a shard
+without being listed. It uploads the exact
 archive as a short-lived artifact, but it does not claim signing,
 installation, road, acoustic, CarPlay, TestFlight, or App Store evidence.
 Physical-device qualification remains a separate local workflow because it

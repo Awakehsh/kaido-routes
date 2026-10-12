@@ -7,6 +7,7 @@
     }
   ],
   "defaultOptions" : {
+    "codeCoverage" : false,
     "targetForVariableExpansion" : {
       "containerPath" : "container:KaidoRoutesApp.xcodeproj",
       "identifier" : "77490D08B862452A4A0A6606",
@@ -26,11 +27,20 @@
     },
     {
       "selectedTests" : [
+        "KRU09AccessibilityUITests/testCriticalDrivingSurfaceExposesAccessibleSemantics()",
         "KRU09AccessibilityUITests/testWholeShutoDeterministicReviewAccessibilityAudit()",
         "KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA()",
+        "KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch()",
+        "KaidoProductJourneyUITests/testDestinationSearchSelectsOneResolvedPlace()",
         "KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation()",
         "KaidoProductJourneyUITests/testHatsudaiC1ShowsLocalPairingTariffAndBackAction()",
-        "KaidoProductJourneyUITests/testWholeShutoC2RecommendedRouteExposesLiveNavigation()"
+        "KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture()",
+        "KaidoProductJourneyUITests/testPAIsSelectedThroughDestinationSearch()",
+        "KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace()",
+        "KaidoProductJourneyUITests/testWholeShutoC2RecommendedRouteExposesLiveNavigation()",
+        "KaidoProductJourneyUITests/testWholeShutoLongSurfaceAccessExposesLiveNavigation()",
+        "KaidoProductJourneyUITests/testWholeShutoSettingsSwitchHighwayPreference()",
+        "RouteExperienceUITests/testDayAndNightCatalogExposeRouteReferences()"
       ],
       "target" : {
         "containerPath" : "container:KaidoRoutesApp.xcodeproj",

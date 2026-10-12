@@ -837,8 +837,9 @@ extension ShutoRoutePlanner {
     guard (parking?.isDrivable == true && exitFacility == nil)
       || (parking == nil && exitFacility.map { isEligibleExit($0, for: circuit) } == true)
     else { throw ShutoNetworkError.facilityUnavailable }
-    // Laps never change the fare, so a loop gains nothing by returning to
-    // its own toll point, and that pairing has no fare distance to quote.
+    // Returning to the entrance's own toll point is not plannable as an
+    // exact entry/exit route either: whatever the laps, the toll-point path
+    // that prices the pairing collapses to the ramps themselves.
     if let exitFacility, Self.sharesTollPoint(entryFacility, exitFacility) {
       throw ShutoNetworkError.sharedTollPoint
     }

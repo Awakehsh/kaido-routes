@@ -129,11 +129,12 @@ extension ShutoRoutePlanner {
   /// tariff distance.
   private static let tariffDistanceMarginMeters = 500.0
 
-  /// Same-named ramps bill as one toll point. An entry and exit at one toll
-  /// point have no fare distance the toll-point path can price — it
-  /// collapses to the ramps' own few metres while the operator prices such
-  /// a pair over a real distance — so the planner refuses that pairing on
-  /// every surface rather than quote a fare it cannot reproduce.
+  /// Same-named ramps bill as one toll point. Between an entry and exit at
+  /// one toll point the toll-point path collapses to the ramps' own few
+  /// metres, so it describes neither the trip nor its tariff distance, and
+  /// the turnaround such a trip needs is not something the planner authors.
+  /// The pair is therefore not plannable as an exact entry/exit route, and
+  /// no surface plans or prices it.
   static func sharesTollPoint(
     _ first: ShutoNetworkDatabase.Facility,
     _ second: ShutoNetworkDatabase.Facility

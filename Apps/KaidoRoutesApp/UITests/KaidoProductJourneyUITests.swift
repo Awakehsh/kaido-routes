@@ -1552,7 +1552,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     customExit.tap()
 
     // The entry's own IC is ruled out as its exit the same way: one toll
-    // point has no fare distance to pair.
+    // point is not plannable as an exact entry/exit route.
     let exitSearch = routeApp.textFields["whole-shuto-custom-exit-search"]
     exitSearch.tap()
     exitSearch.typeText("宝町")

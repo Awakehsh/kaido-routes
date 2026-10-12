@@ -34,12 +34,13 @@ internal review workbench.
   calendar day is the one quoted, so the revision is never shown early and
   takes over on its day without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
-  the band. Same-named ramps bill as one toll point, and the planner never
-  pairs an entrance with an exit sharing it — in the catalog, the editor,
-  destination search, or a reopened saved route — because that path has no
-  length the dated rule can price; a loop leaves at a differently named
-  exit. Destination search remains an optional continuation below the
-  catalog.
+  the band. Same-named ramps bill as one toll point. An entrance and exit
+  sharing one are not plannable as an exact entry/exit route — the
+  planner's toll-point path between them collapses to the ramps
+  themselves — so the catalog, the editor, destination search, and a
+  reopened saved route never form that pair, and a loop leaves at a
+  differently named exit. Destination search remains an optional
+  continuation below the catalog.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
   ordered course. Avoid when possible keeps the selected Shuto course but

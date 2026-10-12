@@ -1103,8 +1103,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.entryIsUnconfirmed)
 
     // The band follows the declaration. The nearest upstream entrance here
-    // is the exit's own IC: one toll point has no fare distance to price,
-    // so there is no band rather than a minimum the operator never charges.
+    // is the exit's own IC, whose toll-point path collapses to the ramps:
+    // there is no band rather than the minimum that collapse would quote.
     let exit = try XCTUnwrap(route.exitFacility)
     let sharedTollPointEntry = try XCTUnwrap(candidates.first)
     XCTAssertEqual(sharedTollPointEntry.nameJA, exit.nameJA)
@@ -4128,8 +4128,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(model.canApplyCustomRoute)
     XCTAssertFalse(model.customEntryCandidates.contains { $0.nameJA == "晴海" })
 
-    // Differently identified ramps of one toll point pair no better, from
-    // either end.
+    // Differently identified ramps of one toll point are no more plannable
+    // as a pair, from either end.
     model.selectCustomEntry(facilityID: "shuto.ic.k1.daishi")
     XCTAssertEqual(model.customEntryFacilityID, "shuto.ic.k1.daishi")
     XCTAssertFalse(model.customExitCandidates.contains { $0.nameJA == "大師" })

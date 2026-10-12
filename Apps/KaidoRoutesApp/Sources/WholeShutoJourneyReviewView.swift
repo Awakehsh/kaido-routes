@@ -69,7 +69,13 @@ struct WholeShutoJourneyReviewView: View {
   private var header: some View {
     HStack(alignment: .top, spacing: 12) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("KAIDO · ROUTE PASS")
+        Text(
+          copy.resolve(
+            japanese: "KAIDO · ルートパス",
+            simplifiedChinese: "KAIDO · 行程卡",
+            english: "KAIDO · ROUTE PASS"
+          )
+        )
           .font(.system(size: 9, weight: .black, design: .rounded))
           .tracking(1.7)
           .foregroundStyle(KaidoInk.accentWarm)
@@ -433,7 +439,7 @@ struct WholeShutoJourneyReviewView: View {
         ),
         tint: KaidoInk.accentWarm,
         accessibilityIdentifier: "whole-shuto-passage-status",
-        accessibilityValue: "REALTIME_UNCONFIRMED"
+        accessibilityCode: "REALTIME_UNCONFIRMED"
       )
 
       Divider()
@@ -449,7 +455,7 @@ struct WholeShutoJourneyReviewView: View {
         value: tariffPresentation.value,
         tint: tariffPresentation.tint,
         accessibilityIdentifier: "whole-shuto-toll-status",
-        accessibilityValue: tariffPresentation.accessibilityValue
+        accessibilityCode: tariffPresentation.accessibilityCode
       )
 
       Divider()
@@ -465,7 +471,7 @@ struct WholeShutoJourneyReviewView: View {
         value: copy.languageName(languageSettings.guidanceVoiceLocale),
         tint: KaidoInk.accentWarm,
         accessibilityIdentifier: "whole-shuto-guidance-language",
-        accessibilityValue: languageSettings.guidanceVoiceLocale.rawValue
+        accessibilityCode: languageSettings.guidanceVoiceLocale.rawValue
       )
     }
     .padding(.horizontal, 12)
@@ -480,7 +486,7 @@ struct WholeShutoJourneyReviewView: View {
   private var tariffPresentation: (
     value: String,
     tint: Color,
-    accessibilityValue: String
+    accessibilityCode: String
   ) {
     let evidence = model.activeTariffEvidence
     if model.entryIsUnconfirmed {
@@ -548,7 +554,7 @@ struct WholeShutoJourneyReviewView: View {
     value: String,
     tint: Color,
     accessibilityIdentifier: String,
-    accessibilityValue: String
+    accessibilityCode: String
   ) -> some View {
     HStack(spacing: 10) {
       Image(systemName: symbol)
@@ -567,7 +573,7 @@ struct WholeShutoJourneyReviewView: View {
     .frame(minHeight: 46)
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier(accessibilityIdentifier)
-    .accessibilityValue(accessibilityValue)
+    .kaidoAccessibilityValue(code: accessibilityCode)
   }
 
   private var startAction: some View {
@@ -591,7 +597,7 @@ struct WholeShutoJourneyReviewView: View {
         .clipShape(RoundedRectangle(cornerRadius: 9))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("whole-shuto-live-drive-blocker")
-        .accessibilityValue(blockerCode)
+        .kaidoAccessibilityValue(code: blockerCode)
       }
 
       Button {
@@ -620,8 +626,8 @@ struct WholeShutoJourneyReviewView: View {
       .disabled(!model.canStartLiveNavigation)
       .opacity(model.canStartLiveNavigation ? 1 : 0.45)
       .accessibilityIdentifier("whole-shuto-start-live-drive")
-      .accessibilityValue(
-        model.liveNavigationBlockerCode ?? "AVAILABLE"
+      .kaidoAccessibilityValue(
+        code: model.liveNavigationBlockerCode ?? "AVAILABLE"
       )
 
       // Route playback is an internal review tool, not a driver feature. It
@@ -767,7 +773,10 @@ struct WholeShutoJourneyReviewView: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier(accessibilityIdentifier)
-    .accessibilityValue(isPending ? "RESOLVING" : value)
+    .kaidoAccessibilityValue(
+      code: isPending ? "RESOLVING" : value,
+      spoken: isPending ? "" : value
+    )
   }
 
   private func distanceLabel(_ value: Double?) -> String {

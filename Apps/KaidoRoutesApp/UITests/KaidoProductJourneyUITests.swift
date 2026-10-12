@@ -214,9 +214,15 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The small diagram names Tokyo Tower in the interface language"
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
-    // The map surface stays clear of source marks: OSM attribution and its
-    // licence live in Settings, reached from the same screen.
-    XCTAssertFalse(element("whole-shuto-map-credit", in: app).exists)
+    // The network map carries its OSM credit in a corner just above the
+    // dock; the licence text stays one step away in Settings.
+    let credit = element("whole-shuto-map-credit", in: app)
+    XCTAssertTrue(credit.isHittable)
+    XCTAssertTrue(credit.label.contains("© OpenStreetMap contributors"))
+    XCTAssertLessThanOrEqual(
+      credit.frame.maxY,
+      element("whole-shuto-planning-dock", in: app).frame.minY + 1
+    )
     XCTAssertFalse(
       element("route-atlas-attribution-licence", in: app).exists
     )
@@ -291,6 +297,73 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(homeScreenshot)
   }
 
+  func testMapAttributionStaysVisibleAboveTheDock() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-NAVIGATION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "ja-JP",
+    ]
+    app.launchSilently()
+    let map = element("whole-shuto-geographic-map", in: app)
+    XCTAssertTrue(map.waitForExistence(timeout: 15))
+    // Hold the replay on the surface leg, before any junction inset rises
+    // over the foot of the map.
+    let playback = app.buttons["whole-shuto-preview-playback"]
+    XCTAssertTrue(playback.waitForExistence(timeout: 5))
+    playback.tap()
+    XCTAssertEqual(playback.value as? String, "PAUSED")
+    XCTAssertFalse(element("whole-shuto-junction-inset", in: app).exists)
+
+    let credit = element("whole-shuto-map-credit", in: app)
+    let dockTop = element("whole-shuto-position-state", in: app)
+    // MapKit's Legal link is the one link inside the map; it and the Maps
+    // logo beside it must clear both the OSM credit and the dock. XCUITest
+    // never reports MapKit's own link as hittable, so its frame is checked.
+    let legal = map.links.firstMatch
+    XCTAssertTrue(legal.waitForExistence(timeout: 15))
+    XCTAssertTrue(app.frame.contains(legal.frame))
+    XCTAssertTrue(credit.isHittable)
+    XCTAssertLessThanOrEqual(legal.frame.maxY, credit.frame.minY)
+    XCTAssertLessThanOrEqual(credit.frame.maxY, dockTop.frame.minY)
+    let portrait = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    portrait.name = "Geographic map attribution, portrait"
+    portrait.lifetime = .keepAlways
+    add(portrait)
+
+    addTeardownBlock { XCUIDevice.shared.orientation = .portrait }
+    XCUIDevice.shared.orientation = .landscapeLeft
+    let landscapeLayout = XCTNSPredicateExpectation(
+      predicate: NSPredicate { object, _ in
+        guard let app = object as? XCUIApplication else { return false }
+        return app.frame.width > app.frame.height
+          && legal.exists
+          && legal.frame.maxY <= credit.frame.minY
+          && credit.frame.maxY <= app.frame.maxY
+      },
+      object: app
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [landscapeLayout], timeout: 5),
+      .completed
+    )
+    XCTAssertTrue(app.frame.contains(legal.frame))
+    XCTAssertTrue(credit.isHittable)
+    let landscape = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    landscape.name = "Geographic map attribution, landscape"
+    landscape.lifetime = .keepAlways
+    add(landscape)
+
+    XCUIDevice.shared.orientation = .portrait
+    element("whole-shuto-map-network", in: app).tap()
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: app).waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(credit.isHittable)
+    XCTAssertLessThanOrEqual(credit.frame.maxY, dockTop.frame.minY)
+  }
+
   func testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -336,7 +409,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(back.waitForExistence(timeout: 2))
     back.tap()
 
-    _ = revealInformationRow("whole-shuto-location-privacy", in: app)
+    XCTAssertTrue(
+      revealInformationRow("whole-shuto-non-affiliation", in: app).label
+        .contains("Metropolitan Expressway Company Limited")
+    )
+    let locationPrivacy = revealInformationRow(
+      "whole-shuto-location-privacy",
+      in: app
+    )
+    let locationText = locationPrivacy.label + " "
+      + (locationPrivacy.value as? String ?? "")
+    XCTAssertTrue(locationText.contains("Not sent to Kaido"), locationText)
+    XCTAssertTrue(locationText.contains("Apple Maps"), locationText)
     _ = revealInformationRow("whole-shuto-privacy-policy", in: app)
     let sourceLicense = revealInformationRow(
       "whole-shuto-source-license",

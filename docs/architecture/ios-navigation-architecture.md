@@ -515,10 +515,10 @@ journey phase; the navigation core never learns about it. The return is
 matcher reacquires from wherever the car actually is, with ordinary recovery
 handling a PA return that lands further along.
 
-Only touch or Siri brings a rested drive back, so rest is offered — button and
-Siri alike — only while the latest fix reports the car standing still: a known
-speed of at most 1 m/s. Core Location's negative "unknown" speed is not a
-stop. Rest, reset and End advance the playback generation and a lap swap
+Only touch or Siri brings a rested drive back, so rest — button and Siri
+alike — is refused while a fresh fix reports a known speed above 1 m/s. A car
+parked under a PA roof often reports Core Location's negative "unknown" speed
+or no fresh fix at all, and neither refuses it. Rest, reset and End advance the playback generation and a lap swap
 replaces the session; a fix whose actor call outlives either is dropped rather
 than written over the state that replaced it, and a checkpoint captured for a
 session that is no longer live is not persisted. Location starts only from an

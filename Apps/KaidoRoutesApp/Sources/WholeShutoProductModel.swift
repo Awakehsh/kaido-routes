@@ -2551,14 +2551,16 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   /// Rest stops Core Location, and only touch or Siri brings the drive back,
-  /// so it is offered only while the latest fix says the car is standing
-  /// still. An unknown speed (Core Location's negative value) is not a stop.
+  /// so a fresh fix that knows the car is moving refuses it. A car parked
+  /// under a PA roof often reports an unknown speed or no fix at all, and
+  /// neither is evidence of movement.
   var canRestLiveJourney: Bool {
     guard isLiveDrive, isPlaying, phase != .completed,
-      liveDriveSession != nil,
-      liveLocationState != .stale,
-      let speed = liveVehicleSpeedMetersPerSecond, speed >= 0
+      liveDriveSession != nil
     else { return false }
+    guard liveLocationState != .stale,
+      let speed = liveVehicleSpeedMetersPerSecond, speed >= 0
+    else { return true }
     return speed <= Self.restMaximumSpeedMetersPerSecond
   }
 

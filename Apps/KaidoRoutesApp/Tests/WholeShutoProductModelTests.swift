@@ -2056,7 +2056,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotEqual(model.liveLocationState, .resting)
   }
 
-  func testRestIsOfferedOnlyToAStationaryCar() async throws {
+  func testRestIsRefusedOnlyWhileAFreshFixShowsMovement() async throws {
     let output = SpeechRecoveryAppOutput()
     output.autoFinish = true
     let model = try await speechRecoveryModel(output: output)
@@ -2084,12 +2084,21 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.isPlaying)
     XCTAssertNotEqual(model.liveLocationState, .resting)
 
-    // Core Location's negative speed is "unknown", not a stop.
+    // Parked under a PA roof Core Location often cannot measure speed; its
+    // negative "unknown" value is not evidence of movement.
     await fix("rest.unknown-speed", at: 3_000, speed: -1)
-    XCTAssertFalse(model.canRestLiveJourney)
-
-    await fix("rest.stopped", at: 4_000, speed: 0.3)
     XCTAssertTrue(model.canRestLiveJourney)
+
+    // Nor is a moving fix that has gone stale.
+    await fix("rest.moving-again", at: 4_000, speed: 12)
+    XCTAssertFalse(model.canRestLiveJourney)
+    model.evaluateLiveLocationFreshness(atMilliseconds: 4_000 + 10_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertTrue(model.canRestLiveJourney)
+
+    await fix("rest.stopped", at: 15_000, speed: 0.3)
+    XCTAssertTrue(model.canRestLiveJourney)
+    await fix("rest.unknown-at-pa", at: 16_000, speed: -1)
     _ = try await DriveControlIntent(action: .rest).perform()
     XCTAssertEqual(model.liveLocationState, .resting)
     XCTAssertFalse(model.isPlaying)

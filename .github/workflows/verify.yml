@@ -212,7 +212,7 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSiriUnmuteRestoresTheDriversVoiceMode \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testLapSwapKeepsThePositionLossCooldown \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRestingALiveDriveKeepsItsSessionAndResumesInPlace \
-            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRestIsOfferedOnlyToAStationaryCar \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRestIsRefusedOnlyWhileAFreshFixShowsMovement \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testAFixInFlightCannotUndoARestOrAnEndedDrive \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSiriResumeReportsAPausedDriveWhenTheAppIsNotInFront \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testDriveFailuresReadAsOneDrivingLine \

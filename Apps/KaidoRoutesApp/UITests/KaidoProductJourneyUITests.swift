@@ -938,12 +938,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
-      // Hatsudai is on Route 4, not on C1: it is offered for a C1 circuit
-      // only under "Prefer highways", which lets a radial entrance join the
-      // loop at a junction. Under "Avoid when possible" the recommendation
-      // is correctly the nearest entrance on C1 itself, 5 km away. The
-      // preference persists in the app container, so this test names the one
-      // it is about instead of inheriting whatever ran last.
+      // Hatsudai-minami is on C2, not on C1: it is offered for a C1 circuit
+      // only under "Prefer highways", which lets an entrance off the loop
+      // join it at a junction. Under "Avoid when possible" the
+      // recommendation is correctly the nearest entrance on C1 itself, 5 km
+      // away. The preference persists in the app container, so this test
+      // names the one it is about instead of inheriting whatever ran last.
       "-app.kaidoroutes.surface-route.preference",
       "PREFER_HIGHWAYS",
     ]
@@ -993,7 +993,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let routeTitle = element("whole-shuto-route-summary-title", in: app)
     XCTAssertTrue(routeTitle.waitForExistence(timeout: 10))
-    XCTAssertTrue(routeTitle.label.contains("4 · 高速4号新宿線"))
+    // Hatsudai-minami reaches C1 over C2 and Route 3. The Route 4 Hatsudai
+    // entrance serves only the down carriageway; it was recommended here
+    // only while Hatagaya's up ramp was bound to it.
+    XCTAssertTrue(routeTitle.label.contains("3 · 高速3号渋谷線"))
     XCTAssertTrue(routeTitle.label.contains("C1 · 高速都心環状線"))
   }
 

@@ -143,7 +143,9 @@ radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the soonest forward exits and
 every reachable exit near the entrance, and picks the lowest honestly-priced
 band. Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
-page and fare search confirm across its Bayshore and Daikoku Line ramps.
+page and fare search confirm across its Bayshore and Daikoku Line ramps, and
+its fare table bills 王子南 with 王子北, 箱崎 with 浜町 and 清洲橋, and 大井南
+with 中環大井南 as one toll point each.
 Between an entrance and an exit at one toll point the planner's toll-point
 path collapses to the ramps themselves, and the editor cannot author the
 turnaround such a trip needs, so that pair is not plannable as an exact

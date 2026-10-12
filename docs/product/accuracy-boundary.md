@@ -13,7 +13,8 @@ The product distinguishes what is known from what is still unconfirmed:
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
   definitions cover all divergent JCTs in the bundled snapshot; the
-  whole-network inventory resolves all 163 exact movement bindings. They
+  whole-network inventory resolves 163 of 165 exact movement bindings, all
+  but the two 本牧JCT movements from the restored start of K3. They
   authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.

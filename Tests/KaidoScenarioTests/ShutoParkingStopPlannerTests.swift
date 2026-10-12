@@ -40,7 +40,10 @@ struct ShutoParkingStopPlannerTests {
   @Test("multiple stops follow route order and keep the tariff pairing")
   func multipleStopsFollowRouteOrder() throws {
     let planner = try planner()
-    let base = try planner.plan(entryFacilityID: "shuto.ic.b.chidoricho", exitFacilityID: "shuto.ic.b.daikokufutou")
+    // Daikoku PA rejoins the Bayshore westbound, so a route that passes it
+    // continues to Honmoku-Futo; the Daikoku-Futo exit leaves the Daikoku
+    // Line before the parking area.
+    let base = try planner.plan(entryFacilityID: "shuto.ic.b.chidoricho", exitFacilityID: "shuto.ic.b.honmakifutou")
     let ids = ["shuto.pa.daikoku", "shuto.pa.oi-westbound"]
     let route = try planner.addingParkingStops(ids, to: base)
     #expect(try planner.addingParkingStops(ids.reversed(), to: base) == route)
@@ -54,7 +57,7 @@ struct ShutoParkingStopPlannerTests {
   @Test("a selected stop occurs once without changing loop count")
   func addsStopOnFirstLapOnly() throws {
     let planner = try planner()
-    let base = try planner.planCircuit(circuit: .daikokuYokohamaLoop, entryFacilityID: "shuto.ic.b.wangankanpachi", exitFacilityID: "shuto.ic.b.daikokufutou", laps: 2)
+    let base = try planner.planCircuit(circuit: .daikokuYokohamaLoop, entryFacilityID: "shuto.ic.b.wangankanpachi", exitFacilityID: "shuto.ic.b.honmakifutou", laps: 2)
     let options = planner.parkingStopOptions(for: base)
     let stop = try #require(options.first { $0.id == "shuto.pa.daikoku" })
     let route = try planner.addingParkingStops([stop.id], to: base)

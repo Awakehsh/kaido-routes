@@ -1,0 +1,1027 @@
+{
+  "checked_at": "2026-10-12",
+  "cut_crossings": [
+    {
+      "continuations": [
+        [
+          "osm.172358461.0.forward",
+          "osm.24039713.121.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1832672162,
+        1832672205
+      ],
+      "facility_ids": [
+        "shuto.ic.2.tengenji"
+      ],
+      "interchange": "天現寺",
+      "reason": "Route 2: the 天現寺 exit (from 下り) and the 天現寺 entrance (to 上り) both meet 明治通り. OSM draws one motorway_link chain through the signalised junction, so the graph let a route or fare path turn back to 上り without leaving the toll road.",
+      "removed_edge_ids": [
+        "osm.172358466.0.forward"
+      ],
+      "surface_ways": {
+        "1832672162": [
+          {
+            "highway": "secondary",
+            "name": "明治通り",
+            "timestamp": "2026-05-03T22:39:32Z",
+            "version": 13,
+            "way_id": 258834790
+          }
+        ],
+        "1832672205": [
+          {
+            "highway": "secondary",
+            "name": "明治通り",
+            "timestamp": "2026-05-03T22:39:32Z",
+            "version": 14,
+            "way_id": 258834779
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.390426216.0.forward",
+          "osm.23681223.62.forward"
+        ],
+        [
+          "osm.390426216.0.forward",
+          "osm.44779772.88.forward"
+        ],
+        [
+          "osm.390426219.0.forward",
+          "osm.23681223.62.forward"
+        ],
+        [
+          "osm.390426219.0.forward",
+          "osm.44779772.88.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1685150499
+      ],
+      "facility_ids": [
+        "shuto.ic.5.higashiikebukuro"
+      ],
+      "interchange": "東池袋",
+      "reason": "Route 5: both 東池袋 exits run to the signalised junction with 補助第177号線 and the entrance ramps leave it. OSM continues the link chain through the junction, so the graph turned 下り traffic back to 上り (and 上り to 下り) inside the toll road; 神田橋 to 一ツ橋 priced at 14.0 km against the operator's 34.4 km.",
+      "removed_edge_ids": [
+        "osm.390426203.0.forward"
+      ],
+      "surface_ways": {
+        "1685150499": [
+          {
+            "highway": "tertiary",
+            "name": "補助第177号線",
+            "timestamp": "2026-04-17T19:48:43Z",
+            "version": 12,
+            "way_id": 259869191
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.151175279.0.forward",
+          "osm.368085647.1.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1640003690,
+        2367334297,
+        1640003688
+      ],
+      "facility_ids": [
+        "shuto.ic.9.kiba"
+      ],
+      "interchange": "木場",
+      "reason": "Route 9: the 木場 exit (from 下り) and entrance (to 上り) meet 三ツ目通り; the link chain along the surface road let the graph turn back without leaving the toll road.",
+      "removed_edge_ids": [
+        "osm.228468520.1.forward",
+        "osm.151175275.0.forward"
+      ],
+      "surface_ways": {
+        "1640003688": [
+          {
+            "highway": "unclassified",
+            "name": null,
+            "timestamp": "2020-09-08T01:55:04Z",
+            "version": 7,
+            "way_id": 151175261
+          },
+          {
+            "highway": "primary",
+            "name": "三ツ目通り",
+            "timestamp": "2025-12-31T09:48:37Z",
+            "version": 18,
+            "way_id": 228090233
+          }
+        ],
+        "1640003690": [
+          {
+            "highway": "primary",
+            "name": "三ツ目通り",
+            "timestamp": "2025-12-31T09:48:37Z",
+            "version": 18,
+            "way_id": 228090233
+          }
+        ],
+        "2367334297": [
+          {
+            "highway": "primary",
+            "name": "三ツ目通り",
+            "timestamp": "2025-12-31T09:48:37Z",
+            "version": 7,
+            "way_id": 702669087
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.383231005.0.forward",
+          "osm.184872023.76.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        31337419,
+        2997051267,
+        31337415
+      ],
+      "facility_ids": [
+        "shuto.ic.c2.funaboribashi"
+      ],
+      "interchange": "船堀橋",
+      "reason": "C2: the 船堀橋 exit and entrance meet the 船堀橋 surface road; the link chain across it let the graph turn 内回り traffic back to 外回り inside the toll road.",
+      "removed_edge_ids": [
+        "osm.871040800.0.forward",
+        "osm.871040800.1.forward",
+        "osm.871040800.2.forward",
+        "osm.71502421.0.forward",
+        "osm.71502421.1.forward"
+      ],
+      "surface_ways": {
+        "2997051267": [
+          {
+            "highway": "primary",
+            "name": "船堀橋",
+            "timestamp": "2019-03-30T07:23:12Z",
+            "version": 10,
+            "way_id": 185216941
+          }
+        ],
+        "31337415": [
+          {
+            "highway": "primary",
+            "name": "船堀橋",
+            "timestamp": "2020-11-13T04:27:07Z",
+            "version": 1,
+            "way_id": 871040799
+          }
+        ],
+        "31337419": [
+          {
+            "highway": "primary",
+            "name": "船堀橋",
+            "timestamp": "2020-11-13T04:27:07Z",
+            "version": 13,
+            "way_id": 185216940
+          },
+          {
+            "highway": "primary",
+            "name": "船堀橋",
+            "timestamp": "2020-11-13T04:27:07Z",
+            "version": 1,
+            "way_id": 871040799
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.71365235.0.forward",
+          "osm.199311844.0.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1695812892,
+        12965525696
+      ],
+      "facility_ids": [
+        "shuto.ic.7.kinshicho"
+      ],
+      "interchange": "錦糸町",
+      "reason": "Route 7: the 錦糸町 exit and entrance meet 四ツ目通り; the link chain along it let the graph turn 上り traffic back to 下り inside the toll road.",
+      "removed_edge_ids": [
+        "osm.155035360.4.forward",
+        "osm.155035360.5.forward",
+        "osm.155035360.6.forward",
+        "osm.960810621.1.forward"
+      ],
+      "surface_ways": {
+        "12965525696": [
+          {
+            "highway": "secondary",
+            "name": "四ツ目通り",
+            "timestamp": "2025-08-22T23:52:03Z",
+            "version": 4,
+            "way_id": 960810636
+          }
+        ],
+        "1695812892": [
+          {
+            "highway": "secondary",
+            "name": "四ツ目通り",
+            "timestamp": "2025-08-22T23:52:03Z",
+            "version": 4,
+            "way_id": 960810636
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.174489009.0.forward",
+          "osm.174484920.6.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1851661479
+      ],
+      "facility_ids": [
+        "shuto.ic.k3.nagata"
+      ],
+      "interchange": "永田",
+      "reason": "K3: the 永田 exit and entrance meet 環状1号; the link chain through the junction let the graph turn 下り traffic back to 上り inside the toll road.",
+      "removed_edge_ids": [
+        "osm.174490700.1.forward"
+      ],
+      "surface_ways": {
+        "1851661479": [
+          {
+            "highway": "primary",
+            "name": "環状1号",
+            "timestamp": "2023-01-13T12:35:00Z",
+            "version": 3,
+            "way_id": 901944312
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.157807836.0.forward",
+          "osm.44422828.46.forward"
+        ],
+        [
+          "osm.157807837.0.forward",
+          "osm.817278024.131.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        308014380,
+        333117898
+      ],
+      "facility_ids": [
+        "shuto.ic.6-mukojima.tsutsumidori"
+      ],
+      "interchange": "堤通",
+      "reason": "Route 6 Mukojima: each 堤通 exit and the same-direction entrance meet 吾妻橋伊興町線; the link chain through it let a route leave the expressway and rejoin it downstream as if it had not exited.",
+      "removed_edge_ids": [
+        "osm.157812863.0.forward",
+        "osm.157812864.0.forward"
+      ],
+      "surface_ways": {
+        "308014380": [
+          {
+            "highway": "secondary",
+            "name": "吾妻橋伊興町線",
+            "timestamp": "2025-09-18T01:26:06Z",
+            "version": 25,
+            "way_id": 30234756
+          },
+          {
+            "highway": "secondary",
+            "name": "吾妻橋伊興町線",
+            "timestamp": "2025-09-18T01:26:06Z",
+            "version": 4,
+            "way_id": 157807821
+          },
+          {
+            "highway": "secondary",
+            "name": "吾妻橋伊興町線",
+            "timestamp": "2025-09-18T01:26:06Z",
+            "version": 4,
+            "way_id": 157807831
+          }
+        ],
+        "333117898": [
+          {
+            "highway": "secondary",
+            "name": "吾妻橋伊興町線",
+            "timestamp": "2025-09-18T01:26:06Z",
+            "version": 25,
+            "way_id": 30234756
+          },
+          {
+            "highway": "secondary",
+            "name": "吾妻橋伊興町線",
+            "timestamp": "2025-09-18T01:26:06Z",
+            "version": 11,
+            "way_id": 157366915
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.106629666.0.forward",
+          "osm.438367202.49.forward"
+        ],
+        [
+          "osm.28127733.0.forward",
+          "osm.44351425.110.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1226695918,
+        1226695533,
+        1226696054,
+        1226695594
+      ],
+      "facility_ids": [
+        "shuto.ic.s1.shingou"
+      ],
+      "interchange": "新郷",
+      "reason": "Kawaguchi Route: each 新郷 exit and the same-direction entrance meet 第二産業道路; the link chain across it let a route leave and rejoin downstream as if it had not exited.",
+      "removed_edge_ids": [
+        "osm.106629674.0.forward",
+        "osm.106629706.2.forward"
+      ],
+      "surface_ways": {
+        "1226695533": [
+          {
+            "highway": "primary",
+            "name": "第二産業道路",
+            "timestamp": "2021-06-10T14:44:59Z",
+            "version": 2,
+            "way_id": 931636540
+          }
+        ],
+        "1226695594": [
+          {
+            "highway": "primary",
+            "name": "第二産業道路",
+            "timestamp": "2021-06-10T14:44:59Z",
+            "version": 2,
+            "way_id": 931636539
+          }
+        ],
+        "1226695918": [
+          {
+            "highway": "primary",
+            "name": "第二産業道路",
+            "timestamp": "2021-06-10T14:44:59Z",
+            "version": 2,
+            "way_id": 931636539
+          }
+        ],
+        "1226696054": [
+          {
+            "highway": "primary",
+            "name": "第二産業道路",
+            "timestamp": "2021-06-10T14:44:59Z",
+            "version": 2,
+            "way_id": 931636540
+          }
+        ]
+      }
+    },
+    {
+      "continuations": [
+        [
+          "osm.5219577.0.forward",
+          "osm.587690676.15.forward"
+        ],
+        [
+          "osm.5219578.0.forward",
+          "osm.45661183.38.forward"
+        ]
+      ],
+      "crossing_node_ids": [
+        1856840054,
+        256189621,
+        256189622,
+        1856840052
+      ],
+      "facility_ids": [
+        "shuto.ic.1-haneda.haneda"
+      ],
+      "interchange": "羽田",
+      "reason": "Route 1 Haneda: each 羽田 exit and the same-direction entrance meet 環八通り; the link chain across it let a route leave and rejoin downstream as if it had not exited.",
+      "removed_edge_ids": [
+        "osm.37793429.2.forward",
+        "osm.37793434.2.forward"
+      ],
+      "surface_ways": {
+        "1856840052": [
+          {
+            "highway": "trunk",
+            "name": "環八通り",
+            "timestamp": "2026-09-07T05:25:52Z",
+            "version": 4,
+            "way_id": 1039808268
+          }
+        ],
+        "1856840054": [
+          {
+            "highway": "trunk",
+            "name": "環八通り",
+            "timestamp": "2026-09-07T05:25:52Z",
+            "version": 4,
+            "way_id": 1039808268
+          }
+        ],
+        "256189621": [
+          {
+            "highway": "trunk",
+            "name": "環八通り",
+            "timestamp": "2026-09-07T05:25:52Z",
+            "version": 3,
+            "way_id": 1039808270
+          }
+        ],
+        "256189622": [
+          {
+            "highway": "trunk",
+            "name": "環八通り",
+            "timestamp": "2026-09-07T05:25:52Z",
+            "version": 3,
+            "way_id": 1039808270
+          }
+        ]
+      }
+    }
+  ],
+  "input_database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914+facility-closures-20261012",
+  "input_database_sha256": "25bb4015389a8dd2b18d403df09014d6b170783cbaaa7af6435c7ef83ebcd2d8",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "operator_evidence": [
+    {
+      "read": "HTTP 429 to a scripted fetch on 2026-10-12; content taken from the two reports below.",
+      "statement": "Operator page for the 2025-10-29 switch of the Haneda Line southbound Higashi-Shinagawa to Samezu section onto the renewed structure.",
+      "url": "https://www.shutoko.jp/ss/higashishinagawa/switchoutboundlines/"
+    },
+    {
+      "published": "2025-10-24",
+      "read": "HTTP 200 on 2026-10-12",
+      "statement": "From 01:00 on 2025-10-29 the southbound route over the about 1.9 km Higashi-Shinagawa pier to Samezu reclamation section moves to the completed renewed line; the provisional southbound line ends its role. The renewed up line, used provisionally as the down line since 2020, is to return to its own role later.",
+      "url": "https://jafmate.jp/car/traffic_topics_20251024_1198216.html"
+    },
+    {
+      "published": "2025-10-22",
+      "read": "HTTP 200 on 2026-10-12",
+      "statement": "The down line switches to the renewed route at 01:00 on 2025-10-29; the up line, on a temporary detour, switches in 2026 or later.",
+      "url": "https://travel.watch.impress.co.jp/docs/news/2057800.html"
+    }
+  ],
+  "removed_ways": [
+    {
+      "reason": "highway=construction: the provisional southbound structure out of service since 2025-10-29 and not yet open as the up line. In the snapshot a northbound chain with no incoming edge.",
+      "way_id": 1181244771
+    },
+    {
+      "reason": "highway=construction: middle of the same out-of-service provisional structure.",
+      "way_id": 1087249387
+    },
+    {
+      "reason": "highway=construction: end of the same out-of-service provisional structure. In the snapshot it has no outgoing edge.",
+      "way_id": 5219300
+    }
+  ],
+  "restored_chains": [
+    {
+      "reason": "Southbound carriageway on the renewed Higashi-Shinagawa structure, open since 2025-10-29 (start_date on both ways): it continues the snapshot's southbound mainline from dead end 579720094 to dead start 36719722. Neither way is a member of relation 4256244, and together they exceed the builder's 1 km gap-connector limit.",
+      "route_id": "1_HANEDA",
+      "way_ids": [
+        1051964009,
+        1087249389
+      ]
+    },
+    {
+      "reason": "K3 carriageway leaving the Bayshore at Honmoku JCT (node 255525019) to the snapshot's K3 dead start 364541743. The way carries ref=K3 and name=首都高速狩場線 but is not a member of relation 4259160, and the builder's gap connector searches only forward from dead ends, so nothing entered K3 there.",
+      "route_id": "K3",
+      "way_ids": [
+        32403531
+      ]
+    }
+  ],
+  "review_id": "shuto-topology-review-20261012",
+  "schema_version": "1.0",
+  "source": {
+    "api": "https://api.openstreetmap.org/api/0.6",
+    "attribution": "© OpenStreetMap contributors",
+    "finding": "Route 1 Haneda southbound stopped at node 579720094 and resumed 1.8 km later at node 36719722. The two OSM ways that carry the carriageway between them opened on 2025-10-29 and are not members of route relation 4256244, and together they exceed the builder's 1 km gap-connector limit. The relation still lists the provisional structure southbound traffic left on that date; it is tagged highway=construction, the builder admitted it as motorway, and in the graph it is a northbound chain that nothing enters or leaves. K3 likewise began from nothing at Honmoku JCT: the one way that feeds it from the Bayshore is outside relation 4259160. Separately, nine interchanges join an exit ramp to an entrance ramp across the surface road they both meet, as one motorway_link chain; six of those turn traffic back in the opposite direction.",
+    "licence": "ODbL-1.0",
+    "licence_uri": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "method": "Mainline dead ends and dead starts of the snapshot graph, then the OSM ways at those nodes read from the OSM API at the versions current at the pinned extract's timestamp; operator notice confirmed by two independent reports because shutoko.jp answers HTTP 429 to scripted fetches. Surface crossings: link paths from an interchange-named exit diverge back onto a carriageway, with the OSM surface roads at the crossing nodes read from the OSM API.",
+    "read_at": "2026-10-12T08:29:54+09:00",
+    "versions_current_at": "2026-08-04T20:20:51Z"
+  },
+  "unbound_candidates": [
+    {
+      "edge_id": "osm.172358466.0.forward",
+      "facility_id": "shuto.ic.2.tengenji",
+      "side": "exit"
+    },
+    {
+      "edge_id": "osm.71502421.1.forward",
+      "facility_id": "shuto.ic.c2.funaboribashi",
+      "side": "entry"
+    },
+    {
+      "edge_id": "osm.871040800.2.forward",
+      "facility_id": "shuto.ic.c2.funaboribashi",
+      "side": "exit"
+    },
+    {
+      "edge_id": "osm.106629674.0.forward",
+      "facility_id": "shuto.ic.s1.shingou",
+      "side": "entry"
+    },
+    {
+      "edge_id": "osm.106629706.2.forward",
+      "facility_id": "shuto.ic.s1.shingou",
+      "side": "exit"
+    }
+  ],
+  "ways": [
+    {
+      "node_ids": [
+        9961798057,
+        579723380,
+        31299042,
+        13267122740
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6090779,
+          "longitude": 139.750807,
+          "node_id": 9961798057,
+          "timestamp": "2022-08-18T15:22:30Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6101619,
+          "longitude": 139.7509097,
+          "node_id": 579723380,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6169398,
+          "longitude": 139.751602,
+          "node_id": 31299042,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6195674,
+          "longitude": 139.7518971,
+          "node_id": 13267122740,
+          "timestamp": "2025-10-29T13:51:51Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "bridge:name": "東品川桟橋",
+        "construction": "motorway",
+        "foot": "no",
+        "highway": "construction",
+        "lanes": "2",
+        "layer": "3",
+        "maxspeed": "60",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "首都高速1号羽田線",
+        "name:en": "Shuto Expressway Route 1 Haneda Line",
+        "name:es": "Ruta 1 Haneda de la Autopista Shuto",
+        "name:ja": "首都高速1号羽田線",
+        "name:ko": "수도고속도로 하네다선",
+        "name:ru": "Шоссе Ханеда",
+        "note": "暫定的に下り線として供用中",
+        "oneway": "yes",
+        "ref": "1",
+        "smoothness": "excellent",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2025-10-29T13:51:51Z",
+      "version": 42,
+      "way_id": 5219300
+    },
+    {
+      "node_ids": [
+        255525019,
+        13329954052,
+        13329954048,
+        13329954050,
+        13329954049,
+        364541730,
+        13329954066,
+        364541743
+      ],
+      "nodes": [
+        {
+          "latitude": 35.4444765,
+          "longitude": 139.6676203,
+          "node_id": 255525019,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 11
+        },
+        {
+          "latitude": 35.4440074,
+          "longitude": 139.6675972,
+          "node_id": 13329954052,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.4438817,
+          "longitude": 139.6675796,
+          "node_id": 13329954048,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.4436164,
+          "longitude": 139.667526,
+          "node_id": 13329954050,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.4433646,
+          "longitude": 139.6674826,
+          "node_id": 13329954049,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.4431106,
+          "longitude": 139.6674489,
+          "node_id": 364541730,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.4428096,
+          "longitude": 139.6674198,
+          "node_id": 13329954066,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.4425085,
+          "longitude": 139.6674102,
+          "node_id": 364541743,
+          "timestamp": "2025-11-25T09:35:22Z",
+          "version": 4
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "motorway",
+        "lanes": "2",
+        "layer": "2",
+        "lit": "yes",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "首都高速狩場線",
+        "name:en": "Kanagawa Route 3 Kariba Line",
+        "name:es": "Ruta 3 Kariba (Kanagawa)",
+        "oneway": "yes",
+        "ref": "K3",
+        "smoothness": "excellent",
+        "source": "Bing 2014",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2025-12-01T14:10:10Z",
+      "version": 9,
+      "way_id": 32403531
+    },
+    {
+      "node_ids": [
+        579720094,
+        9667135216,
+        9667186817
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6197099,
+          "longitude": 139.7519973,
+          "node_id": 579720094,
+          "timestamp": "2025-10-29T13:51:51Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6139688,
+          "longitude": 139.7514134,
+          "node_id": 9667135216,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6090709,
+          "longitude": 139.7509312,
+          "node_id": 9667186817,
+          "timestamp": "2022-08-18T15:22:30Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "motorway",
+        "layer": "3",
+        "name": "首都高速1号羽田線",
+        "name:en": "Shuto Expressway Route 1 Haneda Line",
+        "name:ja": "首都高速1号羽田線",
+        "oneway": "yes",
+        "ref": "1",
+        "start_date": "2025-10-29"
+      },
+      "timestamp": "2026-07-05T12:56:27Z",
+      "version": 6,
+      "way_id": 1051964009
+    },
+    {
+      "node_ids": [
+        31299043,
+        9961798057
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6066006,
+          "longitude": 139.7505722,
+          "node_id": 31299043,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 6
+        },
+        {
+          "latitude": 35.6090779,
+          "longitude": 139.750807,
+          "node_id": 9961798057,
+          "timestamp": "2022-08-18T15:22:30Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "bridge:name": "東品川桟橋",
+        "construction": "motorway",
+        "foot": "no",
+        "highway": "construction",
+        "layer": "1",
+        "maxspeed": "60",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "首都高速1号羽田線",
+        "name:en": "Shuto Expressway Route 1 Haneda Line",
+        "name:es": "Ruta 1 Haneda de la Autopista Shuto",
+        "name:ja": "首都高速1号羽田線",
+        "name:ko": "수도고속도로 하네다선",
+        "name:ru": "Шоссе Ханеда",
+        "note": "暫定的に下り線として供用中",
+        "oneway": "yes",
+        "ref": "1",
+        "smoothness": "excellent",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2025-10-29T13:51:51Z",
+      "version": 10,
+      "way_id": 1087249387
+    },
+    {
+      "node_ids": [
+        9667186817,
+        9667186818,
+        9667186819,
+        9667186820,
+        9667186821,
+        9667186822,
+        36719722
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6090709,
+          "longitude": 139.7509312,
+          "node_id": 9667186817,
+          "timestamp": "2022-08-18T15:22:30Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6066246,
+          "longitude": 139.7506775,
+          "node_id": 9667186818,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6063602,
+          "longitude": 139.7506328,
+          "node_id": 9667186819,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6061024,
+          "longitude": 139.7505556,
+          "node_id": 9667186820,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6058677,
+          "longitude": 139.7504498,
+          "node_id": 9667186821,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6055999,
+          "longitude": 139.7502954,
+          "node_id": 9667186822,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6034415,
+          "longitude": 139.748844,
+          "node_id": 36719722,
+          "timestamp": "2025-10-29T13:51:51Z",
+          "version": 7
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "motorway",
+        "layer": "1",
+        "name": "首都高速1号羽田線",
+        "name:en": "Shuto Expressway Route 1 Haneda Line",
+        "name:ja": "首都高速1号羽田線",
+        "oneway": "yes",
+        "ref": "1",
+        "start_date": "2025-10-29"
+      },
+      "timestamp": "2026-07-05T12:56:27Z",
+      "version": 6,
+      "way_id": 1087249389
+    },
+    {
+      "node_ids": [
+        9473144138,
+        31299047,
+        9667135209,
+        9696590207,
+        9667135210,
+        31299046,
+        6050442544,
+        31299045,
+        9667259818,
+        6050442541,
+        9667135211,
+        31299043
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6036078,
+          "longitude": 139.7488125,
+          "node_id": 9473144138,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6039418,
+          "longitude": 139.7489639,
+          "node_id": 31299047,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.604083,
+          "longitude": 139.7490363,
+          "node_id": 9667135209,
+          "timestamp": "2022-04-27T04:33:46Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6042291,
+          "longitude": 139.7491275,
+          "node_id": 9696590207,
+          "timestamp": "2022-04-27T04:33:46Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6043576,
+          "longitude": 139.7492181,
+          "node_id": 9667135210,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6055265,
+          "longitude": 139.7500968,
+          "node_id": 31299046,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.6057038,
+          "longitude": 139.7502216,
+          "node_id": 6050442544,
+          "timestamp": "2022-04-15T03:58:57Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6058953,
+          "longitude": 139.7503353,
+          "node_id": 31299045,
+          "timestamp": "2022-04-15T03:58:57Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.6060731,
+          "longitude": 139.7504247,
+          "node_id": 9667259818,
+          "timestamp": "2022-04-15T03:58:57Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6062491,
+          "longitude": 139.7504914,
+          "node_id": 6050442541,
+          "timestamp": "2022-04-15T03:58:57Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6064403,
+          "longitude": 139.7505438,
+          "node_id": 9667135211,
+          "timestamp": "2022-04-15T03:58:57Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6066006,
+          "longitude": 139.7505722,
+          "node_id": 31299043,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 6
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "construction": "motorway",
+        "foot": "no",
+        "highway": "construction",
+        "lanes": "2",
+        "layer": "2",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "首都高速1号羽田線",
+        "name:en": "Shuto Expressway Route 1 Haneda Line",
+        "name:es": "Ruta 1 Haneda de la Autopista Shuto",
+        "name:ja": "首都高速1号羽田線",
+        "name:ko": "수도고속도로 하네다선",
+        "name:ru": "Шоссе Ханеда",
+        "note": "暫定的に下り線として供用中",
+        "oneway": "yes",
+        "ref": "1",
+        "smoothness": "excellent",
+        "source": "Bing 2010",
+        "start_date": "2020-06-16",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2025-10-29T13:51:51Z",
+      "version": 8,
+      "way_id": 1181244771
+    }
+  ]
+}

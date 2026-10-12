@@ -1314,22 +1314,17 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.declareEntry(facilityID: offCourse.facilityID)
     XCTAssertTrue(model.entryIsUnconfirmed)
 
-    // The band follows the declaration. The nearest upstream entrance here
-    // is the exit's own IC, whose toll-point path collapses to the ramps:
-    // there is no band rather than the minimum that collapse would quote.
+    // The band follows the declaration. A declarable entrance's ramp lies
+    // on the plan. 銀座, the exit's own IC, was offered here only while it
+    // was also bound to 京橋's entrance ramp, where this drive starts; none
+    // of the entrances offered now shares the exit's toll point.
     let exit = try XCTUnwrap(route.exitFacility)
-    let sharedTollPointEntry = try XCTUnwrap(candidates.first)
-    XCTAssertEqual(sharedTollPointEntry.nameJA, exit.nameJA)
-    model.declareEntry(facilityID: sharedTollPointEntry.facilityID)
-    XCTAssertFalse(model.entryIsUnconfirmed)
-    XCTAssertEqual(
-      model.driveEntryFacility?.facilityID,
-      sharedTollPointEntry.facilityID
+    XCTAssertFalse(
+      candidates.contains { ShutoRoutePlanner.sharesTollPoint($0, exit) }
     )
-    XCTAssertNil(model.selectedTariffBand)
 
     let namedEntry = try XCTUnwrap(
-      candidates.first { $0.nameJA != exit.nameJA }
+      candidates.first { !ShutoRoutePlanner.sharesTollPoint($0, exit) }
     )
     model.declareEntry(facilityID: namedEntry.facilityID)
     XCTAssertFalse(model.entryIsUnconfirmed)
@@ -3096,7 +3091,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       route.routePlan.id,
       "shuto.shuto.ic.c1.ginza.shuto.ic.k1.yokohamakouen.recommended"
     )
-    XCTAssertEqual(route.routePlan.occurrences.count, 789)
+    // 789 before the 2026-10-12 facility review: 銀座 and 横浜公園 now start
+    // and end on their own ramps.
+    XCTAssertEqual(route.routePlan.occurrences.count, 706)
     XCTAssertEqual(
       source.savedRouteTemplateParameters,
       [
@@ -3495,12 +3492,13 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.circuit.c2-inner-bayshore"
     )
     XCTAssertEqual(model.circuitLaps, 1)
-    // The nearest legal start is the Hatsudai radial entrance joining the
-    // loop through the all-directions Nishi-Shinjuku JCT; the exit is
-    // derived too — the driver never assembles a pairing.
+    // The nearest legal start is the loop's own Hatsudai-minami ramp; the
+    // exit is derived too — the driver never assembles a pairing. The
+    // Hatsudai radial entrance serves only Route 4 down and cannot reach
+    // the loop; it qualified only while Hatagaya's up ramp was bound to it.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.c2.hatsudaiminami"
     )
     XCTAssertNotNil(model.circuitExitFacilityID)
     XCTAssertEqual(model.circuitPairingBand?.quotedYen, 300)
@@ -3527,9 +3525,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCircuit(.c1Inner)
     await waitForCircuitPairing(model)
 
+    // Hatsudai-minami, not the Route 4 Hatsudai entrance: that one serves
+    // only the down carriageway, away from C1, and was recommended only
+    // while Hatagaya's up ramp was bound to it.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.c2.hatsudaiminami"
     )
     XCTAssertNotEqual(
       model.circuitEntryFacilityID,
@@ -3749,7 +3750,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertGreaterThan(route.distanceMeters, 100_000)
     XCTAssertEqual(
       route.routePlan.entryFacilityID,
-      "shuto.ic.4.hatsudai"
+      "shuto.ic.c2.hatsudaiminami"
     )
     XCTAssertEqual(
       Set(route.routePlan.occurrences.map(\.id)).count,

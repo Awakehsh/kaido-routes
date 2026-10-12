@@ -80,7 +80,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "scenic-harumi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "8e8c3c7ab4ec183b496a4b61427ed3f247011da2dc8348d5c9b0bac3294fadcf",
+        "d117e0c4aa0845f65f193a34ff8fc49ac76ef6a8c1d015002390c57a3cf7c88b",
       expectedReleaseID:
         "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation

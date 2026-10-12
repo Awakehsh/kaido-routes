@@ -7,7 +7,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testDaikokuRecommendationEndsAtPA() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW", "-app.kaidoroutes.language.interface", "en"]
+    app.launchArguments = ["-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW", "-app.kaidoroutes.language.interface", "en"]
     app.launchSilently()
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.wangan-daikoku-run", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 8))
@@ -35,7 +35,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testPAIsSelectedThroughDestinationSearch() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-SEARCH-PREVIEW", "-app.kaidoroutes.language.interface", "zh-Hans"]
+    app.launchArguments = ["-WHOLE-SHUTO-SEARCH-PREVIEW", "-app.kaidoroutes.language.interface", "zh-Hans"]
     app.launchSilently()
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 8))
@@ -66,7 +66,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-ROUTE-PREVIEW",
+      "-WHOLE-SHUTO-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface", "zh-Hans"
     ]
     app.launchSilently()
@@ -106,7 +106,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-SEARCH-PREVIEW",
+      "-WHOLE-SHUTO-SEARCH-PREVIEW",
       "-app.kaidoroutes.language.interface", "zh-Hans"
     ]
     app.launchSilently()
@@ -159,8 +159,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
-      "-RESET-SAVED-ROUTES",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -449,7 +447,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "en",
       "-app.kaidoroutes.surface-route.preference",
@@ -490,31 +487,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     screenshot.name = "Whole Shuto highway preference"
     screenshot.lifetime = .keepAlways
     add(screenshot)
-
-    // The launch argument only overrides what this launch *reads*; the tap
-    // above wrote the flipped preference into the app container, where it
-    // outlives the test. Switching back proves the picker moves both ways
-    // and leaves the container on the product default, which the entrance
-    // recommendation in `testHatsudaiC1ShowsLocalPairingTariffAndBackAction`
-    // depends on.
-    preference.tap()
-    let preferred = element(
-      "whole-shuto-surface-route-preference-prefer-highways",
-      in: app
-    )
-    XCTAssertTrue(preferred.waitForExistence(timeout: 3))
-    preferred.tap()
-    XCTAssertTrue(
-      [preference.label, preference.value as? String ?? ""]
-        .contains { $0.contains("Prefer highways") }
-    )
   }
 
   func testSettingsSheetCanBePulledDownAndReopened() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
@@ -545,7 +523,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-CORRUPT-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "en",
@@ -569,7 +546,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    nextLaunch.launchSilently()
+    nextLaunch.launchSilently(keepingAppState: true)
     XCTAssertTrue(
       element("whole-shuto-planning-dock", in: nextLaunch)
         .waitForExistence(timeout: 5)
@@ -583,7 +560,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-TRACK-MAP-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -619,7 +595,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-CUSTOM-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -690,8 +665,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
-      "-RESET-SAVED-ROUTES",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
@@ -779,7 +752,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       previewArgument,
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -843,7 +815,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     app.resetAuthorizationStatus(for: .location)
     setTestLocation(latitude: 35.6586, longitude: 139.7454)
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -932,7 +903,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-HATSUDAI-C1-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -942,8 +912,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
       // only under "Prefer highways", which lets an entrance off the loop
       // join it at a junction. Under "Avoid when possible" the
       // recommendation is correctly the nearest entrance on C1 itself, 5 km
-      // away. The preference persists in the app container, so this test
-      // names the one it is about instead of inheriting whatever ran last.
+      // away, so this test names the preference it is about instead of
+      // relying on the product default.
       "-app.kaidoroutes.surface-route.preference",
       "PREFER_HIGHWAYS",
     ]
@@ -1004,7 +974,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-SEARCH-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -1131,7 +1100,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-CUSTOM-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -1163,7 +1131,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-LOCATION-DENIED-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
@@ -1203,8 +1170,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let authoringApp = XCUIApplication()
     authoringApp.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
-      "-RESET-SAVED-ROUTES",
       "-WHOLE-SHUTO-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "en",
@@ -1265,7 +1230,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    reopeningApp.launchSilently()
+    reopeningApp.launchSilently(keepingAppState: true)
 
     let savedRoutes = element(
       "whole-shuto-saved-routes",
@@ -2003,7 +1968,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     app.resetAuthorizationStatus(for: .location)
     setTestLocation(latitude: 35.6586, longitude: 139.7454)
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION",
       "-app.kaidoroutes.language.interface",
       "en",
@@ -2196,7 +2160,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       previewArgument,
       "-app.kaidoroutes.language.interface",
       "en",
@@ -2260,8 +2223,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
-      "-RESET-SAVED-ROUTES",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -2524,7 +2485,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-LEGACY-PRODUCT-JOURNEY",
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",

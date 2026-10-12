@@ -1,0 +1,39 @@
+{
+  "configurations" : [
+    {
+      "id" : "5B0D2C6E-3A0F-4E52-9C1B-6B7E0A4F1D03",
+      "name" : "Default",
+      "options" : {}
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:KaidoRoutesApp.xcodeproj",
+      "identifier" : "77490D08B862452A4A0A6606",
+      "name" : "KaidoRoutesApp"
+    }
+  },
+  "testTargets" : [
+    {
+      "selectedTests" : [
+        "PhysicalAudioQualificationTests"
+      ],
+      "target" : {
+        "containerPath" : "container:KaidoRoutesApp.xcodeproj",
+        "identifier" : "8A994C962B4A54283040F521",
+        "name" : "KaidoRoutesAppTests"
+      }
+    },
+    {
+      "selectedTests" : [
+        "PhysicalAudioQualificationUITests"
+      ],
+      "target" : {
+        "containerPath" : "container:KaidoRoutesApp.xcodeproj",
+        "identifier" : "2E41B89C294C6FC3E01F0274",
+        "name" : "KaidoRoutesAppUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

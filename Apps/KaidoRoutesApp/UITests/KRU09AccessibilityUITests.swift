@@ -7,7 +7,6 @@ final class KRU09AccessibilityUITests: XCTestCase {
     for isLoading in [true, false] {
       let app = XCUIApplication()
       app.launchArguments = [
-        "-RESET-NAVIGATION-CHECKPOINT",
         "-app.kaidoroutes.language.interface", "en",
         "-app.kaidoroutes.language.guidance-voice", "ja-JP",
       ]
@@ -31,7 +30,6 @@ final class KRU09AccessibilityUITests: XCTestCase {
     continueAfterFailure = true
     let app = XCUIApplication()
     app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "en",

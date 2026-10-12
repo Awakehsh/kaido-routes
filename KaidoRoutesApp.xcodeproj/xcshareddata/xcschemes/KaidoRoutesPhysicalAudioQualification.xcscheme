@@ -57,6 +57,12 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       onlyGenerateCoverageForSpecifiedTargets = "NO">
+      <TestPlans>
+         <TestPlanReference
+            default = "YES"
+            reference = "container:Apps/KaidoRoutesApp/TestPlans/PhysicalAudio.xctestplan">
+         </TestPlanReference>
+      </TestPlans>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -67,43 +73,6 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO"
-            useTestSelectionWhitelist = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8A994C962B4A54283040F521"
-               BuildableName = "KaidoRoutesAppTests.xctest"
-               BlueprintName = "KaidoRoutesAppTests"
-               ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
-            </BuildableReference>
-            <SelectedTests>
-               <Test
-                  Identifier = "PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()">
-               </Test>
-               <Test
-                  Identifier = "PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()">
-               </Test>
-            </SelectedTests>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO"
-            useTestSelectionWhitelist = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E41B89C294C6FC3E01F0274"
-               BuildableName = "KaidoRoutesAppUITests.xctest"
-               BlueprintName = "KaidoRoutesAppUITests"
-               ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
-            </BuildableReference>
-            <SelectedTests>
-               <Test
-                  Identifier = "PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()">
-               </Test>
-            </SelectedTests>
-         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

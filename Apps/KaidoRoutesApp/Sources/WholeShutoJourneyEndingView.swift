@@ -144,7 +144,7 @@ struct WholeShutoJourneyEndingView: View {
               } label: {
                 VStack(alignment: .leading) {
                   Text(suggestion.title)
-                  Text(suggestion.subtitle).font(.caption).foregroundStyle(.secondary)
+                  Text(suggestion.displaySubtitle(copy)).font(.caption).foregroundStyle(.secondary)
                 }
               }
               .accessibilityIdentifier("whole-shuto-ending-suggestion-\(suggestion.id)")

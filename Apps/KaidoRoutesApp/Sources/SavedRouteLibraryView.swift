@@ -650,7 +650,7 @@ struct SavedRouteSavePanel: View {
       .buttonStyle(.plain)
       .disabled(!canSave)
       .accessibilityIdentifier("saved-route-save")
-      .accessibilityValue(library.lastErrorCode ?? "READY")
+      .kaidoAccessibilityValue(code: library.lastErrorCode ?? "READY")
 
       if library.lastSavedRecordID != nil {
         Text(copy.resolve(japanese: "保存しました", simplifiedChinese: "已保存", english: "Route saved"))
@@ -661,10 +661,17 @@ struct SavedRouteSavePanel: View {
         error
           != SavedRouteLibraryModelError.storeUnavailable.rawValue
       {
-        Text(error)
+        Text(
+          copy.resolve(
+            japanese: "ルートを保存できませんでした",
+            simplifiedChinese: "未能保存路线",
+            english: "Route not saved"
+          )
+        )
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .foregroundStyle(KaidoTheme.evidenceCoral)
           .accessibilityIdentifier("saved-route-save-error")
+          .kaidoAccessibilityValue(code: error)
       }
     }
     .padding(14)

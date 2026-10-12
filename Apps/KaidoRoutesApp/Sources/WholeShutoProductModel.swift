@@ -1205,11 +1205,13 @@ final class WholeShutoProductModel: ObservableObject {
     activeSurfaceStep?.instruction
   }
 
+  /// The settings model owns the first-launch defaults, so an unset language
+  /// resolves here exactly as the interface does.
   static func storedLanguageSelection() -> NavigationLanguageSelection {
-    let settings = UserDefaultsKaidoLanguagePreferenceStore()
+    let settings = KaidoLanguageSettingsModel()
     return NavigationLanguageSelection(
-      interfaceLocale: settings.interfaceLocale() ?? .simplifiedChinese,
-      guidanceVoiceLocale: settings.guidanceVoiceLocale() ?? .japanese
+      interfaceLocale: settings.interfaceLocale,
+      guidanceVoiceLocale: settings.guidanceVoiceLocale
     )
   }
 

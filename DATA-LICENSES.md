@@ -30,7 +30,7 @@ under the same ODbL 1.0 terms, attribution and source snapshot:
 
 - `c1-inner-shibakoen-shiodome-product-release.json`
 - `wangan-westbound-chidoricho-daikoku-pa-product-release.json`
-- `c2-inner-oujiminami-shikahamabashi-product-release.json`
+- `c2-inner-oujiminami-itabashihoncho-product-release.json`
 - `daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json`
 - `scenic-harumi-daikoku-pa-product-release.json`
 

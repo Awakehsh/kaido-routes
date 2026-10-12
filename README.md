@@ -88,9 +88,9 @@ swift run kaido-release validate-product \
 ```
 
 Every pull request runs the `verify` workflow, which classifies the changed
-paths, then runs the deterministic suites, critical App unit classes,
-whole-Shuto App-model journeys, and route-selection, journey-ending, and
-live-navigation UI checks in a single stable `xcodebuild` session. Documentation-only changes
+paths, then runs the deterministic suites and the `Verify` Xcode test plan —
+every App unit test plus route-selection, PA-ending, pairing, and
+live-navigation UI journeys — in a single stable `xcodebuild` session. Documentation-only changes
 finish after the lightweight classification. The `Verification gate` job
 reports the single required result. The production joint-release validator
 checks the retained K7 product artifact as a deterministic regression anchor;
@@ -98,8 +98,8 @@ it does not enroll the candidate whole-Shuto graph or grant live-navigation
 authority.
 
 Before a road test or release qualification, manually run the
-`iOS qualification` workflow once `verify` is green. It runs the complete App
-unit suite, a broader journey and compact accessibility matrix, and publishes a
+`iOS qualification` workflow once `verify` is green. It runs the `Full` test
+plan — every App unit and UI test — and a compact accessibility matrix, and publishes a
 validated unsigned Release archive. That artifact is not signed, installable
 device evidence, TestFlight delivery, or an App Store submission.
 

@@ -105,7 +105,7 @@ jobs:
               -test-enumeration-output-path "$RUNNER_TEMP/enabled-tests.json" \
               CODE_SIGNING_ALLOWED=NO
             python3 scripts/app_test_shard.py \
-              "$RUNNER_TEMP/enabled-tests.json" "$SHARD" \
+              "$RUNNER_TEMP/enabled-tests.json" "$TEST_SCOPE" "$SHARD" \
               > "$RUNNER_TEMP/shard-selection.txt"
             test_selection=()
             while IFS= read -r argument; do

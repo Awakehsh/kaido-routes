@@ -4,7 +4,7 @@
   "checked_at": "2026-10-12",
   "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
   "input_database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914+facility-closures-20261012+topology-20261012",
-  "input_database_sha256": "e926f3355ce4b8b907a1ebc335cd30bd72bbdab77439917f4bee2b7799a19525",
+  "input_database_sha256": "0fc8ffdceeadfef46735047dd76d6b24406cdb5b52200285e5c2367e718ba83e",
   "source": {
     "method": "Every available facility's candidates re-derived from the snapshot after the 2026-10-12 topology review: each ramp is the link chain from a surface end to the carriageway it merges into (entrances) or leaves (exits), parking-area ramps and closed ramps excluded. A ramp binds the interchange its OSM way name or its non-junction motorway_junction node names; an unnamed ramp binds the nearest facility offering that role on a route the ramp carries. At a route's own end the terminal carriageway edge is the toll point. Ramps of other roads (Tomei, Tohoku, Joban, Daisan-Keihin, Yokohama-Yokosuka links) bind no Shuto facility. Every candidate the builder measured keeps its distance; re-pointed ones are measured to their edge.",
     "finding": "The builder bound every edge of the facility's route within 750 m, and 613 of 1,376 candidates sat more than 200 m away: facilities started or ended on a neighbour's ramp (一ツ橋 on 西神田's, 鈴ヶ森 on 勝島's, 宝町 and 京橋 on the KK branch now called 東銀座), on the opposite direction's ramp, on parking-area return ramps (平和島 on 平和島PA's), on bare carriageway segments (大黒ふ頭 on the Bayshore through lanes, 千鳥町, 三溪園), or on links of the connecting expressways. After this review every ramp binds at most one interchange name.",
@@ -5164,7 +5164,6 @@
       ],
       "exit_edge_candidates": [
         "osm.1041332729.3.forward",
-        "osm.1189558679.2.forward",
         "osm.783636521.6.forward"
       ],
       "evidence": [
@@ -5172,14 +5171,12 @@
         "osm.732069257.0.forward: entry ramp starts at node 1734274815; way name 首都高速神奈川1号横羽線/首都高速神奈川１号横羽線; 355 m from the facility point as built",
         "osm.964191633.0.forward: entry ramp starts at node 3817775783; way name 首都高速神奈川6号川崎線; re-pointed, 97 m from the facility point",
         "osm.1041332729.3.forward: exit ramp ends at node 9586985146; way name 首都高速神奈川6号川崎線; re-pointed, 195 m from the facility point",
-        "osm.1189558679.2.forward: exit ramp ends at node 448041000; way name 首都高速神奈川6号川崎線; re-pointed, 216 m from the facility point",
         "osm.783636521.6.forward: exit ramp ends at node 821821301; way name 首都高速神奈川１号横羽線; 151 m from the facility point as built"
       ],
       "reason": "Re-bound to its own ramps only.",
       "cross_route": {
         "osm.964191633.0.forward": "大師 is one interchange the operator lists under K1 and K6. This is its only entrance joining K1 下り; OSM files the ramp under the K6 relation.",
-        "osm.1041332729.3.forward": "大師 is one interchange the operator lists under K1 and K6. This exit leaves K1 上り; OSM files the ramp under the K6 relation.",
-        "osm.1189558679.2.forward": "大師 is one interchange the operator lists under K1 and K6. This exit leaves K1 上り and K6; OSM files the ramp under the K6 relation."
+        "osm.1041332729.3.forward": "大師 is one interchange the operator lists under K1 and K6. This exit leaves K1 上り; OSM files the ramp under the K6 relation."
       },
       "expect": {
         "reaching_entrances": 130,
@@ -6067,15 +6064,13 @@
         "osm.964191633.0.forward"
       ],
       "exit_edge_candidates": [
-        "osm.1041332729.3.forward",
-        "osm.1189558679.2.forward"
+        "osm.1041332729.3.forward"
       ],
       "evidence": [
         "osm.964191633.0.forward: entry ramp starts at node 3817775783; way name 首都高速神奈川6号川崎線; 97 m from the facility point as built",
-        "osm.1041332729.3.forward: exit ramp ends at node 9586985146; way name 首都高速神奈川6号川崎線; 195 m from the facility point as built",
-        "osm.1189558679.2.forward: exit ramp ends at node 448041000; way name 首都高速神奈川6号川崎線; 210 m from the facility point as built"
+        "osm.1041332729.3.forward: exit ramp ends at node 9586985146; way name 首都高速神奈川6号川崎線; 195 m from the facility point as built"
       ],
-      "reason": "Bindings confirmed unchanged.",
+      "reason": "Bindings confirmed unchanged, less the 大師道 westbound exit branch the topology review cuts.",
       "expect": {
         "reaching_entrances": 130,
         "reachable_exits": 132

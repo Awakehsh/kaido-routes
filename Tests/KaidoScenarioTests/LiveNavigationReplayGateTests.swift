@@ -24,9 +24,8 @@
     /// weak; the gate requires fresh open-sky fixes never to get there.
     static let staleFixSeconds = 10
     static let maximumUnadmittedSeconds = 75
-    /// C2's exit road runs about 85 m beneath the Bayshore mainline it
-    /// leaves, and the exit is only recognised once the car is off it; a
-    /// 4–12 s GPS burst there adds its length.
+    /// The slowest bundled finish in replay is the Bayshore run's arrival
+    /// inside Daikoku PA, 16 s when a GPS burst coincides with it.
     static let maximumCompletionDelaySeconds = 30
     static let maximumDeviationDetectionMeters = 1_000.0
 

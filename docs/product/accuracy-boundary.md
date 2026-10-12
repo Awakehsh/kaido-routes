@@ -125,12 +125,10 @@ The product distinguishes what is known from what is still unconfirmed:
   corridor road at all near the exit, where the corridor still holds every
   alternative (it follows them for 300 m past the exit decision). A single
   exact match on a short terminal edge is not required. Driving on past the
-  exit is a deviation like any other and never finishes the journey. At
-  Shikahamabashi on the C2 loop the exit road passes about 85 m beneath the
-  Bayshore mainline; the drive reads that as the mainline at first and
-  finishes 13–16 seconds after the exit (23 seconds when a GPS burst
-  coincides in replay). A route ending in a PA completes on an admitted fix
-  inside the final PA visit.
+  exit is a deviation like any other and never finishes the journey. In
+  replay the bundled exit-ended releases (C1 at Shiodome, C2 at
+  Itabashi-honcho) finish within 9 seconds of the exit. A route ending in a
+  PA completes on an admitted fix inside the final PA visit.
 - These behaviours are proven by a deterministic 1 Hz replay of every bundled
   foreground release through the Core Location adapters, the App's tunnel
   hooks and the navigation session: ten seeds of 5–15 m GPS error with

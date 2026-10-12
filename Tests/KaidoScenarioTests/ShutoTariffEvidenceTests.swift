@@ -70,10 +70,11 @@ struct ShutoTariffEvidenceTests {
     // The Yoyogi exit serves only the down carriageway, so the legal fare
     // path from the Shinjuku up entrance rides the full C1 circuit
     // (~21.4 km). The operator fare search priced this exact pairing at
-    // 860 yen on 2026-08-04; the band's ±500 m geometry margin may quote
-    // one 10-yen step high, never low. A cheap quote here means a
-    // parking-area ramp or a neighbouring facility's ramp leaked back
-    // into the Yoyogi exit candidates.
+    // 860 yen on 2026-08-04. On the snapshot's geometry that circuit
+    // measures 22.2 km, 890 yen: the 870 this bound allowed until the
+    // 2026-10-12 facility review came from 新宿's exit ramp bound to 代々木.
+    // A cheap quote here means a parking-area ramp or a neighbouring
+    // facility's ramp leaked back into the Yoyogi exit candidates.
     let band = try planner.tariffBand(
       entryFacilityID: "shuto.ic.4.shinjuku",
       exitFacilityID: "shuto.ic.4.yoyogi",
@@ -83,9 +84,69 @@ struct ShutoTariffEvidenceTests {
     switch band {
     case .estimated(let yen):
       #expect(yen >= 860)
-      #expect(yen <= 880)
+      #expect(yen <= 890)
     default:
       Issue.record("Expected an estimated band, got \(band)")
+    }
+  }
+
+  @Test("a turn-back pairing prices the operator's Daikoku PA turnaround")
+  func turnBackPairingPricesTheDaikokuTurnaround() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // 浅田 enters only toward Yokohama and 大師 is behind it, so the fare
+    // path turns back inside 大黒PA: 21.1 km, 920 yen. The operator's fare
+    // distance for this pairing agrees with that turnaround within 0.5 km,
+    // which is why fare searches keep parking interiors; no other PA
+    // changes any pairing's fare path. Without 大黒PA this path is 25.8 km,
+    // 1,090 yen.
+    let band = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.k1.asada",
+      exitFacilityID: "shuto.ic.k1.daishi",
+      evidence: .etcNormalCarFrom2026October
+    )
+
+    switch band {
+    case .estimated(let yen):
+      #expect(yen >= 910)
+      #expect(yen <= 950)
+    default:
+      Issue.record("Expected an estimated band, got \(band)")
+    }
+  }
+
+  @Test("interchanges the operator bills together are one toll point")
+  func operatorTollPointsSpanTheirNames() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // 王子南's own ramp joins the C2 内回り, away from 鹿浜橋: 32.9 km
+    // round the loop. The operator bills it together with 王子北, whose
+    // 外回り ramp reaches 鹿浜橋 in 4.5 km, so the pairing prices the same
+    // from either name.
+    let fromOjiMinami = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.c2.oujiminami",
+      exitFacilityID: "shuto.ic.s1.shikahamabashi",
+      evidence: .etcNormalCarFrom2026October
+    )
+    let fromOjiKita = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.c2.oujikita",
+      exitFacilityID: "shuto.ic.s1.shikahamabashi",
+      evidence: .etcNormalCarFrom2026October
+    )
+    #expect(fromOjiMinami == fromOjiKita)
+    #expect(fromOjiMinami.quotedYen < 400)
+
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.c2.oujiminami", "shuto.ic.c2.oujikita"),
+      ("shuto.ic.6-mukojima.hamacho", "shuto.ic.6-mukojima.kiyosubashi"),
+      ("shuto.ic.b.ooiminami", "shuto.ic.c2.chukanooiminami"),
+    ] {
+      #expect(throws: ShutoNetworkError.sharedTollPoint) {
+        try planner.plan(
+          entryFacilityID: entryFacilityID,
+          exitFacilityID: exitFacilityID
+        )
+      }
     }
   }
 

@@ -3355,7 +3355,8 @@ final class WholeShutoProductModel: ObservableObject {
       customEntryFacilityID = entry.facilityID
       let exit = nearest(
         reachableExitCandidates.filter {
-          $0.operationalStatus == "AVAILABLE" && $0.nameJA != entry.nameJA
+          $0.operationalStatus == "AVAILABLE"
+            && !ShutoRoutePlanner.sharesTollPoint($0, entry)
         }
       )
       customExitFacilityID = exit?.facilityID

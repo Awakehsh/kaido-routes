@@ -1733,6 +1733,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
       speechOutput: output,
       languageSelectionProvider: {
         NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
@@ -1792,6 +1793,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoMultiStepSurfaceRouteResolver(),
       checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
       speechOutput: output,
       languageSelectionProvider: {
         NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)

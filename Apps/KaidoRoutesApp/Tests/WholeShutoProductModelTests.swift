@@ -5269,18 +5269,23 @@ final class WholeShutoProductModelTests: XCTestCase {
     let didReachJunction = await model.advanceSimulationToJunctionPreview()
     XCTAssertTrue(didReachJunction)
 
+    // Oi's long approach edge now carries a 900 m preparation cue, so the
+    // first cue the preview reaches is the preparation.
     let projection = try XCTUnwrap(model.presentationProjection)
     let command = try XCTUnwrap(output.commands.only)
     XCTAssertEqual(projection.interfaceLocale, .english)
     XCTAssertEqual(projection.iPhone.localizedDecisionPointName, "Oi JCT")
     XCTAssertEqual(
       projection.iPhone.localizedDisplayText,
-      "Branch left for the C2 Outer Loop"
+      "At the upcoming junction, Branch left for the C2 Outer Loop"
     )
     XCTAssertEqual(projection.iPhone.japaneseSignText, "東名・中央道")
     XCTAssertEqual(projection.carPlay.japaneseSignText, "東名・中央道")
     XCTAssertEqual(projection.voice.locale, .simplifiedChinese)
-    XCTAssertEqual(projection.voice.spokenText, "在大井枢纽向左分岔，驶入 C2 外环")
+    XCTAssertEqual(
+      projection.voice.spokenText,
+      "前方分岔，在大井枢纽向左分岔，驶入 C2 外环"
+    )
     XCTAssertEqual(command.languageCode, "zh-CN")
     XCTAssertEqual(command.spokenText, projection.voice.spokenText)
     XCTAssertTrue(command.synthesisText.contains("C 二"))

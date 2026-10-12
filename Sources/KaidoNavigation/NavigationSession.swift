@@ -39,6 +39,13 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
     self.guidancePromptEmission = guidancePromptEmission
     self.guidanceBridgeError = guidanceBridgeError
   }
+
+  /// The confidence the session admitted for this fix, after promotion and
+  /// separation from off-plan roads. Presentation reads this, never the raw
+  /// matcher value: only an admitted fix moves route progress or guidance.
+  public var admittedConfidence: LocationConfidence {
+    navigationSnapshot.locationConfidence
+  }
 }
 
 /// Serializes the live matcher and navigation reducer for one compiled RoutePlan.
@@ -57,6 +64,15 @@ public actor NavigationSession {
   private let releasedRecoveryCandidates: [RecoveryCandidate]
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
   private var requiresRestorationReacquisition: Bool
+  private let routeEdgeIDs: Set<String>
+  private let routeEdgeIDByIndex: [Int: String]
+  private let occurrenceIndexesByEdgeID: [String: [Int]]
+  private let occurrenceIndexByID: [String: Int]
+  private let corridorPredecessorEdgeIDs: [String: [String]]
+  private let routeEnd: RouteEndGeometry?
+  private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String)?
+  private var exitEvidenceCount = 0
+  private var lastMatchedOccurrenceIndex: Int?
 
   package init(
     navigationConfiguration: NavigationConfiguration,
@@ -207,6 +223,30 @@ public actor NavigationSession {
     )
     self.requiresRestorationReacquisition =
       requiresRestorationReacquisition
+    routeEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
+    routeEdgeIDByIndex = Dictionary(
+      matcherCorridor.occurrences.map { ($0.index, $0.directedEdgeID) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    occurrenceIndexByID = Dictionary(
+      matcherCorridor.occurrences.map { ($0.id, $0.index) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    occurrenceIndexesByEdgeID = Dictionary(
+      grouping: matcherCorridor.occurrences,
+      by: \.directedEdgeID
+    ).mapValues { $0.map(\.index).sorted() }
+    var predecessors: [String: [String]] = [:]
+    for edge in matcherCorridor.edges {
+      for successor in edge.successorEdgeIDs {
+        predecessors[successor, default: []].append(edge.id)
+      }
+    }
+    corridorPredecessorEdgeIDs = predecessors
+    routeEnd =
+      routePlan.destinationParkingAreaID == nil
+      ? RouteEndGeometry(routePlan: routePlan, corridor: matcherCorridor)
+      : nil
   }
 
   public var snapshot: NavigationSnapshot {
@@ -222,7 +262,9 @@ public actor NavigationSession {
   public func observe(
     _ observation: RouteMatcherObservation
   ) throws -> NavigationSessionUpdate {
-    let estimate = try matcherSession.observe(observation)
+    let matched = try matcherSession.observeWithContext(observation)
+    let estimate = matched.estimate
+    let separatedFromOffPlanRoads = matched.competingOffPlanEdgeIDs.isEmpty
     let admitsOccurrenceProgress =
       engine.snapshot.journeyPhase == .strictRoute
       || engine.snapshot.journeyPhase == .routeRecovery
@@ -233,6 +275,7 @@ public actor NavigationSession {
       || engine.snapshot.journeyPhase == .routeRecovery
     let admitsMediumConfidenceProgress =
       engine.snapshot.journeyPhase == .strictRoute
+      || engine.snapshot.journeyPhase == .routeRecovery
     let resolvesLongitudinalCandidates =
       longitudinalCandidatesAreResolved(in: estimate)
 
@@ -243,7 +286,8 @@ public actor NavigationSession {
           source: observation,
           admitsOccurrenceProgress: admitsOccurrenceProgress,
           admitsMediumConfidence: resolvesLongitudinalCandidates,
-          resolvesLongitudinalCandidates: resolvesLongitudinalCandidates
+          resolvesLongitudinalCandidates: resolvesLongitudinalCandidates,
+          separatedFromOffPlanRoads: separatedFromOffPlanRoads
         )
       )
       if engine.snapshot.signalReacquisitionStatus == .confirmed {
@@ -255,35 +299,49 @@ public actor NavigationSession {
       )
     }
 
+    let wasRecovering = engine.snapshot.journeyPhase == .routeRecovery
+    let returnOccurrenceID = wasRecovering ? earliestReturnOccurrenceID(for: estimate) : nil
     engine.observeLocation(
       Self.locationObservation(
-        from: estimate,
+        from: returnOccurrenceID.map { estimate.replacingOccurrenceID($0) } ?? estimate,
         source: observation,
         admitsOccurrenceProgress: admitsOccurrenceProgress,
         admitsMediumConfidence: admitsMediumConfidenceProgress,
-        resolvesLongitudinalCandidates: resolvesLongitudinalCandidates
+        resolvesLongitudinalCandidates: resolvesLongitudinalCandidates,
+        separatedFromOffPlanRoads: separatedFromOffPlanRoads
       )
     )
+    if wasRecovering, engine.snapshot.journeyPhase == .strictRoute,
+      let returnOccurrenceID
+    {
+      try matcherSession.restart(at: returnOccurrenceID)
+    }
     if engine.snapshot.signalReacquisitionStatus == .pending {
       return update(
         estimate: Self.restorationEstimate(from: estimate),
         guidanceProgressState: .insufficientMatcherEvidence
       )
     }
+    let continuesPastRouteEnd =
+      estimate.occurrenceID == nil
+      && estimate.confidence != .lost
+      && estimate.directedEdgeID.map(continuesPastRouteEnd) == true
+    if engine.snapshot.journeyPhase == .strictRoute {
+      observeRouteEnd(
+        estimate: estimate,
+        continuesPastRouteEnd: continuesPastRouteEnd,
+        observation: observation
+      )
+    }
     if detectsOffPlanDeviation,
-      estimate.confidence == .high,
-      estimate.occurrenceID == nil,
-      let directedEdgeID = estimate.directedEdgeID,
-      estimate.candidateEdgeIDs == [directedEdgeID],
-      !isOnActiveRecoveryPath(directedEdgeID)
+      engine.snapshot.journeyPhase == .strictRoute
+        || engine.snapshot.journeyPhase == .routeRecovery,
+      !continuesPastRouteEnd
     {
-      engine.observeBranch(
-        BranchObservation(
-          observedMovementID:
-            uniquelyReleasedRecoveryTrigger(containing: directedEdgeID)
-            ?? directedEdgeID,
-          confidence: .high
-        )
+      observeOffPlanEvidence(
+        estimate: estimate,
+        isOnReachableOffPlanEdge: matched.isOnReachableOffPlanEdge,
+        observation: observation
       )
     }
 
@@ -330,6 +388,162 @@ public actor NavigationSession {
         guidanceBridgeError: error
       )
     }
+  }
+
+  /// Fixes that place the car on an off-plan road with no RoutePlan edge
+  /// among the candidates. One such fix can be a reflection beside a
+  /// viaduct; consecutive ones mean the car took a road the plan did not.
+  static let offPlanDeviationObservationCount = 2
+  static let offPlanDeviationMaximumGapMilliseconds = 3_000
+
+  private func observeOffPlanEvidence(
+    estimate: MatcherEstimate,
+    isOnReachableOffPlanEdge: Bool,
+    observation: RouteMatcherObservation
+  ) {
+    guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters
+    else { return }
+    let continues = offPlanRun.map {
+      observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
+        <= Self.offPlanDeviationMaximumGapMilliseconds
+    } ?? false
+    let edgeID: String
+    if estimate.confidence == .lost {
+      // Beyond every corridor road: a run already on a branch has left the
+      // corridor along it. Without that run it proves nothing.
+      guard continues, let lastEdgeID = offPlanRun?.edgeID else {
+        offPlanRun = nil
+        return
+      }
+      edgeID = lastEdgeID
+    } else if estimate.occurrenceID == nil,
+      estimate.directedEdgeID == nil,
+      !estimate.candidateEdgeIDs.contains(where: routeEdgeIDs.contains)
+    {
+      // Two segments of the same off-plan road equally near the fix.
+      return
+    } else {
+      // The fix must sit on the off-plan road within the error its accuracy
+      // allows; a fix merely nearer to it than to the plan is not evidence.
+      guard isOnReachableOffPlanEdge,
+        let distance = estimate.distanceMeters,
+        distance <= 2 * max(5, observation.horizontalAccuracyMeters),
+        let directedEdgeID = estimate.directedEdgeID,
+        !estimate.candidateEdgeIDs.contains(where: routeEdgeIDs.contains),
+        !isOnActiveRecoveryPath(directedEdgeID)
+      else {
+        offPlanRun = nil
+        return
+      }
+      edgeID = directedEdgeID
+    }
+    let count = continues ? (offPlanRun?.count ?? 0) + 1 : 1
+    offPlanRun = (count, observation.observedAtMilliseconds, edgeID)
+    guard count >= Self.offPlanDeviationObservationCount else { return }
+    offPlanRun = nil
+    engine.observeBranch(
+      BranchObservation(
+        observedMovementID:
+          uniquelyReleasedRecoveryTrigger(containing: edgeID)
+          ?? branchRootEdgeID(of: edgeID)
+          ?? edgeID,
+        confidence: .high
+      )
+    )
+  }
+
+  /// The earliest occurrence of the matched edge after current progress. Off
+  /// the plan, the matcher can return to any traversal of a repeated road;
+  /// the car can only be at the next one it has not yet driven.
+  private func earliestReturnOccurrenceID(for estimate: MatcherEstimate) -> String? {
+    guard let edgeID = estimate.directedEdgeID,
+      let occurrenceID = estimate.occurrenceID,
+      let matched = routePlan.occurrence(id: occurrenceID),
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      let earliest = occurrenceIndexesByEdgeID[edgeID]?.first(where: {
+        $0 > currentIndex
+      }),
+      earliest < matched.index
+    else { return nil }
+    return routePlan.occurrences.first { $0.index == earliest }?.id
+  }
+
+  /// Whether an off-plan edge is reached only through the route's terminal
+  /// edge: the exit's own continuation past the end of the plan.
+  private func continuesPastRouteEnd(_ directedEdgeID: String) -> Bool {
+    guard let terminalEdgeID = routeEdgeIDByIndex[routePlan.occurrences.count - 1],
+      occurrenceIndexesByEdgeID[terminalEdgeID]?.count == 1,
+      let root = branchRootEdgeID(of: directedEdgeID)
+    else { return false }
+    return (corridorPredecessorEdgeIDs[root] ?? []).filter(routeEdgeIDs.contains)
+      == [terminalEdgeID]
+  }
+
+  /// The first off-plan edge of the branch an observed off-plan edge belongs
+  /// to: the edge recovery candidates name as their trigger.
+  private func branchRootEdgeID(of directedEdgeID: String) -> String? {
+    var current = directedEdgeID
+    var visited: Set<String> = [current]
+    while true {
+      let predecessors = corridorPredecessorEdgeIDs[current] ?? []
+      if predecessors.contains(where: routeEdgeIDs.contains) {
+        return current
+      }
+      guard predecessors.count == 1, let previous = predecessors.first,
+        visited.insert(previous).inserted
+      else {
+        return nil
+      }
+      current = previous
+    }
+  }
+
+  /// Fixes beyond the end of the route's last edge, once admitted progress is
+  /// in the exit tail. A 15 m terminal edge is crossed between two 1 Hz
+  /// fixes, so the exit is recognised by where the car went, not by one
+  /// exact match on that edge.
+  static let exitEvidenceObservationCount = 2
+  static let coarseFixAccuracyMeters = 30.0
+
+  private func observeRouteEnd(
+    estimate: MatcherEstimate,
+    continuesPastRouteEnd: Bool,
+    observation: RouteMatcherObservation
+  ) {
+    if estimate.confidence != .lost,
+      let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
+    {
+      lastMatchedOccurrenceIndex = index
+    }
+    guard let routeEnd,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex
+    else { return }
+    // Parallel exit ramps can withhold admitted progress for the whole
+    // tail; the matcher's own placement there is enough to look for the car
+    // having driven past the end.
+    let isInTail =
+      max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
+      >= routeEnd.tailStartIndex
+    guard isInTail || continuesPastRouteEnd else { return }
+    if engine.snapshot.locationConfidence == .high,
+      estimate.occurrenceID != nil
+    {
+      exitEvidenceCount = 0
+      return
+    }
+    // A road reachable only through the terminal edge proves the car drove
+    // it, however far admitted progress lags behind.
+    guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters,
+      continuesPastRouteEnd
+        || routeEnd.isBeyondEnd(
+          observation.coordinate,
+          matcherLost: estimate.confidence == .lost
+        )
+    else { return }
+    exitEvidenceCount += 1
+    guard exitEvidenceCount >= Self.exitEvidenceObservationCount else { return }
+    exitEvidenceCount = 0
+    engine.finishAtRouteEnd()
   }
 
   private func isOnActiveRecoveryPath(_ directedEdgeID: String) -> Bool {
@@ -458,8 +672,8 @@ public actor NavigationSession {
   ///
   /// The ordinary route matcher cannot call this path or manufacture forward
   /// continuity. The actor serializes admission with every other navigation
-  /// event and restarts route matching at the exact first occurrence only after
-  /// strict-route entry succeeds.
+  /// event and restarts route matching at the occurrence the evidence reached
+  /// only after strict-route entry succeeds.
   public func observeEntryTransitionEvidence(
     _ evidence: EntryTransitionEvidence
   ) throws -> EntryTransitionSessionUpdate {
@@ -476,24 +690,24 @@ public actor NavigationSession {
       journeyPhase: engine.snapshot.journeyPhase
     )
     entryTransitionAdmission = admission
-    if let observation = decision.engineObservation {
-      engine.observeLocation(observation)
+    if decision.status == .progressed {
+      engine.beginEntryTransition()
     }
     if decision.status == .strictRouteEntered,
-      let firstOccurrenceID = admission.context.entryTransition.firstRouteOccurrenceID
+      let firstOccurrenceID = admission.context.entryTransition.firstRouteOccurrenceID,
+      let reachedOccurrenceID = decision.reachedOccurrenceID
     {
-      if engine.snapshot.journeyPhase != .strictRoute {
-        engine.enterStrictRoute(
-          firstOccurrenceID: firstOccurrenceID,
-          trigger: "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY"
-        )
-      }
-      try matcherSession.restart(at: firstOccurrenceID)
+      engine.enterStrictRoute(
+        firstOccurrenceID: firstOccurrenceID,
+        reachedOccurrenceID: reachedOccurrenceID,
+        trigger: "VERIFIED_ROUTE_HEAD_PROGRESSION"
+      )
+      try matcherSession.restart(at: reachedOccurrenceID)
     }
     return EntryTransitionSessionUpdate(
       status: decision.status,
       rejectionReason: decision.rejectionReason,
-      acceptedTransitionEdgeIndex: decision.acceptedTransitionEdgeIndex,
+      reachedOccurrenceID: decision.reachedOccurrenceID,
       navigationSnapshot: engine.snapshot
     )
   }
@@ -726,7 +940,8 @@ public actor NavigationSession {
     source observation: RouteMatcherObservation,
     admitsOccurrenceProgress: Bool,
     admitsMediumConfidence: Bool,
-    resolvesLongitudinalCandidates: Bool
+    resolvesLongitudinalCandidates: Bool,
+    separatedFromOffPlanRoads: Bool = true
   ) -> LocationObservation {
     guard admitsOccurrenceProgress else {
       return LocationObservation(
@@ -747,13 +962,24 @@ public actor NavigationSession {
     } else {
       candidateResolution = .unknown
     }
-    let admittedConfidence: LocationConfidence =
-      estimate.confidence == .medium
-        && admitsMediumConfidence
-        && estimate.occurrenceID != nil
-        && resolvesLongitudinalCandidates
-      ? .high
-      : LocationConfidence(rawValue: estimate.confidence.rawValue) ?? .lost
+    // An off-plan road inside the candidate radius can be where the car is:
+    // a branch running beside the plan is not separated by score margin.
+    let admittedConfidence: LocationConfidence
+    switch estimate.confidence {
+    case .high:
+      admittedConfidence = separatedFromOffPlanRoads ? .high : .medium
+    case .medium:
+      admittedConfidence =
+        admitsMediumConfidence
+          && estimate.occurrenceID != nil
+          && resolvesLongitudinalCandidates
+          && separatedFromOffPlanRoads
+        ? .high : .medium
+    case .low:
+      admittedConfidence = .low
+    case .lost:
+      admittedConfidence = .lost
+    }
     return LocationObservation(
       directedEdgeID: estimate.directedEdgeID,
       matchedEntityID: estimate.directedEdgeID,
@@ -787,11 +1013,7 @@ public actor NavigationSession {
         + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
     )
     return estimate.candidateEdgeIDs.allSatisfy { candidateID in
-      (lower...upper).contains { index in
-        matcherCorridor.occurrences.first {
-          $0.index == index && $0.directedEdgeID == candidateID
-        } != nil
-      }
+      (lower...upper).contains { routeEdgeIDByIndex[$0] == candidateID }
     }
   }
 
@@ -837,5 +1059,82 @@ public actor NavigationSession {
       result[occurrence.id] = target.zone
     }
     return result
+  }
+}
+
+/// Where a route with a released exit ends, for recognising that the car has
+/// driven past it.
+private struct RouteEndGeometry: Sendable {
+  /// Occurrences that begin within this distance of the route end form the
+  /// exit tail; admitted progress must have reached it.
+  static let tailMeters = 300.0
+  static let beyondEndMeters = 15.0
+  static let lostClearanceMeters = 40.0
+
+  let tailStartIndex: Int
+  private let end: MatcherCoordinate
+  private let direction: (east: Double, north: Double)
+
+  init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
+    let edgesByID = Dictionary(
+      corridor.edges.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    let routeEdges = corridor.occurrences.sorted { $0.index < $1.index }
+      .compactMap { edgesByID[$0.directedEdgeID] }
+    guard routeEdges.count == routePlan.occurrences.count,
+      let last = routeEdges.last,
+      last.coordinates.count >= 2
+    else { return nil }
+    var remaining = 0.0
+    var tailStart = routeEdges.count - 1
+    for index in stride(from: routeEdges.count - 1, through: 0, by: -1) {
+      remaining += routeEdges[index].lengthMeters
+      guard remaining <= Self.tailMeters else { break }
+      tailStart = index
+    }
+    let end = last.coordinates[last.coordinates.count - 1]
+    let before = last.coordinates[last.coordinates.count - 2]
+    let offset = Self.planarOffset(from: before, to: end)
+    let length = hypot(offset.east, offset.north)
+    guard length > 0 else { return nil }
+    tailStartIndex = tailStart
+    self.end = end
+    direction = (offset.east / length, offset.north / length)
+  }
+
+  func isBeyondEnd(_ coordinate: MatcherCoordinate, matcherLost: Bool) -> Bool {
+    let offset = Self.planarOffset(from: end, to: coordinate)
+    let along = offset.east * direction.east + offset.north * direction.north
+    return along >= Self.beyondEndMeters
+      || (matcherLost
+        && hypot(offset.east, offset.north) >= Self.lostClearanceMeters)
+  }
+
+  private static func planarOffset(
+    from origin: MatcherCoordinate,
+    to point: MatcherCoordinate
+  ) -> (east: Double, north: Double) {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    return (
+      (point.longitude - origin.longitude) * metersPerDegree
+        * cos(origin.latitude * .pi / 180),
+      (point.latitude - origin.latitude) * metersPerDegree
+    )
+  }
+}
+
+extension MatcherEstimate {
+  fileprivate func replacingOccurrenceID(_ occurrenceID: String) -> MatcherEstimate {
+    MatcherEstimate(
+      observationID: observationID,
+      estimatedAtMilliseconds: estimatedAtMilliseconds,
+      directedEdgeID: directedEdgeID,
+      occurrenceID: occurrenceID,
+      candidateEdgeIDs: candidateEdgeIDs,
+      confidence: confidence,
+      distanceMeters: distanceMeters,
+      fractionAlongEdge: fractionAlongEdge
+    )
   }
 }

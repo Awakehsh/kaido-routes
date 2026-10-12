@@ -252,6 +252,24 @@ public struct RouteMatcherSessionConfiguration: Equatable, Sendable {
   }
 }
 
+/// One matcher step plus the corridor context the estimate alone cannot carry.
+///
+/// An off-plan road counts only where the car could actually be on it: on a
+/// branch the plan diverges onto at or after the last occurrence where the
+/// car was matched clear of every such branch. A stacked road it never left
+/// the plan for, or a ramp merging into the plan, is geometry, not a place
+/// the car can have driven to.
+public struct RouteMatcherObservationResult: Equatable, Sendable {
+  public let estimate: MatcherEstimate
+  /// Reachable off-plan corridor edges inside this fix's candidate radius
+  /// that agree with its course. While one exists, an on-plan estimate is not
+  /// separated from a road the car may be on, however large its score margin.
+  public let competingOffPlanEdgeIDs: [String]
+  /// The estimate selected an off-plan edge the car can have reached by
+  /// leaving the plan.
+  public let isOnReachableOffPlanEdge: Bool
+}
+
 public struct RouteMatcherSessionDiagnostics: Equatable, Sendable {
   public let indexedEdgeCount: Int
   public let lastQueriedEdgeCount: Int
@@ -356,6 +374,9 @@ public struct RouteMatcherSession: Sendable {
   private var lastReceivedAtMilliseconds: Int?
   private var acceptedObservationCount = 0
   private var lastQueriedEdgeCount = 0
+  private var lastMeasuredEdges: [String: EdgeMeasurement] = [:]
+  private var lastSeparatedOccurrenceIndex: Int?
+  private var lastOnPlanOccurrenceIndex: Int?
 
   fileprivate init(
     corridor: RouteMatcherCorridor,
@@ -397,6 +418,9 @@ public struct RouteMatcherSession: Sendable {
     lastReceivedAtMilliseconds = nil
     acceptedObservationCount = 0
     lastQueriedEdgeCount = 0
+    lastMeasuredEdges = [:]
+    lastSeparatedOccurrenceIndex = nil
+    lastOnPlanOccurrenceIndex = nil
   }
 
   public mutating func restart(at initialOccurrenceID: String?) throws {
@@ -408,6 +432,53 @@ public struct RouteMatcherSession: Sendable {
   public mutating func observe(_ observation: RouteMatcherObservation) throws
     -> MatcherEstimate
   {
+    try observeWithContext(observation).estimate
+  }
+
+  public mutating func observeWithContext(
+    _ observation: RouteMatcherObservation
+  ) throws -> RouteMatcherObservationResult {
+    let estimate = try estimate(for: observation)
+    let model = model
+    let selectedIndex = estimate.occurrenceID.flatMap {
+      try? model.occurrenceIndex(id: $0)
+    }
+    let upper =
+      selectedIndex
+      ?? lastOnPlanOccurrenceIndex.map {
+        $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      }
+    let lower = lastSeparatedOccurrenceIndex
+    let isReachable = { (edgeID: String) in
+      model.branchIsReachable(edgeID, from: lower, through: upper)
+    }
+    let competing = model.offPlanEdgeIDs(
+      within: lastMeasuredEdges,
+      observation: observation,
+      matchedDistanceMeters: estimate.distanceMeters,
+      matcherConfiguration: matcherConfiguration,
+      sessionConfiguration: sessionConfiguration
+    ).filter { $0 != estimate.directedEdgeID && isReachable($0) }
+    if let selectedIndex, estimate.confidence != .lost {
+      lastOnPlanOccurrenceIndex = selectedIndex
+      if estimate.confidence == .high || estimate.confidence == .medium,
+        competing.isEmpty
+      {
+        lastSeparatedOccurrenceIndex = selectedIndex
+      }
+    }
+    return RouteMatcherObservationResult(
+      estimate: estimate,
+      competingOffPlanEdgeIDs: competing,
+      isOnReachableOffPlanEdge: estimate.occurrenceID == nil
+        && estimate.confidence != .lost
+        && estimate.directedEdgeID.map(isReachable) == true
+    )
+  }
+
+  private mutating func estimate(
+    for observation: RouteMatcherObservation
+  ) throws -> MatcherEstimate {
     guard observation.isValid else {
       throw RouteAwareSwiftMatcherError.invalidObservation
     }
@@ -423,6 +494,7 @@ public struct RouteMatcherSession: Sendable {
       sessionConfiguration: sessionConfiguration
     )
     lastQueriedEdgeCount = measuredEdges.count
+    lastMeasuredEdges = measuredEdges
     let candidates = model.candidates(
       measuredEdges: measuredEdges,
       observation: observation,
@@ -604,6 +676,16 @@ public struct RouteMatcherSession: Sendable {
     var candidateEdgeIDs = measuredEdges.compactMap { edgeID, measurement in
       measurement.distanceMeters <= bestMeasuredDistance + geometryAllowance ? edgeID : nil
     }
+    if let selectedIndex = selected.state.occurrenceIndex {
+      candidateEdgeIDs.removeAll {
+        model.isOffPlan($0)
+          && !model.branchIsReachable(
+            $0,
+            from: lastSeparatedOccurrenceIndex,
+            through: selectedIndex
+          )
+      }
+    }
     candidateEdgeIDs.append(selected.state.edgeID)
     candidateEdgeIDs = candidateEdgeIDs.uniqued().sorted()
 
@@ -681,6 +763,11 @@ private struct MatcherModel: Sendable {
   let routeStatesByIndex: [Int: MatcherState]
   let occurrenceIndexesByID: [String: Int]
   let spatialIndex: CorridorSpatialIndex
+  /// For each off-plan edge, the RoutePlan occurrences from whose end it is
+  /// reachable through off-plan edges only.
+  let branchRootOccurrenceIndexes: [String: [Int]]
+  /// Route length before each occurrence index, plus the total at the end.
+  let routeDistanceBeforeIndex: [Double]
 
   init(corridor: RouteMatcherCorridor, spatialCellSizeMeters: Double) {
     self.edges = Dictionary(
@@ -712,6 +799,49 @@ private struct MatcherModel: Sendable {
       edges: corridor.edges,
       cellSizeMeters: spatialCellSizeMeters
     )
+    var distances = [0.0]
+    for state in routeStates.sorted(by: { $0.occurrenceIndex! < $1.occurrenceIndex! }) {
+      let length = edges[state.edgeID]?.lengthMeters ?? 0
+      distances.append(distances[distances.count - 1] + length)
+    }
+    routeDistanceBeforeIndex = distances
+    var roots: [String: Set<Int>] = [:]
+    for (edgeID, routeOccurrences) in occurrencesByEdgeID {
+      let indexes = routeOccurrences.map(\.index)
+      var queue = (edges[edgeID]?.successorEdgeIDs ?? [])
+        .filter { occurrencesByEdgeID[$0] == nil }
+        .sorted()
+      var seen = Set(queue)
+      while let offPlanEdgeID = queue.popLast() {
+        roots[offPlanEdgeID, default: []].formUnion(indexes)
+        for next in edges[offPlanEdgeID]?.successorEdgeIDs ?? []
+        where occurrencesByEdgeID[next] == nil && seen.insert(next).inserted {
+          queue.append(next)
+        }
+      }
+    }
+    self.branchRootOccurrenceIndexes = roots.mapValues { $0.sorted() }
+  }
+
+  func isOffPlan(_ edgeID: String) -> Bool {
+    statesByEdgeID[edgeID]?.allSatisfy { $0.occurrenceIndex == nil } == true
+  }
+
+  /// Until a fix has placed the car on the plan clear of every reachable
+  /// branch (`lower` is nil), nothing anchors where it came from, so every
+  /// off-plan road may be where it is. After that, only branches that leave
+  /// the plan at or after that occurrence can. A road reached only past the
+  /// final occurrence is where the plan ends, not a choice it competes with.
+  func branchIsReachable(_ edgeID: String, from lower: Int?, through upper: Int?)
+    -> Bool
+  {
+    if branchRootOccurrenceIndexes[edgeID] == [routeStatesByIndex.count - 1] {
+      return false
+    }
+    guard let lower else { return true }
+    return branchRootOccurrenceIndexes[edgeID]?.contains { root in
+      root >= lower && upper.map { root <= $0 } != false
+    } == true
   }
 
   func occurrenceIndex(id: String?) throws -> Int? {
@@ -790,6 +920,56 @@ private struct MatcherModel: Sendable {
     }
   }
 
+  /// Off-plan edges inside the candidate radius that are not clearly farther
+  /// from the fix than the matched edge: within twice the ambiguity
+  /// allowance the fix's reported accuracy grants. A precise fix on a ramp
+  /// is separated from the mainline beside it; a 10 m fix is not.
+  func offPlanEdgeIDs(
+    within measuredEdges: [String: EdgeMeasurement],
+    observation: RouteMatcherObservation,
+    matchedDistanceMeters: Double?,
+    matcherConfiguration: RouteAwareSwiftMatcherConfiguration,
+    sessionConfiguration: RouteMatcherSessionConfiguration
+  ) -> [String] {
+    let candidateRadius = min(
+      matcherConfiguration.maximumCandidateRadiusMeters,
+      max(
+        matcherConfiguration.minimumCandidateRadiusMeters,
+        observation.horizontalAccuracyMeters
+          * matcherConfiguration.accuracyRadiusMultiplier
+      )
+    )
+    let allowance = max(
+      sessionConfiguration.ambiguityMarginMeters,
+      min(observation.horizontalAccuracyMeters, 25)
+    )
+    let radius = min(
+      candidateRadius,
+      (matchedDistanceMeters ?? candidateRadius) + 2 * allowance
+    )
+    let course =
+      (observation.speedMetersPerSecond ?? 0) >= 2
+      ? observation.courseDegrees : nil
+    let headingTolerance = max(
+      Self.offPlanHeadingToleranceDegrees,
+      observation.courseAccuracyDegrees ?? 0
+    )
+    return measuredEdges.compactMap { edgeID, measurement in
+      guard measurement.distanceMeters <= radius,
+        isOffPlan(edgeID),
+        course.map({
+          angularDifferenceDegrees($0, measurement.bearingDegrees)
+            <= headingTolerance
+        }) ?? true
+      else { return nil }
+      return edgeID
+    }.sorted()
+  }
+
+  /// A road crossing or opposing the car's course is not a competing
+  /// hypothesis for where it is driving.
+  static let offPlanHeadingToleranceDegrees = 60.0
+
   func initialScore(for state: MatcherState, initialOccurrenceIndex: Int?) -> Double {
     guard let initialOccurrenceIndex else {
       return state.occurrenceIndex == nil ? -2 : 0
@@ -856,13 +1036,9 @@ private struct MatcherModel: Sendable {
           let previousEdge = edges[previous.state.edgeID],
           let candidateEdge = edges[candidate.state.edgeID]
         else { return negativeInfinityScore }
-        let intermediateDistance = ((previousIndex + 1)..<candidateIndex).reduce(0.0) {
-          partial, index in
-          guard let state = routeStatesByIndex[index], let edge = edges[state.edgeID] else {
-            return partial
-          }
-          return partial + edge.lengthMeters
-        }
+        let intermediateDistance =
+          routeDistanceBeforeIndex[candidateIndex]
+          - routeDistanceBeforeIndex[previousIndex + 1]
         let distance =
           (1 - previous.measurement.fractionAlong) * previousEdge.lengthMeters
           + intermediateDistance

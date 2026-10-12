@@ -617,6 +617,10 @@ final class WholeShutoProductModel: ObservableObject {
   static let surfaceRoutePreferenceDefaultsKey =
     "app.kaidoroutes.surface-route.preference"
   private var lastLiveObservationAtMilliseconds: Int?
+  /// The last fix that placed the car somewhere the drive can use. Stale
+  /// positioning — label and voice — is measured from this, never from a
+  /// single weak or ambiguous fix.
+  private var lastUsableLiveObservationAtMilliseconds: Int?
   @Published private var liveVehicleCourseDegrees: Double?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
@@ -1777,7 +1781,7 @@ final class WholeShutoProductModel: ObservableObject {
     case .surfacePreview, .boundaryTransition, .networkPreview, .completed:
       return true
     case .tunnelEstimated:
-      return liveLocationState == .available && matcherConfidence == .high
+      return liveLocationState == .available
     case .unavailable, .surfaceRoutePending, .networkDegraded, .resting, .routeInterrupted:
       return false
     }
@@ -1820,7 +1824,9 @@ final class WholeShutoProductModel: ObservableObject {
       if runtimeJourneyPhase == .routeRecovery {
         return .routeInterrupted
       }
-      guard matcherConfidence == .high, runtimeOccurrenceID != nil else {
+      // The last admitted position stands until the stale-fix path says
+      // otherwise; one unadmitted fix is not a weak position.
+      guard runtimeOccurrenceID != nil else {
         return .networkDegraded
       }
       guard let edge = activeExpresswayEdge,
@@ -2192,7 +2198,8 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying,
       phase == .expressway,
       runtimeJourneyPhase == .strictRoute,
-      matcherConfidence == .high,
+      liveLocationState == .available,
+      runtimeOccurrenceID != nil,
       let route = selectedRoute
     else {
       return false
@@ -3910,6 +3917,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    lastUsableLiveObservationAtMilliseconds = nil
     liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     resetDriveEntry()
@@ -4010,6 +4018,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationIssueCode = nil
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
+      lastUsableLiveObservationAtMilliseconds = nil
       liveVehicleCourseDegrees = nil
       failureCode = nil
 
@@ -4100,9 +4109,11 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds =
       liveLocationStartedAtMilliseconds
       ?? observation.receivedAtMilliseconds
-    liveLocationIssueCode = nil
-    liveLocationState = .available
-    scheduleLiveLocationFreshnessCheck()
+    // On the expressway only a fix the matcher placed on a corridor road
+    // keeps the position live; that is decided after the session sees it.
+    if phase != .expressway {
+      markLiveFixUsable(atMilliseconds: observation.receivedAtMilliseconds)
+    }
     if showsDriveRecord {
       driveRecord.observe(
         speedMetersPerSecond: observation.speedMetersPerSecond,
@@ -4189,20 +4200,34 @@ final class WholeShutoProductModel: ObservableObject {
         )
         matcherConfidence = evidence.confidence
         applyLiveActorSnapshot(update.navigationSnapshot)
+        // A fix that does not yet prove the ramp is not a weak position:
+        // only the stale-fix path may say that.
         if let rejection = update.rejectionReason {
-          liveLocationState = .degraded
           liveLocationIssueCode = rejection.rawValue
         }
       case .expressway:
         let update = try await session.observe(observation)
         applyNavigationUpdate(update)
         if phase == .completed { return }
+        if update.matcherEstimate.confidence == .lost {
+          evaluateLiveLocationFreshness(
+            atMilliseconds: observation.receivedAtMilliseconds
+          )
+        } else {
+          markLiveFixUsable(atMilliseconds: observation.receivedAtMilliseconds)
+        }
+        // The session recognises the exit from where the car went.
+        if update.navigationSnapshot.journeyPhase == .exitTransition {
+          applyLiveActorSnapshot(update.navigationSnapshot)
+          await continueAfterExpresswayExit(using: session)
+          break
+        }
         await synchronizeLiveTunnelState(
           from: update.matcherEstimate,
           session: session
         )
         if update.navigationSnapshot.journeyPhase == .strictRoute,
-          update.matcherEstimate.confidence == .high
+          update.admittedConfidence == .high
         {
           refreshTunnelEstimateAnchor(from: envelope)
         } else if update.navigationSnapshot.journeyPhase == .strictRoute {
@@ -4214,23 +4239,6 @@ final class WholeShutoProductModel: ObservableObject {
           )
         } else {
           clearTunnelEstimate()
-        }
-        liveLocationState =
-          update.matcherEstimate.confidence == .high
-          ? .available : .degraded
-        if update.matcherEstimate.confidence != .high {
-          liveLocationIssueCode =
-            "LIVE_MATCHER_CONFIDENCE_"
-            + update.matcherEstimate.confidence.rawValue
-        }
-        if update.matcherEstimate.confidence == .high,
-          runtimeOccurrenceID
-            == selectedRoute?.routePlan.occurrences.last?.id,
-          progressFraction >= 0.995
-        {
-          let snapshot = await session.finishDrive()
-          applyLiveActorSnapshot(snapshot)
-          await continueAfterExpresswayExit(using: session)
         }
       case .exitTransition:
         guard var adapter = liveSurfaceEgressAdapter else {
@@ -4390,6 +4398,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
+    lastUsableLiveObservationAtMilliseconds = nil
     liveVehicleCourseDegrees = nil
     matcherConfidence = .low
     clearTunnelEstimate()
@@ -4455,6 +4464,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationIssueCode = nil
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
+      lastUsableLiveObservationAtMilliseconds = nil
       liveVehicleCourseDegrees = nil
       matcherConfidence = .low
       clearTunnelEstimate()
@@ -4736,6 +4746,7 @@ final class WholeShutoProductModel: ObservableObject {
     if phase == .entryTransition || phase == .expressway {
       speechCoordinator?.resume()
       guard await restoreObservationReplayIfNeeded() else { return }
+      restoredFromCheckpoint = false
       await stepObservationReplay()
     } else {
       tick()
@@ -4867,6 +4878,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    lastUsableLiveObservationAtMilliseconds = nil
     liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     lastSurfaceRerouteAttemptAtMilliseconds = nil
@@ -5278,7 +5290,11 @@ final class WholeShutoProductModel: ObservableObject {
     if update.guidanceProgressState != .resolved {
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
     }
-    matcherConfidence = update.matcherEstimate.confidence
+    // Only the session's admitted confidence moves the position, distance
+    // and heading; a raw matcher result below HIGH is routine at 1 Hz.
+    matcherConfidence = MatcherConfidence(
+      rawValue: update.admittedConfidence.rawValue
+    )
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
     if isLiveDrive, wasRecovering, update.navigationSnapshot.journeyPhase == .strictRoute {
@@ -5323,7 +5339,7 @@ final class WholeShutoProductModel: ObservableObject {
       progressFraction = 0
     }
     guard phase == .expressway else { return }
-    guard
+    guard update.admittedConfidence == .high,
       let progress = runtimeAssets?.project(
         update.matcherEstimate
       ),
@@ -5391,7 +5407,7 @@ final class WholeShutoProductModel: ObservableObject {
       else { return false }
       return speechCoordinator.startedIdentities.contains(command.identity)
     case .expressway:
-      guard matcherConfidence == .high,
+      guard hasCurrentGuidancePosition,
         let projection = presentationProjection,
         projection.voice.distanceMeters > 0
       else { return false }
@@ -5976,6 +5992,13 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  private func markLiveFixUsable(atMilliseconds milliseconds: Int) {
+    lastUsableLiveObservationAtMilliseconds = milliseconds
+    liveLocationIssueCode = nil
+    liveLocationState = .available
+    scheduleLiveLocationFreshnessCheck()
+  }
+
   private func scheduleLiveLocationFreshnessCheck(
     afterMilliseconds: Int = WholeShutoProductModel.liveLocationStaleAfterMilliseconds
   ) {
@@ -5997,7 +6020,7 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     guard isLiveDrive, isPlaying else { return }
     let reference =
-      lastLiveObservationAtMilliseconds
+      lastUsableLiveObservationAtMilliseconds
       ?? liveLocationStartedAtMilliseconds
     guard let reference,
       nowMilliseconds - reference
@@ -6008,7 +6031,10 @@ final class WholeShutoProductModel: ObservableObject {
         scheduleTunnelEstimateRefreshIfNeeded(atMilliseconds: nowMilliseconds)
         return
       }
-      scheduleLiveLocationFreshnessCheck()
+      scheduleLiveLocationFreshnessCheck(
+        afterMilliseconds: Self.liveLocationStaleAfterMilliseconds
+          - max(0, reference.map { nowMilliseconds - $0 } ?? 0)
+      )
       return
     }
     liveLocationState = .stale
@@ -6021,7 +6047,11 @@ final class WholeShutoProductModel: ObservableObject {
       positionLossAnnouncedAtMilliseconds = nowMilliseconds
       announceJourneyNotice(.positionLost)
     }
-    liveLocationIssueCode = "CORE_LOCATION_NO_RECENT_FIX"
+    liveLocationIssueCode =
+      lastLiveObservationAtMilliseconds.map {
+        nowMilliseconds - $0 < Self.liveLocationStaleAfterMilliseconds
+      } == true
+      ? "LIVE_NO_FIX_ON_ROUTE" : "CORE_LOCATION_NO_RECENT_FIX"
     matcherConfidence = .low
     updateTunnelEstimate(atMilliseconds: nowMilliseconds)
     scheduleTunnelEstimateRefreshIfNeeded(
@@ -6178,13 +6208,16 @@ final class WholeShutoProductModel: ObservableObject {
     return matchingCandidates.count == 1 ? matchingCandidates[0] : nil
   }
 
+  /// Presentation only: the released detour is drawn from where the matcher
+  /// places the car on it. Off the plan every neighbouring branch segment
+  /// counts against the raw confidence, so it is not gated on raw HIGH.
   private func updateReleasedRecoveryPosition(
     from estimate: MatcherEstimate
   ) {
     guard
-      estimate.confidence == .high,
+      estimate.confidence != .lost,
+      estimate.occurrenceID == nil,
       let directedEdgeID = estimate.directedEdgeID,
-      estimate.candidateEdgeIDs == [directedEdgeID],
       let targetOccurrenceID = runtimeRecoveryTargetOccurrenceID,
       releasedRecoveryCandidate(
         targetOccurrenceID: targetOccurrenceID,

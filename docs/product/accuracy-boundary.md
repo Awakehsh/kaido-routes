@@ -58,6 +58,51 @@ The product distinguishes what is known from what is still unconfirmed:
   tunnel, field, acoustic, or CarPlay qualification. Tunnel coasting is an
   explicitly low-confidence presentation aid, not dead-reckoning authority;
   spoken expressway guidance still covers reviewed junction movements only.
+- On the expressway, route progress and spoken guidance move only on a fix the
+  navigation session admits. A fix is not admitted while a road the car could
+  have turned onto — a branch leaving the route at or after the last point the
+  car was matched clear of every branch — lies within twice the error its
+  reported accuracy allows. The matcher corridor follows every such branch
+  until it is 125 m from the route, so a branch running a few metres beside
+  the plan is visible instead of being mistaken for it. Two consecutive fixes
+  on such a branch, with no route road among the candidates, end strict-route
+  navigation: the car follows a released detour if one exists, otherwise the
+  route is interrupted and only an admitted fix on a later occurrence of the
+  same plan resumes it. No U-turn, reversal or nearby exit is invented.
+  Where two roads run within GPS error of each other — stacked carriageways,
+  a ramp alongside the mainline before it separates — admitted progress pauses
+  until they separate (up to about 60 seconds in replay); the position and
+  heading hold, and the drive is called weak only after 10 seconds without a
+  fix the matcher can place on any corridor road. One reviewed cue cannot be
+  given in time for that reason: the Namamugi second split on the Daikoku
+  loop, 252 m after the first, before which the first split's other branch
+  never separates from the planned one. It is withheld rather than spoken for
+  a road the car may not be on.
+- A released detour is limited to one whose every junction decision after the
+  wrong turn is a released movement binding and which never leaves the
+  expressway by an exit ramp. The C1 inner release has none (its former
+  Edobashi detour turned through the Hakozaki rotary), so a wrong turn there is
+  the unavailable-recovery state.
+- Entry is confirmed only after fixes have followed the route head away from
+  the straight line the reviewed approach arrives along: each fix is weighed
+  for lying on the route head or on that line, normalised by its accuracy,
+  where the two are at least 20 m apart. A street running straight on beneath
+  or beside a ramp therefore never confirms entry, and confirmation comes
+  some way along the route head (about 300 m at a typical entrance, up to
+  about 1.6 km). A street that curves exactly with the ramp, or a ramp whose
+  route head never leaves its approach line, cannot be told apart by geometry:
+  entry then stays unconfirmed and the driver's "already on the expressway"
+  join remains the way to start (one direction of Toda-minami, along one
+  route-head path within 1.5 km, of 138 directional entrances).
+- The drive finishes at a released exit when fixes show the car past the end
+  of the route's last edge, or on the exit ramp's own continuation, after
+  progress reached the exit tail; a single exact match on a short terminal
+  edge is no longer required. A route ending in a PA completes on an admitted
+  fix inside the final PA visit.
+- These behaviours are proven by a deterministic 1 Hz replay of every bundled
+  foreground release through the Core Location adapters and the navigation
+  session, with seeded 5–15 m GPS error, 30–60 m bursts and correlated error.
+  That is synthetic evidence of deterministic behaviour, not field accuracy.
 
 Inspect one exact planned route's expressway release gaps:
 

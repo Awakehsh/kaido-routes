@@ -7,15 +7,14 @@
   ///
   /// This adapter produces evidence only. It cannot advance the journey: the
   /// `NavigationSession` actor independently checks release identity, time,
-  /// ambiguity, heading, simulation provenance, and either the complete ordered
-  /// edge sequence or the bounded consecutive route-head contract before it
-  /// grants strict-route entry.
+  /// heading, simulation provenance and ordered route-head progression before
+  /// it grants strict-route entry. The matcher's own estimate is passed on
+  /// unchanged; no fix is relabelled onto the first route edge.
   public struct CoreLocationEntryTransitionAdapter: Sendable {
     public let context: EntryTransitionAdmissionContext
 
     private var matcherSession: RouteMatcherSession
     private let edgeByID: [String: RouteMatcherDirectedEdge]
-    private let firstRouteContinuityEdgeIDs: Set<String>
 
     public init(
       context: EntryTransitionAdmissionContext,
@@ -33,21 +32,6 @@
         context.matcherCorridor.edges.map { ($0.id, $0) },
         uniquingKeysWith: { first, _ in first }
       )
-      let routeHeadEdgeIDs = Set(
-        context.matcherCorridor.occurrences
-          .sorted { $0.index < $1.index }
-          .prefix(RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow)
-          .map(\.directedEdgeID)
-      )
-      let entryHeadEdgeIDs = routeHeadEdgeIDs
-        .union(context.entryTransition.directedEdgeIDs)
-        .union([context.firstRouteDirectedEdgeID])
-      firstRouteContinuityEdgeIDs = entryHeadEdgeIDs.union(
-        context.matcherCorridor.edges.compactMap { edge in
-          edge.successorEdgeIDs.isDisjoint(with: entryHeadEdgeIDs)
-            ? nil : edge.id
-        }
-      )
     }
 
     public mutating func adapt(
@@ -55,46 +39,22 @@
     ) throws -> EntryTransitionEvidence {
       let observation = envelope.observation
       let estimate = try matcherSession.observe(observation)
-      let firstRouteOccurrenceID =
-        context.entryTransition.firstRouteOccurrenceID
-      let usesFirstRouteContinuity =
-        (estimate.occurrenceID == firstRouteOccurrenceID
-          || estimate.directedEdgeID == context.firstRouteDirectedEdgeID
-          || estimate.candidateEdgeIDs.contains(
-            context.firstRouteDirectedEdgeID
-          ))
-        && estimate.confidence != .lost
-        && Set(estimate.candidateEdgeIDs)
-          .isSubset(of: firstRouteContinuityEdgeIDs)
-      let directedEdgeID = usesFirstRouteContinuity
-        ? context.firstRouteDirectedEdgeID : estimate.directedEdgeID
-      let candidateEdgeIDs = usesFirstRouteContinuity
-        ? [context.firstRouteDirectedEdgeID] : estimate.candidateEdgeIDs
-      let confidence: MatcherConfidence = usesFirstRouteContinuity
-        ? .medium : estimate.confidence
-      let headingError: Double? = directedEdgeID.flatMap { edgeID in
-        guard let course = observation.courseDegrees,
-          observation.speedMetersPerSecond.map({ $0 >= 2 }) == true,
-          let edge = edgeByID[edgeID],
-          let bearing = Self.closestBearing(
-            to: observation.coordinate,
-            on: edge.coordinates
-          )
-        else {
-          return nil
-        }
-        return Self.angularDifferenceDegrees(course, bearing)
-      }
-
       return EntryTransitionEvidence(
         context: context,
         observationID: observation.id ?? "",
         observedAtMilliseconds: observation.observedAtMilliseconds,
         receivedAtMilliseconds: observation.receivedAtMilliseconds,
-        directedEdgeID: directedEdgeID,
-        candidateEdgeIDs: candidateEdgeIDs,
-        confidence: confidence,
-        headingErrorDegrees: headingError,
+        directedEdgeID: estimate.directedEdgeID,
+        occurrenceID: estimate.occurrenceID,
+        candidateEdgeIDs: estimate.candidateEdgeIDs,
+        confidence: estimate.confidence,
+        coordinate: observation.coordinate,
+        horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
+        distanceMeters: estimate.distanceMeters,
+        headingErrorDegrees: headingError(
+          estimate: estimate,
+          observation: observation
+        ),
         isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
       )
     }
@@ -110,7 +70,28 @@
     ) throws -> RouteJoinEvidence {
       let observation = envelope.observation
       let estimate = try matcherSession.observe(observation)
-      let headingError: Double? = estimate.directedEdgeID.flatMap { edgeID in
+      return RouteJoinEvidence(
+        context: context,
+        observationID: observation.id ?? "",
+        observedAtMilliseconds: observation.observedAtMilliseconds,
+        receivedAtMilliseconds: observation.receivedAtMilliseconds,
+        occurrenceID: estimate.occurrenceID,
+        directedEdgeID: estimate.directedEdgeID,
+        candidateEdgeIDs: estimate.candidateEdgeIDs,
+        confidence: estimate.confidence,
+        headingErrorDegrees: headingError(
+          estimate: estimate,
+          observation: observation
+        ),
+        isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
+      )
+    }
+
+    private func headingError(
+      estimate: MatcherEstimate,
+      observation: RouteMatcherObservation
+    ) -> Double? {
+      estimate.directedEdgeID.flatMap { edgeID in
         guard let course = observation.courseDegrees,
           observation.speedMetersPerSecond.map({ $0 >= 2 }) == true,
           let edge = edgeByID[edgeID],
@@ -123,19 +104,6 @@
         }
         return Self.angularDifferenceDegrees(course, bearing)
       }
-
-      return RouteJoinEvidence(
-        context: context,
-        observationID: observation.id ?? "",
-        observedAtMilliseconds: observation.observedAtMilliseconds,
-        receivedAtMilliseconds: observation.receivedAtMilliseconds,
-        occurrenceID: estimate.occurrenceID,
-        directedEdgeID: estimate.directedEdgeID,
-        candidateEdgeIDs: estimate.candidateEdgeIDs,
-        confidence: estimate.confidence,
-        headingErrorDegrees: headingError,
-        isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
-      )
     }
 
     public mutating func resetMatcher() {

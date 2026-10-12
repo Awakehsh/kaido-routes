@@ -706,13 +706,24 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     defer {
       isDeterministicPreviewTraceRunning = false
     }
-    for (longitude, timestamp) in [
-      (139.75925, 1_000.0),
-      (139.75975, 1_001.0),
-      (139.76025, 1_002.0),
+    // Up the approach ramp, then along the route head until it has left
+    // the approach's straight line, as entry evidence requires.
+    for (latitude, longitude, course, timestamp) in [
+      (35.67925, 139.7594, 33.0, 1_000.0),
+      (35.68, 139.7602, 90.0, 1_001.0),
+      (35.68, 139.7604, 90.0, 1_002.0),
+      (35.68, 139.7606, 90.0, 1_003.0),
+      (35.68, 139.7607, 90.0, 1_004.0),
     ] {
       await process(
-        [Self.previewLocation(longitude: longitude, timestamp: timestamp)],
+        [
+          Self.previewLocation(
+            latitude: latitude,
+            longitude: longitude,
+            course: course,
+            timestamp: timestamp
+          )
+        ],
         receivedAt: Date(timeIntervalSince1970: timestamp)
       )
     }
@@ -977,18 +988,20 @@ final class ProductNavigationRuntimeModel: ObservableObject {
   }
 
   private static func previewLocation(
+    latitude: Double,
     longitude: Double,
+    course: Double,
     timestamp: TimeInterval
   ) -> CLLocation {
     CLLocation(
       coordinate: CLLocationCoordinate2D(
-        latitude: 35.68,
+        latitude: latitude,
         longitude: longitude
       ),
       altitude: 0,
       horizontalAccuracy: 5,
       verticalAccuracy: 5,
-      course: 90,
+      course: course,
       courseAccuracy: 2,
       speed: 10,
       speedAccuracy: 1,

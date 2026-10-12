@@ -1035,17 +1035,24 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     networkSnapshotID: networkSnapshot.id,
     routePlanID: routePlan.id,
     edges: [
-      matcherEdge(
-        "test.entry-transition.surface",
-        139.7590,
-        139.7595,
-        successors: ["test.entry-transition.ramp"]
+      // The approach climbs from the south-west, so the route head leaves
+      // the approach's straight line and entry evidence can tell the two
+      // apart.
+      RouteMatcherDirectedEdge(
+        id: "test.entry-transition.surface",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.6790, longitude: 139.7592),
+          MatcherCoordinate(latitude: 35.6795, longitude: 139.7596),
+        ],
+        successorEdgeIDs: ["test.entry-transition.ramp"]
       ),
-      matcherEdge(
-        "test.entry-transition.ramp",
-        139.7595,
-        139.7600,
-        successors: ["test.edge.loop"]
+      RouteMatcherDirectedEdge(
+        id: "test.entry-transition.ramp",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.6795, longitude: 139.7596),
+          MatcherCoordinate(latitude: 35.6800, longitude: 139.7600),
+        ],
+        successorEdgeIDs: ["test.edge.loop"]
       ),
       matcherEdge(
         "test.edge.loop",

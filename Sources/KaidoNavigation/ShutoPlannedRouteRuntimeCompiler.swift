@@ -279,9 +279,10 @@ public struct ShutoRuntimeAssetIdentity: Codable, Equatable, Sendable {
 
 /// Exact matcher inputs compiled from one selected whole-Shuto route.
 ///
-/// The corridor includes every ordered RoutePlan edge plus graph-adjacent
-/// alternatives at route nodes. Alternative edges let the matcher abstain or
-/// report a deviation without allowing a provider to mutate the RoutePlan.
+/// The corridor includes every ordered RoutePlan edge, graph-adjacent edges
+/// at route nodes, and each diverging branch until it is clear of the route.
+/// Alternative edges let the matcher abstain or report a deviation without
+/// allowing a provider to mutate the RoutePlan.
 public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   public let runtimeAssetIdentity: ShutoRuntimeAssetIdentity
   public let routePlan: RoutePlan
@@ -684,9 +685,15 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let routeNodeIDs = Set(
       route.edges.flatMap { [$0.fromNodeID, $0.toNodeID] }
     )
+    let branchEdgeIDs = divergingBranchEdgeIDs(
+      route: route,
+      context: context,
+      routeNodeIDs: routeNodeIDs
+    )
     let corridorDatabaseEdges = database.edges.filter {
       routeNodeIDs.contains($0.fromNodeID)
         || routeNodeIDs.contains($0.toNodeID)
+        || branchEdgeIDs.contains($0.edgeID)
     }
     let corridorEdgeIDs = Set(corridorDatabaseEdges.map(\.edgeID))
     let outgoingEdges = Dictionary(
@@ -865,15 +872,19 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       var prepareAnchorIndex: Int?
       // Keep preparation on the current approach, after the preceding
       // decision. Closely spaced movements retain their compound/commit cue.
+      // A long approach edge can span the whole preparation window; the
+      // occurrence containing the 900 m point then carries the anchor.
       for index in stride(from: movement.index - 1, through: previousMovementIndex, by: -1) {
         distance += route.edges[index].lengthMeters
-        if distance > 900 { break }
-        if distance >= commit.triggerDistanceMeters + 200,
-          index < commitAnchor.index,
-          !claimedGuidanceAnchorOccurrenceIDs.contains(route.routePlan.occurrences[index].id)
-        {
-          prepareAnchorIndex = index
+        let qualifies =
+          distance >= commit.triggerDistanceMeters + 200
+          && index < commitAnchor.index
+          && !claimedGuidanceAnchorOccurrenceIDs.contains(route.routePlan.occurrences[index].id)
+        if distance > 900 {
+          if prepareAnchorIndex == nil, qualifies { prepareAnchorIndex = index }
+          break
         }
+        if qualifies { prepareAnchorIndex = index }
       }
       guard let prepareAnchorIndex else { return [commit] }
       let anchor = route.routePlan.occurrences[prepareAnchorIndex]
@@ -981,6 +992,79 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       routeEdges: routeMatcherEdges,
       routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
     )
+  }
+
+  /// How far a branch leaving the plan must be from every route edge before
+  /// the corridor may stop following it: the widest candidate search plus
+  /// the widest ambiguity allowance the matcher applies.
+  static let branchSeparationMeters = 125.0
+  private static let maximumBranchExtensionMeters = 5_000.0
+
+  /// Edges that continue each available branch away from the plan until the
+  /// branch is `branchSeparationMeters` from every route edge or rejoins a
+  /// route node. Without them only a branch's first OSM segment exists, so a
+  /// car on a branch running a few metres beside the plan can match nothing
+  /// but the planned edge.
+  private static func divergingBranchEdgeIDs(
+    route: ShutoPlannedRoute,
+    context: NetworkContext,
+    routeNodeIDs: Set<Int64>
+  ) -> Set<String> {
+    let edges = route.edges
+    guard edges.count > 1,
+      let origin = context.nodesByID[edges[0].fromNodeID]
+    else { return [] }
+    let routeGeometry = RouteProximityIndex(
+      segments: edges.compactMap { edge in
+        guard let from = context.nodesByID[edge.fromNodeID],
+          let to = context.nodesByID[edge.toNodeID]
+        else { return nil }
+        return (from.coordinate, to.coordinate)
+      },
+      origin: origin.coordinate,
+      cellSizeMeters: branchSeparationMeters
+    )
+    var included: Set<String> = []
+    var examinedDecisions: Set<String> = []
+    for index in 0..<(edges.count - 1) {
+      let incoming = edges[index]
+      let planned = edges[index + 1]
+      guard
+        examinedDecisions.insert("\(incoming.edgeID)|\(planned.edgeID)")
+          .inserted
+      else { continue }
+      let alternatives = (context.outgoingEdges[incoming.toNodeID] ?? [])
+        .filter {
+          $0.edgeID != planned.edgeID
+            && $0.toNodeID != incoming.fromNodeID
+            && ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+              networkSnapshotID: context.database.networkSnapshotID,
+              incomingDirectedEdgeID: incoming.edgeID,
+              startDirectedEdgeID: $0.edgeID
+            ) == nil
+        }
+      var queue = alternatives.map { (edge: $0, travelled: 0.0) }
+      var cursor = 0
+      while cursor < queue.count {
+        let (edge, travelled) = queue[cursor]
+        cursor += 1
+        guard included.insert(edge.edgeID).inserted else { continue }
+        guard !routeNodeIDs.contains(edge.toNodeID),
+          let end = context.nodesByID[edge.toNodeID],
+          routeGeometry.distanceMeters(to: end.coordinate)
+            <= branchSeparationMeters
+        else { continue }
+        let reached = travelled + edge.lengthMeters
+        guard reached < maximumBranchExtensionMeters else { continue }
+        for next in context.outgoingEdges[edge.toNodeID] ?? []
+        where next.toNodeID != edge.fromNodeID
+          && !included.contains(next.edgeID)
+        {
+          queue.append((next, reached))
+        }
+      }
+    }
+    return included
   }
 
   private static func canonicalSHA256<Value: Encodable>(
@@ -1099,27 +1183,168 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     )
   }
 
+  /// Graph facts shared by route and recovery-path decision classification.
+  private struct DecisionContext {
+    let database: ShutoNetworkDatabase
+    let outgoing: [Int64: [ShutoNetworkDatabase.Edge]]
+    let waysByID: [Int64: ShutoNetworkDatabase.Way]
+    let availableRouteIDs: Set<String>
+    let officialJunctionNodeIDs: Set<Int64>
+    let surfaceExitCandidateEdgeIDs: Set<String>
+
+    init(database: ShutoNetworkDatabase) {
+      self.database = database
+      outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+      waysByID = Dictionary(
+        uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
+      )
+      availableRouteIDs = Set(
+        database.routes.filter { $0.operationalStatus == "AVAILABLE" }
+          .map(\.routeID)
+      )
+      officialJunctionNodeIDs = Set(database.junctions.flatMap(\.osmNodeIDs))
+      surfaceExitCandidateEdgeIDs = Set(
+        database.directionalFacilities.flatMap { facility in
+          facility.exitEdgeCandidates.map(\.edgeID)
+        }
+      )
+    }
+
+    func isSurfaceExitBranch(_ edge: ShutoNetworkDatabase.Edge) -> Bool {
+      ShutoPlannedRouteRuntimeCompiler.isSurfaceExitBranch(
+        edge,
+        networkSnapshotID: database.networkSnapshotID,
+        waysByID: waysByID,
+        outgoing: outgoing,
+        surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
+      )
+    }
+
+    func leadsToAvailableMainline(_ edge: ShutoNetworkDatabase.Edge) -> Bool {
+      ShutoPlannedRouteRuntimeCompiler.leadsToAvailableMainline(
+        from: edge,
+        outgoing: outgoing,
+        availableRouteIDs: availableRouteIDs
+      )
+    }
+  }
+
+  private struct DecisionClassification {
+    let alternatives: [ShutoNetworkDatabase.Edge]
+    let isJunctionDecision: Bool
+    let startsTerminalExitBranch: Bool
+    let definition: ShutoJunctionMovementDefinition?
+  }
+
+  /// Classifies the choice at the end of `edges[index]`, or nil when the
+  /// graph offers no other navigable way out of that node.
+  private static func classifyDecision(
+    edges: [ShutoNetworkDatabase.Edge],
+    index: Int,
+    context: DecisionContext
+  ) -> DecisionClassification? {
+    let incoming = edges[index]
+    let plannedOutgoing = edges[index + 1]
+    let alternatives = (context.outgoing[incoming.toNodeID] ?? [])
+      .filter { $0.edgeID != plannedOutgoing.edgeID }
+      .filter {
+        ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+          networkSnapshotID: context.database.networkSnapshotID,
+          incomingDirectedEdgeID: incoming.edgeID,
+          startDirectedEdgeID: $0.edgeID
+        ) == nil
+      }
+      .sorted { $0.edgeID < $1.edgeID }
+    guard !alternatives.isEmpty else { return nil }
+    let immediateDefinition =
+      ShutoJunctionMovementCatalog.releasedDefinition(
+        database: context.database,
+        routeEdges: edges,
+        decisionIndex: index
+      )
+    let startsTerminalExitBranch =
+      context.isSurfaceExitBranch(plannedOutgoing)
+      || edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }
+    let hasAvailableExpresswayAlternative = alternatives.contains {
+      !context.isSurfaceExitBranch($0) && context.leadsToAvailableMainline($0)
+    }
+    let plannedContinuesOnAvailableExpressway =
+      !context.isSurfaceExitBranch(plannedOutgoing)
+      && context.leadsToAvailableMainline(plannedOutgoing)
+    let coveringDefinition =
+      ShutoJunctionMovementCatalog
+      .releasedDefinitionCoveringFollowingDecision(
+        database: context.database,
+        routeEdges: edges,
+        decisionIndex: index
+      )
+    let candidateDefinition = immediateDefinition ?? coveringDefinition
+    let isJunctionDecision =
+      !startsTerminalExitBranch
+      && plannedContinuesOnAvailableExpressway
+      && hasAvailableExpresswayAlternative
+      && (context.officialJunctionNodeIDs.contains(incoming.toNodeID)
+        || candidateDefinition != nil)
+    return DecisionClassification(
+      alternatives: alternatives,
+      isJunctionDecision: isJunctionDecision,
+      startsTerminalExitBranch: startsTerminalExitBranch,
+      definition: isJunctionDecision ? candidateDefinition : nil
+    )
+  }
+
+  /// The candidates that stay on the expressway and whose every junction
+  /// decision after the wrong turn, including the movement back onto the
+  /// plan, is a released movement binding. A path that crosses an unreviewed
+  /// junction, or leaves by an exit ramp and returns through surface
+  /// connectors, cannot be released: the product would be directing the
+  /// driver through a movement nobody reviewed, or inventing an exit.
+  public static func coveredRecoveryCandidates(
+    _ candidates: [RecoveryCandidate],
+    route: ShutoPlannedRoute,
+    database: ShutoNetworkDatabase
+  ) -> [RecoveryCandidate] {
+    guard !candidates.isEmpty else { return [] }
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let context = DecisionContext(database: database)
+    return candidates.filter { candidate in
+      guard
+        let divergence = route.routePlan.occurrence(
+          id: candidate.divergenceOccurrenceID
+        ),
+        let target = route.routePlan.occurrence(id: candidate.targetOccurrenceID),
+        route.edges.indices.contains(divergence.index),
+        route.edges.indices.contains(target.index)
+      else { return false }
+      let pathEdges = candidate.recoveryOccurrenceIDs.compactMap { edgesByID[$0] }
+      guard pathEdges.count == candidate.recoveryOccurrenceIDs.count else {
+        return false
+      }
+      let edges =
+        [route.edges[divergence.index]] + pathEdges + [route.edges[target.index]]
+      // Index 0 is the wrong turn itself; recovery begins after it.
+      return (1..<(edges.count - 1)).allSatisfy { index in
+        guard
+          let decision = classifyDecision(
+            edges: edges,
+            index: index,
+            context: context
+          )
+        else { return true }
+        if context.isSurfaceExitBranch(edges[index + 1]) { return false }
+        return !decision.isJunctionDecision || decision.definition != nil
+      }
+    }
+  }
+
   private static func liveReleaseCoverage(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
     recoveryCandidates: [RecoveryCandidate]
   ) -> ShutoRouteLiveReleaseCoverage {
-    let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
-    let waysByID = Dictionary(
-      uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
-    )
-    let availableRouteIDs = Set(
-      database.routes.filter { $0.operationalStatus == "AVAILABLE" }
-        .map(\.routeID)
-    )
-    let officialJunctionNodeIDs = Set(
-      database.junctions.flatMap(\.osmNodeIDs)
-    )
-    let surfaceExitCandidateEdgeIDs = Set(
-      database.directionalFacilities.flatMap { facility in
-        facility.exitEdgeCandidates.map(\.edgeID)
-      }
-    )
+    let context = DecisionContext(database: database)
     let candidatesByBranch = Dictionary(
       uniqueKeysWithValues: recoveryCandidates.map {
         ("\($0.divergenceOccurrenceID)|\($0.triggerDirectedEdgeID)", $0)
@@ -1139,104 +1364,44 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     }
 
     for index in 0..<(route.edges.count - 1) {
+      guard
+        let decision = classifyDecision(
+          edges: route.edges,
+          index: index,
+          context: context
+        )
+      else { continue }
       let incoming = route.edges[index]
       let plannedOutgoing = route.edges[index + 1]
-      let alternatives = (outgoing[incoming.toNodeID] ?? [])
-        .filter { $0.edgeID != plannedOutgoing.edgeID }
-        .filter {
-          ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
-            networkSnapshotID: database.networkSnapshotID,
-            incomingDirectedEdgeID: incoming.edgeID,
-            startDirectedEdgeID: $0.edgeID
-          ) == nil
-        }
-        .sorted { $0.edgeID < $1.edgeID }
-      guard !alternatives.isEmpty else { continue }
       let divergenceOccurrenceID = route.routePlan.occurrences[index].id
-      let immediateDefinition =
-        ShutoJunctionMovementCatalog.releasedDefinition(
-          database: database,
-          routeEdges: route.edges,
-          decisionIndex: index
-        )
-      let startsTerminalExitBranch =
-        isSurfaceExitBranch(
-          plannedOutgoing,
-          networkSnapshotID: database.networkSnapshotID,
-          waysByID: waysByID,
-          outgoing: outgoing,
-          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
-        ) || route.edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }
-      let hasAvailableExpresswayAlternative = alternatives.contains {
-        !isSurfaceExitBranch(
-          $0,
-          networkSnapshotID: database.networkSnapshotID,
-          waysByID: waysByID,
-          outgoing: outgoing,
-          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
-        )
-          && leadsToAvailableMainline(
-            from: $0,
-            outgoing: outgoing,
-            availableRouteIDs: availableRouteIDs
-          )
-      }
-      let plannedContinuesOnAvailableExpressway =
-        !isSurfaceExitBranch(
-          plannedOutgoing,
-          networkSnapshotID: database.networkSnapshotID,
-          waysByID: waysByID,
-          outgoing: outgoing,
-          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
-        )
-        && leadsToAvailableMainline(
-          from: plannedOutgoing,
-          outgoing: outgoing,
-          availableRouteIDs: availableRouteIDs
-        )
-      let coveringDefinition =
-        ShutoJunctionMovementCatalog
-        .releasedDefinitionCoveringFollowingDecision(
-          database: database,
-          routeEdges: route.edges,
-          decisionIndex: index
-        )
-      let candidateDefinition = immediateDefinition ?? coveringDefinition
-      let isJunctionDecision =
-        !startsTerminalExitBranch
-        && plannedContinuesOnAvailableExpressway
-        && hasAvailableExpresswayAlternative
-        && (officialJunctionNodeIDs.contains(incoming.toNodeID)
-          || candidateDefinition != nil)
-      let definition = isJunctionDecision ? candidateDefinition : nil
       decisions.append(
         ShutoRouteDecisionCoverage(
-          kind: isJunctionDecision ? .junction : .graphDivergence,
+          kind: decision.isJunctionDecision ? .junction : .graphDivergence,
           divergenceOccurrenceID: divergenceOccurrenceID,
           plannedOutgoingOccurrenceID:
             route.routePlan.occurrences[index + 1].id,
           junctionNodeID: incoming.toNodeID,
           incomingDirectedEdgeID: incoming.edgeID,
           plannedOutgoingDirectedEdgeID: plannedOutgoing.edgeID,
-          alternativeOutgoingDirectedEdgeIDs: alternatives.map(\.edgeID),
-          releasedGuidanceDefinitionID: definition?.id
+          alternativeOutgoingDirectedEdgeIDs: decision.alternatives.map(\.edgeID),
+          releasedGuidanceDefinitionID: decision.definition?.id
         )
       )
-      for alternative in alternatives {
+      for alternative in decision.alternatives {
         let candidate = candidatesByBranch[
           "\(divergenceOccurrenceID)|\(alternative.edgeID)"
         ]
         recoveryBranches.append(
           ShutoRouteRecoveryBranchCoverage(
             kind: recoveryBranchKind(
-              isJunctionDecision: isJunctionDecision,
-              startsTerminalExitBranch: startsTerminalExitBranch,
+              isJunctionDecision: decision.isJunctionDecision,
+              startsTerminalExitBranch: decision.startsTerminalExitBranch,
               alternative: alternative,
               networkSnapshotID: database.networkSnapshotID,
-              waysByID: waysByID,
-              outgoing: outgoing,
-              surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs,
-              availableRouteIDs: availableRouteIDs
+              waysByID: context.waysByID,
+              outgoing: context.outgoing,
+              surfaceExitCandidateEdgeIDs: context.surfaceExitCandidateEdgeIDs,
+              availableRouteIDs: context.availableRouteIDs
             ),
             divergenceOccurrenceID: divergenceOccurrenceID,
             triggerDirectedEdgeID: alternative.edgeID,
@@ -1540,5 +1705,82 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       }
     }
     return candidates
+  }
+}
+
+/// Nearest-segment distance to one route's geometry on a local plane.
+private struct RouteProximityIndex {
+  private let origin: ShutoCoordinate
+  private let cellSizeMeters: Double
+  private let segments: [(start: SIMD2<Double>, end: SIMD2<Double>)]
+  private let cells: [SIMD2<Int>: [Int]]
+
+  init(
+    segments: [(ShutoCoordinate, ShutoCoordinate)],
+    origin: ShutoCoordinate,
+    cellSizeMeters: Double
+  ) {
+    self.origin = origin
+    self.cellSizeMeters = cellSizeMeters
+    let projected = segments.map {
+      (start: Self.project($0.0, origin: origin), end: Self.project($0.1, origin: origin))
+    }
+    var cells: [SIMD2<Int>: [Int]] = [:]
+    for (index, segment) in projected.enumerated() {
+      let lower = Self.cell(
+        SIMD2(min(segment.start.x, segment.end.x), min(segment.start.y, segment.end.y)),
+        size: cellSizeMeters
+      )
+      let upper = Self.cell(
+        SIMD2(max(segment.start.x, segment.end.x), max(segment.start.y, segment.end.y)),
+        size: cellSizeMeters
+      )
+      for x in lower.x...upper.x {
+        for y in lower.y...upper.y {
+          cells[SIMD2(x, y), default: []].append(index)
+        }
+      }
+    }
+    self.segments = projected
+    self.cells = cells
+  }
+
+  /// Exact within one cell size; anything farther reports infinity.
+  func distanceMeters(to coordinate: ShutoCoordinate) -> Double {
+    let point = Self.project(coordinate, origin: origin)
+    let center = Self.cell(point, size: cellSizeMeters)
+    var nearest = Double.infinity
+    for x in (center.x - 1)...(center.x + 1) {
+      for y in (center.y - 1)...(center.y + 1) {
+        for index in cells[SIMD2(x, y)] ?? [] {
+          let segment = segments[index]
+          let direction = segment.end - segment.start
+          let squared = (direction * direction).sum()
+          let fraction =
+            squared > 0
+            ? min(1, max(0, ((point - segment.start) * direction).sum() / squared))
+            : 0
+          let offset = point - (segment.start + direction * fraction)
+          nearest = min(nearest, (offset * offset).sum().squareRoot())
+        }
+      }
+    }
+    return nearest
+  }
+
+  private static func project(
+    _ coordinate: ShutoCoordinate,
+    origin: ShutoCoordinate
+  ) -> SIMD2<Double> {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    return SIMD2(
+      (coordinate.longitude - origin.longitude) * metersPerDegree
+        * cos(origin.latitude * .pi / 180),
+      (coordinate.latitude - origin.latitude) * metersPerDegree
+    )
+  }
+
+  private static func cell(_ point: SIMD2<Double>, size: Double) -> SIMD2<Int> {
+    SIMD2(Int(floor(point.x / size)), Int(floor(point.y / size)))
   }
 }

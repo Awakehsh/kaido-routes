@@ -311,10 +311,11 @@ qualify full-app focus order, Switch Control, physical devices,
 `CPMapTemplate`, or a head unit.
 
 KR-S19 executes the release-bound entrance admission reducer separately from
-ordinary matcher progress. A later transition edge cannot seed the sequence;
-software-simulated evidence and a product-release identity mismatch remain
-rejected; and only fresh HIGH single-edge evidence with compatible heading in
-the exact reviewed order reaches `STRICT_ROUTE`. The fixture uses typed
+ordinary matcher progress. A fix on the approach proves nothing; software-
+simulated evidence and a product-release identity mismatch remain rejected;
+and only ordered route-head fixes that have followed the route away from the
+approach's straight line reach `STRICT_ROUTE`. KR-S23 keeps entry unconfirmed
+while every route-head fix also lies on that line. The fixture uses typed
 synthetic evidence and proves no Core Location device accuracy or production
 threshold. Focused runtime tests now enter the same scenario boundary from an
 admitted compiler-minted surface-access `JourneyPlan`: the fresh actor begins
@@ -476,14 +477,46 @@ precision, at least 20% HIGH coverage, at least 56% diagnostic edge top-1 and
 64% occurrence top-1 accuracy, and no more than 15 meters p95 progress error.
 These are deterministic regression floors, not field accuracy claims.
 
-A separate in-car readiness regression drives the C1 inner circuit and
-Kyobashi-to-Minatomirai corridor at 1 Hz / 17 m/s with both 2-meter clean fixes
-and 12-meter fixes plus deterministic 8-meter radial drift. It requires zero
-unsafe HIGH edge or occurrence commits, at least 50% admitted HIGH-or-ordered-
-MEDIUM progress coverage, and no admitted-progress gap longer than 30 seconds.
-The C1 entry adapter is also exercised at 1 Hz with 8-meter accuracy through the
-real release-bound route-head continuity path. These are synthetic regression
-bounds, not road or field evidence.
+A separate in-car readiness regression drives the C1 inner circuit and the
+Kyobashi-to-Minatomirai corridor through the matcher at 1 Hz / 17 m/s with
+2-meter clean fixes and 12-meter fixes plus deterministic 8-meter radial
+drift. It requires zero unsafe HIGH edge or occurrence commits, at least 50%
+admitted progress coverage, and no admitted-progress gap longer than 45
+seconds (30 seconds before the corridor followed each diverging branch).
+
+The 1 Hz live-navigation replay gate (`LiveNavigationReplayGateTests`) drives
+every bundled foreground release — C1 inner, C2 inner with the Bayshore, the
+Bayshore westbound run to Daikoku PA, the Daikoku loop and the scenic tour —
+through the same Core Location adapters, entry gate, tunnel hooks and
+`NavigationSession` the App uses. Fixes are sampled strictly once per second
+from a constant-speed trace (70 km/h mainline, 40 km/h ramps) with seeded,
+correlated horizontal error consistent with a 5–15 m reported accuracy,
+30–60 m bursts, and noisy course and speed.
+
+- Ten seeds per release must enter, commit no occurrence more than 60 m ahead
+  of the car, never interrupt the route while the car is on it, speak every
+  reviewed cue before its maneuver except the one geometry pins as
+  unconfirmable, never go 10 seconds without a fix the matcher can place,
+  admit progress at least every 75 seconds, and complete after — never
+  before — leaving the last occurrence or entering the destination PA, within
+  30 seconds.
+- Multipath that holds its offset for about 30 seconds must meet the same
+  completion and interruption bounds; fixes whose true error is twice their
+  reported accuracy must still commit no wrong occurrence and never finish
+  early.
+- A tunnel outage, with no fixes or only cell-grade fixes under every tunnel
+  or covered road, must complete without a wrong commit; only cues whose
+  whole window lies under cover may be missed, and that set is pinned.
+- A straight surface street under each entrance must never enter. A street
+  following the ramp and route head 0, 8 or 15 m to one side may enter, but
+  once it turns away it must not advance the plan, speak a cue or complete.
+- At the four divergent junctions the review measured (C1 occurrences 283
+  and 487, C2 234, Bayshore 130), and at the last choice of road before each
+  release's exit or destination PA, the wrong branch must never advance the
+  plan or play a later cue, must be detected within 1 km, and must never
+  complete the journey.
+
+These are synthetic regression bounds, not road or field evidence.
 
 Core Location adapter tests additionally require valid `courseAccuracy` and
 `speedAccuracy` to reach the matcher observation. A focused opposing-direction

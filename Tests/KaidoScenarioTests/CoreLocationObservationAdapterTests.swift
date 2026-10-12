@@ -320,11 +320,15 @@
     )
     _ = await runtime.session.start()
 
+    // A fix on the approach ramp binds to the release but proves nothing
+    // about entry on its own.
     let envelope = try accepted(
       locationAdapter.adapt(
         [
           makeLocation(
-            longitude: 139.75925,
+            latitude: 35.67925,
+            longitude: 139.7594,
+            course: 33,
             timestamp: Date(timeIntervalSince1970: 1_000)
           )
         ],
@@ -341,30 +345,41 @@
       evidence.directedEdgeID
         == runtime.entryTransitionAdmissionContext.entryTransition.directedEdgeIDs[0]
     )
-    #expect(evidence.candidateEdgeIDs == [evidence.directedEdgeID].compactMap { $0 })
-    #expect(evidence.confidence == .high)
-    #expect(evidence.headingErrorDegrees.map { $0 < 1 } == true)
+    #expect(evidence.occurrenceID == nil)
+    #expect(evidence.coordinate != nil)
+    #expect(evidence.horizontalAccuracyMeters == 5)
+    #expect(evidence.headingErrorDegrees.map { $0 < 5 } == true)
     #expect(evidence.isSimulatedBySoftware == false)
     let firstUpdate = try await runtime.session.observeEntryTransitionEvidence(evidence)
-    #expect(firstUpdate.navigationSnapshot.journeyPhase == .entryTransition)
+    #expect(firstUpdate.status == .observing)
+    #expect(firstUpdate.navigationSnapshot.journeyPhase == .planning)
 
-    let rampEnvelope = try accepted(
-      locationAdapter.adapt(
-        [
-          makeLocation(
-            longitude: 139.75975,
-            timestamp: Date(timeIntervalSince1970: 1_001)
-          )
-        ],
-        receivedAt: Date(timeIntervalSince1970: 1_001)
-      )[0]
-    )
-    let rampEvidence = try entryAdapter.adapt(rampEnvelope)
-    let rampUpdate = try await runtime.session.observeEntryTransitionEvidence(
-      rampEvidence
-    )
-    #expect(rampUpdate.status == .strictRouteEntered)
-    #expect(rampUpdate.navigationSnapshot.journeyPhase == .strictRoute)
+    // Fixes that follow the route head away from the approach line enter.
+    var entered: EntryTransitionSessionUpdate?
+    for (offset, longitude) in [139.7603, 139.7605, 139.7607].enumerated() {
+      let routeEnvelope = try accepted(
+        locationAdapter.adapt(
+          [
+            makeLocation(
+              longitude: longitude,
+              timestamp: Date(timeIntervalSince1970: 1_001 + Double(offset))
+            )
+          ],
+          receivedAt: Date(timeIntervalSince1970: 1_001 + Double(offset))
+        )[0]
+      )
+      let routeEvidence = try entryAdapter.adapt(routeEnvelope)
+      #expect(
+        routeEvidence.occurrenceID
+          == runtime.entryTransitionAdmissionContext.entryTransition
+          .firstRouteOccurrenceID
+      )
+      entered = try await runtime.session.observeEntryTransitionEvidence(
+        routeEvidence
+      )
+    }
+    #expect(entered?.status == .strictRouteEntered)
+    #expect(entered?.navigationSnapshot.journeyPhase == .strictRoute)
   }
 
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)

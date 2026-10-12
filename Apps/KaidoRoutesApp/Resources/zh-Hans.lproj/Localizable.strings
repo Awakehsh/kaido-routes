@@ -30,3 +30,6 @@
 "Finish this lap" = "本圈结束后离开";
 "Finish this lap, then follow the planned exit and destination." = "本圈结束后，将继续引导至原定出口和终点。";
 "There are no later complete laps to remove at this position." = "当前位置没有可取消的后续整圈。";
+"Finish at the planned exit" = "在原定出口结束";
+"Following the planned exit." = "将引导至原定出口。";
+"The planned exit is not close enough yet." = "原定出口还在前方。";

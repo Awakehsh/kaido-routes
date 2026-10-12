@@ -44,8 +44,8 @@ repairs graph defects the builder's rules introduced. Route 1 Haneda
 southbound stopped for 1.8 km because its 2025-10-29 rebuilt section was
 never added to the route relation, and K3 began from nothing at 本牧JCT;
 both carriageways are restored from the OSM ways current at the extract. Three
-construction structures the builder admitted as motorway are removed. At nine
-interchanges (天現寺, 東池袋, 木場, 船堀橋, 錦糸町, 永田, 堤通, 新郷, 羽田) OSM
+construction structures the builder admitted as motorway are removed. At ten
+interchanges (天現寺, 東池袋, 木場, 船堀橋, 錦糸町, 永田, 堤通, 新郷, 羽田, 大師) OSM
 draws the exit and the entrance as one link chain across the surface road;
 the review cuts the chain at the surface crossing, so a route or fare path
 can no longer leave the expressway and come straight back on. The restored K3
@@ -57,7 +57,7 @@ The [facility candidate patch](../../data/route-atlas/reviews/README.md) of
 of the facility's route within 750 m, so 613 of 1,376 candidates sat more than
 200 m away and interchanges started or ended on a neighbour's ramp, the
 opposite direction's ramp, a PA return ramp, bare carriageway, or a connecting
-expressway's link. Each ramp now binds at most one interchange name: 750
+expressway's link. Each ramp now binds at most one interchange name: 748
 candidates, 28 of them beyond 400 m with a reviewed reason. The patch adds the
 東銀座 exit (外回り), which the operator lists and the KK line closure kept
 open, and drops two stray nodes that a name-substring match had added to

@@ -622,9 +622,9 @@ struct ShutoCircuitPlannerTests {
       (35.7295, 139.7109, ShutoCircuitDefinition.c2InnerWithBayshore,
        "shuto.ic.c2.nishiikebukuro", "shuto.ic.5.kitaikebukuro", 70_000.0),
       // 芝浦 reaches the Daikoku loop only after 30 km of Route 1 and the
-      // Bayshore; 殿町 is on the loop.
+      // Bayshore; 豊洲 joins the Bayshore westbound that leads into it.
       (35.655, 139.7964, ShutoCircuitDefinition.daikokuYokohamaLoop,
-       "shuto.ic.k6.tonomachi", "shuto.ic.1-haneda.shibaura", 55_000.0),
+       "shuto.ic.10.toyosu", "shuto.ic.1-haneda.shibaura", 55_000.0),
       // 勝島 reaches C1 only after 49 km: south to the Bayshore and back.
       (35.6, 139.743, ShutoCircuitDefinition.c1Inner,
        "shuto.ic.c2.chukanooiminami", "shuto.ic.1-haneda.katsushima", 25_000.0),

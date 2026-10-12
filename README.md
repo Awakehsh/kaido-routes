@@ -97,11 +97,12 @@ checks the retained K7 product artifact as a deterministic regression anchor;
 it does not enroll the candidate whole-Shuto graph or grant live-navigation
 authority.
 
-Before a road test or release qualification, manually run the
-`iOS qualification` workflow once `verify` is green. It runs the complete App
-unit suite, a broader journey and compact accessibility matrix, and publishes a
-validated unsigned Release archive. That artifact is not signed, installable
-device evidence, TestFlight delivery, or an App Store submission.
+The `iOS qualification` workflow runs nightly on `main`; before a road test or
+release, run it manually once `verify` is green. It runs the complete App unit
+suite on iOS 26 and iOS 18, a broader journey and compact accessibility matrix,
+and publishes a validated unsigned Release archive. That artifact is not
+signed, installable device evidence, TestFlight delivery, or an App Store
+submission.
 
 ## Documentation
 
@@ -110,7 +111,7 @@ device evidence, TestFlight delivery, or an App Store submission.
 | Product | [principles](docs/product/principles.md) · [iPhone experience](docs/product/iphone-product-experience.md) · [current capabilities](docs/product/current-capabilities.md) · [accuracy boundary](docs/product/accuracy-boundary.md) |
 | Architecture | [domain contract](docs/architecture/domain-contract.md) · [iOS navigation](docs/architecture/ios-navigation-architecture.md) · [journey lifecycle](docs/architecture/journey-lifecycle.md) |
 | Testing | [E2E strategy](docs/testing/e2e-strategy.md) · [scenario catalog](docs/testing/scenario-catalog.md) · [device qualification](docs/testing/ios-physical-device-qualification.md) |
-| Data and releases | [rebuilding the network](docs/contributing/rebuilding-the-network.md) · [route evidence](docs/contributing/route-evidence.md) · [product release authoring](docs/contributing/product-release-authoring.md) · [licensing](docs/contributing/licensing.md) |
+| Data and releases | [rebuilding the network](docs/contributing/rebuilding-the-network.md) · [route evidence](docs/contributing/route-evidence.md) · [product release authoring](docs/contributing/product-release-authoring.md) · [App release](docs/contributing/release.md) · [licensing](docs/contributing/licensing.md) |
 | Working in this repo | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`AGENTS.md`](AGENTS.md) · [`SECURITY.md`](SECURITY.md) |
 
 ## Contributing

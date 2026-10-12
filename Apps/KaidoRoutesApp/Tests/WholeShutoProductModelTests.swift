@@ -1601,40 +1601,32 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
-  func testDaikokuYokohamaCircuitUsesNearestReachableEntrance()
+  func testDaikokuYokohamaCircuitAdmitsBundledForegroundNavigation()
     async throws
   {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil
     )
-    let releasedEntrance = try XCTUnwrap(
-      model.database.directionalFacilities.first {
-        $0.facilityID
-          == ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
-      }
-    )
-    model.selectCurrentOrigin(releasedEntrance.coordinate)
+    let expected =
+      try ShutoCircuitProductReleaseBuilder
+      .plannedDaikokuRoute(database: model.database)
+
+    // Wangan-Kanpachi was no candidate while the graph still turned the
+    // Daishi exit back onto the expressway across Daishi-dori; with that
+    // chain cut, the release's own entrance is the recommendation.
+    model.selectCurrentOrigin(expected.entryFacility.coordinate)
     model.selectCircuit(.daikokuYokohamaLoop)
     await waitForCircuitPairing(model)
 
     XCTAssertEqual(
-      model.circuitEntryFacilityID,
-      "shuto.ic.b.ukishima"
-    )
-    XCTAssertNotEqual(
       model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
     )
     XCTAssertNil(model.circuitExitFacilityID)
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
-    XCTAssertEqual(model.phase, .review)
-    XCTAssertTrue(
-      model.selectedRoute?.routePlan.id.hasPrefix(
-        "shuto.circuit.daikoku-yokohama-loop."
-      ) == true
-    )
+    XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
   }

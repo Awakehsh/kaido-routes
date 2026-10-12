@@ -1634,6 +1634,34 @@ final class KaidoProductJourneyUITests: XCTestCase {
     customEntry.tap()
     XCTAssertTrue(customExit.waitForExistence(timeout: 3))
     customExit.tap()
+
+    // The entry's own IC is ruled out as its exit the same way: one toll
+    // point has no fare distance to pair.
+    let exitSearch = routeApp.textFields["whole-shuto-custom-exit-search"]
+    exitSearch.tap()
+    exitSearch.typeText("宝町")
+    let sameTollPointExit = routeApp.buttons[
+      "whole-shuto-custom-exit-shuto.ic.c1.takaracho"
+    ]
+    XCTAssertTrue(sameTollPointExit.waitForExistence(timeout: 3))
+    XCTAssertTrue(sameTollPointExit.label.contains("入口无法到达"))
+    let sameTollPointScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    sameTollPointScreenshot.name = "Whole Shuto exit sharing the entry toll point"
+    sameTollPointScreenshot.lifetime = .keepAlways
+    add(sameTollPointScreenshot)
+    sameTollPointExit.tap()
+    XCTAssertFalse(
+      routeApp.buttons["whole-shuto-apply-custom-route"].isEnabled
+    )
+    exitSearch.typeText(
+      String(repeating: XCUIKeyboardKey.delete.rawValue, count: 2) + "\n"
+    )
+    XCTAssertTrue(customExit.waitForExistence(timeout: 3))
+    customExit.tap()
+    XCTAssertTrue(customEntry.waitForExistence(timeout: 3))
+    customEntry.tap()
     let fewerJunctions = routeApp.buttons[
       "whole-shuto-custom-preference-fewer_junctions"
     ]

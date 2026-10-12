@@ -2113,8 +2113,10 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto replay uses a separate schema-2.0 app checkpoint. It binds the
-candidate network snapshot, the complete replanned `RoutePlan`, directional
+The whole-Shuto replay uses a separate schema-2.0 app checkpoint, one
+atomically replaced file under Application Support; a nine-lap circuit's
+`RoutePlan` alone is about 1.8 MB, too large for a UserDefaults value. It binds
+the candidate network snapshot, the complete replanned `RoutePlan`, directional
 entry and exit, selected preference, recommendation/custom/circuit selection
 source, circuit identity and lap count when applicable, bounded surface legs,
 phase, map mode, and consumed output prompt IDs. Entry-transition and
@@ -2138,9 +2140,10 @@ entry-transition checkpoint must retain zero route progress and no runtime
 occurrence or fraction. Restoration is paused, discards matcher posterior and
 partial entry continuity, and resumes from the first generated entrance
 observation. An expressway restore resumes at the saved occurrence but admits
-no new progress until another HIGH replay observation. App inactive/background
-cancels replay, stops current speech, and saves consumed prompt IDs so
-reconstruction cannot repeat an admitted command. Any checkpoint marked as live
+no new progress until another HIGH replay observation. Replay steps do not
+write the checkpoint; pausing and App inactive/background do.
+App inactive/background cancels replay, stops current speech, and saves
+consumed prompt IDs so reconstruction cannot repeat an admitted command. Any checkpoint marked as live
 is also returned to parked review with
 `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; the candidate product never
 reconstructs `ShutoLiveDriveSession`. This is replay termination recovery, not
@@ -2165,7 +2168,11 @@ The App's `SavedRouteLibraryModel` uses the pure
 `SHARED_IMPORT` provenance, rename local display metadata, export the exact
 shared document, or delete one stable record. It persists each complete result
 before publishing it to SwiftUI; failed I/O cannot expose an uncommitted
-library. Unsupported schemas are rejected rather than implicitly migrated.
+library. Unsupported schemas are rejected rather than implicitly migrated. A
+stored library that fails to load — unsupported schema, one invalid record, or
+a read error — stays byte-for-byte in place: the model publishes no records and
+refuses every write with the load error code, so a build that can read the file
+recovers every saved route.
 
 The retained release-editor path can reopen a record only after
 `SavedRouteReleaseMatcher` finds exactly one whole-RoutePlan-equal current
@@ -2272,7 +2279,8 @@ commands to an application server. Foreground scene registration owns the weak
 model reference; it does not introduce a second navigation session.
 
 Drive history persists aggregate recorded intervals, observed lap splits, and
-the exact planned route locally. A checkpoint may retain the aggregate record
+the exact planned route locally, one file per drive; a file that cannot be read
+or validated hides only its own drive. A checkpoint may retain the aggregate record
 without retaining the last raw speed sample. Rest interrupts speed integration;
 missing samples and skipped planned laps never become recorded driving. The
 existing recording setting also controls collection and history persistence.

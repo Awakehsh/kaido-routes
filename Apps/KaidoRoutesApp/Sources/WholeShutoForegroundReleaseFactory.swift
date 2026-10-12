@@ -9,7 +9,7 @@ enum WholeShutoForegroundReleaseFactory {
     surfaceRouteResolver: any WholeShutoSurfaceRouteResolving =
       WholeShutoMapKitSurfaceRouteResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
-      WholeShutoUserDefaultsCheckpointStore(),
+      WholeShutoFileCheckpointStore(),
     liveLocationSource: (any ForegroundNavigationLocationSource)? = nil,
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     nowMillisecondsProvider: @escaping () -> Int = {

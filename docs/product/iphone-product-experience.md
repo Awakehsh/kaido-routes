@@ -141,10 +141,13 @@ the Japanese calendar day). The folklore radial pairings are dead under the curr
 rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
 radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the soonest forward exits and
-every reachable exit near the entrance, picks the lowest honestly-priced
-band, and never recommends an exit sharing the entrance's name (same-named
-ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
-search confirm across its Bayshore and Daikoku Line ramps). An entrance on
+every reachable exit near the entrance, and picks the lowest honestly-priced
+band. Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
+page and fare search confirm across its Bayshore and Daikoku Line ramps, so
+the shortest path from a toll point back to itself has no length the dated
+rule can price; the planner therefore never pairs an entrance with an exit
+sharing its name, on any surface, and a loop that returns there is refused
+rather than quoted the minimum band. An entrance on
 a member route must still match the experience's carriageway direction
 (the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
 every anchor in course order. Highway preference defaults to prefer highways;
@@ -212,7 +215,8 @@ the leading edge, show direction and straight-line distance, and can be filtered
 by IC name or route shield. Whichever end is fixed constrains the other: with
 an entry chosen the exit list holds only exits some directed all-Shuto path
 reaches from it, and with an exit chosen the entry list holds only entrances
-such a path leads from. A search still shows an IC the other end rules out,
+such a path leads from; neither list holds the other end's own toll point. A
+search still shows an IC the other end rules out,
 marked unreachable; choosing it clears the other end rather than keeping a
 broken draft, and the cleared end is chosen again from the list the new choice
 allows. Empty filters and unavailable origins explain the next action instead

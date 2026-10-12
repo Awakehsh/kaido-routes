@@ -211,6 +211,37 @@ struct ShutoNetworkTests {
     #expect(route.routePlan.occurrences.map(\.entityID) == expectedOccurrenceEntities)
   }
 
+  @Test("no facility binds a ramp the 2026-10-18 C1 closures shut")
+  func unbindsTheClosedC1Ramps() throws {
+    let database = try loadDatabase()
+    let facilities = Dictionary(
+      uniqueKeysWithValues: database.directionalFacilities.map {
+        ($0.facilityID, $0)
+      }
+    )
+    let shintomicho = try #require(facilities["shuto.ic.c1.shintomicho"])
+    #expect(shintomicho.operationalStatus == "UNAVAILABLE")
+    #expect(!shintomicho.canExit)
+    let ginza = try #require(facilities["shuto.ic.c1.ginza"])
+    #expect(ginza.entranceDirections == ["外回り"])
+    #expect(ginza.exitDirections == ["内回り", "外回り"])
+    #expect(ginza.canEnter && ginza.canExit)
+    // 新富町出口 (osm way 760760233) was also a nearby exit candidate of
+    // 宝町, 京橋 and 銀座; 4848936 is the 内回り 銀座入口.
+    let closedWayIDs: Set<Int64> = [760_760_233, 4_848_936]
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let bound = database.directionalFacilities.flatMap {
+      $0.entryEdgeCandidates + $0.exitEdgeCandidates
+    }
+    #expect(
+      !bound.contains {
+        closedWayIDs.contains(edgesByID[$0.edgeID]?.wayID ?? 0)
+      }
+    )
+  }
+
   @Test("Kiba entry follows the reviewed Route 9 inbound ramp")
   func plansKibaInboundWithoutSouthboundDetour() throws {
     let database = try loadDatabase()

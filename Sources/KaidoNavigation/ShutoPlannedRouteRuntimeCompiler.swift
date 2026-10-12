@@ -999,6 +999,11 @@ public enum ShutoPlannedRouteRuntimeCompiler {
   /// the widest ambiguity allowance the matcher applies.
   static let branchSeparationMeters = 125.0
   private static let maximumBranchExtensionMeters = 5_000.0
+  /// How far from the exit of a route that leaves by one the corridor
+  /// follows the roads the car could take instead of it. A car off all of
+  /// them that close to the exit has taken it, so this sets how far the
+  /// session can recognise the exit from fixes matching no road at all.
+  static let exitBranchSeparationMeters = 300.0
 
   /// Edges that continue each available branch away from the plan until the
   /// branch is `branchSeparationMeters` from every route edge or rejoins a
@@ -1024,25 +1029,45 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       origin: origin.coordinate,
       cellSizeMeters: branchSeparationMeters
     )
+    let decisions = (0..<(edges.count - 1)).map { index in
+      let incoming = edges[index]
+      let planned = edges[index + 1]
+      return (
+        index: index,
+        alternatives: (context.outgoingEdges[incoming.toNodeID] ?? [])
+          .filter {
+            $0.edgeID != planned.edgeID
+              && $0.toNodeID != incoming.fromNodeID
+              && ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+                networkSnapshotID: context.database.networkSnapshotID,
+                incomingDirectedEdgeID: incoming.edgeID,
+                startDirectedEdgeID: $0.edgeID
+              ) == nil
+          }
+      )
+    }.filter { !$0.alternatives.isEmpty }
+    let exitDecisionIndex =
+      route.routePlan.destinationParkingAreaID == nil ? decisions.last?.index : nil
+    let exitGeometry = RouteProximityIndex(
+      segments: edges[((exitDecisionIndex ?? edges.count - 2) + 1)...].compactMap { edge in
+        guard let from = context.nodesByID[edge.fromNodeID],
+          let to = context.nodesByID[edge.toNodeID]
+        else { return nil }
+        return (from.coordinate, to.coordinate)
+      },
+      origin: origin.coordinate,
+      cellSizeMeters: exitBranchSeparationMeters
+    )
     var included: Set<String> = []
     var examinedDecisions: Set<String> = []
-    for index in 0..<(edges.count - 1) {
+    for (index, alternatives) in decisions {
       let incoming = edges[index]
       let planned = edges[index + 1]
       guard
         examinedDecisions.insert("\(incoming.edgeID)|\(planned.edgeID)")
           .inserted
       else { continue }
-      let alternatives = (context.outgoingEdges[incoming.toNodeID] ?? [])
-        .filter {
-          $0.edgeID != planned.edgeID
-            && $0.toNodeID != incoming.fromNodeID
-            && ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
-              networkSnapshotID: context.database.networkSnapshotID,
-              incomingDirectedEdgeID: incoming.edgeID,
-              startDirectedEdgeID: $0.edgeID
-            ) == nil
-        }
+      let isExitDecision = index == exitDecisionIndex
       var queue = alternatives.map { (edge: $0, travelled: 0.0) }
       var cursor = 0
       while cursor < queue.count {
@@ -1053,6 +1078,9 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           let end = context.nodesByID[edge.toNodeID],
           routeGeometry.distanceMeters(to: end.coordinate)
             <= branchSeparationMeters
+            || (isExitDecision
+              && exitGeometry.distanceMeters(to: end.coordinate)
+                <= exitBranchSeparationMeters)
         else { continue }
         let reached = travelled + edge.lengthMeters
         guard reached < maximumBranchExtensionMeters else { continue }
@@ -1191,9 +1219,11 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let availableRouteIDs: Set<String>
     let officialJunctionNodeIDs: Set<Int64>
     let surfaceExitCandidateEdgeIDs: Set<String>
+    let releasedMovements: ShutoJunctionMovementCatalog.ReleasedContext
 
     init(database: ShutoNetworkDatabase) {
       self.database = database
+      releasedMovements = ShutoJunctionMovementCatalog.ReleasedContext(database: database)
       outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
       waysByID = Dictionary(
         uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
@@ -1256,12 +1286,10 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       }
       .sorted { $0.edgeID < $1.edgeID }
     guard !alternatives.isEmpty else { return nil }
-    let immediateDefinition =
-      ShutoJunctionMovementCatalog.releasedDefinition(
-        database: context.database,
-        routeEdges: edges,
-        decisionIndex: index
-      )
+    let immediateDefinition = context.releasedMovements.releasedDefinition(
+      routeEdges: edges,
+      decisionIndex: index
+    )
     let startsTerminalExitBranch =
       context.isSurfaceExitBranch(plannedOutgoing)
       || edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }

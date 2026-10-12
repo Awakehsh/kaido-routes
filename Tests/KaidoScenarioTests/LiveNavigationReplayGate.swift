@@ -19,6 +19,9 @@
     private let nodesByID: [Int64: ShutoNetworkDatabase.Node]
     private let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
     private let parkingInteriorEdgeIDs: Set<String>
+    /// Edges of ways tagged tunnel or covered: where the App's tunnel hooks
+    /// apply and where a tunnel outage withholds fixes.
+    let coveredEdgeIDs: Set<String>
     let routeEdgeIDs: [String]
     let routeStartDistances: [Double]
     let routeLengthMeters: Double
@@ -39,6 +42,14 @@
       outgoingEdges = Dictionary(grouping: database.edges, by: \.fromNodeID)
       parkingInteriorEdgeIDs = Set(
         database.parkingAreas.flatMap { $0.interiorEdgeIDs ?? [] }
+      )
+      let coveredWayIDs = Set(
+        database.ways.filter {
+          $0.tags["tunnel"] == "yes" || $0.tags["covered"] == "yes"
+        }.map(\.wayID)
+      )
+      coveredEdgeIDs = Set(
+        database.edges.filter { coveredWayIDs.contains($0.wayID) }.map(\.edgeID)
       )
       routeEdgeIDs = corridor.occurrences.sorted { $0.index < $1.index }
         .map(\.directedEdgeID)
@@ -79,6 +90,50 @@
           ],
           speedMetersPerSecond: Self.surfaceSpeed
         )
+      ]
+    }
+
+    /// A street that follows the approach and the route head `offsetMeters`
+    /// to one side (0: directly beneath) for `followMeters`, then turns away
+    /// from the expressway. Geometry cannot tell it from the route while it
+    /// follows.
+    func parallelStreetLegs(
+      offsetMeters: Double,
+      followMeters: Double = 1_500,
+      awayMeters: Double = 1_000
+    ) -> [ReplayGateLeg] {
+      var travelled = 0.0
+      var shifted: [MatcherCoordinate] = []
+      for leg in plannedLegs() where travelled < followMeters {
+        let points = leg.coordinates
+        guard points.count >= 2 else { continue }
+        for (index, point) in points.enumerated() {
+          let from = points[max(0, min(index, points.count - 2))]
+          let to = points[max(1, min(index + 1, points.count - 1))]
+          shifted.append(
+            replayOffset(
+              point,
+              bearingDegrees: replayBearing(from, to) + 90,
+              meters: offsetMeters
+            )
+          )
+        }
+        travelled += replayLength(points)
+      }
+      let end = shifted[shifted.count - 1]
+      let bearing = replayBearing(shifted[shifted.count - 2], end)
+      let turn = offsetMeters < 0 ? bearing - 90 : bearing + 90
+      return [
+        ReplayGateLeg(
+          kind: .approach,
+          coordinates: shifted,
+          speedMetersPerSecond: Self.surfaceStreetFollowingSpeed
+        ),
+        ReplayGateLeg(
+          kind: .offPlan("surface-street"),
+          coordinates: [end, replayOffset(end, bearingDegrees: turn, meters: awayMeters)],
+          speedMetersPerSecond: Self.surfaceSpeed
+        ),
       ]
     }
 
@@ -186,10 +241,12 @@
           )
         ]
       }
-      // The exit ramp's own continuation where the graph has one, then a
-      // straight surface run-out.
-      var legs = branchPath(from: routeEdgeIDs.last!, meters: 300).dropFirst().map {
-        edge in
+      // The exit ramp's own continuation where the graph has one, then the
+      // surface street it leads onto: of straight on, left and right, the one
+      // that leaves the expressway. A street running beneath the expressway
+      // is the stacked-road limit; the missed-exit cases drive that geometry.
+      let continuation = branchPath(from: routeEdgeIDs.last!, meters: 300).dropFirst()
+      var legs = continuation.map { edge in
         ReplayGateLeg(
           kind: .egress,
           coordinates: coordinates(of: edge),
@@ -199,11 +256,24 @@
       let tail = legs.last?.coordinates ?? last
       let end = tail[tail.count - 1]
       let bearing = replayBearing(tail[tail.count - 2], end)
+      let excluded = Set(continuation.map(\.edgeID) + [routeEdgeIDs.last!])
+      let expressway = corridorEdgesByID.values.filter { !excluded.contains($0.id) }
+      let clearance = { (direction: Double) -> Double in
+        stride(from: 60.0, through: 300, by: 20).map { meters in
+          let point = replayOffset(end, bearingDegrees: direction, meters: meters)
+          return expressway.map {
+            replayDistance(from: point, toPolyline: $0.coordinates)
+          }.min() ?? .infinity
+        }.min() ?? .infinity
+      }
+      let street = [bearing, bearing - 90, bearing + 90].max {
+        clearance($0) < clearance($1)
+      }!
       legs.append(
         ReplayGateLeg(
           kind: .egress,
           coordinates: [
-            end, replayOffset(end, bearingDegrees: bearing, meters: 300),
+            end, replayOffset(end, bearingDegrees: street, meters: 300),
           ],
           speedMetersPerSecond: Self.surfaceSpeed
         )
@@ -267,6 +337,24 @@
     static let rampSpeed = 40 / 3.6
     static let parkingSpeed = 15 / 3.6
     static let surfaceSpeed = 30 / 3.6
+    static let surfaceStreetFollowingSpeed = 40 / 3.6
+
+    /// The last occurrence, up to the destination PA visit, at which the
+    /// plan offers another road: taking it misses the exit or the PA.
+    var finalDivergenceIndex: Int {
+      let limit = finalStopStartIndex ?? routeEdgeIDs.count - 1
+      return (1...limit).last { index in
+        !alternativeEdgeIDs(atMovementIndex: index).isEmpty
+      } ?? 0
+    }
+
+    /// The first occurrence of the PA visit a PA-ending route stops in.
+    var finalStopStartIndex: Int? {
+      let plan = release.navigation.bundle.routePlan
+      guard plan.destinationParkingAreaID != nil else { return nil }
+      let trailing = plan.occurrences.reversed().prefix { $0.kind == .paVisit }
+      return trailing.last?.index
+    }
 
     /// Reviewed movements whose every cue is anchored at or after the
     /// preceding decision, where that decision's alternative branch stays
@@ -327,6 +415,43 @@
     /// The matcher's widest ambiguity allowance.
     static let ambiguityAllowanceMeters = 25.0
 
+    /// Movements whose cue window never leaves tunnel or covered road for
+    /// `openRoadMeters`: from the farthest released trigger distance up to
+    /// the maneuver there is no stretch of open road long enough to admit a
+    /// fix, so without fixes under cover no cue can be timed for them.
+    func coveredCueWindowMovementIndexes(openRoadMeters: Double = 100) -> Set<Int> {
+      let plan = release.navigation.bundle.routePlan
+      let triggerByMovement = Dictionary(
+        release.navigation.bundle.releasedGuidance.compactMap { definition in
+          plan.occurrence(id: definition.frameTemplate.movementOccurrenceID).map {
+            ($0.index, definition.triggerDistanceMeters)
+          }
+        },
+        uniquingKeysWith: max
+      )
+      var result: Set<Int> = []
+      for (movement, trigger) in triggerByMovement {
+        let to = routeStartDistances[movement]
+        let from = max(0, to - trigger)
+        var open = 0.0
+        var longestOpen = 0.0
+        for index in routeEdgeIDs.indices {
+          let start = routeStartDistances[index]
+          let end = index + 1 < routeEdgeIDs.count ? routeStartDistances[index + 1] : routeLengthMeters
+          guard end > from, start < to else { continue }
+          let overlap = min(end, to) - max(start, from)
+          if coveredEdgeIDs.contains(routeEdgeIDs[index]) {
+            open = 0
+          } else {
+            open += overlap
+            longestOpen = max(longestOpen, open)
+          }
+        }
+        if longestOpen < openRoadMeters { result.insert(movement) }
+      }
+      return result
+    }
+
     private func routePoint(atDistance distance: Double) -> MatcherCoordinate {
       let index = max(
         0,
@@ -363,7 +488,8 @@
     func run(
       legs: [ReplayGateLeg],
       seed: UInt64,
-      noise: ReplayGateNoiseModel = .urban
+      noise: ReplayGateNoiseModel = .urban,
+      tunnelOutage: ReplayGateTunnelOutage = .none
     ) async throws -> ReplayGateRun {
       let truth = ReplayGateTruthSampler.sample(legs: legs, gate: self)
       let runtime = try KaidoProductNavigationRuntime(
@@ -387,8 +513,30 @@
       let startedAt = 1_800_000_000_000
       var records: [ReplayGateFixRecord] = []
       records.reserveCapacity(truth.count)
+      var isInTunnel = false
       for (second, point) in truth.enumerated() {
-        let fix = generator.fix(for: point)
+        if point.isUnderCover, tunnelOutage == .noFixes {
+          let snapshot = await session.snapshot
+          records.append(
+            ReplayGateFixRecord(
+              second: second,
+              truth: point,
+              observedCoordinate: nil,
+              horizontalAccuracyMeters: nil,
+              phase: snapshot.journeyPhase,
+              currentOccurrenceIndex: snapshot.currentOccurrenceIndex,
+              engineConfidence: snapshot.locationConfidence,
+              rawConfidence: nil,
+              estimate: nil,
+              recoveryStatus: snapshot.recovery.status,
+              emittedMovementOccurrenceIDs: []
+            )
+          )
+          continue
+        }
+        let fix =
+          point.isUnderCover && tunnelOutage == .coarseFixes
+          ? generator.coarseFix(for: point) : generator.fix(for: point)
         let observedAt = startedAt + second * 1_000
         let receivedAt = observedAt + fix.receptionDelayMilliseconds
         let location = CLLocation(
@@ -430,6 +578,19 @@
           {
             emittedMovementIDs.append(movement)
           }
+          // The App's tunnel hooks follow the occurrence the matcher names.
+          if let index = update.matcherEstimate.occurrenceID.flatMap({
+            release.navigation.bundle.routePlan.occurrence(id: $0)?.index
+          }) {
+            let isCovered = coveredEdgeIDs.contains(routeEdgeIDs[index])
+            if isCovered, !isInTunnel {
+              _ = await session.enterTunnel()
+              isInTunnel = true
+            } else if !isCovered, isInTunnel {
+              _ = await session.exitTunnel()
+              isInTunnel = false
+            }
+          }
         case .exitTransition:
           _ = await session.completeAtExitHandoff()
         case .surfaceEgress, .completed:
@@ -445,7 +606,7 @@
             second: second,
             truth: point,
             observedCoordinate: fix.coordinate,
-            horizontalAccuracyMeters: fix.horizontalAccuracyMeters,
+            horizontalAccuracyMeters: fix.horizontalAccuracyMeters as Double?,
             phase: after.journeyPhase,
             currentOccurrenceIndex: after.currentOccurrenceIndex,
             engineConfidence: after.locationConfidence,
@@ -464,6 +625,16 @@
 
   enum ReplayGateError: Error {
     case observationRejected(Int)
+  }
+
+  /// What Core Location delivers under a tunnel or covered road.
+  enum ReplayGateTunnelOutage: Sendable {
+    /// Ordinary fixes, as if the sky were open.
+    case none
+    /// No fix at all until the car is out again.
+    case noFixes
+    /// Cell- and Wi-Fi-grade fixes, 65–200 m accuracy, no course or speed.
+    case coarseFixes
   }
 
   enum ReplayGateLegKind: Equatable, Sendable {
@@ -490,6 +661,8 @@
     let routeDistanceMeters: Double?
     /// Distance travelled along an off-plan branch since leaving the route.
     let offPlanDistanceMeters: Double?
+    /// The car is on a road tagged tunnel or covered.
+    let isUnderCover: Bool
   }
 
   enum ReplayGateTruthSampler {
@@ -551,9 +724,15 @@
           ) : current.length
         let located = replayLocate(current.leg.coordinates, along: along)
         var routeDistance: Double?
-        if case .occurrence(let index) = current.leg.kind {
-          routeDistance =
-            gate.routeStartDistances[index] + along
+        var isUnderCover = false
+        switch current.leg.kind {
+        case .occurrence(let index):
+          routeDistance = gate.routeStartDistances[index] + along
+          isUnderCover = gate.coveredEdgeIDs.contains(gate.routeEdgeIDs[index])
+        case .offPlan(let edgeID):
+          isUnderCover = gate.coveredEdgeIDs.contains(edgeID)
+        case .approach, .egress, .parked:
+          break
         }
         points.append(
           ReplayGateTruthPoint(
@@ -562,7 +741,8 @@
             speedMetersPerSecond: current.leg.speedMetersPerSecond,
             kind: current.leg.kind,
             routeDistanceMeters: routeDistance,
-            offPlanDistanceMeters: current.offPlanStart.map { $0 + along }
+            offPlanDistanceMeters: current.offPlanStart.map { $0 + along },
+            isUnderCover: isUnderCover
           )
         )
         second += 1
@@ -576,11 +756,13 @@
     let burstAccuracyRange: ClosedRange<Double>
     let burstStartProbability: Double
     let burstSecondsRange: ClosedRange<Double>
-    let errorCorrelation: Double
+    var errorCorrelation: Double
     let courseAccuracyRange: ClosedRange<Double>
     let burstCourseAccuracyRange: ClosedRange<Double>
     let speedAccuracyRange: ClosedRange<Double>
     let burstSpeedAccuracyRange: ClosedRange<Double>
+    /// True error over the error the reported accuracy promises.
+    var errorScale: Double = 1
 
     /// 5–15 m open-sky fixes with 30–60 m bursts under structures. The
     /// horizontal error is a correlated 2D Gaussian whose radius falls within
@@ -596,6 +778,21 @@
       speedAccuracyRange: 0.3...1,
       burstSpeedAccuracyRange: 1.5...3
     )
+
+    /// Multipath that holds its offset for tens of seconds: the urban model
+    /// with an error correlation time of about 33 s instead of 3 s.
+    static var multipath: ReplayGateNoiseModel {
+      var model = urban
+      model.errorCorrelation = 0.97
+      return model
+    }
+
+    /// A receiver that reports half its true error.
+    static var underReported: ReplayGateNoiseModel {
+      var model = urban
+      model.errorScale = 2
+      return model
+    }
   }
 
   struct ReplayGateFix: Sendable {
@@ -609,6 +806,24 @@
   }
 
   struct ReplayGateNoiseGenerator {
+    mutating func coarseFix(for truth: ReplayGateTruthPoint) -> ReplayGateFix {
+      let accuracy = random.uniform(65...200)
+      let sigma = accuracy / 1.515
+      return ReplayGateFix(
+        coordinate: replayOffset(
+          truth.coordinate,
+          northMeters: random.gaussian() * sigma,
+          eastMeters: random.gaussian() * sigma
+        ),
+        horizontalAccuracyMeters: accuracy,
+        courseDegrees: nil,
+        courseAccuracyDegrees: nil,
+        speedMetersPerSecond: nil,
+        speedAccuracyMetersPerSecond: nil,
+        receptionDelayMilliseconds: Int(random.uniform(0...300))
+      )
+    }
+
     private var random: ReplayGateRandom
     private let model: ReplayGateNoiseModel
     private var northError = 0.0
@@ -634,7 +849,7 @@
       // A 68% radius equals 1.515 standard deviations of each axis. The
       // correlated error is kept in units of the current sigma, so a fix
       // leaving a burst reports an accuracy its error honours.
-      let sigma = accuracy / 1.515
+      let sigma = accuracy / 1.515 * model.errorScale
       let rho = model.errorCorrelation
       let innovation = sqrt(1 - rho * rho)
       northError = rho * northError + innovation * random.gaussian()
@@ -707,8 +922,9 @@
   struct ReplayGateFixRecord: Sendable {
     let second: Int
     let truth: ReplayGateTruthPoint
-    let observedCoordinate: MatcherCoordinate
-    let horizontalAccuracyMeters: Double
+    /// Nil while a tunnel outage delivers no fix.
+    let observedCoordinate: MatcherCoordinate?
+    let horizontalAccuracyMeters: Double?
     let phase: JourneyPhase
     let currentOccurrenceIndex: Int?
     let engineConfidence: LocationConfidence
@@ -735,6 +951,12 @@
       records.filter { $0.phase == .strictRoute || $0.phase == .routeRecovery }
     }
 
+    /// Fixes the App received on open road. Under a tunnel or covered road an
+    /// outage, not the matcher, decides what arrives.
+    private var openSkyRecords: [ReplayGateFixRecord] {
+      records.filter { $0.rawConfidence != nil && !$0.truth.isUnderCover }
+    }
+
     /// A committed occurrence that begins more than `aheadToleranceMeters`
     /// beyond where the car truly is, or any commit while the car is off the
     /// plan, unless the committed edge is geometrically under the car.
@@ -758,18 +980,26 @@
       }
     }
 
-    /// Commits of an occurrence at or beyond the planned movement while the
-    /// car is on the alternative branch and not on that occurrence's edge.
+    /// Fixes at which the car was on the plan, or still approaching it, yet
+    /// the session had declared it off the plan.
+    var falseRouteRecoveryCount: Int {
+      records.count { record in
+        guard record.phase == .routeRecovery else { return false }
+        switch record.truth.kind {
+        case .approach, .occurrence: return true
+        case .offPlan, .egress, .parked: return false
+        }
+      }
+    }
+
+    /// Fixes on the alternative branch at which progress stood at or past
+    /// the planned movement the car did not take.
     func offPlanCommitCount(movementIndex: Int) -> Int {
       records.count { record in
         guard case .offPlan = record.truth.kind,
-          let index = record.currentOccurrenceIndex,
-          index >= movementIndex
+          let index = record.currentOccurrenceIndex
         else { return false }
-        return gate.distanceFromRouteEdge(
-          occurrenceIndex: index,
-          to: record.truth.coordinate
-        ) > 30
+        return index >= movementIndex
       }
     }
 
@@ -788,6 +1018,47 @@
       records.first {
         $0.phase == .routeRecovery && $0.truth.offPlanDistanceMeters != nil
       }?.truth.offPlanDistanceMeters
+    }
+
+    /// The journey completed before the car left the last planned
+    /// occurrence of an exit route, or more than the commit tolerance before
+    /// it reached the PA visit it stops in.
+    func completedEarly(aheadToleranceMeters: Double = 60) -> Bool {
+      guard reachedCompletion, let last = records.last else { return false }
+      switch last.truth.kind {
+      case .approach, .offPlan:
+        return true
+      case .occurrence:
+        guard let stop = gate.finalStopStartIndex,
+          let truthDistance = last.truth.routeDistanceMeters
+        else { return true }
+        return truthDistance + aheadToleranceMeters < gate.routeStartDistances[stop]
+      case .egress, .parked:
+        return false
+      }
+    }
+
+    /// Seconds between the car leaving the last planned occurrence (exit
+    /// routes) or entering the PA visit it stops in (PA routes) and the
+    /// journey completing.
+    var completionDelaySeconds: Int? {
+      guard reachedCompletion, !completedEarly(),
+        let completedAt = records.last?.second
+      else { return nil }
+      let arrivedAt = records.first { record in
+        switch record.truth.kind {
+        case .egress, .parked:
+          return true
+        case .occurrence:
+          guard let stop = gate.finalStopStartIndex,
+            let truthDistance = record.truth.routeDistanceMeters
+          else { return false }
+          return truthDistance + 60 >= gate.routeStartDistances[stop]
+        case .approach, .offPlan:
+          return false
+        }
+      }?.second
+      return arrivedAt.map { completedAt - $0 }
     }
 
     /// Movements whose first spoken cue came at or after the car reached the
@@ -836,52 +1107,44 @@
       return leads.min()
     }
 
-    /// Fixes the App shows as weak position: at review time any fresh
-    /// expressway fix whose raw matcher result was below HIGH.
+    /// Open-sky expressway fixes whose raw matcher result was below HIGH.
     var rawBelowHighFraction: Double {
-      let strict = records.filter { $0.phase == .strictRoute }
+      let strict = openSkyRecords.filter { $0.phase == .strictRoute }
       guard !strict.isEmpty else { return 0 }
       return Double(strict.count { $0.rawConfidence != .high })
         / Double(strict.count)
     }
 
     var longestRawBelowHighRunSeconds: Int {
-      longestRun(in: records.filter { $0.phase == .strictRoute }) {
+      longestRun(in: openSkyRecords.filter { $0.phase == .strictRoute }) {
         $0.rawConfidence != .high
       }
     }
 
-    /// Longest stretch on the expressway without a fix the engine admitted
-    /// as route progress.
+    /// Longest open-sky stretch on the expressway without a fix the engine
+    /// admitted as route progress.
     var longestUnadmittedSeconds: Int {
-      longestRun(in: records.filter { $0.phase == .strictRoute }) {
+      longestRun(in: openSkyRecords.filter { $0.phase == .strictRoute }) {
         $0.engineConfidence != .high
       }
     }
 
-    /// Longest stretch on the expressway in which no fix placed the car on
-    /// any corridor road: the only gap the App may label weak position.
+    /// Longest open-sky stretch on the expressway in which no fix placed the
+    /// car on any corridor road: the only gap the App may label weak
+    /// position.
     var longestLostSeconds: Int {
-      longestRun(in: expresswayRecords) { $0.rawConfidence == .lost }
+      longestRun(
+        in: openSkyRecords.filter {
+          $0.phase == .strictRoute || $0.phase == .routeRecovery
+        }
+      ) { $0.rawConfidence == .lost }
     }
 
     var admittedFraction: Double {
-      let strict = records.filter { $0.phase == .strictRoute }
+      let strict = openSkyRecords.filter { $0.phase == .strictRoute }
       guard !strict.isEmpty else { return 0 }
       return Double(strict.count { $0.engineConfidence == .high })
         / Double(strict.count)
-    }
-
-    /// Seconds between the car leaving the last planned occurrence (exit
-    /// run-out or PA stop) and the journey completing.
-    var completionDelaySeconds: Int? {
-      guard reachedCompletion,
-        let leftAt = records.first(where: {
-          $0.truth.kind == .egress || $0.truth.kind == .parked
-        })?.second,
-        let completedAt = records.last?.second
-      else { return nil }
-      return completedAt - leftAt
     }
 
     private func longestRun(

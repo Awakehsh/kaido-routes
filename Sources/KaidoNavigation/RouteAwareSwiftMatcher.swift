@@ -268,6 +268,9 @@ public struct RouteMatcherObservationResult: Equatable, Sendable {
   /// The estimate selected an off-plan edge the car can have reached by
   /// leaving the plan.
   public let isOnReachableOffPlanEdge: Bool
+  /// Distance from the fix to every corridor edge inside the query radius.
+  /// An edge absent here is farther than the radius.
+  public let edgeDistancesMeters: [String: Double]
 }
 
 public struct RouteMatcherSessionDiagnostics: Equatable, Sendable {
@@ -472,7 +475,8 @@ public struct RouteMatcherSession: Sendable {
       competingOffPlanEdgeIDs: competing,
       isOnReachableOffPlanEdge: estimate.occurrenceID == nil
         && estimate.confidence != .lost
-        && estimate.directedEdgeID.map(isReachable) == true
+        && estimate.directedEdgeID.map(isReachable) == true,
+      edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters)
     )
   }
 

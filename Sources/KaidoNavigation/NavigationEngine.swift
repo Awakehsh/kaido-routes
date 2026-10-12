@@ -470,10 +470,12 @@ public struct NavigationEngine: Sendable {
   }
 
   /// Ends strict-route progress at the released exit once the car has been
-  /// observed past the end of the route. The occurrences between admitted
-  /// progress and the terminal edge were driven to get there.
+  /// observed past the end of the route, also from a deviation the exit's
+  /// own road read as. The occurrences between admitted progress and the
+  /// terminal edge were driven to get there.
   package mutating func finishAtRouteEnd() {
-    guard snapshot.journeyPhase == .strictRoute,
+    guard snapshot.journeyPhase == .strictRoute
+      || snapshot.journeyPhase == .routeRecovery,
       let terminal = configuration.routePlan?.occurrences.last
     else { return }
     advance(to: terminal.id)

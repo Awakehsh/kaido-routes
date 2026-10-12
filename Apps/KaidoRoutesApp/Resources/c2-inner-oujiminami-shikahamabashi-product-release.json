@@ -17563,6 +17563,86 @@
           ],
           "directed_edge_id" : "osm.438481480.1.forward",
           "successor_edge_ids" : [
+            "osm.438481480.2.forward"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.7771085,
+              "longitude" : 139.7480361
+            },
+            {
+              "latitude" : 35.7773599,
+              "longitude" : 139.7476554
+            }
+          ],
+          "directed_edge_id" : "osm.438481480.2.forward",
+          "successor_edge_ids" : [
+            "osm.438481480.3.forward"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.7773599,
+              "longitude" : 139.7476554
+            },
+            {
+              "latitude" : 35.7776102,
+              "longitude" : 139.7473058
+            }
+          ],
+          "directed_edge_id" : "osm.438481480.3.forward",
+          "successor_edge_ids" : [
+            "osm.438481480.4.forward"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.7776102,
+              "longitude" : 139.7473058
+            },
+            {
+              "latitude" : 35.777805,
+              "longitude" : 139.7470573
+            }
+          ],
+          "directed_edge_id" : "osm.438481480.4.forward",
+          "successor_edge_ids" : [
+            "osm.438481480.5.forward"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.777805,
+              "longitude" : 139.7470573
+            },
+            {
+              "latitude" : 35.7780647,
+              "longitude" : 139.746759
+            }
+          ],
+          "directed_edge_id" : "osm.438481480.5.forward",
+          "successor_edge_ids" : [
+            "osm.438481480.6.forward"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.7780647,
+              "longitude" : 139.746759
+            },
+            {
+              "latitude" : 35.7783253,
+              "longitude" : 139.7464979
+            }
+          ],
+          "directed_edge_id" : "osm.438481480.6.forward",
+          "successor_edge_ids" : [
 
           ]
         },

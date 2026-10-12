@@ -140,9 +140,10 @@ operator's dated revision quotes 32.472 yen/km and a ¥2,130 cap, selected by
 the Japanese calendar day). The folklore radial pairings are dead under the current
 rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
 radial is only reachable through a full circuit — so recommendations never
-repeat that folklore: the exit search covers the soonest forward exits and
-every reachable exit near the entrance, and picks the lowest honestly-priced
-band. Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
+repeat that folklore: the exit search covers the exits reached within 3 km of
+the soonest one after the final lap and picks the lowest honestly-priced band
+among them, so a cheaper quote never costs another pass of the course.
+Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
 page and fare search confirm across its Bayshore and Daikoku Line ramps, and
 its fare table bills 王子南 with 王子北, 箱崎 with 浜町 and 清洲橋, and 大井南
 with 中環大井南 as one toll point each.
@@ -165,8 +166,10 @@ recommended normally, between 8 and 16 km it carries an explicit far label,
 and longer approaches carry a long-access label. Straight-line distance never
 decides whether the ordinary-road leg is drivable: the bounded surface provider
 must resolve the exact directional ramp, and a missing access route blocks
-review and start. Automatic selection always starts with the nearest reachable,
-direction-valid entrance from the current origin. Navigation authority is
+review and start. Automatic selection always starts with the reachable,
+direction-valid entrance that reaches the course soonest from the current
+origin: straight-line surface access at city speed plus the expressway
+approach to the course at expressway speed. Navigation authority is
 evaluated only after that exact pairing is formed and cannot replace the
 location recommendation with a distant released sample entrance. An explicit
 driver override remains honored and retains its precise release blocker. The

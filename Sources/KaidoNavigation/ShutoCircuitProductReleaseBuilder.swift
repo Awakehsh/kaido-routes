@@ -48,7 +48,7 @@ public enum ShutoCircuitProductReleaseBuilder {
   public static let c2EntryFacilityID =
     "shuto.ic.c2.oujiminami"
   public static let c2ExitFacilityID =
-    "shuto.ic.s1.shikahamabashi"
+    "shuto.ic.5.itabashihoncho"
   public static let daikokuCircuitID =
     "shuto.circuit.daikoku-yokohama-loop"
   public static let daikokuEntryFacilityID =
@@ -148,7 +148,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     try buildArtifact(
       database: database,
       route: plannedC2Route(database: database),
-      releaseKey: "c2-inner-oujiminami-shikahamabashi",
+      releaseKey: "c2-inner-oujiminami-itabashihoncho",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -550,7 +550,7 @@ public enum ShutoCircuitProductReleaseBuilder {
         .simplifiedChinese: "\(route.entryFacility.nameJA)入口",
         .english: "\(route.entryFacility.nameJA) entrance",
       ]
-    case "c2-inner-oujiminami-shikahamabashi":
+    case "c2-inner-oujiminami-itabashihoncho":
       entranceTitle = [
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "王子南入口",

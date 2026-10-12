@@ -14,7 +14,7 @@
   struct LiveNavigationReplayGateTests {
     static let releaseFiles = [
       "c1-inner-shibakoen-to-shiodome-product-release.json",
-      "c2-inner-oujiminami-shikahamabashi-product-release.json",
+      "c2-inner-oujiminami-itabashihoncho-product-release.json",
       "wangan-westbound-chidoricho-daikoku-pa-product-release.json",
       "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json",
       "scenic-harumi-daikoku-pa-product-release.json",
@@ -129,7 +129,7 @@
       #expect(
         unconfirmable == [
           "c1-inner-shibakoen-to-shiodome-product-release.json": [],
-          "c2-inner-oujiminami-shikahamabashi-product-release.json": [],
+          "c2-inner-oujiminami-itabashihoncho-product-release.json": [],
           "wangan-westbound-chidoricho-daikoku-pa-product-release.json": [],
           "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json": [158],
           "scenic-harumi-daikoku-pa-product-release.json": [],
@@ -138,7 +138,7 @@
       #expect(
         covered == [
           "c1-inner-shibakoen-to-shiodome-product-release.json": [],
-          "c2-inner-oujiminami-shikahamabashi-product-release.json": [234, 343, 1352, 1461],
+          "c2-inner-oujiminami-itabashihoncho-product-release.json": [234, 343],
           "wangan-westbound-chidoricho-daikoku-pa-product-release.json": [285],
           "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json": [31],
           "scenic-harumi-daikoku-pa-product-release.json": [],
@@ -186,7 +186,7 @@
     static let wrongBranchCases: [(file: String, movementIndex: Int)] = [
       ("c1-inner-shibakoen-to-shiodome-product-release.json", 283),
       ("c1-inner-shibakoen-to-shiodome-product-release.json", 487),
-      ("c2-inner-oujiminami-shikahamabashi-product-release.json", 234),
+      ("c2-inner-oujiminami-itabashihoncho-product-release.json", 234),
       ("wangan-westbound-chidoricho-daikoku-pa-product-release.json", 130),
     ]
 

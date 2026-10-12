@@ -19,12 +19,10 @@ internal review workbench.
   Mirai, and the Yokohama Bay Bridge. These three Daikoku experiences end
   inside the PA, including completion of the chosen laps on the loop. The driver
   chooses a route, never designs an entrance or exit: selecting an
-  experience derives the pairing automatically (nearest reachable
-  direction-valid entrance, and for loops the exit whose pairing lands in
-  the lowest tariff band), shows it as one factual line with ranked
-  alternatives one disclosure away, offers a 1–9 lap count on loops, plans
-  the experience as one ordered occurrence sequence, and runs it as a round
-  trip through the normal review gate. Tariff bands come from dated ACTIVE
+  experience derives the pairing automatically, shows it as one factual line
+  with ranked alternatives one disclosure away, offers a 1–9 lap count on
+  loops, plans the experience as one ordered occurrence sequence, and runs it
+  as a round trip through the normal review gate. Tariff bands come from dated ACTIVE
   evidence (normal car, ETC): the minimum band is asserted only with a
   distance safety margin, mid-range amounts stay explicit estimates, and
   nothing is shown until a band is computed. Two dated rules are encoded from
@@ -43,6 +41,19 @@ internal review workbench.
   reopened saved route never form that pair, and a loop leaves at another
   toll point's exit. Destination search remains an optional
   continuation below the catalog.
+- The derived pairing takes the reachable direction-valid entrance that
+  reaches the course soonest: the straight line from the origin to the ramp
+  at city speed (~27 km/h, the surface-access tiers' 8 km in 15–20 min) plus,
+  at the 54 km/h expressway reference, the approach the plan drives before
+  its first lap or tour pass. A ramp beside the origin therefore loses to the
+  course's own ramp a few kilometers away when its approach is a long
+  off-course detour, while a short radial approach still wins. For loops the
+  exit is the lowest tariff band among the exits reached within 3 km — one
+  inner-ward ramp spacing — of the soonest exit after the final lap, ties
+  going to the earlier forward exit. An exit back beside the entrance often
+  quotes the minimum band, but after the laps it can be most of another lap
+  away; the recommendation never buys a lower band with a pass the driver
+  did not choose. Tours keep their soonest course exit.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
   ordered course. Avoid when possible keeps the selected Shuto course and its

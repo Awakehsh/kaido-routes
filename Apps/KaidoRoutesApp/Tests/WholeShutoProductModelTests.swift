@@ -6,6 +6,7 @@ import KaidoPresentation
 import KaidoRouting
 import KaidoSurfaceRouting
 import MapKit
+import Synchronization
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -1938,7 +1939,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     _ = try await DriveControlIntent(action: .rest).perform()
     XCTAssertFalse(model.isPlaying)
-    XCTAssertTrue(try history.load().isEmpty)
+    let historyWhileResting = try await history.load()
+    XCTAssertTrue(historyWhileResting.isEmpty)
     _ = try await DriveControlIntent(action: .resume).perform()
     XCTAssertTrue(model.isPlaying)
     let selectedPlan = try XCTUnwrap(model.selectedRoute?.routePlan)
@@ -1951,7 +1953,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(model.isLiveDrive)
     XCTAssertEqual(model.selectedRoute?.routePlan, selectedPlan)
     XCTAssertEqual(model.origin?.coordinate, midpoint)
-    let saved = try XCTUnwrap(history.load().first)
+    let savedHistory = try await history.load()
+    let saved = try XCTUnwrap(savedHistory.first)
     XCTAssertEqual(saved.recordedDistanceMeters, 75, accuracy: 0.001)
     XCTAssertEqual(saved.recordedDurationMilliseconds, 5_000)
     XCTAssertEqual(saved.averageSpeedMetersPerSecond, 15)
@@ -2835,6 +2838,54 @@ final class WholeShutoProductModelTests: XCTestCase {
     case .unavailable(let code):
       XCTFail("Expected live admission after complete review, got \(code)")
     }
+  }
+
+  func testCancelledRouteAuthorityResolutionAdmitsNothing() async throws {
+    let database = try WholeShutoNetworkCatalog.bundled()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.k1.yokohamakouen",
+      exitFacilityID: "shuto.ic.k7-yokohama-hokusei.yokohamaaoba"
+    )
+    let authority = try WholeShutoRouteReleaseAuthority(database: database)
+
+    let resolution = await Task.detached {
+      withUnsafeCurrentTask { $0?.cancel() }
+      return authority.resolve(route: route)
+    }.value
+
+    guard case .unavailable = resolution else {
+      return XCTFail("A replaced route must not finish building its release")
+    }
+  }
+
+  func testReplacedRouteStopsItsLivePreparationAndNeverPublishes()
+    async throws
+  {
+    let hold = FirstAdmissionHold()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveJourneyAdmissionResolver: { hold.resolve($0) }
+    )
+    model.preparePreviewJourney()
+    XCTAssertGreaterThan(model.recommendations.count, 1)
+    let firstRoute = try XCTUnwrap(model.selectedRoute)
+
+    model.selectRecommendation(at: 1)
+    XCTAssertNotEqual(model.selectedRoute, firstRoute)
+    for _ in 0..<200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !hold.firstFinished
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertTrue(hold.firstFinished)
+    XCTAssertTrue(hold.firstSawCancellation)
+    XCTAssertEqual(
+      model.liveNavigationBlockerCode,
+      FirstAdmissionHold.laterRouteCode
+    )
   }
 
   func testOnDeviceRouteAuthorityAdmitsRinkaiToHatsudaiWithoutPredecessor()
@@ -6308,5 +6359,44 @@ private actor WholeShutoGatedSurfaceRouteResolver: WholeShutoSurfaceRouteResolvi
   {
     if !isReleased { await withCheckedContinuation { pending.append($0) } }
     return await WholeShutoPreviewSurfaceRouteResolver().route(from: origin, to: destination)
+  }
+}
+
+/// Holds the first route's admission until the model cancels it, and answers
+/// every later route at once.
+private final class FirstAdmissionHold: Sendable {
+  static let firstRouteCode = "TEST_FIRST_ROUTE"
+  static let laterRouteCode = "TEST_LATER_ROUTE"
+  private struct State {
+    var firstRoutePlanID: String?
+    var firstFinished = false
+    var firstSawCancellation = false
+  }
+  private let state = Mutex(State())
+
+  var firstFinished: Bool { state.withLock { $0.firstFinished } }
+  var firstSawCancellation: Bool { state.withLock { $0.firstSawCancellation } }
+
+  func resolve(
+    _ route: ShutoPlannedRoute
+  ) -> WholeShutoLiveJourneyAdmissionResolution {
+    let isFirst = state.withLock { state in
+      if state.firstRoutePlanID == nil {
+        state.firstRoutePlanID = route.routePlan.id
+        return true
+      }
+      return false
+    }
+    guard isFirst else { return .unavailable(Self.laterRouteCode) }
+    let deadline = Date().addingTimeInterval(10)
+    while !Task.isCancelled, Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.005)
+    }
+    let cancelled = Task.isCancelled
+    state.withLock { state in
+      state.firstFinished = true
+      state.firstSawCancellation = cancelled
+    }
+    return .unavailable(Self.firstRouteCode)
   }
 }

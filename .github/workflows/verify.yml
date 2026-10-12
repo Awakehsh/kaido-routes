@@ -92,10 +92,10 @@ jobs:
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
-  # Unit tests and UI journeys run as parallel jobs. Each builds for itself:
-  # handing the build products to the other job would cost an upload and a
-  # download on the critical path, while a second build costs only runner
-  # time.
+  # Unit tests and UI journeys run as parallel jobs, each building for itself.
+  # Handing one build to both would put a build job, a second runner
+  # allocation and the simulator boot in series; building in each job lets
+  # the boot overlap the compile.
   app:
     name: iPhone app ${{ matrix.suite }}
     needs: changes
@@ -132,73 +132,15 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Build for testing, then boot the simulator alongside it
+      - name: Build for testing and boot the simulator alongside it
         id: simulator
-        env:
-          TARGET_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
-        run: |
-          set -euo pipefail
-          BUILD_LOG="$RUNNER_TEMP/KaidoRoutesApp-build.log"
-          xcodebuild build-for-testing \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -testPlan Verify \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            ARCHS=arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            > "$BUILD_LOG" 2>&1 &
-          BUILD_PID=$!
-          # EXPERIMENT: a starting xcodebuild waits while CoreSimulator boots
-          # a device, so touch CoreSimulator only once the build is planned.
-          until grep -q '^ComputeTargetDependencyGraph' "$BUILD_LOG" \
-            || ! kill -0 "$BUILD_PID" 2>/dev/null; do
-            sleep 2
-          done
-          echo "Build planned; selecting the simulator"
-          SELECTION=$(xcrun simctl list devices available -j | python3 -c '
-          import json, os, sys
-          devices = json.load(sys.stdin)["devices"]
-          candidates = [
-              (runtime, device)
-              for runtime in devices
-              for device in devices[runtime]
-              if device.get("isAvailable")
-              and device.get("deviceTypeIdentifier")
-                  == os.environ["TARGET_DEVICE_TYPE"]
-          ]
-          if not candidates:
-              raise SystemExit(
-                  "target iPhone simulator is unavailable: "
-                  + os.environ["TARGET_DEVICE_TYPE"]
-              )
-          def runtime_version(identifier):
-              tail = identifier.rsplit(".iOS-", 1)[-1]
-              return tuple(int(component) for component in tail.split("-"))
-          runtime, device = max(
-              candidates,
-              key=lambda candidate: runtime_version(candidate[0]),
-          )
-          print("\t".join(
-              (device["udid"], device["name"], runtime, device["state"])
-          ))
-          ')
-          IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID DEVICE_STATE \
-            <<< "$SELECTION"
-          echo "Selected $DEVICE_NAME on $RUNTIME_ID ($DEVICE_STATE)"
-          echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
-          if [[ "$DEVICE_STATE" != "Booted" ]]; then
-            xcrun simctl boot "$DEVICE_ID"
-          fi
-          xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
-          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-          xcrun simctl ui "$DEVICE_ID" content_size large
-          echo "Simulator ready"
-          BUILD_STATUS=0
-          wait "$BUILD_PID" || BUILD_STATUS=$?
-          echo "Build finished ($BUILD_STATUS)"
-          cat "$BUILD_LOG"
-          exit "$BUILD_STATUS"
+        run: >-
+          python3 scripts/build_and_boot_for_ci.py
+          --test-plan Verify
+          --device-type com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+          --content-size large
+          --derived-data "$RUNNER_TEMP/DerivedData"
+          --build-log "$RUNNER_TEMP/KaidoRoutesApp-build.log"
 
       - name: Verify test plan (${{ matrix.suite }})
         env:
@@ -217,31 +159,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-test.log"
 
-      # TEMPORARY (measurement for the CI split; removed before merge).
-      - name: Phase timings
-        if: always()
-        run: |
-          xcrun xcresulttool get log --path "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
-            --type action --compact | python3 -c '
-          import json, sys
-          def walk(node, depth=0):
-              if depth < 3:
-                  print("  " * depth + node.get("title", "")[:80],
-                        round(node.get("duration") or 0, 1))
-              for child in node.get("subsections", [])[:12]:
-                  walk(child, depth + 1)
-          walk(json.load(sys.stdin))
-          '
-
-      # TEMPORARY (measurement): what handing build products between jobs costs.
-      - name: Upload build products (measurement)
-        if: matrix.slug == 'unit'
-        uses: actions/upload-artifact@v7
-        with:
-          name: products-measurement-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/DerivedData/Build/Products
-          retention-days: 1
-
       - name: Upload App test diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
@@ -253,17 +170,6 @@ jobs:
             ${{ runner.temp }}/KaidoRoutesApp.xcresult
           if-no-files-found: warn
           retention-days: 7
-
-  # TEMPORARY (measurement): download cost of the build products.
-  products-download-measurement:
-    needs: app
-    runs-on: macos-15
-    steps:
-      - uses: actions/download-artifact@v7
-        with:
-          name: products-measurement-${{ github.run_attempt }}
-          path: products
-      - run: du -sh products
 
   gate:
     name: Verification gate

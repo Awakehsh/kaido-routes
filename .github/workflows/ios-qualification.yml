@@ -68,73 +68,20 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Select the qualification simulator
+      - name: Build for testing and boot the simulator alongside it
         id: simulator
         env:
-          TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
-          TARGET_RUNTIME_PREFIX: ${{ matrix.runtime_prefix }}
-        run: |
-          set -euo pipefail
-          SELECTION=$(xcrun simctl list devices available -j | python3 -c '
-          import json, os, sys
-          devices = json.load(sys.stdin)["devices"]
-          candidates = [
-              (runtime, device)
-              for runtime in devices
-              for device in devices[runtime]
-              if device.get("isAvailable")
-              and device.get("deviceTypeIdentifier")
-                  == os.environ["TARGET_DEVICE_TYPE"]
-              and runtime.startswith(os.environ["TARGET_RUNTIME_PREFIX"])
-          ]
-          if not candidates:
-              raise SystemExit(
-                  "target iPhone simulator is unavailable: "
-                  + os.environ["TARGET_DEVICE_TYPE"]
-                  + " " + os.environ["TARGET_RUNTIME_PREFIX"]
-              )
-          def runtime_version(identifier):
-              tail = identifier.rsplit(".iOS-", 1)[-1]
-              return tuple(int(component) for component in tail.split("-"))
-          runtime, device = max(
-              candidates,
-              key=lambda candidate: runtime_version(candidate[0]),
-          )
-          print("\t".join((device["udid"], device["name"], runtime)))
-          ')
-          IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID <<< "$SELECTION"
-          echo "Selected $DEVICE_NAME on $RUNTIME_ID"
-          echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
-
-      - name: Build for testing while the simulator boots
-        env:
-          DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
-          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
-        run: |
-          set -euo pipefail
-          # The build targets a generic simulator, so it never waits on the
-          # booting device; tests run on that device in the next step.
-          (
-            set -euo pipefail
-            echo "Simulator boot started"
-            xcrun simctl boot "$DEVICE_ID"
-            xcrun simctl bootstatus "$DEVICE_ID" > /dev/null
-            xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-            xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
-            echo "Simulator ready"
-          ) &
-          SIMULATOR_PID=$!
-          xcodebuild build-for-testing \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -testPlan Full \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            ARCHS=arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-build.log"
-          echo "Build finished"
-          wait "$SIMULATOR_PID"
+          DEVICE_TYPE: ${{ matrix.device_type }}
+          RUNTIME_PREFIX: ${{ matrix.runtime_prefix }}
+          CONTENT_SIZE: ${{ matrix.content_size }}
+        run: >-
+          python3 scripts/build_and_boot_for_ci.py
+          --test-plan Full
+          --device-type "$DEVICE_TYPE"
+          --runtime-prefix "$RUNTIME_PREFIX"
+          --content-size "$CONTENT_SIZE"
+          --derived-data "$RUNNER_TEMP/DerivedData"
+          --build-log "$RUNNER_TEMP/KaidoRoutesApp-build.log"
 
       - name: App qualification
         env:

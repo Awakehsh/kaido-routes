@@ -364,6 +364,9 @@ private struct WholeShutoResolvedSavedRoute {
 }
 
 enum WholeShutoNetworkCatalog {
+  /// Decodes the bundled network without validating it: every consumer
+  /// builds a `ShutoRoutePlanner` or a runtime `NetworkContext`, and each of
+  /// those validates the database it is given.
   static func bundled(bundle: Bundle = .main) throws -> ShutoNetworkDatabase {
     guard
       let url = bundle.url(
@@ -374,12 +377,10 @@ enum WholeShutoNetworkCatalog {
       throw WholeShutoProductError.bundledNetworkMissing
     }
     do {
-      let database = try JSONDecoder().decode(
+      return try JSONDecoder().decode(
         ShutoNetworkDatabase.self,
         from: Data(contentsOf: url)
       )
-      try database.validate()
-      return database
     } catch {
       throw WholeShutoProductError.bundledNetworkInvalid
     }
@@ -767,9 +768,10 @@ final class WholeShutoProductModel: ObservableObject {
     let planner = planner
     let database = database
     circuitThumbnailTask?.cancel()
-    circuitThumbnailTask = Task.detached(priority: .utility) { [weak self] in
+    // The cards are the first screen's content, not deferrable housekeeping:
+    // at utility priority a saturated CPU held them back for 50 s.
+    circuitThumbnailTask = Task.detached(priority: .userInitiated) { [weak self] in
       var previews: [String: WholeShutoCircuitPreview] = [:]
-      let movementContext = ShutoJunctionMovementCatalog.ReleasedContext(database: database)
       for circuit in ShutoCircuitDefinition.bundled {
         guard !Task.isCancelled else { return }
         guard
@@ -821,7 +823,8 @@ final class WholeShutoProductModel: ObservableObject {
         previews[circuit.circuitID] = WholeShutoCircuitPreview(
           points: sampled, distanceMeters: route.distanceMeters,
           junctionCount: ShutoJunctionGuidanceCompiler.compile(
-            database: database, route: route, releasedContext: movementContext
+            database: database, route: route,
+            releasedContext: planner.releasedMovementContext
           ).count,
           routeIDsInOrder: route.routeIDsInOrder
         )
@@ -1033,6 +1036,7 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     let requestID = UUID()
     let database = database
+    let releasedContext = planner.releasedMovementContext
     liveRuntimeAssetsRequestID = requestID
     isPreparingLiveNavigation = true
     let work = Task.detached(priority: .userInitiated) {
@@ -1054,7 +1058,8 @@ final class WholeShutoProductModel: ObservableObject {
         let runtime = try admission.core.makeRuntime()
         let prompts = Self.compileJunctionPrompts(
           database: database,
-          route: route
+          route: route,
+          releasedContext: releasedContext
         )
         return (assets, runtime, prompts)
       } catch {
@@ -1701,20 +1706,26 @@ final class WholeShutoProductModel: ObservableObject {
     guard !isPreparingLiveNavigation else { return [] }
     let prompts = Self.compileJunctionPrompts(
       database: database,
-      route: route
+      route: route,
+      releasedContext: planner.releasedMovementContext
     )
     junctionPromptCacheRoutePlan = route.routePlan
     junctionPromptCache = prompts
     return prompts
   }
 
+  /// The released context must come from the same database. Without it the
+  /// compiler re-indexes the whole network at every route edge, which takes
+  /// seconds on a long route.
   private nonisolated static func compileJunctionPrompts(
     database: ShutoNetworkDatabase,
-    route: ShutoPlannedRoute
+    route: ShutoPlannedRoute,
+    releasedContext: ShutoJunctionMovementCatalog.ReleasedContext
   ) -> [WholeShutoJunctionPrompt] {
     ShutoJunctionGuidanceCompiler.compile(
       database: database,
-      route: route
+      route: route,
+      releasedContext: releasedContext
     ).map { match in
       let definition = match.definition
       return WholeShutoJunctionPrompt(
@@ -2316,6 +2327,7 @@ final class WholeShutoProductModel: ObservableObject {
 
     let laps = circuitLaps + 1
     let database = database
+    let planner = planner
     let preference = route.preference
     let stopIDs = parkingStopSelection?.parkingAreaIDs ?? []
     let prepared = await Task.detached(priority: .userInitiated) {
@@ -2328,7 +2340,6 @@ final class WholeShutoProductModel: ObservableObject {
         ShutoPlannedRoute
       )? in
       do {
-        let planner = try ShutoRoutePlanner(database: database)
         let base = try planner.planCircuit(
           circuit: circuit,
           entryFacilityID: entryFacilityID,
@@ -2354,7 +2365,8 @@ final class WholeShutoProductModel: ObservableObject {
         let runtime = try admission.core.makeRuntime()
         let prompts = Self.compileJunctionPrompts(
           database: database,
-          route: extended
+          route: extended,
+          releasedContext: planner.releasedMovementContext
         )
         return (extended, admission, assets, runtime, prompts, base)
       } catch {

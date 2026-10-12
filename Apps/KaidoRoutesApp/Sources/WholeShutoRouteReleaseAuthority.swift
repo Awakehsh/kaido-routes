@@ -30,26 +30,32 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
 
   let database: ShutoNetworkDatabase
   let runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext
+  private let planner: ShutoRoutePlanner
 
   init(database: ShutoNetworkDatabase) throws {
     self.database = database
     runtimeContext = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
       database: database
     )
+    planner = try ShutoRoutePlanner(database: database)
   }
 
+  /// Cancellation is checked between the expensive phases, so a route the
+  /// driver has already replaced stops consuming CPU.
   func resolve(
     route selectedRoute: ShutoPlannedRoute
   ) -> WholeShutoLiveJourneyAdmissionResolution {
     do {
-      let reconstructed = try ShutoRoutePlanner(database: database)
-        .restore(routePlan: selectedRoute.routePlan)
+      let reconstructed = try planner.restore(
+        routePlan: selectedRoute.routePlan
+      )
       // The round trip proves the saved plan rebuilds the same road from the
       // bundled database. It cannot rebuild lap marks, which the plan does not
       // carry, so road identity is compared rather than whole-value equality.
       guard reconstructed.describesSameRoad(as: selectedRoute) else {
         return .unavailable(Self.runtimeInvalidCode)
       }
+      try Task.checkCancellation()
       // Built from the selected route, not the reconstruction: the two are
       // now proven to be the same road, and only the selected one carries the
       // planner's lap marks for the release to hold.
@@ -59,6 +65,7 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
           context: runtimeContext,
           route: selectedRoute
         )
+      try Task.checkCancellation()
       let core = try KaidoLiveJourneyAdmission(
         release: product.release,
         selectedRoutePlan: selectedRoute.routePlan,

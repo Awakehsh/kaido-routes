@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class DriveHistoryStoreTests: XCTestCase {
-  func testHistorySurvivesReopeningAndDeletionTargetsOneRecord() throws {
+  func testHistorySurvivesReopeningAndDeletionTargetsOneRecord() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
     let first = try entry(start: 1_000)
@@ -14,12 +14,14 @@ final class DriveHistoryStoreTests: XCTestCase {
     try store.save(first)
     try store.save(second)
     let reopened = FileDriveHistoryStore(directory: directory)
-    XCTAssertEqual(try reopened.load().map(\.id), [second.id, first.id])
+    let reloaded = try await reopened.load()
+    XCTAssertEqual(reloaded.map(\.id), [second.id, first.id])
     try reopened.remove(id: second.id)
-    XCTAssertEqual(try reopened.load(), [first])
+    let afterRemoval = try await reopened.load()
+    XCTAssertEqual(afterRemoval, [first])
   }
 
-  func testABadHistoryFileHidesOnlyItself() throws {
+  func testABadHistoryFileHidesOnlyItself() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
     let kept = try entry(start: 10_000)
@@ -29,7 +31,8 @@ final class DriveHistoryStoreTests: XCTestCase {
       .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
     try Data("not-a-drive".utf8)
       .write(to: directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("json"))
-    XCTAssertEqual(try store.load(), [kept])
+    let loaded = try await store.load()
+    XCTAssertEqual(loaded, [kept])
   }
 
   private func entry(start: Int) throws -> DriveHistoryEntry {

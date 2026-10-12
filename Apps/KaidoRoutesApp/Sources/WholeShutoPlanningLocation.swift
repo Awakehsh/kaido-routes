@@ -35,6 +35,12 @@ final class WholeShutoPlanningLocationController:
   private var isForeground = true
   private var locationTimeoutTask: Task<Void, Never>?
   private static let locationTimeout = Duration.seconds(12)
+  /// A fix this good settles the planning origin, so updates stop until the
+  /// app returns to the foreground or the driver asks for the current
+  /// location again. Entrances sit farther apart than this, and every fix
+  /// re-renders the home. A fix that never gets this good still stops when
+  /// the locating window ends.
+  static let settledAccuracyMeters = 100.0
 
   init(
     manager: CLLocationManager = CLLocationManager(),
@@ -138,15 +144,18 @@ final class WholeShutoPlanningLocationController:
         ? location.course : nil,
       measuredAt: location.timestamp
     )
-    locationTimeoutTask?.cancel()
-    locationTimeoutTask = nil
     state = .measured
+    if location.horizontalAccuracy <= Self.settledAccuracyMeters {
+      locationTimeoutTask?.cancel()
+      locationTimeoutTask = nil
+      manager.stopUpdatingLocation()
+    }
   }
 
   func locationManager(_: CLLocationManager, didFailWithError _: Error) {
     guard previewState == nil else { return }
-    locationTimeoutTask?.cancel()
-    locationTimeoutTask = nil
+    // Core Location keeps trying after a transient failure, so the locating
+    // window stays armed to stop it.
     state = snapshot == nil ? .unavailable : .measured
   }
 
@@ -176,7 +185,7 @@ final class WholeShutoPlanningLocationController:
     case .authorizedAlways, .authorizedWhenInUse:
       state = snapshot == nil ? .locating : .measured
       manager.startUpdatingLocation()
-      scheduleLocationTimeoutIfNeeded()
+      scheduleLocationTimeout()
     case .notDetermined, .denied, .restricted:
       break
     @unknown default:
@@ -184,18 +193,16 @@ final class WholeShutoPlanningLocationController:
     }
   }
 
-  private func scheduleLocationTimeoutIfNeeded() {
+  private func scheduleLocationTimeout() {
     locationTimeoutTask?.cancel()
-    guard snapshot == nil else { return }
     locationTimeoutTask = Task { [weak self] in
       try? await Task.sleep(for: Self.locationTimeout)
       guard !Task.isCancelled, let self,
         self.wantsLocation,
-        self.isForeground,
-        self.snapshot == nil
+        self.isForeground
       else { return }
       self.manager.stopUpdatingLocation()
-      self.state = .unavailable
+      self.state = self.snapshot == nil ? .unavailable : .measured
       self.locationTimeoutTask = nil
     }
   }

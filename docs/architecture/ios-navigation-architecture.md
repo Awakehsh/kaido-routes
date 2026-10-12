@@ -87,7 +87,9 @@ authority because most routes do not publish them consistently.
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
 multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
-Core Location lifecycle only for the planning origin. An admitted live drive
+Core Location lifecycle only for the planning origin. It stops updating once a
+fix is within 100 m, or 12 seconds after it starts, and restarts on foreground
+return or an explicit current-location request. An admitted live drive
 starts its separate When In Use session in the foreground and keeps it active
 through screen lock and temporary app switching. It
 cannot create a live navigation session from the candidate graph alone. The
@@ -830,6 +832,12 @@ another route's road evidence or live-input authority merely because location
 permission or device fixes exist.
 
 Bundled catalog matching and admission construction run off the main actor.
+The verified foreground catalog loads once per process, and the whole-network
+runtime context, with its validation and network hash, is built once per
+product model by the first route that needs it. Junction prompts compile
+against the planner's released movement context. Preparation checks
+cancellation between route reconstruction, release build, and admission, so a
+replaced route stops early; request identity keeps its result from publishing.
 Admission construction validates the immutable release, full selected
 `RoutePlan`, foreground authority, journey composition, and complete navigation
 runtime before exposing foreground input authority. Route selection then
@@ -2306,7 +2314,8 @@ model reference; it does not introduce a second navigation session.
 
 Drive history persists aggregate recorded intervals, observed lap splits, and
 the exact planned route locally, one file per drive; a file that cannot be read
-or validated hides only its own drive. A checkpoint may retain the aggregate record
+or validated hides only its own drive. The history list reads those files off
+the main actor. A checkpoint may retain the aggregate record
 without retaining the last raw speed sample. Rest interrupts speed integration;
 missing samples and skipped planned laps never become recorded driving. The
 existing recording setting also controls collection and history persistence.

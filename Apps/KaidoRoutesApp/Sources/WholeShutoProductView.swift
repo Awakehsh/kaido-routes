@@ -1814,25 +1814,40 @@ struct WholeShutoProductView: View {
               .truncationMode(.tail)
           }
           if let preview = model.circuitPreviewsByID[circuit.circuitID] {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-              Text("\(preview.referenceMinutes)")
-                .font(KaidoType.display)
-                .foregroundStyle(KaidoInk.textPrimary)
-                .monospacedDigit()
-              Text(copy.resolve(
-                japanese: "分", simplifiedChinese: "分钟", english: "min"
-              ))
-              .font(KaidoType.label)
-              .foregroundStyle(KaidoInk.textQuiet)
-              Rectangle()
-                .fill(KaidoInk.divider)
-                .frame(width: 1, height: 12)
-                .padding(.horizontal, 2)
+            // At accessibility text sizes the column is too narrow for one
+            // row, and wrapping broke numbers mid-token: "16.1 km" stood as
+            // "16", ".1", "km" and the minutes split in two. The time and the
+            // distance take a line each there, and a part that still does not
+            // fit shrinks rather than breaks. The three-line fragment was also
+            // what the home's contrast audit failed.
+            let metricsLayout = dynamicTypeSize.isAccessibilitySize
+              ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+              : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+            metricsLayout {
+              HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(preview.referenceMinutes)")
+                  .font(KaidoType.display)
+                  .foregroundStyle(KaidoInk.textPrimary)
+                  .monospacedDigit()
+                Text(copy.resolve(
+                  japanese: "分", simplifiedChinese: "分钟", english: "min"
+                ))
+                .font(KaidoType.label)
+                .foregroundStyle(KaidoInk.textQuiet)
+              }
+              if !dynamicTypeSize.isAccessibilitySize {
+                Rectangle()
+                  .fill(KaidoInk.divider)
+                  .frame(width: 1, height: 12)
+                  .padding(.horizontal, 2)
+              }
               Text(distanceLabel(preview.distanceMeters))
                 .font(KaidoType.headline)
                 .foregroundStyle(KaidoInk.textQuiet)
                 .monospacedDigit()
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(
               "whole-shuto-circuit-metrics-\(circuit.circuitID)"

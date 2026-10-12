@@ -25206,22 +25206,22 @@
                 "spoken_text" : "Ahead at Kasai JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん",
                   "葛西" : "かさい"
                 },
-                "spoken_text" : "この先の分岐で、葛西ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、葛西ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在葛西 JCT 不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在葛西 JCT 不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25316,22 +25316,22 @@
                 "spoken_text" : "Ahead at Tatsumi JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん",
                   "辰巳" : "たつみ"
                 },
-                "spoken_text" : "この先の分岐で、辰巳ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、辰巳ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在辰巳 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在辰巳 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25426,22 +25426,22 @@
                 "spoken_text" : "Ahead at Shinonome JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "東雲" : "しののめ",
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、東雲ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、東雲ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在东云 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在东云 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25536,22 +25536,22 @@
                 "spoken_text" : "Ahead at Ariake JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "有明" : "ありあけ",
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、有明ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、有明ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在有明 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在有明 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25646,22 +25646,22 @@
                 "spoken_text" : "Ahead at Oi JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "大井" : "おおい",
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、大井ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、大井ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在大井 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在大井 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25756,7 +25756,7 @@
                 "spoken_text" : "Ahead at Tokai JCT, stay on the Bayshore Route toward 空港中央・大黒ふ頭"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
                 "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
                   "大黒ふ頭" : "だいこくふとう",
@@ -25764,15 +25764,15 @@
                   "湾岸線" : "わんがんせん",
                   "空港中央" : "くうこうちゅうおう"
                 },
-                "spoken_text" : "この先の分岐で、東海ジャンクションは分岐せず、湾岸線 空港中央・大黒ふ頭方面へ進んでください"
+                "spoken_text" : "この先、東海ジャンクションは分岐せず、湾岸線 空港中央・大黒ふ頭方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 空港中央・大黒ふ頭 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 空港中央・大黒ふ頭 方向",
                 "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
                   "空港中央・大黒ふ頭" : "空港中央・大黒ふ頭"
                 },
-                "spoken_text" : "前方分岔，在东海 JCT 不要分岔，沿湾岸线继续前往 空港中央・大黒ふ頭 方向"
+                "spoken_text" : "前方，在东海 JCT 不要分岔，沿湾岸线继续前往 空港中央・大黒ふ頭 方向"
               }
             },
             "route_shields" : [
@@ -25868,22 +25868,22 @@
                 "spoken_text" : "Ahead at Kawasaki-Ukishima JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "川崎浮島" : "かわさきうきしま",
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、川崎浮島ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、川崎浮島ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在川崎浮岛 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在川崎浮岛 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -25978,20 +25978,20 @@
                 "spoken_text" : "Ahead at Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、K5 大黒線 東名方面へ",
+                "display_text" : "この先、左方向へ分岐し、K5 大黒線 東名方面へ",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黒線 東名方面" : "K5 大黒線 東名方面"
                 },
-                "spoken_text" : "この先の分岐で、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
+                "spoken_text" : "この先、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 K5 大黑线东名高速方向",
+                "display_text" : "前方，向左分岔，驶往 K5 大黑线东名高速方向",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黑线东名高速方向" : "K5 大黑线东名高速方向"
                 },
-                "spoken_text" : "前方分岔，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
+                "spoken_text" : "前方，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
               }
             },
             "route_shields" : [

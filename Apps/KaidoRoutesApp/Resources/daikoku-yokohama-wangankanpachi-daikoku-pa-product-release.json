@@ -19965,22 +19965,22 @@
                 "spoken_text" : "Ahead at Kawasaki-Ukishima JCT, stay on the Bayshore Route toward 横浜"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "川崎浮島" : "かわさきうきしま",
                   "横浜" : "よこはま",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、川崎浮島ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、川崎浮島ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 横浜 方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "横浜" : "横浜"
                 },
-                "spoken_text" : "前方分岔，在川崎浮岛 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+                "spoken_text" : "前方，在川崎浮岛 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
               }
             },
             "route_shields" : [
@@ -20075,20 +20075,20 @@
                 "spoken_text" : "Ahead at Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、K5 大黒線 東名方面へ",
+                "display_text" : "この先、左方向へ分岐し、K5 大黒線 東名方面へ",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黒線 東名方面" : "K5 大黒線 東名方面"
                 },
-                "spoken_text" : "この先の分岐で、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
+                "spoken_text" : "この先、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 K5 大黑线东名高速方向",
+                "display_text" : "前方，向左分岔，驶往 K5 大黑线东名高速方向",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黑线东名高速方向" : "K5 大黑线东名高速方向"
                 },
-                "spoken_text" : "前方分岔，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
+                "spoken_text" : "前方，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
               }
             },
             "route_shields" : [
@@ -20185,20 +20185,20 @@
                 "spoken_text" : "Ahead at Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、右方向を保ち、第三京浜・東名・K1 羽田方面へ",
+                "display_text" : "この先、右方向を保ち、第三京浜・東名・K1 羽田方面へ",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京浜・東名・K1 羽田方面" : "第三京浜・東名・K1 羽田方面"
                 },
-                "spoken_text" : "この先の分岐で、生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください"
+                "spoken_text" : "この先、生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，保持右侧，驶往 第三京滨・东名高速・K1 羽田方向",
+                "display_text" : "前方，保持右侧，驶往 第三京滨・东名高速・K1 羽田方向",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京滨・东名高速・K1 羽田方向" : "第三京滨・东名高速・K1 羽田方向"
                 },
-                "spoken_text" : "前方分岔，在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
+                "spoken_text" : "前方，在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
               }
             },
             "route_shields" : [
@@ -20352,20 +20352,20 @@
                 "spoken_text" : "Ahead at Namamugi JCT, continue straight for Route K1 toward Haneda"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、K1 横羽線 羽田方面へ",
+                "display_text" : "この先、分岐せず、K1 横羽線 羽田方面へ",
                 "preserved_japanese_sign_text" : "羽田",
                 "spoken_forms" : {
                   "K1 横羽線 羽田方面" : "K1 横羽線 羽田方面"
                 },
-                "spoken_text" : "この先の分岐で、生麦JCTでは分岐せず、K1 横羽線 羽田方面へ進んでください"
+                "spoken_text" : "この先、生麦JCTでは分岐せず、K1 横羽線 羽田方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，驶往 K1 横羽线羽田方向",
+                "display_text" : "前方，不要分岔，驶往 K1 横羽线羽田方向",
                 "preserved_japanese_sign_text" : "羽田",
                 "spoken_forms" : {
                   "K1 横羽线羽田方向" : "K1 横羽线羽田方向"
                 },
-                "spoken_text" : "前方分岔，在生麦 JCT不要分岔，驶往 K1 横羽线羽田方向"
+                "spoken_text" : "前方，在生麦 JCT不要分岔，驶往 K1 横羽线羽田方向"
               }
             },
             "route_shields" : [
@@ -20458,20 +20458,20 @@
                 "spoken_text" : "Ahead at Daishi JCT, branch left for Route K6 toward the Bayshore Route"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、K6 川崎線 湾岸線方面へ",
+                "display_text" : "この先、左方向へ分岐し、K6 川崎線 湾岸線方面へ",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "K6 川崎線 湾岸線方面" : "K6 川崎線 湾岸線方面"
                 },
-                "spoken_text" : "この先の分岐で、大師JCTでは左方向へ分岐し、K6 川崎線 湾岸線方面へ進んでください"
+                "spoken_text" : "この先、大師JCTでは左方向へ分岐し、K6 川崎線 湾岸線方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 K6 川崎线湾岸线方向",
+                "display_text" : "前方，向左分岔，驶往 K6 川崎线湾岸线方向",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "K6 川崎线湾岸线方向" : "K6 川崎线湾岸线方向"
                 },
-                "spoken_text" : "前方分岔，在大师 JCT向左分岔，驶往 K6 川崎线湾岸线方向"
+                "spoken_text" : "前方，在大师 JCT向左分岔，驶往 K6 川崎线湾岸线方向"
               }
             },
             "route_shields" : [
@@ -20566,20 +20566,20 @@
                 "spoken_text" : "Ahead at Kawasaki-Ukishima JCT, keep right for the Bayshore Route toward Tokyo or Yokohama"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、右方向を保ち、湾岸線 東京・横浜方面へ",
+                "display_text" : "この先、右方向を保ち、湾岸線 東京・横浜方面へ",
                 "preserved_japanese_sign_text" : "東京・横浜",
                 "spoken_forms" : {
                   "湾岸線 東京・横浜方面" : "湾岸線 東京・横浜方面"
                 },
-                "spoken_text" : "この先の分岐で、川崎浮島JCTでは右方向を保ち、湾岸線 東京・横浜方面へ進んでください"
+                "spoken_text" : "この先、川崎浮島JCTでは右方向を保ち、湾岸線 東京・横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，保持右侧，驶往 湾岸线东京、横滨方向",
+                "display_text" : "前方，保持右侧，驶往 湾岸线东京、横滨方向",
                 "preserved_japanese_sign_text" : "東京・横浜",
                 "spoken_forms" : {
                   "湾岸线东京、横滨方向" : "湾岸线东京、横滨方向"
                 },
-                "spoken_text" : "前方分岔，在川崎浮岛 JCT保持右侧，驶往 湾岸线东京、横滨方向"
+                "spoken_text" : "前方，在川崎浮岛 JCT保持右侧，驶往 湾岸线东京、横滨方向"
               }
             },
             "route_shields" : [
@@ -20672,20 +20672,20 @@
                 "spoken_text" : "Ahead at Kawasaki-Ukishima Junction, branch right for the Bayshore Route toward Yokohama"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、右方向へ分岐し、湾岸線 横浜方面へ",
+                "display_text" : "この先、右方向へ分岐し、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "湾岸線 横浜方面" : "湾岸線 横浜方面"
                 },
-                "spoken_text" : "この先の分岐で、川崎浮島JCTでは右方向へ分岐し、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "この先、川崎浮島JCTでは右方向へ分岐し、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向右分岔，驶往 湾岸线横滨方向",
+                "display_text" : "前方，向右分岔，驶往 湾岸线横滨方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "湾岸线横滨方向" : "湾岸线横滨方向"
                 },
-                "spoken_text" : "前方分岔，在川崎浮岛 JCT向右分岔，驶往 湾岸线横滨方向"
+                "spoken_text" : "前方，在川崎浮岛 JCT向右分岔，驶往 湾岸线横滨方向"
               }
             },
             "route_shields" : [
@@ -20778,20 +20778,20 @@
                 "spoken_text" : "Ahead at Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、K5 大黒線 東名方面へ",
+                "display_text" : "この先、左方向へ分岐し、K5 大黒線 東名方面へ",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黒線 東名方面" : "K5 大黒線 東名方面"
                 },
-                "spoken_text" : "この先の分岐で、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
+                "spoken_text" : "この先、大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 K5 大黑线东名高速方向",
+                "display_text" : "前方，向左分岔，驶往 K5 大黑线东名高速方向",
                 "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
                   "K5 大黑线东名高速方向" : "K5 大黑线东名高速方向"
                 },
-                "spoken_text" : "前方分岔，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
+                "spoken_text" : "前方，在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
               }
             },
             "route_shields" : [

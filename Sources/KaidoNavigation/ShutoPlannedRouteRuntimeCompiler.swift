@@ -894,13 +894,15 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       for (locale, original) in template.presentationSource.localizedContent {
         let displayText: String
         let spokenText: String
+        // The lead-in says only "ahead": the commit cue names the movement,
+        // and a "fork" lead-in contradicts a stay-on cue ("don't fork").
         switch locale {
         case .japanese:
-          displayText = "この先の分岐で、" + original.displayText
-          spokenText = "この先の分岐で、" + original.spokenText
+          displayText = "この先、" + original.displayText
+          spokenText = "この先、" + original.spokenText
         case .simplifiedChinese:
-          displayText = "前方分岔，" + original.displayText
-          spokenText = "前方分岔，" + original.spokenText
+          displayText = "前方，" + original.displayText
+          spokenText = "前方，" + original.spokenText
         case .english:
           // The commit cue already says where ("At Edobashi JCT, stay on…"),
           // so preparation announces it ahead instead of prefixing a second

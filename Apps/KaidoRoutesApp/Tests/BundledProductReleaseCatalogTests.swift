@@ -120,7 +120,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertEqual(scenic.release.navigation.bundle.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
     XCTAssertEqual(
       scenic.release.navigation.bundle.routePlan.occurrences.count,
-      849
+      852
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,

@@ -18,8 +18,9 @@ struct NetworkOverviewLayoutTests {
         }
       }
     )
-    // All 147 available facilities carry their directional facts.
-    #expect(layout.facilityMarks.count == 147)
+    // All 148 available facilities, 東銀座 included, carry their
+    // directional facts.
+    #expect(layout.facilityMarks.count == 148)
     let hatsudaiMinami = try #require(
       layout.facilityMarks.first {
         $0.id == "shuto.ic.c2.hatsudaiminami"

@@ -143,7 +143,9 @@ radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the soonest forward exits and
 every reachable exit near the entrance, and picks the lowest honestly-priced
 band. Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
-page and fare search confirm across its Bayshore and Daikoku Line ramps.
+page and fare search confirm across its Bayshore and Daikoku Line ramps, and
+its fare table bills 王子南 with 王子北, 箱崎 with 浜町 and 清洲橋, and 大井南
+with 中環大井南 as one toll point each.
 Between an entrance and an exit at one toll point the planner's toll-point
 path collapses to the ramps themselves, and the editor cannot author the
 turnaround such a trip needs, so that pair is not plannable as an exact
@@ -152,8 +154,8 @@ than quoted the collapsed minimum band. An entrance on
 a member route must still match the experience's carriageway direction
 (the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
 every anchor in course order. Highway preference defaults to prefer highways;
-avoid when possible limits recommendations to entrances on the chosen course
-and prefers ordinary roads for connecting legs. The pairing appears as one
+avoid when possible limits recommendations to entrances on the chosen course.
+Connecting legs use ordinary roads under either setting. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.
@@ -263,8 +265,10 @@ with a retry message. Required surface legs must resolve before starting.
 End at an expressway exit completes only after the planned exit handoff; it has
 no onward surface leg and never fabricates a return journey. Changing the exit
 replans explicitly: circuit choices retain their course and lap count, while
-custom choices must produce a legal directional route. Invalid exit choices
-leave the existing plan intact. Optional onward guidance starts automatically
+custom choices must produce a legal directional route. A route that is not a
+circuit offers only exits its entrance actually reaches, nearest first to where
+the route now ends; a PA-ended route continuing onward therefore leaves near
+that PA. Invalid exit choices leave the existing plan intact. Optional onward guidance starts automatically
 after the highway segment; the app does not require a destination prompt at the
 exit while driving.
 

@@ -1,0 +1,434 @@
+{
+  "schema_version": "1.0",
+  "checked_at": "2026-10-12",
+  "database_id": "kaido.shuto.whole-network.2026-08-04+pa-access-20260908+facility-candidates-20260914+facility-closures-20261012+topology-20261012+facility-candidates-20261012",
+  "candidate_distance_limit_meters": 400,
+  "mainline_termini": [
+    {
+      "node_id": 246081024,
+      "kind": "dead_end",
+      "edge_id": "osm.1023386115.1.forward",
+      "reason": "Toll point: the 浦和南 exit meets the surface road at 新大宮バイパス (OSM way 1241272849)."
+    },
+    {
+      "node_id": 252830367,
+      "kind": "dead_start",
+      "edge_id": "osm.56132891.0.forward",
+      "reason": "Toll point: the 与野 entrance meets the surface road at 新大宮バイパス (OSM way 678900580)."
+    },
+    {
+      "node_id": 260710868,
+      "kind": "dead_start",
+      "edge_id": "osm.24039714.0.forward",
+      "reason": "Toll point: the 荏原 entrance meets the surface road at 中原街道 (OSM way 161271578)."
+    },
+    {
+      "node_id": 263988698,
+      "kind": "dead_end",
+      "edge_id": "osm.1535575835.0.forward",
+      "reason": "Carriageway ends at the boundary with the Tohoku Expressway (OSM way 44351424), outside the Shuto network."
+    },
+    {
+      "node_id": 264005882,
+      "kind": "dead_start",
+      "edge_id": "osm.1199150818.0.forward",
+      "reason": "Toll point of the 三郷 entrance, which the operator's fare table prices with 三郷JCT as one: OSM continues the carriageway as way 24336407 (首都高速道路6号三郷線) into 三郷JCT outside the route relation."
+    },
+    {
+      "node_id": 264873291,
+      "kind": "dead_start",
+      "edge_id": "osm.24402716.0.forward",
+      "reason": "End of the long-term-closed Yaesu Route."
+    },
+    {
+      "node_id": 286641897,
+      "kind": "dead_end",
+      "edge_id": "osm.58699003.5.forward",
+      "reason": "Carriageway ends at the boundary with the Yokohama-Yokosuka Road (OSM way 58699008), outside the Shuto network."
+    },
+    {
+      "node_id": 293336827,
+      "kind": "dead_start",
+      "edge_id": "osm.1200967443.0.forward",
+      "reason": "Carriageway begins at the boundary with the Yokohama-Yokosuka Road (OSM way 161560171), outside the Shuto network."
+    },
+    {
+      "node_id": 294043105,
+      "kind": "dead_end",
+      "edge_id": "osm.1020253302.1.forward",
+      "reason": "Toll point: the 杉田 exit meets the surface road at 東京湾岸道路 (OSM way 306701919)."
+    },
+    {
+      "node_id": 294046876,
+      "kind": "dead_end",
+      "edge_id": "osm.1020258662.2.forward",
+      "reason": "Toll point: the 三溪園 exit meets the surface road at 東京湾岸道路 (OSM way 537162582)."
+    },
+    {
+      "node_id": 309601745,
+      "kind": "dead_start",
+      "edge_id": "osm.1535575834.0.forward",
+      "reason": "Carriageway begins at the boundary with the Tohoku Expressway (OSM way 44351618), outside the Shuto network."
+    },
+    {
+      "node_id": 310160780,
+      "kind": "dead_start",
+      "edge_id": "osm.44823312.0.forward",
+      "reason": "Carriageway begins at the boundary with the Daisan-Keihin Road (OSM way 44823943), outside the Shuto network."
+    },
+    {
+      "node_id": 339899765,
+      "kind": "dead_end",
+      "edge_id": "osm.347256153.4.forward",
+      "reason": "Toll point: the 幸浦 exit meets the surface road at 東京湾岸道路 (OSM way 779273280)."
+    },
+    {
+      "node_id": 393101168,
+      "kind": "dead_end",
+      "edge_id": "osm.437896345.7.forward",
+      "reason": "End of the long-term-closed Yaesu Route."
+    },
+    {
+      "node_id": 443726408,
+      "kind": "dead_start",
+      "edge_id": "osm.37838294.0.forward",
+      "reason": "Toll point: the 幸浦 entrance meets the surface road at 東京湾岸道路 (OSM way 798453129)."
+    },
+    {
+      "node_id": 447798983,
+      "kind": "dead_start",
+      "edge_id": "osm.31709129.0.forward",
+      "reason": "Carriageway begins at the boundary with the Yokohama-Yokosuka Road (OSM way 58699005), outside the Shuto network."
+    },
+    {
+      "node_id": 493584454,
+      "kind": "dead_end",
+      "edge_id": "osm.760583394.1.forward",
+      "reason": "Toll point: the 豊洲 exit meets the surface road at 有明通り (OSM way 24053272)."
+    },
+    {
+      "node_id": 530886978,
+      "kind": "dead_end",
+      "edge_id": "osm.846888239.44.forward",
+      "reason": "Toll point of the 三郷 exit, which the operator's fare table prices with 三郷JCT as one: OSM continues the carriageway as way 43992700 (首都高速道路6号三郷線) into 三郷JCT outside the route relation."
+    },
+    {
+      "node_id": 568312527,
+      "kind": "dead_end",
+      "edge_id": "osm.44823944.3.forward",
+      "reason": "Carriageway ends at the boundary with the Daisan-Keihin Road (OSM way 1494904063), outside the Shuto network."
+    },
+    {
+      "node_id": 580892048,
+      "kind": "dead_end",
+      "edge_id": "osm.560259107.4.forward",
+      "reason": "Toll point: the 平和島 exit meets the surface road at 海岸通り (OSM way 1134230714)."
+    },
+    {
+      "node_id": 614591159,
+      "kind": "dead_end",
+      "edge_id": "osm.904689118.2.forward",
+      "reason": "Toll point: the さいたま見沼 exit meets the surface road at 第二産業道路 (OSM way 95366565)."
+    },
+    {
+      "node_id": 614599183,
+      "kind": "dead_start",
+      "edge_id": "osm.904691646.0.forward",
+      "reason": "Toll point: the さいたま見沼 entrance meets the surface road at 第二産業道路 (OSM way 200860002)."
+    },
+    {
+      "node_id": 1041276967,
+      "kind": "dead_start",
+      "edge_id": "osm.41520089.0.forward",
+      "reason": "Toll point: the 入谷 entrance meets the surface road at 昭和通り (OSM way 1547456976)."
+    },
+    {
+      "node_id": 1064064228,
+      "kind": "dead_end",
+      "edge_id": "osm.106911692.1.forward",
+      "reason": "Toll point: the 戸越 exit meets the surface road at 第二京浜 (OSM way 1101385036)."
+    },
+    {
+      "node_id": 1509483677,
+      "kind": "dead_end",
+      "edge_id": "osm.805171062.3.forward",
+      "reason": "Toll point: the 五反田 exit meets the surface road at 山手通り (OSM way 262007608)."
+    },
+    {
+      "node_id": 1774388229,
+      "kind": "dead_end",
+      "edge_id": "osm.724099522.1.forward",
+      "reason": "Toll point: the 東神奈川 exit meets the surface road at 第一京浜 (OSM way 306326877)."
+    },
+    {
+      "node_id": 1858137841,
+      "kind": "dead_end",
+      "edge_id": "osm.207646123.1.forward",
+      "reason": "Toll point: the 荏原 exit meets the surface road at 中原街道 (OSM way 107127319)."
+    },
+    {
+      "node_id": 2402061967,
+      "kind": "dead_end",
+      "edge_id": "osm.945962601.0.forward",
+      "reason": "Toll point: the 入谷 exit meets the surface road at 昭和通り (OSM way 945962602)."
+    },
+    {
+      "node_id": 2703511281,
+      "kind": "dead_start",
+      "edge_id": "osm.106909100.0.forward",
+      "reason": "Toll point: the 戸越 entrance meets the surface road at 第二京浜 (OSM way 796871116)."
+    },
+    {
+      "node_id": 4360978736,
+      "kind": "dead_end",
+      "edge_id": "osm.1022520297.2.forward",
+      "reason": "Toll point: the 浅田 exit meets the surface road at 産業道路 (OSM way 1346330477)."
+    },
+    {
+      "node_id": 4361060076,
+      "kind": "dead_end",
+      "edge_id": "osm.915743992.1.forward",
+      "reason": "Toll point: the 千鳥町 exit meets the surface road at 東京湾岸道路 (OSM way 916232754)."
+    },
+    {
+      "node_id": 4361138363,
+      "kind": "dead_end",
+      "edge_id": "osm.1023900267.1.forward",
+      "reason": "Toll point: the 加賀 exit meets the surface road at 足立川口線 (OSM way 867188600)."
+    },
+    {
+      "node_id": 5470031352,
+      "kind": "dead_start",
+      "edge_id": "osm.568584516.0.forward",
+      "reason": "Toll point: the 晴海 entrance meets the surface road at 有明通り (OSM way 198900395)."
+    },
+    {
+      "node_id": 5470031356,
+      "kind": "dead_end",
+      "edge_id": "osm.568584518.0.forward",
+      "reason": "Toll point: the 晴海 exit meets the surface road at 有明通り (OSM way 44955796)."
+    },
+    {
+      "node_id": 5660587044,
+      "kind": "dead_end",
+      "edge_id": "osm.49177725.41.forward",
+      "reason": "Carriageway ends at the boundary with the Keiyo Road (OSM way 920238369), outside the Shuto network."
+    },
+    {
+      "node_id": 5660587045,
+      "kind": "dead_start",
+      "edge_id": "osm.156796455.0.forward",
+      "reason": "Carriageway begins at the boundary with the Keiyo Road (OSM way 920238368), outside the Shuto network."
+    },
+    {
+      "node_id": 5978934417,
+      "kind": "dead_end",
+      "edge_id": "osm.1023900266.1.forward",
+      "reason": "Toll point: the 東領家 exit meets the surface road at 足立川口線 (OSM way 961188426)."
+    },
+    {
+      "node_id": 7105141622,
+      "kind": "dead_start",
+      "edge_id": "osm.435743369.0.forward",
+      "reason": "Toll point: the 新山下 entrance meets an unnamed tertiary road (OSM way 1427302948)."
+    },
+    {
+      "node_id": 7111415496,
+      "kind": "dead_start",
+      "edge_id": "osm.301662701.0.forward",
+      "reason": "Carriageway begins at the boundary with the Chuo Expressway (OSM way 28368972), outside the Shuto network."
+    },
+    {
+      "node_id": 7276388533,
+      "kind": "dead_end",
+      "edge_id": "osm.31711330.0.forward",
+      "reason": "Southern end of the Bayshore Route 西行き carriageway; OSM continues it 23 m as way 779273271 outside route relation 4256202, and no Shuto toll point binds it."
+    },
+    {
+      "node_id": 8506194350,
+      "kind": "dead_end",
+      "edge_id": "osm.909937705.21.forward",
+      "reason": "Carriageway ends at the boundary with the Higashi-Kanto Expressway (OSM way 38029065), outside the Shuto network."
+    },
+    {
+      "node_id": 8506194351,
+      "kind": "dead_start",
+      "edge_id": "osm.4854232.0.forward",
+      "reason": "Carriageway begins at the boundary with the Higashi-Kanto Expressway (OSM way 61897437), outside the Shuto network."
+    },
+    {
+      "node_id": 13990199111,
+      "kind": "dead_end",
+      "edge_id": "osm.1535564383.8.forward",
+      "reason": "Carriageway ends at the boundary with the Tomei Expressway (OSM way 1467911979), outside the Shuto network."
+    },
+    {
+      "node_id": 13990199112,
+      "kind": "dead_start",
+      "edge_id": "osm.1535564384.0.forward",
+      "reason": "Carriageway begins at the boundary with the Tomei Expressway (OSM way 1467911980), outside the Shuto network."
+    },
+    {
+      "node_id": 13991390367,
+      "kind": "dead_start",
+      "edge_id": "osm.1535715309.0.forward",
+      "reason": "Carriageway begins at the boundary with the Tokyo Bay Aqua-Line (OSM way 5204888), outside the Shuto network."
+    },
+    {
+      "node_id": 13991390368,
+      "kind": "dead_end",
+      "edge_id": "osm.1535715310.0.forward",
+      "reason": "Carriageway ends at the boundary with the Tokyo Bay Aqua-Line (OSM way 1523947188), outside the Shuto network."
+    }
+  ],
+  "candidate_distance_exceptions": [
+    {
+      "facility_id": "shuto.ic.1-haneda.heiwajima",
+      "edge_id": "osm.256114185.0.forward",
+      "reason": "平和島's 上り entrance ramp, the one 上り entrance between 鈴ヶ森 and 平和島PA's return; its surface end is 413 m north of the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.1-haneda.heiwajima",
+      "edge_id": "osm.560259107.4.forward",
+      "reason": "平和島's 下り exit ramp to 海岸通り (OSM way 560259107, a relation member), 477 m north of the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.3.shibuya",
+      "edge_id": "osm.1071659160.1.forward",
+      "reason": "Ramp named 渋谷出口(道玄坂上)."
+    },
+    {
+      "facility_id": "shuto.ic.3.shibuya",
+      "edge_id": "osm.311740422.1.forward",
+      "reason": "Ramp named 渋谷出口(道玄坂上)."
+    },
+    {
+      "facility_id": "shuto.ic.3.shibuya",
+      "edge_id": "osm.382210313.0.forward",
+      "reason": "Ramp named 渋谷出口."
+    },
+    {
+      "facility_id": "shuto.ic.3.shibuya",
+      "edge_id": "osm.756785283.0.forward",
+      "reason": "Ramp named 渋谷入口; 渋谷's ramps are spread along Route 3 around the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.141340876.0.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.439262440.0.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.43992169.1.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.491625691.0.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.763341649.0.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.6-misato.misato",
+      "edge_id": "osm.763350967.1.forward",
+      "reason": "Link of 三郷JCT to the Joban Expressway or the Gaikan; the operator's fare table prices 三郷 and 三郷JCT as one toll point."
+    },
+    {
+      "facility_id": "shuto.ic.b.higashiogishima",
+      "edge_id": "osm.32355491.0.forward",
+      "reason": "東扇島's ramps run along the island access road; junction node named 東扇島."
+    },
+    {
+      "facility_id": "shuto.ic.b.higashiogishima",
+      "edge_id": "osm.32355494.9.forward",
+      "reason": "東扇島's ramps run along the island access road; junction node named 東扇島."
+    },
+    {
+      "facility_id": "shuto.ic.b.higashiogishima",
+      "edge_id": "osm.5365199.0.forward",
+      "reason": "東扇島's ramps run along the island access road, 857 m from the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.b.higashiogishima",
+      "edge_id": "osm.5365200.15.forward",
+      "reason": "東扇島's ramps run along the island access road; junction node named 東扇島."
+    },
+    {
+      "facility_id": "shuto.ic.b.kasai",
+      "edge_id": "osm.1471606997.1.forward",
+      "reason": "葛西's ramps wrap around 葛西JCT; this entrance is 413 m from the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.b.kasai",
+      "edge_id": "osm.46876076.11.forward",
+      "reason": "葛西's ramps wrap around 葛西JCT; this exit is 515 m from the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.b.ooiminami",
+      "edge_id": "osm.250495122.9.forward",
+      "reason": "Exit diverging at the node named 大井南出口, across 大井JCT."
+    },
+    {
+      "facility_id": "shuto.ic.b.ooiminami",
+      "edge_id": "osm.45683107.4.forward",
+      "reason": "大井南's ramps sit across 大井JCT from the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.b.ooiminami",
+      "edge_id": "osm.5171347.0.forward",
+      "reason": "大井南's ramps sit across 大井JCT from the operator point."
+    },
+    {
+      "facility_id": "shuto.ic.b.rinkaihukutoshin",
+      "edge_id": "osm.405795841.0.forward",
+      "reason": "Ramp whose junction node is named 臨海副都心."
+    },
+    {
+      "facility_id": "shuto.ic.k7-yokohama-kita.yokohamakohoku",
+      "edge_id": "osm.693933987.2.forward",
+      "reason": "横浜港北's ramps (横浜北線) spread around 横浜港北JCT."
+    },
+    {
+      "facility_id": "shuto.ic.k7-yokohama-kita.yokohamakohoku",
+      "edge_id": "osm.783548646.0.forward",
+      "reason": "横浜港北's ramps (横浜北線) spread around 横浜港北JCT."
+    },
+    {
+      "facility_id": "shuto.ic.s1.shikahamabashi",
+      "edge_id": "osm.1023900994.15.forward",
+      "reason": "Ramp named 鹿浜橋."
+    },
+    {
+      "facility_id": "shuto.ic.s2.shintoshin",
+      "edge_id": "osm.283894031.0.forward",
+      "reason": "Split interchange; this binding is the 2026-09-14 facility candidate patch's."
+    },
+    {
+      "facility_id": "shuto.ic.s2.shintoshin",
+      "edge_id": "osm.283919441.2.forward",
+      "reason": "Split interchange; this binding is the 2026-09-14 facility candidate patch's."
+    },
+    {
+      "facility_id": "shuto.ic.s2.shintoshin",
+      "edge_id": "osm.284163654.7.forward",
+      "reason": "Split interchange; this binding is the 2026-09-14 facility candidate patch's."
+    }
+  ],
+  "ramp_continuations": [
+    {
+      "facility_id": "shuto.ic.6-misato.yashio",
+      "side": "exit",
+      "edge_id": "osm.1463660809.6.forward",
+      "reason": "OSM joins the 下り exit ramp (way 1463660809, destination 八潮入口) straight onto the 6号三郷線 carriageway at plaza node 559433465, as bound by the 2026-09-14 patch. No surface road meets that node in OSM, so it is not cut as a surface crossing; the continuation stays listed until it is reviewed against the plaza layout."
+    }
+  ]
+}

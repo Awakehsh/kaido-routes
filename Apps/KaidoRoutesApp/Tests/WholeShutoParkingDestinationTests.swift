@@ -1,3 +1,4 @@
+import CoreLocation
 import KaidoDomain
 import KaidoNavigation
 import KaidoRouting
@@ -71,6 +72,44 @@ final class WholeShutoParkingDestinationTests: XCTestCase {
     XCTAssertNil(model.selectedRoute?.exitFacility)
     XCTAssertNil(model.egressRoute)
     XCTAssertTrue(model.canStartLiveNavigation, model.liveNavigationBlockerCode ?? "")
+  }
+
+  func testOnwardEndingFromAPARouteLeavesAtAReachableExitNearThePA() async throws {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil)
+    let search = WholeShutoPlaceSearchController(localPlaces: WholeShutoProductView.localSearchPlaces(in: model.database), usesMapKit: false)
+    search.update(query: "大黑", near: nil)
+    let place = try await search.resolve(try XCTUnwrap(search.suggestions.first))
+    XCTAssertEqual(place.parkingAreaID, "shuto.pa.daikoku")
+    model.selectCurrentOrigin(try XCTUnwrap(model.database.directionalFacilities.first { $0.facilityID == "shuto.ic.10.harumi" }).coordinate)
+    model.selectDestinationPreview(place)
+    model.planJourney()
+    try await waitForJourney(model)
+    let route = try XCTUnwrap(model.selectedRoute)
+    XCTAssertFalse(model.isCircuitRouteSelected)
+    XCTAssertEqual(route.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
+    XCTAssertNil(route.exitFacility)
+
+    // The ending sheet offers only exits this entrance really reaches.
+    let planner = try ShutoRoutePlanner(database: model.database)
+    let exits = try await model.journeyExitCandidates()
+    XCTAssertFalse(exits.isEmpty)
+    for exit in exits {
+      XCTAssertNoThrow(
+        try planner.plan(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID),
+        exit.facilityID)
+    }
+
+    // Continuing onward leaves near the PA the route was heading for, not at
+    // whichever exit sorts first by name.
+    try await model.prepareExitForOnwardJourney()
+    try await waitForJourney(model)
+    let onward = try XCTUnwrap(model.selectedRoute)
+    let exit = try XCTUnwrap(onward.exitFacility)
+    XCTAssertEqual(onward.entryFacility.facilityID, route.entryFacility.facilityID)
+    XCTAssertEqual(exit.facilityID, exits.first?.facilityID)
+    let paDistance = CLLocation(latitude: exit.coordinate.latitude, longitude: exit.coordinate.longitude)
+      .distance(from: CLLocation(latitude: route.destinationCoordinate.latitude, longitude: route.destinationCoordinate.longitude))
+    XCTAssertLessThan(paDistance, 3_000, exit.nameJA)
   }
 
   func testSelectedPAAndSavedRouteRemainTerminalDestinations() async throws {

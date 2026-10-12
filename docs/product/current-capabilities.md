@@ -34,18 +34,21 @@ internal review workbench.
   calendar day is the one quoted, so the revision is never shown early and
   takes over on its day without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
-  the band. Same-named ramps bill as one toll point. An entrance and exit
+  the band. Same-named ramps bill as one toll point, and so do the
+  interchanges the operator bills together: 王子南 and 王子北; 箱崎, 浜町 and
+  清洲橋; 大井南 and 中環大井南. An entrance and exit
   sharing one are not plannable as an exact entry/exit route — the
   planner's toll-point path between them collapses to the ramps
   themselves — so the catalog, the editor, destination search, and a
-  reopened saved route never form that pair, and a loop leaves at a
-  differently named exit. Destination search remains an optional
+  reopened saved route never form that pair, and a loop leaves at another
+  toll point's exit. Destination search remains an optional
   continuation below the catalog.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
-  ordered course. Avoid when possible keeps the selected Shuto course but
-  prefers its own entrances and ordinary roads on connecting legs. Connecting
-  tolls are outside the Shuto estimate.
+  ordered course. Avoid when possible keeps the selected Shuto course and its
+  own entrances. Either way the legs to and from the expressway are ordinary
+  roads: MapKit is asked to avoid highways and tolls, so a connecting leg never
+  guides through unreviewed junctions or adds a second toll.
 - PAs appear in destination search alongside other places. Selecting one
   plans its exact directional access and an arrival point on the reviewed
   parking interior. There is no separate stop-selection screen. A PA-ended

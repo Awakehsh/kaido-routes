@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "ffd651b8e6c42a86e2c0b82151164d8d6898be253198dd914b3802a3ff1cf5b7",
+        "d0cbe686d32bc1a1acb853f9c1149e82b59d4d147b81b6b6d6d1e2bb336b5190",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07",
       role: .foregroundNavigation
@@ -80,7 +80,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "scenic-harumi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "9b6b67f775c151eeae725c6487feee1de651249dadcefff1a076ade5e551d9ac",
+        "01839bb0c23fc4ca107cc4bfce77a6525c5a04858938dd0046219976b4a48f15",
       expectedReleaseID:
         "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation

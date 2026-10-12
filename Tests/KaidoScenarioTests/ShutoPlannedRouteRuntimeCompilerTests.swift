@@ -46,10 +46,15 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 29)
-    #expect(coverage.incomingApproachCount == 81)
-    #expect(coverage.movements.count == 163)
+    // The 2026-10-12 topology review restores the Bayshore westbound feed
+    // into K3 at Honmoku JCT (osm way 32403531). Its two movements wait for
+    // a review against the operator's junction diagram, which no longer
+    // sits at the URL the earlier reviews hashed; every other movement
+    // stays released.
+    #expect(coverage.incomingApproachCount == 82)
+    #expect(coverage.movements.count == 165)
     #expect(coverage.releasedMovementCount == 163)
-    #expect(coverage.missingMovementReviewCount == 0)
+    #expect(coverage.missingMovementReviewCount == 2)
     #expect(
       coverage.movements.first {
         $0.incomingDirectedEdgeID == "osm.38093215.139.forward"
@@ -179,9 +184,15 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       }
     )
     #expect(
-      coverage.movements.allSatisfy {
-        $0.releasedGuidanceDefinitionID != nil
-      }
+      Set(
+        coverage.movements
+          .filter { $0.releasedGuidanceDefinitionID == nil }
+          .map { "\($0.incomingDirectedEdgeID)->\($0.outgoingDirectedEdgeID)" }
+      )
+        == [
+          "osm.31711323.6.forward->osm.32403531.0.forward",
+          "osm.31711323.6.forward->osm.340606274.0.forward",
+        ]
     )
   }
 
@@ -478,10 +489,13 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       coverage.recoveryBranchCount(kind: .unavailableExpresswayBranch)
         == 0
     )
+    // The branches onto Route 5 at Takehashi and Route 2 at Ichinohashi
+    // used to find a way back through the surface U-turns at
+    // Higashi-Ikebukuro and Tengenji; the topology review cut both.
     #expect(
       coverage.missingRecoveryCandidateBranchCount(
         kind: .expresswayBranch
-      ) == 2
+      ) == 4
     )
     #expect(
       coverage.missingRecoveryCandidateBranchCount(kind: .surfaceExit)
@@ -589,7 +603,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.k1.minatomirai", "shuto.ic.k3.hananoki"),
       ("shuto.ic.k3.shinyamashita", "shuto.ic.k1.minatomirai"),
       ("shuto.ic.k3.hananoki", "shuto.ic.k3.shinyamashita"),
-      ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
       ("shuto.ic.k6.daishi", "shuto.ic.k1.hamakawasaki"),
       ("shuto.ic.c2.oujiminami", "shuto.ic.5.nakadai"),
       ("shuto.ic.c2.oujiminami", "shuto.ic.c2.nishiikebukuro"),
@@ -603,7 +616,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         "shuto.ic.k1.daishi",
         "shuto.ic.k7-yokohama-kita.shinyokohama"
       ),
-      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
       (
         "shuto.ic.k5.daikokufutou",
         "shuto.ic.k7-yokohama-kita.shinyokohama"
@@ -620,10 +632,6 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       (
         "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
         "shuto.ic.k5.daikokufutou"
-      ),
-      (
-        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
-        "shuto.ic.k1.yokohamakouen"
       ),
     ]
 
@@ -644,6 +652,34 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
           route: route
         )
       #expect(artifact.navigationRelease.routePlan == route.routePlan)
+    }
+
+    // These used to turn back through the Daikoku Line and Namamugi, or
+    // round the Yokohama loop the other way; they now take the Bayshore
+    // westbound into K3 at Honmoku JCT (the short way the operator's fare
+    // distance from Daikoku-Futo to Yokohama-Koen implies), whose decision
+    // waits for movement review and so blocks a live release.
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
+      ("shuto.ic.k7-yokohama-hokusei.yokohamaaoba", "shuto.ic.k1.yokohamakouen"),
+      ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
+    ] {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      #expect(route.edges.contains { $0.edgeID == "osm.32403531.0.forward" })
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      #expect(assets.liveReleaseCoverage.missingGuidanceDecisionCount == 1)
+      #expect(throws: (any Error).self) {
+        _ = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteArtifact(
+          database: database,
+          route: route
+        )
+      }
     }
   }
 

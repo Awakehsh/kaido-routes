@@ -10,9 +10,11 @@ Attribution and licence:
 - <https://www.openstreetmap.org/copyright>
 - <https://opendatacommons.org/licenses/odbl/1-0/>
 
-The database is the default iPhone product graph. It contains 26 official route
-entries, 2,499 selected OSM ways, 24,299 directed edges, 151 operator IC names,
-39 JCTs, and 19 PAs. Its metadata retains the exact parent input, SHA-256,
+The database is the default iPhone product graph: the builder's output with
+the dated reviews in `data/route-atlas/reviews/` replayed in order. It contains
+26 official route entries, 2,540 OSM ways, 24,553 directed edges, 152 IC
+names (the operator catalog's 151 plus the 東銀座 exit a review adds), 39 JCTs,
+and 19 PAs. Its metadata retains the exact parent input, SHA-256,
 snapshot timestamp, builder/version, ODbL identifier, attribution, official
 catalog binding, facility-candidate review binding, graph limitations, and
 bounded gap-connector way IDs.

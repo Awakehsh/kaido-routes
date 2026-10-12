@@ -15,6 +15,16 @@ unless every patched facility then pairs with the network the review says it
 should. Graph geometry is untouched: only which ramp edge a toll point is
 bound to changes, so `network_snapshot_id` stays and `database_id` gains the
 review's revision.
+
+Schema 1.1 reviews every facility at once. A candidate the facility already
+had keeps the distance the builder measured, so re-reviewing a binding that
+was right changes nothing; a re-pointed candidate is measured to its edge.
+A candidate whose OSM ramp carries another route's relation membership (one
+interchange the operator lists under two routes, or a ramp OSM files under
+the neighbouring route) binds only when the patch names it under
+`cross_route` with a reason. A review may also add a facility the catalog
+missed, and re-point a junction's OSM nodes, recomputing the junction
+coordinate as the builder does: the mean of its nodes.
 """
 
 from __future__ import annotations
@@ -67,8 +77,79 @@ def distance_to_segment(
     return math.hypot(px - fraction * sx, py - fraction * sy)
 
 
+FACILITY_FIELDS = {
+    "coordinate",
+    "entrance_directions",
+    "etc_only",
+    "exit_directions",
+    "facility_id",
+    "name_ja",
+    "official_page_route_slug",
+    "official_page_url",
+    "operational_status",
+    "reading_ja",
+    "route_id",
+    "source_sha256",
+}
+
+
+def add_facilities(applied: dict[str, Any], additions: list[dict[str, Any]]) -> None:
+    """Insert reviewed facilities after the last facility of their route, with
+    no ramp bound until a patch binds one."""
+    routes = {route["route_id"] for route in applied["routes"]}
+    facilities = applied["directional_facilities"]
+    for addition in additions:
+        record = {key: addition[key] for key in FACILITY_FIELDS if key in addition}
+        if set(record) != FACILITY_FIELDS or not addition.get("evidence"):
+            raise FacilityCandidatePatchError(
+                f"added facility {addition.get('facility_id')} is incomplete or carries no evidence"
+            )
+        if any(facility["facility_id"] == record["facility_id"] for facility in facilities):
+            raise FacilityCandidatePatchError(f"facility {record['facility_id']} already exists")
+        if record["route_id"] not in routes:
+            raise FacilityCandidatePatchError(f"unknown route {record['route_id']}")
+        record.update(
+            entry_edge_candidates=[],
+            exit_edge_candidates=[],
+            geometry_match_state="UNRESOLVED",
+        )
+        position = max(
+            (index for index, facility in enumerate(facilities)
+             if facility["route_id"] == record["route_id"]),
+            default=len(facilities) - 1,
+        )
+        facilities.insert(position + 1, record)
+
+
+def patch_junctions(applied: dict[str, Any], patches: list[dict[str, Any]]) -> None:
+    coordinates = {
+        node["node_id"]: (node["latitude"], node["longitude"])
+        for node in applied["nodes"]
+    }
+    junctions = {junction["junction_id"]: junction for junction in applied["junctions"]}
+    for patch in patches:
+        junction = junctions.get(patch["junction_id"])
+        if junction is None:
+            raise FacilityCandidatePatchError(f"unknown junction {patch['junction_id']}")
+        if not patch.get("evidence") or not patch.get("reason"):
+            raise FacilityCandidatePatchError(
+                f"junction patch for {patch['junction_id']} carries no reason or evidence"
+            )
+        node_ids = sorted(set(patch["osm_node_ids"]))
+        if not node_ids or any(node_id not in coordinates for node_id in node_ids):
+            raise FacilityCandidatePatchError(
+                f"junction {patch['junction_id']} names a node outside the snapshot"
+            )
+        junction["osm_node_ids"] = node_ids
+        junction["coordinate"] = {
+            "latitude": sum(coordinates[node_id][0] for node_id in node_ids) / len(node_ids),
+            "longitude": sum(coordinates[node_id][1] for node_id in node_ids) / len(node_ids),
+        }
+
+
 def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
-    if review.get("schema_version") != "1.0":
+    schema = review.get("schema_version")
+    if schema not in ("1.0", "1.1"):
         raise FacilityCandidatePatchError("unsupported facility candidate patch schema")
     if review.get("network_snapshot_id") != network["network_snapshot_id"]:
         raise FacilityCandidatePatchError(
@@ -84,6 +165,9 @@ def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, A
         for facility in network["directional_facilities"]
     }
     applied = json.loads(json.dumps(network))
+    if schema == "1.1":
+        add_facilities(applied, review.get("added_facilities", []))
+        patch_junctions(applied, review.get("junction_patches", []))
     patched = {
         facility["facility_id"]: facility
         for facility in applied["directional_facilities"]
@@ -103,6 +187,11 @@ def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, A
             edge_ids = patch.get(key)
             if edge_ids is None:
                 continue
+            measured_before = {
+                candidate["edge_id"]: candidate["distance_meters"]
+                for candidate in facility[key]
+            }
+            cross_route = patch.get("cross_route", {}) if schema == "1.1" else {}
             if len(set(edge_ids)) != len(edge_ids):
                 raise FacilityCandidatePatchError(f"{facility_id} repeats an {role} edge")
             directions = facility["entrance_directions" if role == "entry" else "exit_directions"]
@@ -119,18 +208,21 @@ def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, A
                     raise FacilityCandidatePatchError(
                         f"{edge_id} is a parking edge and cannot bind a toll point"
                     )
-                if not any(
+                if not cross_route.get(edge_id) and not any(
                     membership["route_id"] == facility["route_id"]
                     for membership in edge["route_memberships"]
                 ):
                     raise FacilityCandidatePatchError(
                         f"{edge_id} does not belong to route {facility['route_id']}"
                     )
-                distance = distance_to_segment(
-                    (facility["coordinate"]["latitude"], facility["coordinate"]["longitude"]),
-                    coordinates[edge["from_node_id"]],
-                    coordinates[edge["to_node_id"]],
-                )
+                if schema == "1.1" and edge_id in measured_before:
+                    distance = measured_before[edge_id]
+                else:
+                    distance = distance_to_segment(
+                        (facility["coordinate"]["latitude"], facility["coordinate"]["longitude"]),
+                        coordinates[edge["from_node_id"]],
+                        coordinates[edge["to_node_id"]],
+                    )
                 candidates.append(
                     {"distance_meters": round(distance, 3), "edge_id": edge_id}
                 )
@@ -141,6 +233,8 @@ def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, A
         # neither as an entrance nor as an exit.
         if not facility["entry_edge_candidates"] and not facility["exit_edge_candidates"]:
             facility["geometry_match_state"] = "UNRESOLVED"
+        elif schema == "1.1":
+            facility["geometry_match_state"] = "CANDIDATE_MATCHED"
     return applied
 
 
@@ -217,12 +311,19 @@ def main() -> int:
         if review.get("input_database_sha256") != sha256(arguments.network):
             raise FacilityCandidatePatchError("review input database hash does not match")
         applied = apply_review(network, review)
+        previous_patch = network["sources"].get("facility_candidate_patch")
         applied["sources"]["facility_candidate_patch"] = {
             "review_id": review["review_id"],
             "checked_at": review["checked_at"],
             "sha256": sha256(arguments.review),
             "patched_facility_count": len(review["patches"]),
         }
+        if review["schema_version"] == "1.1":
+            applied["sources"]["facility_candidate_patch"].update(
+                added_facility_count=len(review.get("added_facilities", [])),
+                patched_junction_count=len(review.get("junction_patches", [])),
+                previous_patch=previous_patch,
+            )
         applied["database_id"] = (
             applied["database_id"]
             + "+facility-candidates-"

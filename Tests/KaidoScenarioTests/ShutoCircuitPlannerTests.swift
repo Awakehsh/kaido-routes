@@ -310,15 +310,13 @@ struct ShutoCircuitPlannerTests {
     )
 
     #expect(!candidates.isEmpty)
-    // The nearest legal start is the Hatsudai radial entrance, which joins
-    // the inner loop through the all-directions Nishi-Shinjuku JCT; the
-    // loop's own Hatsudai-minami ramp ranks right behind it.
-    #expect(candidates.first?.facilityID == "shuto.ic.4.hatsudai")
-    #expect(
-      candidates.contains {
-        $0.facilityID == "shuto.ic.c2.hatsudaiminami"
-      }
-    )
+    // The nearest legal start is the loop's own Hatsudai-minami ramp. The
+    // Hatsudai radial entrance joins Route 4 down, past the Nishi-Shinjuku
+    // JCT split, so it cannot reach the loop: the operator prices it only
+    // to Hatagaya, Eifuku and Takaido. It used to qualify only because
+    // Hatagaya's up entrance was bound to it.
+    #expect(candidates.first?.facilityID == "shuto.ic.c2.hatsudaiminami")
+    #expect(!candidates.contains { $0.facilityID == "shuto.ic.4.hatsudai" })
     #expect(candidates.allSatisfy { $0.canEnter })
   }
 
@@ -399,7 +397,12 @@ struct ShutoCircuitPlannerTests {
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    // After the parking area the run rejoins the Bayshore westbound, and
+    // the next exit on it is Honmoku-Futo. The Daikoku-Futo exit ramp is
+    // reached from the Daikoku Line before the parking area; the Bayshore
+    // listing of Daikoku-Futo used to be bound to through-lane segments
+    // beside the parking area, which looked like an exit right after it.
+    #expect(pairing.exit.facilityID == "shuto.ic.b.honmakifutou")
 
     let route = try planner.planCircuit(
       circuit: .wanganDaikokuRun,
@@ -413,7 +416,7 @@ struct ShutoCircuitPlannerTests {
     #expect(route.distanceMeters < 45_000)
     #expect(assertContinuity(route.edges))
     // The run leaves the Bayshore for the Daikoku Line to reach the parking
-    // area, then comes back to it for the Daikoku-Futo exit.
+    // area, then comes back to it for the Honmoku-Futo exit.
     #expect(Array(route.routeIDsInOrder.suffix(3)) == ["B", "K5", "B"])
 
     // The parking area is the point of the run: it is driven, not passed.
@@ -425,7 +428,7 @@ struct ShutoCircuitPlannerTests {
     // Driving the parking area is inside the toll domain — the driver has
     // not exited — so the pairing the tariff is quoted for is untouched.
     #expect(parkingVisits.allSatisfy { $0.tollDomainID == "shuto.toll-domain" })
-    #expect(route.exitFacility?.facilityID == "shuto.ic.b.daikokufutou")
+    #expect(route.exitFacility?.facilityID == "shuto.ic.b.honmakifutou")
     // The visit is a contiguous run of occurrences, not scattered edges.
     let visitIndices = parkingVisits.map(\.index)
     #expect(zip(visitIndices, visitIndices.dropFirst()).allSatisfy { $0 + 1 == $1 })
@@ -477,11 +480,16 @@ struct ShutoCircuitPlannerTests {
       for: .daikokuYokohamaLoop,
       origin: origin
     )
-    // The Daikoku-Futo westbound entrance heads away from the cycle toward
-    // the Honmoku dead end; the closure gate must exclude it even though it
-    // is geodesically nearest.
+    // The operator lists Daikoku-Futo under the Bayshore and the Daikoku
+    // Line; both listings are one interchange whose single entrance ramp
+    // joins the Daikoku Line beside the PA. Whichever listing is offered,
+    // the drive starts on that ramp.
+    let daikokuFutoEntrances = entrances.filter { $0.nameJA == "大黒ふ頭" }
+    #expect(!daikokuFutoEntrances.isEmpty)
     #expect(
-      entrances.allSatisfy { $0.facilityID != "shuto.ic.b.daikokufutou" }
+      daikokuFutoEntrances.allSatisfy {
+        $0.entryEdgeCandidates.map(\.edgeID) == ["osm.32592469.0.forward"]
+      }
     )
 
     let pairing = try planner.recommendedCircuitPairing(
@@ -489,11 +497,15 @@ struct ShutoCircuitPlannerTests {
       origin: origin,
       evidence: .etcNormalCarUntil2026September
     )
-    // The Daikoku Line entrance right beside the PA is on the cycle and
-    // geodesically nearest; the same-named Bayshore exit is never paired,
-    // so the fare-best exit is Namamugi just off the cycle — the quoted
-    // band never changes with lap count.
-    #expect(pairing.entrance.facilityID == "shuto.ic.k5.daikokufutou")
+    // The Daikoku-Futo entrance right beside the PA is on the cycle and
+    // geodesically nearest; the same-named exit is never paired, so the
+    // fare-best exit lies off the cycle — the quoted band never changes
+    // with lap count.
+    #expect(pairing.entrance.nameJA == "大黒ふ頭")
+    #expect(
+      pairing.entrance.entryEdgeCandidates.map(\.edgeID)
+        == ["osm.32592469.0.forward"]
+    )
     let entranceDistance = try #require(pairing.entranceDistanceMeters)
     #expect(
       ShutoEntranceAccessTier.classify(
@@ -536,7 +548,11 @@ struct ShutoCircuitPlannerTests {
       evidence: .etcNormalCarUntil2026September
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.10.harumi")
-    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    // After the parking area the tour rejoins the Bayshore eastbound and
+    // the first exit on it is Higashi-Ogishima. The Bayshore listing of
+    // Daikoku-Futo used to be bound to through-lane segments beside the
+    // parking area, which looked like an exit there.
+    #expect(pairing.exit.facilityID == "shuto.ic.b.higashiogishima")
 
     let route = try planner.planCircuit(
       circuit: .scenicGrandTour,
@@ -544,7 +560,8 @@ struct ShutoCircuitPlannerTests {
       exitFacilityID: pairing.exit.facilityID,
       laps: 1
     )
-    // Harumi past Haneda and Minato Mirai to Daikoku measures ~41 km.
+    // Harumi past Haneda and Minato Mirai to Daikoku and on to
+    // Higashi-Ogishima measures ~45 km.
     #expect(route.distanceMeters > 30_000)
     #expect(route.distanceMeters < 55_000)
     #expect(assertContinuity(route.edges))

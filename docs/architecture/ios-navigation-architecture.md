@@ -2,7 +2,7 @@
 
 **Status:** accepted and implemented for the platform-light core and default
 whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
-with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. The whole-network
+with 26 route entries, 152 IC names, 39 JCTs, and 19 PAs. The whole-network
 browse map marks classic places with licensed photographs and names a
 curated PA set at the default frame, then names those places and every
 bundled PA once pinched in. Its route-first home
@@ -62,8 +62,10 @@ realtime, or field authority.
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
-mainlines, 81 incoming approaches, and 163 candidate incoming/outgoing movement
-pairs. All 163 exact definitions are source-bound and released. The former KK
+mainlines, 82 incoming approaches, and 165 candidate incoming/outgoing movement
+pairs. 163 exact definitions are source-bound and released; the two 本牧JCT
+movements from the start of K3 that the 2026-10-12 topology review restored
+are not yet reviewed. The former KK
 Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and

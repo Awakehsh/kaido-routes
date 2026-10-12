@@ -30,3 +30,8 @@ links, respects directed access, excludes abandoned and unavailable roads,
 applies hash-bound facility exclusions, forward entry-boundary corrections,
 and exact direction-reviewed candidate replacements,
 matches every usable official IC and JCT, and fails on source or coverage drift.
+
+The bundled database is that output with the dated reviews in
+`data/route-atlas/reviews/` replayed in the order its README gives; each
+review refuses an input whose SHA-256 differs from the one it was taken
+against. Then run `python3 scripts/audit_shuto_network.py`.

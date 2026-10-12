@@ -2,13 +2,16 @@ name: iOS qualification
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 18 * * *'
 
 permissions:
   contents: read
 
+# The nightly run waits behind a manual qualification instead of cancelling it.
 concurrency:
   group: ios-qualification-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
   simulator:
@@ -29,6 +32,11 @@ jobs:
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoArrivalHasOneClearFinishAction
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation
+          - label: ios18-unit
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro
+            runtime_prefix: com.apple.CoreSimulator.SimRuntime.iOS-18-
+            content_size: large
+            test_scope: KaidoRoutesAppTests
           - label: compact-large
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
             content_size: large
@@ -58,6 +66,7 @@ jobs:
         env:
           TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
           TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
+          TARGET_RUNTIME_PREFIX: ${{ matrix.runtime_prefix }}
         run: |
           set -euo pipefail
           SELECTION=$(xcrun simctl list devices available -j | python3 -c '
@@ -70,11 +79,13 @@ jobs:
               if device.get("isAvailable")
               and device.get("deviceTypeIdentifier")
                   == os.environ["TARGET_DEVICE_TYPE"]
+              and runtime.startswith(os.environ["TARGET_RUNTIME_PREFIX"])
           ]
           if not candidates:
               raise SystemExit(
                   "target iPhone simulator is unavailable: "
                   + os.environ["TARGET_DEVICE_TYPE"]
+                  + " " + os.environ["TARGET_RUNTIME_PREFIX"]
               )
           def runtime_version(identifier):
               tail = identifier.rsplit(".iOS-", 1)[-1]

@@ -124,7 +124,6 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes
-          CODE_SIGN_IDENTITY: Apple Distribution
           EXCLUDED_SOURCE_FILE_NAMES: >-
             c2-b-20260729-geographic-route.json
             k7-aoba-kohoku-product-release.json

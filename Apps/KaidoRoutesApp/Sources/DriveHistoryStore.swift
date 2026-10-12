@@ -50,7 +50,9 @@ struct DriveHistoryEntry: Codable, Equatable, Identifiable {
 
 @MainActor
 protocol DriveHistoryStoring {
-  func load() throws -> [DriveHistoryEntry]
+  /// Every entry holds a full route plan, so the whole history is too large
+  /// to read on the main actor.
+  func load() async throws -> [DriveHistoryEntry]
   func save(_ entry: DriveHistoryEntry) throws
   func remove(id: UUID) throws
 }
@@ -64,7 +66,14 @@ final class FileDriveHistoryStore: DriveHistoryStoring {
     self.directory = directory
   }
 
-  func load() throws -> [DriveHistoryEntry] {
+  func load() async throws -> [DriveHistoryEntry] {
+    let directory = directory
+    return try await Task.detached(priority: .userInitiated) {
+      try Self.entries(in: directory)
+    }.value
+  }
+
+  private nonisolated static func entries(in directory: URL) throws -> [DriveHistoryEntry] {
     guard FileManager.default.fileExists(atPath: directory.path) else { return [] }
     return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
       .filter { $0.pathExtension == "json" }

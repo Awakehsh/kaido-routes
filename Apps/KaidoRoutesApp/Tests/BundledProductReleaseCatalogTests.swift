@@ -102,7 +102,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
-      14
+      17
     )
     XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
 
@@ -124,7 +124,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
-      17
+      20
     )
     XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }

@@ -298,12 +298,12 @@
         {
           "coordinates" : [
             {
-              "latitude" : 35.68,
-              "longitude" : 139.759
+              "latitude" : 35.679,
+              "longitude" : 139.7592
             },
             {
-              "latitude" : 35.68,
-              "longitude" : 139.7595
+              "latitude" : 35.6795,
+              "longitude" : 139.7596
             }
           ],
           "directed_edge_id" : "test.entry-transition.surface",
@@ -314,8 +314,8 @@
         {
           "coordinates" : [
             {
-              "latitude" : 35.68,
-              "longitude" : 139.7595
+              "latitude" : 35.6795,
+              "longitude" : 139.7596
             },
             {
               "latitude" : 35.68,

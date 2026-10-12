@@ -112,7 +112,7 @@ func navigationSessionRestartDoesNotRewind() async throws {
   #expect(phone.currentOccurrenceID == "test.occurrence.movement")
 }
 
-@Test("A HIGH off-plan matcher commit activates route-first recovery")
+@Test("Consecutive off-plan fixes activate route-first recovery")
 func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
   let routePlan = RoutePlan(
     id: "test.plan.session-recovery",
@@ -252,11 +252,29 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       source: .phone
     )
   )
-  let deviation = try await session.observe(
+  // One fix on a branch can be a reflection; the deviation needs the next.
+  let firstOffPlan = try await session.observe(
     RouteMatcherObservation(
       id: "test.recovery.wrong-branch",
       observedAtMilliseconds: 2_000,
       receivedAtMilliseconds: 2_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.6806,
+        longitude: 139.761
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 0,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  #expect(firstOffPlan.matcherEstimate.directedEdgeID == "test.edge.wrong-branch")
+  #expect(firstOffPlan.navigationSnapshot.journeyPhase == .strictRoute)
+  let deviation = try await session.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.wrong-branch.1",
+      observedAtMilliseconds: 2_500,
+      receivedAtMilliseconds: 2_500,
       coordinate: MatcherCoordinate(
         latitude: 35.6808,
         longitude: 139.761
@@ -348,7 +366,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       source: .phone
     )
   )
-  let delayedEvidence = try await delayedEvidenceSession.observe(
+  _ = try await delayedEvidenceSession.observe(
     RouteMatcherObservation(
       id: "test.recovery.delayed-evidence.continuation",
       observedAtMilliseconds: 2_000,
@@ -356,6 +374,21 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       coordinate: MatcherCoordinate(
         latitude: 35.6805,
         longitude: 139.7615
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 141,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  let delayedEvidence = try await delayedEvidenceSession.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.delayed-evidence.continuation.1",
+      observedAtMilliseconds: 3_000,
+      receivedAtMilliseconds: 3_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.6803,
+        longitude: 139.7617
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 141,

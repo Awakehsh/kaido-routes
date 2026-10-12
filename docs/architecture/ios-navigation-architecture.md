@@ -38,7 +38,9 @@ to both the RoutePlan divergence occurrence and the observed directed edge;
 runtime selection refuses a candidate authored for a different branch. Because
 the graph is a planning candidate, compiler output marks those paths unreleased.
 The foreground product release builder may explicitly promote one exact
-in-domain candidate into the release-bound runtime policy; all other deviations
+in-domain candidate into the release-bound runtime policy, and only one whose
+every junction decision after the wrong turn is a released movement binding
+and which never leaves the expressway by an exit ramp; all other deviations
 become unavailable/route-interrupted instead of executing an unreviewed
 movement. The compiler also emits a deterministic
 `ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
@@ -87,7 +89,9 @@ authority because most routes do not publish them consistently.
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
 multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
-Core Location lifecycle only for the planning origin. An admitted live drive
+Core Location lifecycle only for the planning origin. It stops updating once a
+fix is within 100 m, or 12 seconds after it starts, and restarts on foreground
+return or an explicit current-location request. An admitted live drive
 starts its separate When In Use session in the foreground and keeps it active
 through screen lock and temporary app switching. It
 cannot create a live navigation session from the candidate graph alone. The
@@ -99,9 +103,15 @@ constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
 boundary adapters, and the observation adapter before attaching the shared
 serial navigation location controller. Device fixes reject invalid, stale,
 future-dated, independently ambiguous, and distributed-build simulated input.
-HIGH remains mandatory at entry/exit, recovery, and completion boundaries;
-between them, MEDIUM estimates may advance only when every candidate is a
-nearby ordered occurrence of the active RoutePlan. The seam cannot mint
+Between the entry and exit boundaries the session admits a fix — raw HIGH, or
+MEDIUM when every candidate is a nearby ordered occurrence of the active
+RoutePlan — only while no reachable off-plan road lies within twice the
+fix's accuracy allowance of the matched edge. A reachable road is a branch
+leaving the plan at or after the last occurrence where the car was matched
+clear of every such branch; a ramp merging into the plan or a stacked road
+the car never left the plan for is geometry, not a place it can be.
+`NavigationSessionUpdate.admittedConfidence` carries that decision, and
+presentation reads it, never the raw matcher value. The seam cannot mint
 `EntryTransitionAdmissionContext`,
 `SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
 hash or a MapKit response. Two consecutive accepted off-route observations may
@@ -417,13 +427,21 @@ or schedule guidance. `CoreLocationEntryTransitionAdapter` instead consumes the
 immutable admission context supplied by `KaidoProductNavigationRuntime`, matches
 against the exact release-bound corridor, and emits a package-only
 `EntryTransitionEvidence`. The actor rejects simulation, stale/replayed or
-receive-reversed observations, release identity drift, independent road
-ambiguity, missing/mismatched heading, and skipped transition edges. Exact HIGH
-ordered transition edges remain sufficient. Because several released ramps are
-shorter than a 1 Hz driving sample, two time-ordered, heading-compatible MEDIUM
-observations over the release-bound transition/route-head chain may instead
-confirm the exact first RoutePlan edge. It restarts route matching at that exact
-first occurrence only after strict-route entry. The current 45-degree
+receive-reversed observations, release identity drift, fixes away from every
+corridor road or resolved to a road the plan does not use, mismatched heading,
+and backward progression. The adapter passes the matcher's own estimate
+unchanged; nothing is relabelled onto the first route edge. Because the
+corridor holds expressway roads only, a street beneath or beside a ramp can
+match the ramp as confidently as the ramp itself, so presence near the ramp is
+never entry. Entry needs at least three ordered, heading-compatible MEDIUM or
+HIGH route-head fixes whose residual fits their accuracy, and a log-likelihood
+ratio of at least 9 that the fixes lie on the route head rather than on the
+straight continuation of the reviewed approach. Only fixes where the two are
+at least 20 m apart are weighed, because correlated GPS error would otherwise
+let one hypothesis drift ahead where they coincide. A route head that never
+leaves its approach line cannot confirm entry. Strict-route navigation starts
+at the occurrence the evidence reached, with the ramp behind it recorded as
+driven, and route matching restarts there. The current 45-degree
 heading and ten-second age gates are conservative implementation thresholds, not
 field-calibrated release values. The Core Location adapter preserves
 `courseAccuracy` and `speedAccuracy` on the matcher observation as well as in
@@ -830,6 +848,12 @@ another route's road evidence or live-input authority merely because location
 permission or device fixes exist.
 
 Bundled catalog matching and admission construction run off the main actor.
+The verified foreground catalog loads once per process, and the whole-network
+runtime context, with its validation and network hash, is built once per
+product model by the first route that needs it. Junction prompts compile
+against the planner's released movement context. Preparation checks
+cancellation between route reconstruction, release build, and admission, so a
+replaced route stops early; request identity keeps its result from publishing.
 Admission construction validates the immutable release, full selected
 `RoutePlan`, foreground authority, journey composition, and complete navigation
 runtime before exposing foreground input authority. Route selection then
@@ -883,16 +907,30 @@ of being mistaken for a second deviation; reaching the bound target marks the
 bypassed RoutePlan occurrences skipped and returns the actor to strict-route
 navigation. Every recovery candidate must identify an exact divergence
 occurrence and trigger directed edge, begin with that same edge, and rejoin a
-strictly later RoutePlan occurrence. A uniquely matched trigger edge selects
-that candidate directly. If the first branch segments remain geometrically
-ambiguous, a later HIGH observation may select a candidate only when that edge
-belongs to exactly one eligible released recovery path; ambiguous or unknown
-edges remain fail-closed. The App then keeps the live observation stream active,
-projects the current position onto that released path, renders its remaining
-geometry, and clears recovery state only after the actor reaches the bound
-target occurrence. If no released detour exists, the stream remains active and
-an exact HIGH match on a legal later RoutePlan occurrence resumes strict-route
-navigation without inventing a reversal or destination reroute. The release gate additionally requires
+strictly later RoutePlan occurrence. The compiled matcher corridor follows
+every branch leaving the plan until it is 125 m — the widest candidate radius
+plus the widest ambiguity allowance — from every route edge, so a branch
+running beside the plan stays a candidate instead of leaving only the planned
+edge to match. A deviation needs two consecutive fixes, no more than three
+seconds apart, that the matcher places within twice the fix's accuracy on a
+reachable off-plan edge, or on a traversal of the plan more than the
+longitudinal window behind admitted progress, and that lie farther than three
+times the fix's allowance from every road of the plan from that window on and
+from the road its exit leads onto. A fix beyond every corridor road continues
+such a run but cannot start one, and near the exit it continues none. A match
+farther ahead of admitted progress than 40 m/s since that progress, plus
+100 m, is never admitted and restarts the matcher on progress: it is a
+repeated traversal or a misplaced fix, not where the car went. The observed edge maps to its released candidate through the
+candidate's path or, failing that, to the branch's first off-plan edge;
+ambiguous or unknown edges remain fail-closed. The App then keeps the live
+observation stream active, projects the current position onto that released
+path, renders its remaining geometry, and clears recovery state at the first
+admitted position at or past the bound target occurrence. An admitted position
+on the plan before it retracts the deviation without skipping anything. If no
+released detour exists, the stream remains active and an admitted position on a
+legal later RoutePlan occurrence — the earliest traversal of a repeated road
+not yet driven — resumes strict-route navigation without inventing a reversal
+or destination reroute. The release gate additionally requires
 every transition edge to exist in the same matcher corridor and every
 consecutive pair to be an explicit successor. The transition may end
 immediately before the first RoutePlan occurrence or use an exact prefix
@@ -1697,6 +1735,26 @@ search from exact exit facilities. Runtime `FINISH_DRIVE` selects the next legal
 option consistent with the accepted return policy. It never reverses the graph or
 unlocks an arbitrary exit connector.
 
+`NavigationSession` recognises the released exit itself. Once admitted
+progress, or the matcher's own placement, is within the final 300 m of the
+route, it needs two consecutive accurate fixes, no more than three seconds
+apart, that place the car on the exit side of every road it could have taken
+instead: matched after the plan's last choice of road, or on a road reached
+only through the terminal edge, with no reachable off-plan road within twice
+the fix's allowance; or matching no corridor road at all within the exit's
+coverage, less twice the fix's accuracy. The coverage is read from the
+corridor itself — the nearest point near the exit where it stops following a
+road — and the compiler follows the roads leaving the exit decision until
+300 m from the exit, so a car off all of them there has taken it. The second
+fix must be past the end of the last edge, on its road, or off the corridor;
+the drive then finishes at the terminal occurrence and enters
+`EXIT_TRANSITION`, also from a deviation the exit's own road read as. A 15 m
+terminal edge is crossed between 1 Hz fixes, so the exit is recognised by
+where the car went rather than by one exact match on that edge. Driving on
+past the exit is a deviation and never finishes the journey. The Finish
+control and its Siri action remain a fallback gated on an admitted position
+near the end.
+
 ## Route-aware map matching
 
 Nearest-road snapping is unsafe on stacked carriageways, parallel ramps, tunnels,
@@ -2306,7 +2364,8 @@ model reference; it does not introduce a second navigation session.
 
 Drive history persists aggregate recorded intervals, observed lap splits, and
 the exact planned route locally, one file per drive; a file that cannot be read
-or validated hides only its own drive. A checkpoint may retain the aggregate record
+or validated hides only its own drive. The history list reads those files off
+the main actor. A checkpoint may retain the aggregate record
 without retaining the last raw speed sample. Rest interrupts speed integration;
 missing samples and skipped planned laps never become recorded driving. The
 existing recording setting also controls collection and history persistence.

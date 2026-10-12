@@ -323,11 +323,16 @@ public enum ShutoCircuitProductReleaseBuilder {
       releaseKey: releaseKey
     )
     let releaseRecovery = releasedRecovery(
-      assets: assets,
       availableDirectedEdgeIDs:
         runtimeContext?.directedEdgeIDs
         ?? Set(database.edges.map(\.edgeID)),
-      preferredTriggerID: preferredRecoveryTriggerID
+      preferredTriggerID: preferredRecoveryTriggerID,
+      coveredCandidates: ShutoPlannedRouteRuntimeCompiler
+        .coveredRecoveryCandidates(
+          assets.recoveryCandidates,
+          route: route,
+          database: database
+        )
     )
     let entryApproach = try entryApproach(
       route: route,
@@ -691,12 +696,16 @@ public enum ShutoCircuitProductReleaseBuilder {
     )
   }
 
+  /// Promotes at most one compiler recovery candidate, and only one whose
+  /// every junction decision is a released movement binding. When none
+  /// qualifies the release carries no recovery and a wrong turn leads to the
+  /// unavailable-recovery state instead of an unreviewed detour.
   private static func releasedRecovery(
-    assets: ShutoPlannedRouteRuntimeAssets,
     availableDirectedEdgeIDs: Set<String>,
-    preferredTriggerID: String?
+    preferredTriggerID: String?,
+    coveredCandidates: [RecoveryCandidate]
   ) -> RecoveryCandidate? {
-    let available = assets.recoveryCandidates
+    let available = coveredCandidates
       .filter { candidate in
         candidate.recoveryOccurrenceIDs.allSatisfy(
           availableDirectedEdgeIDs.contains

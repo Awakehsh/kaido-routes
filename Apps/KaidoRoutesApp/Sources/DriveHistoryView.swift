@@ -5,7 +5,7 @@ struct DriveHistoryView: View {
   @ObservedObject var model: WholeShutoProductModel
   @ObservedObject var savedRoutes: SavedRouteLibraryModel
   let locale: KaidoReleaseLocale
-  @State private var records: [DriveHistoryEntry] = []
+  @State private var records: [DriveHistoryEntry]?
   @State private var loadFailed = false
   @State private var pendingDeletion: DriveHistoryEntry?
 
@@ -16,10 +16,12 @@ struct DriveHistoryView: View {
           Text(copy.resolve(japanese: "走行記録を読み込めないか、前回の記録を保存できませんでした。",
             simplifiedChinese: "行程记录无法读取，或上次记录未能保存。",
             english: "History could not be read, or the last record could not be saved."))
-          Button(copy.resolve(japanese: "再読み込み", simplifiedChinese: "重新读取", english: "Reload")) { load() }
+          Button(copy.resolve(japanese: "再読み込み", simplifiedChinese: "重新读取", english: "Reload")) {
+            Task { await load() }
+          }
         }
       }
-      if records.isEmpty && !loadFailed {
+      if records?.isEmpty == true && !loadFailed {
         ContentUnavailableView(
           copy.resolve(japanese: "走行記録はありません", simplifiedChinese: "暂无行程记录", english: "No drive history"),
           systemImage: "clock.arrow.circlepath",
@@ -28,7 +30,7 @@ struct DriveHistoryView: View {
             english: "With recording enabled, recorded drives are saved here when they end."))
         )
       }
-      ForEach(records) { record in
+      ForEach(records ?? []) { record in
         let kilometers = (record.recordedDistanceMeters / 1_000).formatted(.number.precision(.fractionLength(1)))
         NavigationLink {
           DriveHistoryDetailView(record: record, savedRoutes: savedRoutes, locale: locale)
@@ -55,22 +57,24 @@ struct DriveHistoryView: View {
     .navigationTitle(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"))
     .environment(\.locale, Locale(identifier: locale.rawValue))
     .accessibilityIdentifier("whole-shuto-drive-history")
-    .onAppear { load() }
+    .task { await load() }
     .confirmationDialog(
       copy.resolve(japanese: "この走行記録を削除しますか？", simplifiedChinese: "删除这次行程记录？", english: "Delete this drive record?"),
       isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } })
     ) {
       Button(copy.resolve(japanese: "削除", simplifiedChinese: "删除", english: "Delete"), role: .destructive) {
         guard let record = pendingDeletion else { return }
-        do { try model.driveHistoryStore.remove(id: record.id); load() }
-        catch { loadFailed = true }
+        do {
+          try model.driveHistoryStore.remove(id: record.id)
+          Task { await load() }
+        } catch { loadFailed = true }
         pendingDeletion = nil
       }
     }
   }
 
-  private func load() {
-    do { records = try model.driveHistoryStore.load(); loadFailed = false }
+  private func load() async {
+    do { records = try await model.driveHistoryStore.load(); loadFailed = false }
     catch { loadFailed = true }
   }
 

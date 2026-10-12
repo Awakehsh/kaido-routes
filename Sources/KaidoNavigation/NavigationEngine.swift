@@ -65,12 +65,18 @@ public struct NavigationEngine: Sendable {
   private var lastReacquisitionObservationAtMilliseconds: Int?
   private var entryTransitionProgress = -1
   private var emittedGuidanceAnchorKeys: Set<GuidanceAnchorKey> = []
+  private let occurrencePositions: [String: Int]
 
   public init(
     configuration: NavigationConfiguration,
     initialSnapshot: NavigationSnapshot = NavigationSnapshot()
   ) {
     self.configuration = configuration
+    occurrencePositions = Dictionary(
+      (configuration.routePlan?.occurrences ?? []).enumerated()
+        .map { ($1.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
     self.snapshot = initialSnapshot
     self.snapshot.activeRoutePlanID =
       configuration.routePlan?.id
@@ -158,6 +164,7 @@ public struct NavigationEngine: Sendable {
     let result = GuidanceFramePlanner.plan(
       snapshot: snapshot,
       routePlan: configuration.routePlan,
+      occurrencePositions: occurrencePositions,
       definitions: configuration.releasedGuidance,
       observation: observation
     )
@@ -432,8 +439,22 @@ public struct NavigationEngine: Sendable {
       "RELEASED_EGRESS_PLAN_ACTIVATED"
   }
 
+  /// Marks that ordered entry evidence has begun on the route head.
+  package mutating func beginEntryTransition() {
+    guard snapshot.journeyPhase == .planning
+      || snapshot.journeyPhase == .approachToEntry
+    else { return }
+    snapshot.journeyPhase = .entryTransition
+    snapshot.strictRouteAutoCommitAllowed = false
+  }
+
+  /// Enters STRICT_ROUTE from verified entry evidence. The evidence may only
+  /// be complete once the car has driven some way along the route head, so
+  /// progress lands on the occurrence that evidence reached; everything
+  /// before it was driven, not skipped.
   package mutating func enterStrictRoute(
     firstOccurrenceID: String,
+    reachedOccurrenceID: String? = nil,
     trigger: String
   ) {
     guard snapshot.journeyPhase == .planning
@@ -445,6 +466,20 @@ public struct NavigationEngine: Sendable {
     snapshot.strictRouteAutoCommitAllowed = true
     snapshot.ambiguityReason = nil
     advance(to: firstOccurrenceID)
+    if let reachedOccurrenceID { advance(to: reachedOccurrenceID) }
+  }
+
+  /// Ends strict-route progress at the released exit once the car has been
+  /// observed past the end of the route, also from a deviation the exit's
+  /// own road read as. The occurrences between admitted progress and the
+  /// terminal edge were driven to get there.
+  package mutating func finishAtRouteEnd() {
+    guard snapshot.journeyPhase == .strictRoute
+      || snapshot.journeyPhase == .routeRecovery,
+      let terminal = configuration.routePlan?.occurrences.last
+    else { return }
+    advance(to: terminal.id)
+    finishDrive()
   }
 
   /// Joins STRICT_ROUTE at an occurrence no reviewed entry ramp proved.
@@ -870,15 +905,26 @@ public struct NavigationEngine: Sendable {
         "EXACT_LATER_ROUTE_OCCURRENCE_REACQUIRED"
     }
 
+    // Short occurrences are crossed between 1 Hz fixes, so the first
+    // admitted position at or past the rejoin occurrence is the rejoin. An
+    // admitted position on the plan before it means the car never left: the
+    // deviation was not real and nothing was skipped.
     if snapshot.journeyPhase == .routeRecovery,
       snapshot.recovery.status == .active,
-      snapshot.recovery.chosenRejoinOccurrenceID == target.id
+      let rejoin = snapshot.recovery.chosenRejoinOccurrenceID
+        .flatMap(routePlan.occurrence(id:)),
+      target.index > currentIndex
     {
-      for occurrence in routePlan.occurrences
-      where occurrence.index > currentIndex
-        && occurrence.index < target.index
-      {
-        appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+      if target.index >= rejoin.index {
+        for occurrence in routePlan.occurrences
+        where occurrence.index > currentIndex
+          && occurrence.index < rejoin.index
+        {
+          appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+        }
+        snapshot.lastPhaseTransitionTrigger = "RELEASED_RECOVERY_REJOINED"
+      } else {
+        snapshot.lastPhaseTransitionTrigger = "PLANNED_ROUTE_REACQUIRED"
       }
       snapshot.journeyPhase = .strictRoute
       snapshot.recovery = RecoveryState()

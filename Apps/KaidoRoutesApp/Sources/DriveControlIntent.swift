@@ -2,14 +2,15 @@ import AppIntents
 import KaidoAppleAdapters
 
 enum DriveControlAction: String, AppEnum {
-  case repeatDirection, mute, unmute, addLap, removeLap, finishLap, exitAtPlannedExit, rest, resume,
-    endNavigation
+  case repeatDirection, mute, unmute, joinRoute, addLap, removeLap, finishLap, exitAtPlannedExit,
+    rest, resume, endNavigation
 
   static let typeDisplayRepresentation: TypeDisplayRepresentation = "Drive action"
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
     .repeatDirection: "Repeat current direction",
     .mute: "Mute guidance",
     .unmute: "Unmute guidance",
+    .joinRoute: "Join the route here",
     .addLap: "Add one lap",
     .removeLap: "Remove one lap",
     .finishLap: "Finish this lap",
@@ -71,6 +72,11 @@ struct DriveControlIntent: AppIntent {
     case .unmute:
       model.unmuteSpeech()
       return .result(dialog: "Guidance is on.")
+    case .joinRoute:
+      if await model.declareAlreadyOnRoute() {
+        return .result(dialog: "Joining the route. Confirming the position.")
+      }
+      return .result(dialog: "The route cannot be joined from this position.")
     case .addLap:
       if await model.addOneLap() { return .result(dialog: "One lap added.") }
       return .result(dialog: "A lap cannot be added at the current position.")

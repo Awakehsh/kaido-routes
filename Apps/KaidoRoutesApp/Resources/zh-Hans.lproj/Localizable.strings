@@ -33,3 +33,6 @@
 "Finish at the planned exit" = "在原定出口结束";
 "Following the planned exit." = "将引导至原定出口。";
 "The planned exit is not close enough yet." = "原定出口还在前方。";
+"Join the route here" = "从这里加入路线";
+"Joining the route. Confirming the position." = "正在加入路线，正在确认位置。";
+"The route cannot be joined from this position." = "无法从当前位置加入路线。";

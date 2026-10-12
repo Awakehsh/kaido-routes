@@ -904,10 +904,15 @@ every branch leaving the plan until it is 125 m — the widest candidate radius
 plus the widest ambiguity allowance — from every route edge, so a branch
 running beside the plan stays a candidate instead of leaving only the planned
 edge to match. A deviation needs two consecutive fixes, no more than three
-seconds apart, that the matcher places on a reachable off-plan edge with no
-RoutePlan edge among the candidates and a residual within twice the fix's
-accuracy; a fix beyond every corridor road continues such a run but cannot
-start one. The observed edge maps to its released candidate through the
+seconds apart, that the matcher places within twice the fix's accuracy on a
+reachable off-plan edge, or on a traversal of the plan more than the
+longitudinal window behind admitted progress, and that lie farther than three
+times the fix's allowance from every road of the plan from that window on and
+from the road its exit leads onto. A fix beyond every corridor road continues
+such a run but cannot start one, and near the exit it continues none. A match
+farther ahead of admitted progress than 40 m/s since that progress, plus
+100 m, is never admitted and restarts the matcher on progress: it is a
+repeated traversal or a misplaced fix, not where the car went. The observed edge maps to its released candidate through the
 candidate's path or, failing that, to the branch's first off-plan edge;
 ambiguous or unknown edges remain fail-closed. The App then keeps the live
 observation stream active, projects the current position onto that released
@@ -1722,14 +1727,25 @@ search from exact exit facilities. Runtime `FINISH_DRIVE` selects the next legal
 option consistent with the accepted return policy. It never reverses the graph or
 unlocks an arbitrary exit connector.
 
-`NavigationSession` recognises the released exit itself: once admitted progress,
-or the matcher's own placement, is within the final 300 m of the route, two
-accurate fixes at least 15 m past the end of the last edge, beyond every
-corridor road 40 m from it, or on the exit ramp's own continuation finish the
-drive at the terminal occurrence and enter `EXIT_TRANSITION`. A 15 m terminal
-edge is crossed between 1 Hz fixes, so the exit is recognised by where the car
-went rather than by one exact match on that edge. The Finish control and its
-Siri action remain a fallback gated on an admitted position near the end.
+`NavigationSession` recognises the released exit itself. Once admitted
+progress, or the matcher's own placement, is within the final 300 m of the
+route, it needs two consecutive accurate fixes, no more than three seconds
+apart, that place the car on the exit side of every road it could have taken
+instead: matched after the plan's last choice of road, or on a road reached
+only through the terminal edge, with no reachable off-plan road within twice
+the fix's allowance; or matching no corridor road at all within the exit's
+coverage, less twice the fix's accuracy. The coverage is read from the
+corridor itself — the nearest point near the exit where it stops following a
+road — and the compiler follows the roads leaving the exit decision until
+300 m from the exit, so a car off all of them there has taken it. The second
+fix must be past the end of the last edge, on its road, or off the corridor;
+the drive then finishes at the terminal occurrence and enters
+`EXIT_TRANSITION`, also from a deviation the exit's own road read as. A 15 m
+terminal edge is crossed between 1 Hz fixes, so the exit is recognised by
+where the car went rather than by one exact match on that edge. Driving on
+past the exit is a deviation and never finishes the journey. The Finish
+control and its Siri action remain a fallback gated on an admitted position
+near the end.
 
 ## Route-aware map matching
 

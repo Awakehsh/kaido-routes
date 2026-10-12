@@ -330,7 +330,12 @@ public actor NavigationSession {
         separatedFromOffPlanRoads: separatedFromOffPlanRoads && isWithinReach
       )
     )
-    if detectsOffPlanDeviation, engine.snapshot.locationConfidence == .high {
+    // Only an admitted fix at the occurrence progress stands on confirms
+    // where the car is; one on a detour says nothing about the plan.
+    if detectsOffPlanDeviation, engine.snapshot.locationConfidence == .high,
+      let observedIndex = observed.occurrenceID.flatMap({ occurrenceIndexByID[$0] }),
+      observedIndex == engine.snapshot.currentOccurrenceIndex
+    {
       lastProgressObservedAtMilliseconds = observation.observedAtMilliseconds
     }
     if wasRecovering, engine.snapshot.journeyPhase == .strictRoute,
@@ -1114,18 +1119,15 @@ public actor NavigationSession {
     in estimate: MatcherEstimate
   ) -> Bool {
     guard estimate.directedEdgeID != nil,
-      let occurrenceID = estimate.occurrenceID,
-      let occurrence = routePlan.occurrence(id: occurrenceID)
+      let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
     else { return false }
     let lower = max(
       0,
-      occurrence.index
-        - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      index - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
     )
     let upper = min(
       routePlan.occurrences.count - 1,
-      occurrence.index
-        + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      index + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
     )
     return estimate.candidateEdgeIDs.allSatisfy { candidateID in
       (lower...upper).contains { routeEdgeIDByIndex[$0] == candidateID }

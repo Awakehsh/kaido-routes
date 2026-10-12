@@ -513,6 +513,11 @@
       let startedAt = 1_800_000_000_000
       var records: [ReplayGateFixRecord] = []
       records.reserveCapacity(truth.count)
+      let occurrenceIndexByID = Dictionary(
+        uniqueKeysWithValues: release.navigation.bundle.routePlan.occurrences.map {
+          ($0.id, $0.index)
+        }
+      )
       var isInTunnel = false
       for (second, point) in truth.enumerated() {
         if point.isUnderCover, tunnelOutage == .noFixes {
@@ -580,7 +585,7 @@
           }
           // The App's tunnel hooks follow the occurrence the matcher names.
           if let index = update.matcherEstimate.occurrenceID.flatMap({
-            release.navigation.bundle.routePlan.occurrence(id: $0)?.index
+            occurrenceIndexByID[$0]
           }) {
             let isCovered = coveredEdgeIDs.contains(routeEdgeIDs[index])
             if isCovered, !isInTunnel {
@@ -1248,9 +1253,10 @@
     var remaining = distance
     for (start, end) in zip(coordinates, coordinates.dropFirst()) {
       let length = replayHaversine(start, end)
+      guard length > 0 else { continue }
       let bearing = replayBearing(start, end)
-      if remaining <= length || length == 0 {
-        let fraction = length > 0 ? remaining / length : 0
+      if remaining <= length {
+        let fraction = remaining / length
         return (
           MatcherCoordinate(
             latitude: start.latitude + (end.latitude - start.latitude) * fraction,

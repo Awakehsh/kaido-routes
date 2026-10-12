@@ -2337,8 +2337,10 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
     )
     model.prepareCustomRouteDraft()
-    model.selectCustomEntry(facilityID: "shuto.ic.b.rinkaihukutoshin")
-    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    // The released detour must leave the plan by more than GPS error; the
+    // Rinkai-fukutoshin run's only one is a slip road within 14 m of it.
+    model.selectCustomEntry(facilityID: "shuto.ic.b.shinkiba")
+    model.selectCustomExit(facilityID: "shuto.ic.b.ooi")
     XCTAssertTrue(model.applyCustomRoute())
     for _ in 0..<300
     where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
@@ -2400,7 +2402,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2444,7 +2449,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2476,9 +2484,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
     XCTAssertTrue(observedActiveRecovery)
 
+    // Where the detour merges back it still runs within GPS error of the
+    // plan, so the rejoin is admitted once the car is clear of it.
     for occurrence in corridorOccurrences
     where occurrence.index >= target.index
-      && occurrence.index < target.index + 2
+      && occurrence.index < target.index + 8
     {
       let edge = try XCTUnwrap(corridorEdges[occurrence.directedEdgeID])
       let start = try XCTUnwrap(edge.coordinates.first)
@@ -2491,7 +2501,10 @@ final class WholeShutoProductModelTests: XCTestCase {
         latitude: end.latitude,
         longitude: end.longitude
       )
-      for fraction in [0.25, 0.75] {
+      for fraction in Self.oneHertzFractions(
+        from: startCoordinate,
+        to: endCoordinate
+      ) {
         nowMilliseconds += 1_000
         await model.consumeLiveObservationForTesting(
           Self.liveLocationEnvelope(
@@ -2586,7 +2599,13 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     let clock = LiveTestClock()
     let output = WholeShutoRecordingSpeechOutput()
-    let drive = try await bayshoreLiveDrive(clock: clock, output: output)
+    // A released detour that leaves the plan by more than GPS error.
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.b.shinkiba",
+      exitFacilityID: "shuto.ic.b.ooi"
+    )
     let model = drive.model
     let recovery = try XCTUnwrap(
       drive.release.navigation.bundle.runtimePolicy.recoveryCandidates.first
@@ -2656,11 +2675,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
-  /// A started live drive from Rinkai-fukutoshin to Daikoku-futou, with the
+  /// A started live Bayshore drive (Rinkai-fukutoshin to Daikoku-futou unless
+  /// told otherwise), with the
   /// release it runs, so a test can place fixes on exact corridor edges.
   private func bayshoreLiveDrive(
     clock: LiveTestClock,
-    output: any GuidanceSpeechOutput
+    output: any GuidanceSpeechOutput,
+    entryFacilityID: String = "shuto.ic.b.rinkaihukutoshin",
+    exitFacilityID: String = "shuto.ic.b.daikokufutou"
   ) async throws -> (
     model: WholeShutoProductModel,
     route: ShutoPlannedRoute,
@@ -2677,8 +2699,8 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
     )
     model.prepareCustomRouteDraft()
-    model.selectCustomEntry(facilityID: "shuto.ic.b.rinkaihukutoshin")
-    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    model.selectCustomEntry(facilityID: entryFacilityID)
+    model.selectCustomExit(facilityID: exitFacilityID)
     XCTAssertTrue(model.applyCustomRoute())
     await model.awaitLiveNavigationPreparationForTesting()
     XCTAssertTrue(
@@ -5944,6 +5966,23 @@ final class WholeShutoProductModelTests: XCTestCase {
       - sin(startLatitude) * cos(endLatitude) * cos(longitudeDelta)
     let degrees = atan2(y, x) * 180 / .pi
     return degrees >= 0 ? degrees : degrees + 360
+  }
+
+  /// Fractions along an edge at which a car at highway speed reports a
+  /// 1 Hz fix: never more than 25 m apart, so a long edge is not crossed in
+  /// one second.
+  private static func oneHertzFractions(
+    from start: ShutoCoordinate,
+    to end: ShutoCoordinate
+  ) -> [Double] {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    let meters = hypot(
+      (end.latitude - start.latitude) * metersPerDegree,
+      (end.longitude - start.longitude) * metersPerDegree
+        * cos(start.latitude * .pi / 180)
+    )
+    let count = max(2, Int((meters / 25).rounded(.up)))
+    return (0..<count).map { (Double($0) + 0.5) / Double(count) }
   }
 
   private static func interpolate(

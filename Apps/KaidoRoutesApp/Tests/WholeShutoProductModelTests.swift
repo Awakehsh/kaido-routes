@@ -1384,6 +1384,112 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testALapThatIsNotAddedAfterAllIsSpokenOnce() async throws {
+    var nowMilliseconds = 1_000
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { nowMilliseconds },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      }
+    )
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    model.selectCircuitLaps(2)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    let route = try XCTUnwrap(model.selectedRoute)
+    let occurrences = route.routePlan.occurrences
+    let boundaries = route.lapBoundaryOccurrenceIndices
+    let lapLength = boundaries[1] - boundaries[0]
+    // Where the exit tail leaves the loop. A plan with one more lap drives
+    // on around instead, so the two plans are the same road only up to here.
+    let parting = try XCTUnwrap(
+      occurrences.indices.first {
+        $0 >= boundaries[2] && occurrences[$0].entityID != occurrences[$0 - lapLength].entityID
+      }
+    )
+    func drive(_ index: Int, at fraction: Double) async {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      nowMilliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "lap-drop.\(nowMilliseconds)",
+          coordinate: ShutoCoordinate(
+            latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+            longitude: start.longitude + (end.longitude - start.longitude) * fraction),
+          atMilliseconds: nowMilliseconds, courseDegrees: Self.bearing(from: start, to: end),
+          speedMetersPerSecond: 18))
+    }
+    func engineIndex() -> Int? {
+      model.runtimeOccurrenceID.flatMap { route.routePlan.occurrence(id: $0)?.index }
+    }
+    if let accessEnd = model.accessRoute?.coordinates.last {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "lap-drop.access-end", coordinate: accessEnd, atMilliseconds: nowMilliseconds,
+          courseDegrees: Self.bearing(from: route.coordinates[0], to: route.coordinates[1])))
+    }
+    for index in 0..<60 {
+      await drive(index, at: 0.25)
+      await drive(index, at: 0.75)
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    for _ in 0..<200 where model.remainingWholeLapsAhead == 0 {
+      try? await Task.sleep(nanoseconds: 25_000_000)
+    }
+    // Into the last lap, so the exit tail is close.
+    let finished = await model.finishCurrentLap()
+    XCTAssertTrue(finished)
+    let lastLapIndex = try XCTUnwrap(engineIndex())
+    for index in (lastLapIndex + 1)..<(parting - 1) {
+      await drive(index, at: 0.25)
+      await drive(index, at: 0.75)
+    }
+    await drive(parting - 1, at: 0.25)
+    XCTAssertLessThan(try XCTUnwrap(engineIndex()), parting)
+
+    let added = await model.addOneLap()
+    XCTAssertTrue(added, model.failureCode ?? "no failure code")
+    func lapNotAddedCount() -> Int {
+      output.commands.filter { $0.identity.promptID.contains("lapNotAdded") }.count
+    }
+    // The car takes the exit before the new session has placed it.
+    var index = parting
+    while model.isChangingLaps, index < parting + 10 {
+      await drive(index, at: 0.5)
+      index += 1
+    }
+    XCTAssertFalse(model.isChangingLaps)
+    XCTAssertEqual(model.circuitLaps, 2)
+    XCTAssertEqual(model.selectedRoute?.routePlan, route.routePlan)
+    XCTAssertEqual(model.failureCode, WholeShutoProductModel.lapChangeUnavailableCode)
+    XCTAssertEqual(lapNotAddedCount(), 1)
+    XCTAssertEqual(
+      output.commands.last { $0.identity.promptID.contains("lapNotAdded") }?.spokenText,
+      "The lap could not be added."
+    )
+    // Once.
+    await drive(index, at: 0.5)
+    await drive(index + 1, at: 0.5)
+    XCTAssertEqual(lapNotAddedCount(), 1)
+    model.reset()
+  }
+
   func testRouteJoinIsOfferedOnlyWhereTheMatcherHoldsTheRoute() async throws {
     var nowMilliseconds = 1_000
     let history = MemoryDriveHistoryStore()

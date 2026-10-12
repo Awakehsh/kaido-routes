@@ -78,7 +78,7 @@ struct DriveControlIntent: AppIntent {
       }
       return .result(dialog: "The route cannot be joined from this position.")
     case .addLap:
-      if await model.addOneLap() { return .result(dialog: "One lap added.") }
+      if await model.addOneLap() { return .result(dialog: "Adding one lap.") }
       return .result(dialog: "A lap cannot be added at the current position.")
     case .removeLap:
       if await model.dropOneLap() { return .result(dialog: "One lap removed.") }

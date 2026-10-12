@@ -22,7 +22,7 @@ enum WholeShutoJourneyPhase:
 
 private enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
-  case rerouting, rejoined, exiting, resting, resumed, arrived
+  case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -48,6 +48,7 @@ private enum WholeShutoJourneyNotice: String {
         "ナビを再開します。位置情報を確認しています。", "导航已恢复，正在确认位置。", "Navigation resumed. Acquiring your position."
       )
     case .arrived: words = ("ルートの走行が完了しました。", "本次路线已完成。", "Your route is complete.")
+    case .lapNotAdded: words = ("周回を追加できませんでした。", "未能增加一圈。", "The lap could not be added.")
     }
     switch locale {
     case .japanese: return words.0
@@ -2509,9 +2510,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard snapshot.journeyPhase == .strictRoute,
       (snapshot.currentOccurrenceIndex ?? 0) < pending.sharedOccurrenceCount
     else {
-      pendingLapSwap = nil
-      isChangingLaps = false
-      failureCode = Self.lapChangeUnavailableCode
+      dropLapSwap()
       return false
     }
     do {
@@ -2554,11 +2553,18 @@ final class WholeShutoProductModel: ObservableObject {
       persistCheckpoint()
       return true
     } catch {
-      pendingLapSwap = nil
-      isChangingLaps = false
-      failureCode = Self.lapChangeUnavailableCode
+      dropLapSwap()
       return false
     }
+  }
+
+  /// The driver was already told the lap is being added and may not be
+  /// looking at the screen, so a lap that is not added after all is spoken.
+  private func dropLapSwap() {
+    pendingLapSwap = nil
+    isChangingLaps = false
+    failureCode = Self.lapChangeUnavailableCode
+    announceJourneyNotice(.lapNotAdded)
   }
 
   private func refreshRemainingLaps(from session: ShutoLiveDriveSession) async {

@@ -18,7 +18,7 @@
 "No current direction is ready to repeat." = "当前没有可以重听的有效指令。";
 "Guidance is muted. Navigation continues." = "已静音，导航继续进行。";
 "Guidance is on." = "已开启导航语音。";
-"One lap added." = "已增加一圈。";
+"Adding one lap." = "正在增加一圈。";
 "A lap cannot be added at the current position." = "当前位置暂时不能增加圈数。";
 "One lap removed." = "已减少一圈。";
 "There is no complete remaining lap to remove." = "没有可以减少的完整剩余圈数。";

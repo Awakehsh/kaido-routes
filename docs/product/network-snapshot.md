@@ -66,16 +66,20 @@ fails CI if a carriageway ends or starts outside a listed terminus, a ramp is
 bound to two interchanges, a candidate exceeds the limit without a reviewed
 exception, or an exit ramp runs on to another interchange's exit.
 
+Fare search and pairing treat the interchanges the operator bills together
+as one toll point, as they do same-named ramps: 王子南 and 王子北; 箱崎, 浜町 and 清洲橋;
+大井南 and 中環大井南. Each name has its own ramp, and 王子南's leads away from
+most of the network, so pricing it alone sent fare paths round the C2 loop.
+
 Against the operator's 2026-10 fare and distance table (not distributed here),
-the snapshot's fare distances over 16,929 priced pairings now quote more than
-100 yen off for 12.8% of them (21.3% of 16,800 before the two reviews) and
-more than 500 yen off for 2.0% (6.7%); 2 pairings are falsely quoted at the
-minimum (49 before) and 126 at the cap (322). Known residuals: C1 内回り has no link to Route 1 and
-Route 11 at 浜崎橋 (芝公園 to 平和島 measures about twice the operator's
-distance); the operator counts 大井南 with 中環大井南 and 王子南 with 王子北 as one
-toll point each, where the snapshot keeps separate names; and the directions
-the operator lists without a ramp in the snapshot stay unbound rather than
-borrowing a neighbour's: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り
+over the 16,798 pairings the app may quote, fares now come out more than
+100 yen off for 10.5% (21.0% of 16,669 before this change) and more than
+500 yen off for 0.6% (6.5%); none is falsely quoted at the minimum (16
+before) and 52 at the cap (321). Known residuals: C1 内回り has no link to
+Route 1 and Route 11 at 浜崎橋 (芝公園 to 平和島 measures about twice the
+operator's distance); 加賀 to 東領家, which the operator prices at the
+minimum, has no path; and the directions the operator lists without a ramp
+in the snapshot stay unbound rather than borrowing a neighbour's: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り
 entrance and 外回り exit, 新都心西 下り entrance, and 横浜港北 (横浜北線) 下り
 entrance and 上り exit.
 

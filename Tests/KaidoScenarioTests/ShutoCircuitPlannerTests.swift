@@ -892,19 +892,15 @@ struct ShutoCircuitPlannerTests {
     let edgesByID = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let exitEdges = harumi.exitEdgeCandidates.compactMap {
-      edgesByID[$0.edgeID]
-    }
-    // The 2-edge plan the planner used to return: Harumi's entrance ramp
-    // straight onto its own exit ramp.
-    let ramps = try #require(
-      harumi.entryEdgeCandidates.compactMap { candidate in
-        edgesByID[candidate.edgeID].flatMap { entryEdge in
-          exitEdges.first { $0.fromNodeID == entryEdge.toNodeID }
-            .map { [entryEdge, $0] }
-        }
-      }.first
-    )
+    // Harumi's entrance ramp and its own exit ramp. The planner once
+    // returned them as a 2-edge route, while Harumi was also bound to
+    // ramps that met; the 2026-10-12 facility review left no interchange
+    // whose entrance runs onto its own exit, and restore refuses the pair
+    // on its toll point before it reads any edge.
+    let ramps = try [
+      #require(harumi.entryEdgeCandidates.first.flatMap { edgesByID[$0.edgeID] }),
+      #require(harumi.exitEdgeCandidates.first.flatMap { edgesByID[$0.edgeID] }),
+    ]
     let routePlan = RoutePlan(
       id: "shuto.shuto.ic.10.harumi.shuto.ic.10.harumi.recommended",
       networkSnapshotID: database.networkSnapshotID,
@@ -1062,8 +1058,10 @@ struct ShutoCircuitPlannerTests {
         #expect(
           Set(exits.map(\.facilityID))
             == Set(
-              allExits.values.filter { $0.nameJA != entrance.nameJA }
-                .map(\.facilityID)
+              allExits.values.filter {
+                !ShutoRoutePlanner.sharesTollPoint($0, entrance)
+              }
+              .map(\.facilityID)
             ),
           Comment(rawValue: "\(circuit.circuitID) \(entrance.facilityID)")
         )

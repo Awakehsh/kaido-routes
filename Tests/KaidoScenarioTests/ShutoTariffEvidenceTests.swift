@@ -115,6 +115,41 @@ struct ShutoTariffEvidenceTests {
     }
   }
 
+  @Test("interchanges the operator bills together are one toll point")
+  func operatorTollPointsSpanTheirNames() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // 王子南's own ramp joins the C2 内回り, away from 鹿浜橋: 32.9 km
+    // round the loop. The operator bills it together with 王子北, whose
+    // 外回り ramp reaches 鹿浜橋 in 4.5 km, so the pairing prices the same
+    // from either name.
+    let fromOjiMinami = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.c2.oujiminami",
+      exitFacilityID: "shuto.ic.s1.shikahamabashi",
+      evidence: .etcNormalCarFrom2026October
+    )
+    let fromOjiKita = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.c2.oujikita",
+      exitFacilityID: "shuto.ic.s1.shikahamabashi",
+      evidence: .etcNormalCarFrom2026October
+    )
+    #expect(fromOjiMinami == fromOjiKita)
+    #expect(fromOjiMinami.quotedYen < 400)
+
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.c2.oujiminami", "shuto.ic.c2.oujikita"),
+      ("shuto.ic.6-mukojima.hamacho", "shuto.ic.6-mukojima.kiyosubashi"),
+      ("shuto.ic.b.ooiminami", "shuto.ic.c2.chukanooiminami"),
+    ] {
+      #expect(throws: ShutoNetworkError.sharedTollPoint) {
+        try planner.plan(
+          entryFacilityID: entryFacilityID,
+          exitFacilityID: exitFacilityID
+        )
+      }
+    }
+  }
+
   @Test("the active evidence stays dated and sourced")
   func evidenceIsDatedAndSourced() {
     let evidence = ShutoTariffEvidence.etcNormalCarUntil2026September

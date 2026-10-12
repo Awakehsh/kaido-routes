@@ -555,6 +555,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var surfaceRerouteTask: Task<Void, Never>?
   private var surfaceRerouteRequestID: UUID?
   private var consecutiveSurfaceOffRouteObservations = 0
+  private var consecutivePastEntranceObservations = 0
   private var lastSurfaceRerouteAttemptAtMilliseconds: Int?
   private var liveAdmissionTask: Task<Void, Never>?
   private var liveAdmissionRequestID: UUID?
@@ -4255,35 +4256,44 @@ final class WholeShutoProductModel: ObservableObject {
     do {
       switch phase {
       case .surfaceAccess:
-        updateLiveSurfaceProgress(
-          coordinate: coordinate,
-          horizontalAccuracyMeters:
-            observation.horizontalAccuracyMeters,
-          route: accessRoute,
-          completesJourney: false
-        )
-        guard
-          isNearSurfaceRouteEnd(
-            coordinate: coordinate,
-            horizontalAccuracyMeters:
-              observation.horizontalAccuracyMeters,
-            route: accessRoute,
-            thresholdMeters: Self.surfaceEntryTransitionRadiusMeters
-          )
-        else {
-          break
-        }
-        cancelSurfaceReroute()
+        // Every fix also goes to the ramp admission: the car can reach the
+        // entrance before the provider's leg ends there, and the admission's
+        // own route-head test refuses a street that only passes it.
         guard var adapter = liveEntryTransitionAdapter else {
           throw WholeShutoProductError.noExpresswayRoute
         }
         let evidence = try adapter.adapt(envelope)
         liveEntryTransitionAdapter = adapter
+        updateLiveSurfaceProgress(
+          coordinate: coordinate,
+          horizontalAccuracyMeters:
+            observation.horizontalAccuracyMeters,
+          route: accessRoute,
+          completesJourney: false,
+          // On a corridor road the car has left the ordinary-road leg for the
+          // expressway; a highway-avoiding reroute would only send it back.
+          reroutesOffRoute: evidence.confidence == .lost
+        )
+        let isNearEntrance = isNearSurfaceRouteEnd(
+          coordinate: coordinate,
+          horizontalAccuracyMeters:
+            observation.horizontalAccuracyMeters,
+          route: accessRoute,
+          thresholdMeters: Self.surfaceEntryTransitionRadiusMeters
+        )
+        if isNearEntrance {
+          cancelSurfaceReroute()
+        }
+        consecutivePastEntranceObservations = 0
         let update = try await session.observeEntryTransitionEvidence(
           evidence
         )
         guard isCurrent() else { return }
-        matcherConfidence = evidence.confidence
+        if isNearEntrance
+          || update.navigationSnapshot.journeyPhase == .strictRoute
+        {
+          matcherConfidence = evidence.confidence
+        }
         if update.navigationSnapshot.journeyPhase == .strictRoute
           || isNearSurfaceRouteEnd(
             coordinate: coordinate,
@@ -4336,6 +4346,12 @@ final class WholeShutoProductModel: ObservableObject {
         if let rejection = update.rejectionReason {
           liveLocationIssueCode = rejection.rawValue
         }
+        resumeSurfaceAccessIfEntrancePassed(
+          evidence: evidence,
+          coordinate: coordinate,
+          horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
+          journeyPhase: update.navigationSnapshot.journeyPhase
+        )
       case .expressway:
         let update = try await session.observe(observation)
         guard isCurrent() else { return }
@@ -4718,7 +4734,8 @@ final class WholeShutoProductModel: ObservableObject {
     coordinate: ShutoCoordinate,
     horizontalAccuracyMeters: Double,
     route: WholeShutoSurfaceRoute?,
-    completesJourney: Bool
+    completesJourney: Bool,
+    reroutesOffRoute: Bool = true
   ) -> Bool {
     guard let route,
       let measurement = Self.surfaceRouteMeasurement(
@@ -4732,11 +4749,13 @@ final class WholeShutoProductModel: ObservableObject {
       if !isReroutingSurfaceRoute {
         liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
       }
-      beginSurfaceRerouteIfDue(
-        from: coordinate,
-        observedAtMilliseconds:
-          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
-      )
+      if reroutesOffRoute {
+        beginSurfaceRerouteIfDue(
+          from: coordinate,
+          observedAtMilliseconds:
+            lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+        )
+      }
       return false
     }
     let maximumLateralDistance = min(
@@ -4753,11 +4772,13 @@ final class WholeShutoProductModel: ObservableObject {
       if !isReroutingSurfaceRoute {
         liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
       }
-      beginSurfaceRerouteIfDue(
-        from: coordinate,
-        observedAtMilliseconds:
-          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
-      )
+      if reroutesOffRoute {
+        beginSurfaceRerouteIfDue(
+          from: coordinate,
+          observedAtMilliseconds:
+            lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+        )
+      }
       return false
     }
     consecutiveSurfaceOffRouteObservations = 0
@@ -4775,6 +4796,42 @@ final class WholeShutoProductModel: ObservableObject {
       return false
     }
     return true
+  }
+
+  /// The approach road and the ramp share their first metres, so the drive
+  /// hands over to the entrance before the ramp has proved anything. A car
+  /// that then goes on past it, off every corridor road and away from the
+  /// end of its ordinary-road leg, did not enter: the leg resumes, and its
+  /// off-route reroute brings the entrance back ahead.
+  private func resumeSurfaceAccessIfEntrancePassed(
+    evidence: EntryTransitionEvidence,
+    coordinate: ShutoCoordinate,
+    horizontalAccuracyMeters: Double,
+    journeyPhase: JourneyPhase
+  ) {
+    guard accessRoute != nil,
+      journeyPhase == .entryTransition,
+      evidence.confidence == .lost,
+      !isNearSurfaceRouteEnd(
+        coordinate: coordinate,
+        horizontalAccuracyMeters: horizontalAccuracyMeters,
+        route: accessRoute,
+        thresholdMeters: Self.surfaceEntryTransitionRadiusMeters
+      )
+    else {
+      consecutivePastEntranceObservations = 0
+      return
+    }
+    consecutivePastEntranceObservations += 1
+    guard consecutivePastEntranceObservations
+      >= Self.surfaceRerouteRequiredOffRouteObservations
+    else { return }
+    consecutivePastEntranceObservations = 0
+    phase = .surfaceAccess
+    progressFraction = 0
+    matcherConfidence = nil
+    liveLocationIssueCode = nil
+    scheduleLiveSurfaceSpeech(forceCurrentStep: true)
   }
 
   private func isNearSurfaceRouteEnd(

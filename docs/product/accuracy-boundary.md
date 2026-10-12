@@ -41,8 +41,12 @@ The product distinguishes what is known from what is still unconfirmed:
   share the interruption-safe audio output but never gain expressway guidance
   authority. Two consecutive accurate off-route observations trigger a bounded
   MapKit recalculation of only the active ordinary-road leg, with a cooldown;
-  the exact Shuto plan and the opposite surface leg remain unchanged. Entry
-  evidence takes over only near the exact directional ramp. A single fix that
+  the exact Shuto plan and the opposite surface leg remain unchanged. Every
+  fix also goes to the ramp admission, so a car that reaches the entrance
+  before the ordinary-road leg ends there still enters, and no reroute is
+  requested while the matcher places the car on a corridor road. A car that
+  goes on past the entrance, off every corridor road, gets its ordinary-road
+  leg back. A single fix that
   misses the ordinary-road leg changes nothing on screen: the step, the
   distance and the position stay as they were, and only the second consecutive
   miss labels the drive as waiting to join the route. That label is never weak

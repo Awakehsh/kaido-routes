@@ -117,7 +117,13 @@ presentation reads it, never the raw matcher value. The seam cannot mint
 hash or a MapKit response. Two consecutive accepted off-route observations may
 replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
-recomputed. Presentation waits for that same second observation: one fix off
+recomputed. No reroute is requested while the entry adapter's matcher places
+the access fix on a corridor road: the car has left the ordinary-road leg
+for the expressway. Every access fix also goes to the release-bound entry
+admission, whose route-head test decides entry wherever the provider's leg
+happens to end; within 60 m of that end the drive shows the entrance
+transition, and two consecutive fixes off every corridor road beyond 80 m of
+it return the drive to the access leg. Presentation waits for that same second observation: one fix off
 the line leaves the position available and the current step on screen, because
 a single sideways fix beside a tower is a mismeasurement, not a lost route.
 Once the second observation confirms it, presentation reports that the drive is
@@ -2364,7 +2370,8 @@ bounded role it may own.
 ## Drive controls, history, and shared routes
 
 App Intents expose the foreground live model's existing repeat, speech mode,
-lap, rest, resume, and end actions. Unmute returns to the voice mode the driver
+route join, lap, rest, resume, and end actions. Joining declares "already on
+the expressway" only where the in-app control is offered. Unmute returns to the voice mode the driver
 had before muting rather than to full guidance. A lap change, exit handoff or
 resume that fails mid-drive is reported as one line on the driving screen, not
 only in the planning dock. Siri returns the current valid instruction

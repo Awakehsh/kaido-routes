@@ -4271,6 +4271,62 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotNil(model.circuitExitFacilityID)
   }
 
+  func testCircuitTapWithAKnownLocationResolvesThePairingOnce() async {
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
+    )
+    let hatsudai = ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    model.selectCurrentOrigin(hatsudai)
+    var resolutionsStarted = 0
+    let subscription = model.$isResolvingCircuitPairing.dropFirst().sink {
+      if $0 { resolutionsStarted += 1 }
+    }
+    defer { subscription.cancel() }
+
+    // What a circuit card does when the planning location is measured.
+    model.selectCircuit(.c1Inner)
+    model.selectCurrentOrigin(hatsudai)
+    model.refreshCircuitEntrances()
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(resolutionsStarted, 1)
+    XCTAssertEqual(model.circuitEntryFacilityID, "shuto.ic.4.yoyogi")
+  }
+
+  func testAMovedOriginRestartsAResolvingPairing() async {
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    var resolutionsStarted = 0
+    let subscription = model.$isResolvingCircuitPairing.dropFirst().sink {
+      if $0 { resolutionsStarted += 1 }
+    }
+    defer { subscription.cancel() }
+
+    model.selectCircuit(.c1Inner)
+    XCTAssertTrue(model.isResolvingCircuitPairing)
+    // Tokyo Tower, about 6 km away: the in-flight pairing no longer applies.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6586, longitude: 139.7454)
+    )
+    model.refreshCircuitEntrances()
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(resolutionsStarted, 2)
+    XCTAssertNotEqual(model.circuitEntryFacilityID, "shuto.ic.4.yoyogi")
+  }
+
   func testCircuitEntranceTariffBandsResolveFromDatedEvidence() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.selectCurrentOrigin(

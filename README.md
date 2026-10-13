@@ -4,10 +4,11 @@ Kaido Routes is a route-first iPhone navigation product for the Shuto
 Expressway. A driver chooses a route experience first, derives a
 direction-valid entrance and an exit or PA destination from the current origin, optionally adds a
 final destination, reviews the exact Shuto route and junction sequence, then
-replays the journey from surface access through surface egress. Live navigation
-starts only in the foreground and only when the selected route matches an exact
-enrolled product release; that explicitly started session continues through
-screen lock and temporary app switching.
+navigates the journey from surface access through surface egress. Live
+navigation starts only in the foreground and only when an exact product
+release, bundled or built on the device, matches the selected route; that
+explicitly started session continues through screen lock and temporary app
+switching.
 
 The project is not affiliated with or endorsed by Metropolitan Expressway
 Company Limited.
@@ -28,11 +29,11 @@ before trusting any guidance this product gives.
 - Opens on the whole Shuto network — all 26 current official route entries,
   directional IC facilities, JCTs, and PAs — not a sample route or an internal
   workbench.
-- Leads with a named route-experience catalog: the C1 inner loop, the C2 inner
-  loop closed by the Bayshore Route, the Bayshore westbound run that leaves
-  the Bayshore at Daikoku to finish inside Daikoku PA,
+- Leads with a named route-experience catalog: the C1 inner and outer loops,
+  the C2 inner loop closed by the Bayshore Route, the Bayshore westbound run
+  that leaves the Bayshore at Daikoku to finish inside Daikoku PA,
   the Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge. All three finish at Daikoku PA. The driver picks a route, never designs
+  Mirai, and the Yokohama Bay Bridge. The last three finish at Daikoku PA. The driver picks a route, never designs
   an entrance: selecting one derives the direction-valid pairing, offers a 1–9
   lap count on loops, and shows a tariff band from dated operator evidence.
 - Includes PAs in destination search. A PA destination ends the Shuto route
@@ -81,6 +82,8 @@ listed in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 swift test
 swift run kaido-scenarios e2e/scenarios
 python3 scripts/validate_e2e.py
+python3 scripts/verify_facility_candidate_review.py
+python3 scripts/audit_shuto_network.py
 python3 -m unittest discover -s scripts/tests
 swift run kaido-release validate-product \
   --artifact \
@@ -89,17 +92,19 @@ swift run kaido-release validate-product \
 
 Every pull request runs the `verify` workflow, which classifies the changed
 paths, then runs the deterministic suites and the `Verify` Xcode test plan —
-every App unit test plus route-selection, PA-ending, pairing, and
-live-navigation UI journeys — as parallel unit and UI jobs. Documentation-only changes
+every App unit test except the device-only physical-audio checks, plus
+route-selection, PA-ending, pairing, and live-navigation UI journeys — as
+parallel unit and UI jobs. Documentation-only changes
 finish after the lightweight classification. The `Verification gate` job
 reports the single required result. The production joint-release validator
 checks the retained K7 product artifact as a deterministic regression anchor;
 it does not enroll the candidate whole-Shuto graph or grant live-navigation
 authority.
 
-The `iOS qualification` workflow runs nightly on `main`; before a road test or
-release, run it manually once `verify` is green. It runs the `Full` test plan —
-every App unit and UI test — on iOS 26, the App unit tests on iOS 18, and a
+The `iOS qualification` workflow runs nightly on `main` (scheduled for 18:17
+UTC); before a road test or release, run it manually once `verify` is green.
+It runs the `Full` test plan — every App unit and UI test except the
+device-only physical-audio checks — on iOS 26, the App unit tests on iOS 18, and a
 compact accessibility matrix, and publishes a validated unsigned Release
 archive. That artifact is not signed, installable device evidence, TestFlight
 delivery, or an App Store submission.

@@ -65,6 +65,11 @@ should become scenarios when their layer is built.
 | KR-S20 | A release-bound surface-egress matcher requires two fresh exact handoff observations before leaving the exit transition | P0 | Seeded |
 | KR-S21 | An exit-only journey completes at its exact released exit handoff without entering surface egress | P0 | Seeded |
 | KR-S22 | A generic whole-route simulation preserves repeated occurrences and requires fresh confirmation after a signal gap | P0 | Seeded |
+| KR-S23 | Route-head evidence on the approach line cannot enter strict-route mode | — | Seeded |
+| KR-S24 | A driver-declared join enters the route only where the matcher places it | — | Seeded |
+| KR-S33 | Tunnel signal recovery follows adjacent short route occurrences | — | Seeded |
+| KR-S34 | A junction remains speakable after a missed anchor edge | — | Seeded |
+| KR-S35 | A PA destination completes inside the parking area without an exit handoff | — | Seeded |
 
 ## iPhone and CarPlay experience
 
@@ -115,5 +120,3 @@ The following are permanent rejection tests once UI or analytics exist:
 - no implication that a PA is guaranteed open;
 - no claim that an estimated toll or position is confirmed;
 - no route start when a required safety-relevant movement is stale or conflicted.
-
-- `KR-S35`: PA destination arrival completes inside the parking area without an exit handoff.

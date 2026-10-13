@@ -65,6 +65,12 @@ radial-to-loop joins, and repeated laps — must render through the same pipelin
 9. **Uncertainty is visible.** Toll and passage information renders its
    explicit unconfirmed state when no current source exists.
 
+The current track map does not yet meet rules 3, 5, and 6 in full. Every
+on-route facility keeps its mark, but the Japanese name plates are
+collision-managed, so some appear only as the driver zooms closer. The
+entrance carries a checkered start-grid mark; the planned exit has none.
+Repeated laps share one drawing, with each facility marked once.
+
 ## Shape families
 
 The renderer handles two families through the same pipeline:

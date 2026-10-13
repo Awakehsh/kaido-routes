@@ -1,10 +1,11 @@
 # Kaido Routes iPhone app
 
 Status: active iPhone product target with a default whole-Shuto route-first
-planner, labeled replay, and foreground-started live navigation that continues
-through screen lock and temporary app switching. The App authors one
-exact, content-addressed `KaidoProductRelease` from the validated bundled
-snapshot and released movement catalog before attaching Core Location. The
+planner, a Debug-only labeled replay, and foreground-started live navigation
+that continues through screen lock and temporary app switching. Five exact
+routes use prebuilt foreground releases; for any other route the App authors one exact,
+content-addressed `KaidoProductRelease` from the validated bundled snapshot and
+released movement catalog before attaching Core Location. The
 released K7 product remains a deterministic regression fixture. Physical
 position accuracy, field reliability, background continuity, acoustic output,
 and CarPlay remain separately unqualified.
@@ -25,11 +26,11 @@ whole-Shuto product journey rather than the internal evidence workbench:
    exact occurrence-preserving `RoutePlan` from the current bundled snapshot;
 3. Review requires access plus any selected onward leg and keeps passage/toll uncertainty
    visible; and
-4. **Replay route** runs the deterministic complete-journey trace, while
-   **Start navigation** constructs the selected route's exact joint release and
+4. **Start navigation** constructs the selected route's exact joint release and
    begins Core Location in the foreground only after validation succeeds, then
    keeps that active navigation session running through lock screen and app
-   switching.
+   switching. Debug builds alone add **Preview without driving**, which runs
+   the deterministic complete-journey trace at a 54 km/h reference and 20×.
 
 The planning panel can be collapsed and reopened by tap or drag without losing
 the selected route. Place completion merges bundled direction-valid Shuto ICs
@@ -37,20 +38,21 @@ ahead of MapKit results for both manual origins and destinations. The custom
 route editor waits for an origin, pins its current entry and exit at the leading
 edge, and exposes searchable nearby candidates with direction and distance.
 
-A saved record labeled `CURRENT SNAPSHOT` has had its complete ordered
+A saved record shown as `Available` has had its complete ordered
 `RoutePlan` reconstructed against the exact bundled graph, including repeats
 and circuit laps. Circuit source, ID, and lap metadata must reproduce that same
-plan and survive reopen/re-save. The record may open parked Review and resolve
-fresh bounded surface legs for replay; saving/importing does not upgrade
-evidence or unblock live navigation.
+plan and survive reopen/re-save. The record opens parked Review and resolves
+fresh bounded surface legs; **Start navigation** then authors its release on
+device exactly as for any other selected route. Saving or importing never
+upgrades evidence, and the record itself carries no release authority.
 
 The `ROUTES | MAP` choice persists through the journey. `ROUTES` shows the
 Kaido-owned whole-network/whole-route track presentation; `MAP` shows the exact
-selected Shuto path plus bounded ordinary-road legs over MapKit. Replay exposes
-pause, resume, finish, and termination reconstruction without claiming live-road
-position or current passage status. A junction inset and one-shot speech appear
-only for snapshot-bound reviewed movement definitions; lane indices and every
-unreviewed movement stay silent. The App generates the road scene and does not
+selected Shuto path plus bounded ordinary-road legs over MapKit. Debug replay
+exposes pause, resume, finish, and termination reconstruction without claiming
+live-road position or current passage status. A junction inset and one-shot
+speech appear only for snapshot-bound reviewed movement definitions; lane
+indices and every unreviewed movement stay silent. The App generates the road scene and does not
 bundle operator photographs used for private visual comparison. Exact HIGH
 matcher evidence may advance the replay marker; LOW, LOST, ambiguous, stale, or
 identity-drifted evidence cannot.
@@ -207,8 +209,9 @@ The retained Debug/regression surfaces additionally compose:
   schema-1.0 file retains complete shared documents, storage origin, evidence
   state, snapshot, and ordered occurrences; the retained release editor still
   requires one whole-RoutePlan-equal foreground release, while the default
-  planner may reopen an exact `CURRENT SNAPSHOT` match for parked review/replay
-  only, with no evidence promotion or live-navigation authority;
+  planner reopens an exact current-snapshot match into parked review, with no
+  evidence promotion; its live start is authored on device like any other
+  selected route;
 - parked local rename, confirmation-gated deletion, deterministic JSON export,
   and validated JSON import controls; import records `SHARED_IMPORT`, unknown
   schemas fail closed without migration, and every mutation persists before the
@@ -608,7 +611,9 @@ Apache-2.0 software licence, and the separate bundled
 [`DATA-LICENSES.md`](../../DATA-LICENSES.md) notice for the machine-readable
 whole-Shuto OpenStreetMap derivative under ODbL 1.0. Release contains only
 those disclosures, localizations,
-the whole-Shuto snapshot, compiled UI assets, and the app binary; retained K7,
+the whole-Shuto snapshot, the five prebuilt foreground product releases, the
+App Intents metadata of its drive-control intent, compiled UI assets, and the
+app binary; retained K7,
 C2, synthetic, and internal-calibration resources remain Debug-only.
 
 The structural Release archive can be reproduced without signing:
@@ -651,18 +656,19 @@ tracked output, and existing evidence directories before a passing receipt can
 exist. Raw `.xcresult`, summary, and build logs remain in ignored private
 storage; the coordinate-free receipt excludes device identifier and name.
 
-The physical App suite includes one exact default whole-Shuto foreground
-planning-location Core Location lifecycle,
+The physical App suite includes one exact default whole-Shuto
+planning-to-live Core Location lifecycle,
 `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`: the user
 action requests When In Use permission, survives the system-dialog scene
-interruption, reaches `RUNNING`, and explicitly stops. The default suite is
+interruption, measures the planning origin, starts live navigation on the C1
+inner circuit, stops the planning session in favour of the live one, and keeps
+that live session running across a Home press and return. The default suite is
 silent and does not grant audio evidence. The separate physical-audio runner
 plays parked Japanese, Simplified Chinese, and English samples only when
 explicitly invoked. These are permission, callback, and route-lifecycle smokes
-only; they do not
-start or enroll live navigation and do not qualify location accuracy, matcher
+only; they do not qualify location accuracy, matcher
 reliability, voice naturalness, pronunciation, driver comprehension, current
-road conditions, CarPlay, or lock-screen/background continuity. See
+road conditions, CarPlay, or lock-screen continuity. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
 When the device's XCTest UI Automation service cannot start, use the narrower
@@ -752,8 +758,8 @@ as a basic fallback and names the iPhone Spoken Content voice installation path;
 the current preview Simulator reports only default-quality voices, not an
 enhanced-voice qualification.
 `PhysicalAudioQualificationTests` and
-`PhysicalAudioQualificationUITests` are excluded from the default scheme so a
-build or ordinary test run never activates the speaker. The explicit
+`PhysicalAudioQualificationUITests` are skipped by the `Full` and `Verify` test
+plans so a build or ordinary test run never activates the speaker. The explicit
 `KaidoRoutesPhysicalAudioQualification` scheme retains the parked-only
 technical harness for deliberate physical-device checks.
 They also save one background checkpoint, reconstruct a fresh runtime, retain

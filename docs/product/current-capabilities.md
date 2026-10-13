@@ -13,8 +13,8 @@ internal review workbench.
   Beneath the highlighted route it draws every mainline carriageway — both
   directions — as a muted context layer with no guidance authority.
 - The home is route-first: a named route-experience catalog leads the
-  planning surface — the C1 inner loop, the C2 inner loop closed by the
-  Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
+  planning surface — the C1 inner and outer loops, the C2 inner loop closed
+  by the Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
   Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
   Mirai, and the Yokohama Bay Bridge. These three Daikoku experiences end
   inside the PA, including completion of the chosen laps on the loop. The driver
@@ -26,11 +26,11 @@ internal review workbench.
   evidence (normal car, ETC): the minimum band is asserted only with a
   distance safety margin, mid-range amounts stay explicit estimates, and
   nothing is shown until a band is computed. Two dated rules are encoded from
-  the operator's own pages: the current one (29.52 yen/km, 300–1,950 yen)
-  through 2026-09-30, and the 2026-10-01 revision (32.472 yen/km, 300–2,130
-  yen, the 55.0 km cap distance kept). The rule payable on today's Japanese
-  calendar day is the one quoted, so the revision is never shown early and
-  takes over on its day without a release. Because the tariff uses the
+  the operator's own pages: the 2026-10-01 revision now in force (32.472
+  yen/km, 300–2,130 yen, the 55.0 km cap distance kept), and the earlier rule
+  (29.52 yen/km, 300–1,950 yen) payable through 2026-09-30. The App quotes
+  the rule payable on the current calendar day in Japan time, which is how
+  the revision took over on 2026-10-01 without a release. Because the tariff uses the
   shortest all-Shuto path between entry and exit, lap count never changes
   the band. Same-named ramps bill as one toll point, and so do the
   interchanges the operator bills together: 王子南 and 王子北; 箱崎, 浜町 and
@@ -57,9 +57,11 @@ internal review workbench.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
   ordered course. Avoid when possible keeps the selected Shuto course and its
-  own entrances. Either way the legs to and from the expressway are ordinary
-  roads: MapKit is asked to avoid highways and tolls, so a connecting leg never
-  guides through unreviewed junctions or adds a second toll.
+  own entrances. Either way the legs to and from the expressway are meant to
+  be ordinary roads: MapKit is asked to avoid highways and tolls, and a route
+  it flags as using either is taken only when it returns nothing else (an
+  access leg that ends on the entrance ramp is often flagged for the ramp
+  itself).
 - PAs appear in destination search alongside other places. Selecting one
   plans its exact directional access and an arrival point on the reviewed
   parking interior. There is no separate stop-selection screen. A PA-ended
@@ -94,21 +96,25 @@ internal review workbench.
   source exists. Missing a required surface leg blocks review and start rather than
   silently skipping that part of the journey.
 - Saved-route import preserves the complete shared `RoutePlan` and never
-  upgrades its evidence. A record labeled `CURRENT SNAPSHOT` has been
+  upgrades its evidence. A record shown as **Available** has been
   reconstructed and revalidated against the exact bundled whole-Shuto snapshot,
-  including repeated occurrences and circuit laps; it may reopen parked review
-  and replay only. Live start still requires an authority-bearing
-  `KaidoProductRelease`.
+  including repeated occurrences and circuit laps; it reopens parked review.
+  The file itself carries no release authority: **Start navigation** is
+  prepared exactly as for any other selected route, from a bundled release or
+  one built on the device.
 - Route occurrences remain ordered and distinct. Directed links represent
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
 - The bundled whole-Shuto graph remains a candidate asset rather than blanket
-  navigation authority. Five representative foreground releases are prebuilt
-  for startup regression. Every other plannable exact `RoutePlan` is rebuilt
-  and content-addressed on device from the same validated snapshot and 163
-  released movement bindings before **Start navigation** is enabled. The
-  exhaustive admission audit covers all 51,582 direction-valid facility route
-  combinations; malformed, mismatched, or incomplete plans still fail closed.
+  navigation authority. Five foreground releases are prebuilt for startup
+  regression, one representative route for every catalog experience except
+  the C1 outer loop. Any other exact `RoutePlan`, the C1 outer loop included,
+  is rebuilt and content-addressed on device from the same validated snapshot
+  before **Start navigation** is enabled, and only when every junction
+  decision it makes is one of the 163 released movement bindings. A route
+  through the unreviewed 本牧JCT split on the Bayshore westbound builds no
+  release and cannot start; malformed, mismatched, or incomplete plans fail
+  closed the same way.
 - Every compiled whole-Shuto runtime exposes a deterministic asset identity.
   Its network-artifact hash covers the complete decoded network, including
   source, licence, limitation, and bounds metadata; its route-runtime hash
@@ -199,17 +205,17 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network catalog contains 144 exact movements. It covers
-  every divergent JCT on both C1 catalog loops, the Bayshore corridor in both
-  directions, and the currently released radial and Yokohama approaches.
+- The reviewed whole-network catalog contains 165 exact movement definitions.
+  They bind 163 of the 165 movements at the snapshot's 29 divergent JCTs.
   Their Kaido vectors, branch or continuation instructions,
   Japanese sign targets, and route shields are operator-source-traceable. Each
   exact outgoing occurrence compiles into actor-owned screen guidance and
   one-shot speech per stage: advance preparation where the current approach
   has room, followed by the final branch or continuation cue. Lane indices remain explicitly unreleased, and transitions
   without sufficient approach-specific evidence remain silent.
-  The remaining 23 candidate JCT movements stay preview-only until their
-  approach-specific signs and legal continuations are released.
+  The remaining 2, the Bayshore westbound split at 本牧JCT where the restored
+  start of K3 branches off, have no guidance until their approach-specific
+  signs and legal continuations are reviewed.
 - Map facility labels for IC, JCT, and PA, route shields, and physical sign
   targets stay in Japanese. The default whole-network journey provides
   persisted Japanese, Simplified Chinese, and English interface controls plus

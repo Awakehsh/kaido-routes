@@ -1,7 +1,9 @@
 # Rebuilding the network
 
 How the bundled whole-Shuto database is regenerated from operator pages and
-a pinned OpenStreetMap extract.
+a pinned OpenStreetMap extract. Geofabrik no longer serves that dated extract
+(HTTP 404 on 2026-10-13); the build needs a retained copy whose SHA-256
+matches `--expected-input-sha256`.
 
 The builders use Beautiful Soup and pinned pyosmium:
 

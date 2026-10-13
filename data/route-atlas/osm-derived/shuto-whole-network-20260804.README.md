@@ -12,7 +12,7 @@ Attribution and licence:
 
 The database is the default iPhone product graph: the builder's output with
 the dated reviews in `data/route-atlas/reviews/` replayed in order. It contains
-26 official route entries, 2,540 OSM ways, 24,553 directed edges, 152 IC
+26 official route entries, 2,540 OSM ways, 24,549 directed edges, 152 IC
 names (the operator catalog's 151 plus the 東銀座 exit a review adds), 39 JCTs,
 and 19 PAs. Its metadata retains the exact parent input, SHA-256,
 snapshot timestamp, builder/version, ODbL identifier, attribution, official
@@ -68,7 +68,8 @@ Reconstruct the complete distributed database from the current operator fact
 catalog and pinned Kanto PBF. Geofabrik rotates dated files: 260728 and 260803
 are no longer served; the snapshot now pins the dated 260804 file, whose
 selected graph is identical to 260803's — only three ways gained a `lanes` tag
-upstream:
+upstream. That file has since rotated out as well (HTTP 404 on 2026-10-13), so
+the command below needs a retained copy matching the pinned SHA-256:
 
 ```sh
 python3 -m venv /tmp/kaido-shuto-osmium

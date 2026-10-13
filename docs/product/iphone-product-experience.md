@@ -4,8 +4,9 @@ Status: accepted product design contract, checked against the default App on
 2026-09-04. The implementation now opens on the
 route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
 bands for named experiences, supports loop lap count and exact custom routes,
-and carries the selected route through review, labeled replay, finish, and
-checkpoint reconstruction. Every direction-valid route with complete reviewed
+and carries the selected route through review, live navigation, finish, and
+checkpoint reconstruction; labeled replay is a Debug-only review tool. Every
+direction-valid route with complete reviewed
 junction coverage can build an authority-bearing foreground product release on
 device; incomplete routes still fail closed. An interrupted live journey keeps
 its exact release-bound actor checkpoint and returns through an explicit resume
@@ -59,18 +60,21 @@ The home surface asks one question: which route to drive. It shows the network
 map as context, an explicit current-location origin chip, and the named
 route-experience catalog — versioned candidate templates over the bundled
 planning snapshot, covering the drives the audience actually runs (the C1
-inner loop, the C2-plus-Bayshore grand loop,
+inner and outer loops, the C2-plus-Bayshore grand loop,
 the Bayshore run ending inside Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
-entry for interface language, guidance voice, ordinary-road routing preference,
-known map limitations, privacy, and licences. **Prefer highways** is the
-default, with **Avoid when possible** as the alternative. OSM source and licence credit sits under the title as a compact
-caption, adjacent to the map and off the road drawing. Each catalog card presents the
-route as a finished experience: its directional shape thumbnail, reference
-distance and duration, reviewed junction count, mapped tunnel share, landmark
-and PA facts, and — once an origin is known — the derived
-entrance/exit pairing as one factual line. It does not lead with a destination
+entry for map appearance, interface language, guidance voice, highway
+preference, drive record and history, known map limitations, privacy, and
+licences. **Prefer highways** is the
+default, with **Avoid when possible** as the alternative. A corner
+`© OpenStreetMap` credit, linked to the OpenStreetMap copyright page, sits just
+above the dock on every map that draws the network. Each catalog card presents the
+route as a finished experience: its directional shape thumbnail with a loop or
+tour badge, its route shields and name, reference duration and distance, and
+one fact — the PA it ends in or stops at, otherwise its first landmark.
+Selecting a card derives the entrance/exit pairing from the origin as one
+factual line. It does not lead with a destination
 field, and it does not show an editorial, operator, creator, or community
 recommendation feed.
 
@@ -116,14 +120,18 @@ Saved routes remain below the route-experience catalog. Import preserves the
 complete versioned shared document and its evidence state. When the exact
 `network_snapshot_id` matches the bundled graph, the planner reconstructs and
 revalidates the full ordered `RoutePlan`, including repeated occurrences and
-circuit laps, before labeling the record `CURRENT SNAPSHOT`. Opening it requires
+circuit laps, before labeling the record **Available**. Opening it requires
 a parked origin, resolves fresh bounded surface legs, and enters Review; it does
-not silently replan the Shuto sequence. Snapshot drift or invalid occurrence
-content stays unavailable. Circuit template metadata must also reproduce the
+not silently replan the Shuto sequence. Snapshot drift shows **Map update
+needed** and invalid occurrence content shows **Invalid file**; neither opens.
+Circuit template metadata must also reproduce the
 same complete plan for the named circuit and lap count; valid source parameters
-survive reopen and re-save rather than becoming a custom route. This path
-enables parked review and replay only: save, import, and current-snapshot
-matching cannot create a release or unblock **Start navigation**.
+survive reopen and re-save rather than becoming a custom route. A reopened
+route then prepares **Start navigation** exactly like any other selected route:
+the App authors its foreground release on device from the bundled snapshot and
+released movement bindings, or keeps the start blocked when a junction decision
+is not covered. Save, import, and current-snapshot matching never upgrade the
+document's own evidence.
 
 ### Derived entrance/exit pairing and tariff bands
 
@@ -279,14 +287,14 @@ The map corner shows only the KAIDO wordmark. Route choice, scope, route names,
 and lap counts belong in the route controls and review, not in the brand mark.
 **Route map / Map** names the two map presentations.
 
-Ordinary-road access, egress, and live rerouting use the same persisted
-preference. **Major roads first** requests provider alternatives and may accept
-a route up to 15 percent slower, capped at eight additional minutes, when it
-has fewer maneuvers or a higher implied average speed. The limit keeps the
-preference bounded; it is not a promise that every road is wide. A local street
-may remain necessary near an origin, destination, or directional ramp. The
-provider's highway and toll avoidance remains separate and no surface
-preference may alter the selected Shuto `RoutePlan`.
+Ordinary-road access, egress, and live rerouting always prefer major roads: the App
+requests provider alternatives and may accept a route up to 15 percent slower,
+capped at eight additional minutes, when it has fewer maneuvers or a higher
+implied average speed. The limit keeps the preference bounded; it is not a
+promise that every road is wide. A local street may remain necessary near an
+origin, destination, or directional ramp. The highway preference in Settings
+decides only which entrances are recommended, and no surface preference may
+alter the selected Shuto `RoutePlan`.
 
 ### Provider boundary
 
@@ -298,9 +306,11 @@ ordered occurrences before it can become selectable. Required provider
 attribution and technical provenance remain in route details or the system map
 attribution surface rather than the primary choice row. The default iPhone
 adapter currently uses MapKit only for the ordinary-road comparison and cached
-surface legs. It asks for alternate automobile routes, removes candidates that
-MapKit identifies as highway or toll routes, and applies the persisted bounded
-ordinary-road preference to the survivors. MapKit exposes no road-width or
+surface legs. It asks for alternate automobile routes that avoid highways and
+tolls, drops candidates MapKit still flags as highway or toll routes unless
+nothing else was returned (an access leg ends on the entry ramp, which MapKit
+can flag), and applies the bounded major-road preference to the survivors.
+MapKit exposes no road-width or
 road-class contract, so this remains a best available provider preference,
 not verified road-width evidence. Google Routes and other billable services require their own
 configured account, credentials, licence review, and executable comparison
@@ -310,7 +320,8 @@ before they can occupy the same replaceable boundary.
 
 Siri and Shortcuts expose bounded drive actions: repeat the current direction,
 mute/unmute guidance, join the route where the "already on the expressway"
-control is offered, add/remove a lap, take a break, resume, and end navigation.
+control is offered, add/remove a lap, finish this lap, finish at the planned
+exit, take a break, resume, and end navigation.
 Each action uses the active App session and its existing guards. Ending guidance
 requires confirmation and rechecks that the same session is still active. It is
 distinct from choosing an earlier exit. Siri reads repeat text through its own
@@ -357,15 +368,14 @@ closer — the same anchored pinch, double-tap, and clamped pan as the network
 diagram. While driving, the frame follows the current position at a closer
 zoom by default; any gesture hands the viewport to the driver and a recenter
 control returns it, with the whole-route frame one double-tap away. The next
-facility ahead of the position always keeps its plate and carries its
-remaining route distance. In landscape the instrument column (title, guidance
+facility ahead of the position claims its plate first, and an IC or PA there
+carries its remaining route distance. In landscape the instrument column (title, guidance
 banner, and dock) sits on the leading edge and the map owns the remaining
 width at full height; portrait keeps the floating top bar and bottom dock. Off-route network appears
-only as quiet context or not at all. Repeated laps remain separate occurrences; the renderer offsets
-repeated traversals and exposes their ordinal and count instead of
-deduplicating them. A compact summary reports the entrance, JCT, PA, and exit
-counts. Facility names follow the interface locale while Japanese sign text
-and route shields remain available.
+only as quiet context or not at all. Repeated laps remain separate occurrences
+in the `RoutePlan`; the track map draws their shared geometry once and marks
+each facility once. Facility names on the plates stay in Japanese, as on the
+signs.
 
 Dense circuits keep the complete entrance and exit names in the header and
 visually distinguish each required route section. A practical C2 circuit
@@ -409,8 +419,8 @@ Review is a short journey summary, not an evidence report. It shows:
 
 Only an actionable blocker expands automatically. Evidence sources and release
 identity remain in a secondary detail sheet. Review preserves the exact selected
-journey for both start intents; replay remains synthetic, while navigation stays
-disabled unless an authority-bearing release admits it.
+journey for **Start navigation**, which stays disabled unless an
+authority-bearing release admits it; the Debug-only replay stays synthetic.
 Navigation also waits for any in-flight ordinary-road access and egress requests
 to finish. An early start request stays in Review, so a pending access leg cannot
 be mistaken for a journey that begins at the expressway entrance.
@@ -437,25 +447,33 @@ stays parked when restoration cannot be proven. Rejected or failed replacement
 data is cleared when storage remains writable, so an older progress position or
 spoken-prompt ledger cannot silently return on the next launch.
 
-Review presents two start intents. The secondary action replays the complete
-journey without driving and states its 54 km/h reference trace and 20x playback
-rate wherever it appears, so a preview cannot be mistaken for a drive. **Start
-navigation** may run only when one exact authority-bearing
-`KaidoProductRelease`, released surface-provider artifacts, and required field
-evidence are enrolled. With the current candidate whole-Shuto graph it fails
-closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; an asset hash, location
+The distributed App's Review offers one start action, **Start navigation**.
+Debug builds add a secondary action that replays the complete journey without
+driving and states its 54 km/h reference trace and 20x playback rate wherever
+it appears, so a preview cannot be mistaken for a drive. **Start navigation**
+is enabled only when exactly one authority-bearing `KaidoProductRelease`
+matches the complete selected `RoutePlan` — one of the five bundled foreground
+releases, or one the App authors on device from the bundled snapshot and
+released movement bindings — its runtime and junction prompts are prepared,
+and the required ordinary-road legs have resolved. A route with a junction
+decision outside the released bindings stays blocked as
+`WHOLE_SHUTO_NAVIGATION_GUIDANCE_INCOMPLETE`; an asset hash, location
 permission, or MapKit route response cannot satisfy that gate.
 
-The default candidate product requests when-in-use location only for the
-foreground planning origin. The physical lifecycle smoke proves that permission
-and start/stop wiring; it does not enroll live navigation or grant road
-authority. A future release-enrolled live drive must pass device fixes through
-the shared adaptation boundary, reject invalid, stale, future-dated, and
-distributed-build simulated fixes, and admit no entry, expressway, or egress
-progress from proximity alone. Its termination restore must retain neither a
-measured marker, matcher posterior, partial entry continuity, active audio, nor
-background location ownership, and must require fresh observations before new
-progress.
+Location uses When In Use authorization only. Planning location runs in the
+foreground and stops when the App leaves it, once a fix settles within 100 m,
+or after a 12-second locating window. **Start navigation** requests the same
+permission if it is still undetermined, then keeps background location updates
+on, with the system indicator, while the session runs, so it continues through
+screen lock and temporary app switching; it stops when the journey ends,
+permission is revoked, or the pipeline fails. Device fixes pass through the
+shared adaptation boundary, which rejects invalid coordinates, accuracy and
+timestamps, future-dated fixes, and fixes iOS reports as simulated by
+software. The physical lifecycle smoke proves the permission and start/stop
+wiring, not road authority. Restoring an interrupted live journey keeps no
+measured marker, matcher session, or partial entry evidence and does not
+restart location: it waits for the driver's explicit resume and fresh
+observations.
 
 ## Drive
 
@@ -505,10 +523,10 @@ a muted context layer, so the driver always sees the opposite carriageway and
 nearby lines the way an ordinary navigation basemap would; the muted layer
 never competes visually with the active route and grants no guidance
 authority. Stacked or parallel carriageways may coincide in plan view; that is
-a display compromise and never affects position matching. A user-started
-automatic route simulation may exercise the complete Drive presentation along
-the selected route geometry.
-The current whole-Shuto replay uses at most 30 meters between generated samples,
+a display compromise and never affects position matching. In Debug builds a
+user-started automatic route simulation may exercise the complete Drive
+presentation along the selected route geometry.
+That whole-Shuto replay uses at most 30 meters between generated samples,
 a 54 km/h reference trace, and an explicitly displayed 20x wall-clock rate,
 including position, progress, and transient junction insets. It remains visibly
 synthetic and grants no live-road or passage authority.

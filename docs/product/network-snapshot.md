@@ -8,15 +8,15 @@ checked on `2026-07-29`:
 | Item | Bundled coverage |
 |---|---:|
 | Official route entries | 26 |
-| Directed graph edges | 24,553 |
-| IC names | 152 |
+| Directed graph edges | 24,549 |
+| IC entries | 152 |
 | Usable IC geometry matches | 147 / 148 |
 | Official JCT matches | 39 / 39 |
 | PA entries | 19 |
 | Source-reviewed PA interiors | 19 / 19 |
 | PA stops with supported Shuto entrance/exit tests | 17 / 19 |
 
-Four unavailable IC names have no routable geometry: the three of the
+Four unavailable IC entries have no routable geometry: the three of the
 long-term-closed Yaesu Route, and the abolished 新富町 exit. They remain
 visible as unavailable facts and are never admitted to route search. The one
 available IC without a ramp of its own is the 横浜港北 entry listed under

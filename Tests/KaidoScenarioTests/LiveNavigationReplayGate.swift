@@ -656,7 +656,8 @@
         records: records,
         truthCount: truth.count,
         lapChangeOutcome: lapChangeOutcome,
-        finalSnapshot: await runtime.session.snapshot
+        finalSnapshot: await runtime.session.snapshot,
+        errorScale: noise.errorScale
       )
     }
 
@@ -996,6 +997,8 @@
     let truthCount: Int
     var lapChangeOutcome: ReplayGateLapChangeOutcome? = nil
     var finalSnapshot: NavigationSnapshot? = nil
+    /// The noise model's true error over the error it reports.
+    var errorScale: Double = 1
 
     var entryRecord: ReplayGateFixRecord? {
       records.first { $0.phase == .strictRoute }
@@ -1015,27 +1018,57 @@
       records.filter { $0.rawConfidence != nil && !$0.truth.isUnderCover }
     }
 
-    /// A committed occurrence that begins more than `aheadToleranceMeters`
-    /// beyond where the car truly is, or any commit while the car is off the
-    /// plan, unless the committed edge is geometrically under the car.
-    func wrongCommitCount(aheadToleranceMeters: Double = 60) -> Int {
-      records.count { record in
+    /// Fixes whose committed occurrence the car does not stand on, while it
+    /// is approaching the plan or on it:
+    /// - any commit before the car has reached the plan;
+    /// - a commit more than `aheadToleranceMeters` ahead of the car that
+    ///   passes a junction decision the car has not reached;
+    /// - a commit ahead on the same road by more than that tolerance times
+    ///   the noise model's error scale. The tolerance assumes a receiver that
+    ///   reports its accuracy honestly; one that reports half its error
+    ///   carries twice the error by construction;
+    /// - a new commit that lands more than `passToleranceMeters` behind the
+    ///   car: another pass of a road the plan drives twice. The default is
+    ///   the longest unadmitted stretch the gate allows, 75 s, at mainline
+    ///   speed.
+    /// Off-plan legs keep their own contract (`offPlanCommitCount`).
+    func wrongCommitCount(
+      aheadToleranceMeters: Double = 60,
+      passToleranceMeters: Double = 1_500
+    ) -> Int {
+      let movementIndexes = gate.release.navigation.bundle.routePlan.occurrences
+        .filter { $0.kind == .junctionMovement }.map(\.index)
+      var previousIndex: Int?
+      var count = 0
+      for record in records {
         guard record.phase == .strictRoute || record.phase == .routeRecovery,
           let index = record.currentOccurrenceIndex
-        else { return false }
+        else { continue }
+        defer { previousIndex = index }
         switch record.truth.kind {
-        case .occurrence:
-          guard let truthDistance = record.truth.routeDistanceMeters else {
-            return false
+        case .occurrence(let truthIndex):
+          guard let truthDistance = record.truth.routeDistanceMeters else { continue }
+          let ahead = gate.routeStartDistances[index] - truthDistance
+          let passesUnreachedJunction = movementIndexes.contains {
+            $0 > truthIndex && $0 <= index
           }
-          return gate.routeStartDistances[index]
-            > truthDistance + aheadToleranceMeters
+          let committedEnd =
+            index + 1 < gate.routeStartDistances.count
+            ? gate.routeStartDistances[index + 1] : gate.routeLengthMeters
+          if ahead > aheadToleranceMeters * errorScale
+            || (ahead > aheadToleranceMeters && passesUnreachedJunction)
+            || (index != previousIndex
+              && committedEnd < truthDistance - passToleranceMeters)
+          {
+            count += 1
+          }
         case .approach:
-          return true
+          count += 1
         case .offPlan, .egress, .parked:
-          return false
+          continue
         }
       }
+      return count
     }
 
     /// Fixes at which the car was on the plan, or still approaching it, yet

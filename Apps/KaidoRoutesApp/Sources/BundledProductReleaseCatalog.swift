@@ -68,7 +68,7 @@ extension AppBundleProductReleaseDescriptor {
         "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "d8c1e47632ddd0a651b3f1eaa78247dec90ad93f73aca1e413db875215a460c6",
+        "c560776e29e80fc35c6800c86d6d7de576e33248e58df44500d7d3c68bc96f24",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07",
       role: .foregroundNavigation

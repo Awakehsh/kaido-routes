@@ -16,11 +16,7 @@ The product distinguishes what is known from what is still unconfirmed:
   reviewed definitions bind 163 of them. The other two are the Bayshore
   westbound split at 本牧JCT, where the restored start of K3 branches off:
   neither staying on the Bayshore nor taking K3 has reviewed guidance, so a
-  route through that split builds no foreground release. A route that leaves
-  K1 上り at the 浅田 exit builds none either: OSM tags that ramp ref=K1, so
-  the graph types it mainline, and its diverge node is listed under 生麦JCT,
-  so leaving there reads as an unreviewed junction movement while the
-  inventory files the ramp as a non-navigable dead end. The definitions
+  route through that split builds no foreground release. The definitions
   authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.

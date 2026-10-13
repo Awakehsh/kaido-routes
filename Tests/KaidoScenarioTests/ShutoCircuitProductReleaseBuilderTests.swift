@@ -238,6 +238,33 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  /// Every route to the 浅田 exit was refused before its ramp was reviewed as
+  /// a surface exit: OSM types it K1 mainline, and it leaves K1 上り at a
+  /// node listed under 生麦JCT, so it read as an unreviewed junction movement.
+  @Test(
+    "a route ending at the 浅田 上り exit builds foreground authority",
+    arguments: ["shuto.ic.k1.shioiri", "shuto.ic.k1.koyasu", "shuto.ic.b.daikokufutou"]
+  )
+  func buildsRoutesEndingAtAsada(entryFacilityID: String) throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+    for preference in ShutoRoutePreference.allCases {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: "shuto.ic.k1.asada",
+        preference: preference
+      )
+      #expect(route.edges.contains { $0.edgeID == "osm.567321755.0.forward" })
+      let release =
+        try ShutoCircuitProductReleaseBuilder
+        .buildPlannedRouteRelease(context: context, route: route)
+      #expect(release.foregroundLiveInputAuthority != nil)
+    }
+  }
+
   @Test("on-demand product build returns its exact compiled runtime assets")
   func buildsProductAndRuntimeAssetsTogether() throws {
     let database = try loadDatabase()

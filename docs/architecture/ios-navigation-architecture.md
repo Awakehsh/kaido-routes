@@ -2458,6 +2458,21 @@ Replay exercises the same arrival path. Existing saved routes and checkpoints
 retain their exact destination type; legacy authored PA visits remain readable,
 but the product has no separate PA-stop editor.
 
+Kaido has no PA closure feed, so a closed PA and a missed turn look the same:
+the car stays on the road past the PA's entry ramp. The session finds that
+ramp's divergence from the corridor alone: the plan's last choice of road
+before the final PA visit. Off-plan evidence on a road leaving there ends the
+drive with `DESTINATION_PARKING_AREA_NOT_ENTERED` instead of entering
+unavailable recovery: everything after the divergence is skipped, and the App
+speaks one line and completes the journey without claiming arrival. Because
+that ends the drive, it needs evidence above LOW matcher confidence (the ramp
+runs beside the road at first), and the car must be able to have reached the
+divergence since its last admitted progress; evidence on that road out of
+reach, as when a loop passes near it in an earlier lap, stays an ordinary
+deviation. A plan that drives the road past the ramp elsewhere, such as a loop
+ending in a PA it passed on the way in, keeps the ordinary deviation too. No
+release field carries this, so bundled releases are unchanged.
+
 ### Pre-departure journey ending
 
 The App persists an explicit journey ending alongside the exact route checkpoint:

@@ -1911,6 +1911,117 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testPassingDaikokuPAEndsTheDriveWithOneSpokenLine() async throws {
+    var nowMilliseconds = 1_000
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let history = MemoryDriveHistoryStore()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: { nowMilliseconds },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      },
+      driveHistoryStore: history
+    )
+    let entrance = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.facilityID
+          == ShutoCircuitProductReleaseBuilder.wanganEntryFacilityID
+      }
+    )
+    model.selectCurrentOrigin(entrance.coordinate)
+    model.selectCircuit(.wanganDaikokuRun)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
+    XCTAssertTrue(model.mayEndPastClosedDaikokuPA)
+    let route = try XCTUnwrap(model.selectedRoute)
+
+    // The plan's last choice before the PA: where its ramp leaves the road
+    // to the Daikoku-futou exit.
+    let edges = Dictionary(
+      uniqueKeysWithValues: model.database.edges.map { ($0.edgeID, $0) }
+    )
+    let outgoing = Dictionary(grouping: model.database.edges, by: \.fromNodeID)
+    func waysOn(_ edge: ShutoNetworkDatabase.Edge) -> [ShutoNetworkDatabase.Edge] {
+      (outgoing[edge.toNodeID] ?? []).filter { $0.toNodeID != edge.fromNodeID }
+    }
+    let visitStart = try XCTUnwrap(
+      route.routePlan.occurrences.firstIndex { $0.kind == .paVisit }
+    )
+    let divergence = try XCTUnwrap(
+      (0..<(visitStart - 1)).last { index in
+        waysOn(route.edges[index]).contains { $0.edgeID != route.edges[index + 1].edgeID }
+      }
+    )
+    var passing = waysOn(route.edges[divergence]).filter {
+      $0.edgeID != route.edges[divergence + 1].edgeID
+    }
+    XCTAssertEqual(passing.count, 1)
+    while passing.count < 26, let next = waysOn(passing[passing.count - 1]).only {
+      passing.append(next)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    let nodes = Dictionary(
+      uniqueKeysWithValues: model.database.nodes.map { ($0.nodeID, $0.coordinate) }
+    )
+    var sawUnavailableRecovery = false
+    var observationIndex = 0
+    func drive(_ edgeID: String) async throws {
+      let edge = try XCTUnwrap(edges[edgeID])
+      let start = try XCTUnwrap(nodes[edge.fromNodeID])
+      let end = try XCTUnwrap(nodes[edge.toNodeID])
+      for fraction in Self.oneHertzFractions(from: start, to: end) {
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "past-pa.\(observationIndex)",
+            coordinate: Self.interpolate(from: start, to: end, fraction: fraction),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 20
+          )
+        )
+        if model.runtimeRecoveryStatus == .unavailable { sawUnavailableRecovery = true }
+      }
+    }
+    // Join the run a little before Daikoku, then stay on the road past the
+    // PA's entry ramp.
+    for edge in route.edges[(divergence - 40)...divergence] {
+      try await drive(edge.edgeID)
+      if model.phase == .surfaceAccess, model.routeJoinState == .offered {
+        let declared = await model.declareAlreadyOnRoute()
+        XCTAssertTrue(declared)
+      }
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.runtimeJourneyPhase, .strictRoute)
+    for edge in passing where model.phase != .completed {
+      try await drive(edge.edgeID)
+    }
+    // Fixes after the end change nothing.
+    try await drive(passing[passing.count - 1].edgeID)
+
+    XCTAssertEqual(model.phase, .completed)
+    XCTAssertTrue(model.passedDestinationParkingArea)
+    XCTAssertFalse(sawUnavailableRecovery)
+    let notEntered = output.commands.filter {
+      $0.identity.promptID.contains("parkingAreaNotEntered")
+    }
+    XCTAssertEqual(notEntered.map(\.spokenText), ["The PA was not entered. The drive has ended."])
+    XCTAssertFalse(output.commands.contains { $0.identity.promptID.contains("arrived") })
+    model.reset()
+    let record = try XCTUnwrap(history.load().first)
+    XCTAssertFalse(record.arrived)
+  }
+
   func testC2InnerCircuitAdmitsBundledForegroundNavigation() async throws {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),

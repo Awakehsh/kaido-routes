@@ -23,6 +23,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(destination.waitForExistence(timeout: 8))
     XCTAssertTrue(destination.label.contains("DESTINATION"))
     XCTAssertTrue(destination.label.contains("大黒PA"))
+    XCTAssertTrue(
+      destination.label.contains("大黒PA may be closed; if so, the drive ends at the 大黒ふ頭 exit"),
+      destination.label
+    )
     XCTAssertFalse(element("whole-shuto-review-edit-parking-stops", in: app).exists)
     let start = element("whole-shuto-start-live-drive", in: app)
     XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: start)], timeout: 20), .completed)

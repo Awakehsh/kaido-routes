@@ -65,6 +65,10 @@ internal review workbench.
   parking interior. There is no separate stop-selection screen. A PA-ended
   route has no exit, exit handoff, surface egress or entrance/exit tariff quote.
   Arrival completes automatically from resolved position evidence inside the PA.
+  There is no PA closure feed: a car that stays on the road past the PA's entry
+  ramp, closed or missed, ends the drive there with one spoken line instead of
+  rerouting. The three Daikoku recommendations say so in one line before
+  departure.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

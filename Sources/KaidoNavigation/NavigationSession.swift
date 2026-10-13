@@ -72,6 +72,7 @@ public actor NavigationSession {
   /// Route length before each occurrence index, plus the total at the end.
   private let routeDistanceBeforeIndex: [Double]
   private let routeEnd: RouteEndGeometry?
+  private let destinationParkingAreaEntry: DestinationParkingAreaEntry?
   private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String)?
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
@@ -261,6 +262,10 @@ public actor NavigationSession {
       routePlan.destinationParkingAreaID == nil
       ? RouteEndGeometry(routePlan: routePlan, corridor: matcherCorridor)
       : nil
+    destinationParkingAreaEntry = DestinationParkingAreaEntry(
+      routePlan: routePlan,
+      corridor: matcherCorridor
+    )
   }
 
   public var snapshot: NavigationSnapshot {
@@ -476,7 +481,15 @@ public actor NavigationSession {
         distance <= clearance,
         (isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
           || isBehindProgress(estimate),
-        isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance)
+        isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
+        // Leaving past the destination PA's entry ramp ends the drive; the
+        // ramp runs beside the road past it at first, so a fix the matcher
+        // is torn about cannot show which one the car took.
+        estimate.confidence != .low
+          || !isPastDestinationParkingAreaEntry(
+            directedEdgeID,
+            atMilliseconds: observation.observedAtMilliseconds
+          )
       else {
         offPlanRun = nil
         return
@@ -487,6 +500,17 @@ public actor NavigationSession {
     offPlanRun = (count, observation.observedAtMilliseconds, edgeID)
     guard count >= Self.offPlanDeviationObservationCount else { return }
     offPlanRun = nil
+    if let entry = destinationParkingAreaEntry,
+      isPastDestinationParkingAreaEntry(
+        edgeID,
+        atMilliseconds: observation.observedAtMilliseconds
+      )
+    {
+      engine.endPastDestinationParkingArea(
+        divergenceOccurrenceID: entry.divergenceOccurrenceID
+      )
+      return
+    }
     engine.observeBranch(
       BranchObservation(
         observedMovementID:
@@ -495,6 +519,23 @@ public actor NavigationSession {
           ?? edgeID,
         confidence: .high
       )
+    )
+  }
+
+  /// The car is on a road leaving the plan at its destination PA's entry
+  /// ramp, and can have reached that divergence since admitted progress. A
+  /// loop passes near the road in earlier laps; off-plan evidence there is
+  /// an ordinary deviation.
+  private func isPastDestinationParkingAreaEntry(
+    _ directedEdgeID: String,
+    atMilliseconds observedAt: Int
+  ) -> Bool {
+    guard let entry = destinationParkingAreaEntry,
+      branchRootEdgeID(of: directedEdgeID).map(entry.passingEdgeIDs.contains) == true
+    else { return false }
+    return isWithinReachOfProgress(
+      index: entry.divergenceIndex + 1,
+      atMilliseconds: observedAt
     )
   }
 
@@ -534,9 +575,17 @@ public actor NavigationSession {
     _ estimate: MatcherEstimate,
     atMilliseconds observedAt: Int
   ) -> Bool {
+    guard let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
+    else { return true }
+    return isWithinReachOfProgress(index: index, atMilliseconds: observedAt)
+  }
+
+  private func isWithinReachOfProgress(
+    index: Int,
+    atMilliseconds observedAt: Int
+  ) -> Bool {
     guard let progressIndex = engine.snapshot.currentOccurrenceIndex,
       let progressAt = lastProgressObservedAtMilliseconds,
-      let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] }),
       index > progressIndex
     else { return true }
     let gapMeters =
@@ -1176,6 +1225,43 @@ public actor NavigationSession {
       result[occurrence.id] = target.zone
     }
     return result
+  }
+}
+
+/// For a plan ending in a PA: its last choice of road before the PA visit,
+/// where the plan takes the PA's entry ramp, and the roads that pass it by.
+private struct DestinationParkingAreaEntry: Sendable {
+  let divergenceIndex: Int
+  let divergenceOccurrenceID: String
+  let passingEdgeIDs: Set<String>
+
+  init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
+    guard let parkingAreaID = routePlan.destinationParkingAreaID else { return nil }
+    let visitStart =
+      (routePlan.occurrences.last {
+        $0.kind != .paVisit || $0.parkingAreaID != parkingAreaID
+      }?.index ?? -1) + 1
+    let edgesByID = Dictionary(
+      corridor.edges.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    let routeEdgeIDs = Set(corridor.occurrences.map(\.directedEdgeID))
+    let occurrences = corridor.occurrences.sorted { $0.index < $1.index }
+    for position in stride(from: min(visitStart, occurrences.count - 1) - 1, through: 0, by: -1) {
+      let occurrence = occurrences[position]
+      let next = occurrences[position + 1].directedEdgeID
+      let passing = (edgesByID[occurrence.directedEdgeID]?.successorEdgeIDs ?? [])
+        .filter { $0 != next }
+      guard !passing.isEmpty else { continue }
+      // Where the road past the ramp is one the plan drives elsewhere, as a
+      // loop that passed the PA earlier, a car on it is not off the plan.
+      guard !passing.contains(where: routeEdgeIDs.contains) else { return nil }
+      divergenceIndex = occurrence.index
+      divergenceOccurrenceID = occurrence.id
+      passingEdgeIDs = Set(passing)
+      return
+    }
+    return nil
   }
 }
 

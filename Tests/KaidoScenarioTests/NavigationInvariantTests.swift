@@ -527,6 +527,56 @@ func exitHandoffCompletionFailsClosedUntilTerminalProgress() {
   #expect(engine.snapshot.currentOccurrenceID == nil)
 }
 
+@Test("Passing the destination PA's entry ramp ends the drive at the divergence")
+func passingDestinationParkingAreaEntryEndsTheDrive() {
+  let routePlan = RoutePlan(
+    id: "test.plan.parking-area-entry",
+    networkSnapshotID: "test.snapshot.navigation",
+    entryFacilityID: "test.entry",
+    destinationParkingAreaID: "test.pa",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(id: "approach", index: 0, kind: .edge, entityID: "test.edge.approach"),
+      RouteOccurrence(id: "divergence", index: 1, kind: .edge, entityID: "test.edge.divergence"),
+      RouteOccurrence(id: "ramp", index: 2, kind: .edge, entityID: "test.edge.ramp"),
+      RouteOccurrence(
+        id: "stop", index: 3, kind: .paVisit, entityID: "test.edge.parking",
+        parkingAreaID: "test.pa"),
+    ]
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "approach",
+      locationConfidence: .high
+    )
+  )
+
+  engine.endPastDestinationParkingArea(divergenceOccurrenceID: "divergence")
+
+  #expect(engine.snapshot.journeyPhase == .completed)
+  #expect(
+    engine.snapshot.lastPhaseTransitionTrigger == "DESTINATION_PARKING_AREA_NOT_ENTERED"
+  )
+  #expect(engine.snapshot.completedOccurrenceIDs == ["approach", "divergence"])
+  #expect(engine.snapshot.skippedOccurrenceIDs == ["ramp", "stop"])
+  #expect(engine.snapshot.pendingOccurrenceIDs.isEmpty)
+  #expect(engine.snapshot.recovery.status == .inactive)
+  #expect(engine.snapshot.currentOccurrenceID == nil)
+
+  var exitRoute = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: testRoutePlan()),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+  exitRoute.endPastDestinationParkingArea(divergenceOccurrenceID: "first")
+  #expect(exitRoute.snapshot.journeyPhase == .strictRoute)
+}
+
 @Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(

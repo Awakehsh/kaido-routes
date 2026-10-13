@@ -560,6 +560,7 @@
               rawConfidence: nil,
               estimate: nil,
               recoveryStatus: snapshot.recovery.status,
+              phaseTrigger: snapshot.lastPhaseTransitionTrigger,
               emittedMovementOccurrenceIDs: []
             )
           )
@@ -644,6 +645,7 @@
             rawConfidence: rawConfidence,
             estimate: estimate,
             recoveryStatus: after.recovery.status,
+            phaseTrigger: after.lastPhaseTransitionTrigger,
             emittedMovementOccurrenceIDs: emittedMovementIDs
           )
         )
@@ -967,6 +969,7 @@
     let rawConfidence: MatcherConfidence?
     let estimate: MatcherEstimate?
     let recoveryStatus: RecoveryState.Status
+    let phaseTrigger: String?
     let emittedMovementOccurrenceIDs: [String]
   }
 
@@ -1071,6 +1074,11 @@
       records.first {
         $0.phase == .routeRecovery && $0.truth.offPlanDistanceMeters != nil
       }?.truth.offPlanDistanceMeters
+    }
+
+    /// How far past its divergence the car had driven when the drive ended.
+    var completedAfterOffPlanMeters: Double? {
+      records.first { $0.phase == .completed }?.truth.offPlanDistanceMeters
     }
 
     /// The journey completed before the car left the last planned

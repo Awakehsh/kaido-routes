@@ -482,6 +482,42 @@ public struct NavigationEngine: Sendable {
     finishDrive()
   }
 
+  /// Ends a PA-terminal drive whose car went on past the entry ramp of its
+  /// destination PA. Kaido cannot tell a closed PA from a missed turn, and
+  /// nothing past the ramp leads back to it, so the drive ends here instead
+  /// of looking for a rejoin. Everything up to the divergence was driven.
+  package mutating func endPastDestinationParkingArea(
+    divergenceOccurrenceID: String
+  ) {
+    guard snapshot.journeyPhase == .strictRoute
+      || snapshot.journeyPhase == .routeRecovery,
+      let routePlan = configuration.routePlan,
+      routePlan.destinationParkingAreaID != nil,
+      let divergence = routePlan.occurrence(id: divergenceOccurrenceID)
+    else { return }
+    if divergence.index > (snapshot.currentOccurrenceIndex ?? -1) {
+      advance(to: divergence.id)
+    }
+    for occurrence in routePlan.occurrences where occurrence.index > divergence.index {
+      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+    }
+    snapshot.recovery = RecoveryState()
+    snapshot.journeyPhase = .completed
+    snapshot.lastPhaseTransitionTrigger = "DESTINATION_PARKING_AREA_NOT_ENTERED"
+    snapshot.completedOccurrenceIDs = routePlan.occurrences
+      .filter {
+        $0.index <= divergence.index
+          && !snapshot.skippedOccurrenceIDs.contains($0.id)
+      }
+      .map(\.id)
+    snapshot.pendingOccurrenceIDs = []
+    snapshot.currentOccurrenceID = nil
+    snapshot.currentOccurrenceIndex = nil
+    snapshot.strictRouteAutoCommitAllowed = false
+    snapshot.activeGuidanceFrame = nil
+    snapshot.guidancePlanningStatus = .inactive
+  }
+
   /// Joins STRICT_ROUTE at an occurrence no reviewed entry ramp proved.
   ///
   /// The driver was already on the expressway when the drive started, so the

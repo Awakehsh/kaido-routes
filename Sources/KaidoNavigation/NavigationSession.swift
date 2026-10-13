@@ -69,6 +69,7 @@ public actor NavigationSession {
   private let occurrenceIndexesByEdgeID: [String: [Int]]
   private let occurrenceIndexByID: [String: Int]
   private let corridorPredecessorEdgeIDs: [String: [String]]
+  private let corridorEdgesByID: [String: RouteMatcherDirectedEdge]
   /// Route length before each occurrence index, plus the total at the end.
   private let routeDistanceBeforeIndex: [Double]
   private let routeEnd: RouteEndGeometry?
@@ -254,6 +255,10 @@ public actor NavigationSession {
       }
     }
     corridorPredecessorEdgeIDs = predecessors
+    corridorEdgesByID = Dictionary(
+      matcherCorridor.edges.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
     let edgeLengths = Dictionary(
       matcherCorridor.edges.map { ($0.id, $0.lengthMeters) },
       uniquingKeysWith: { first, _ in first }
@@ -490,7 +495,11 @@ public actor NavigationSession {
         let distance = estimate.distanceMeters,
         distance <= clearance,
         (isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
-          || isBehindProgress(estimate),
+          || (isBehindProgress(estimate)
+            && canDriveOntoFromProgress(
+              directedEdgeID,
+              atMilliseconds: observation.observedAtMilliseconds
+            )),
         isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
         // Leaving past the destination PA's entry ramp ends the drive; the
         // ramp runs beside the road past it at first, so a fix the matcher
@@ -606,6 +615,37 @@ public actor NavigationSession {
       let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
     else { return false }
     return index < progressIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  }
+
+  /// Whether a road leads from admitted progress onto this one within the
+  /// distance the car can have driven since. Missing a loop's exit carries
+  /// the car onto the lap it already drove; nothing on the expressway leads
+  /// back onto the entrance ramp the plan started on, though it can run
+  /// beside the road the car is on.
+  private func canDriveOntoFromProgress(
+    _ directedEdgeID: String,
+    atMilliseconds observedAt: Int
+  ) -> Bool {
+    guard let progressIndex = engine.snapshot.currentOccurrenceIndex,
+      let start = routeEdgeIDByIndex[progressIndex],
+      let progressAt = lastProgressObservedAtMilliseconds
+    else { return true }
+    let reach =
+      Double(max(0, observedAt - progressAt)) / 1_000
+      * Self.maximumPlausibleSpeedMetersPerSecond + Self.reachMarginMeters
+    var driven: [String: Double] = [start: 0]
+    var frontier = [start]
+    while let edgeID = frontier.popLast() {
+      if edgeID == directedEdgeID { return true }
+      guard let edge = corridorEdgesByID[edgeID], let meters = driven[edgeID] else { continue }
+      let next = meters + edge.lengthMeters
+      guard next <= reach else { continue }
+      for successor in edge.successorEdgeIDs where next < driven[successor] ?? .infinity {
+        driven[successor] = next
+        frontier.append(successor)
+      }
+    }
+    return false
   }
 
   /// No road of the plan from just before admitted progress onwards, nor

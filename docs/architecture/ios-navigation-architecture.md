@@ -948,7 +948,11 @@ running beside the plan stays a candidate instead of leaving only the planned
 edge to match. A deviation needs two consecutive fixes, no more than three
 seconds apart, that the matcher places within twice the fix's accuracy on a
 reachable off-plan edge, or on a traversal of the plan more than the
-longitudinal window behind admitted progress, and that lie farther than three
+longitudinal window behind admitted progress that a road leads onto from
+admitted progress within the 40 m/s-plus-100 m reach — missing a loop's exit
+carries the car onto the lap it already drove, but nothing on the expressway
+leads back onto the entrance ramp the plan started on, however close beside
+the road it runs — and that lie farther than three
 times the fix's allowance from every road of the plan from that window on and
 from the road its exit leads onto. A fix beyond every corridor road continues
 such a run but cannot start one, and near the exit it continues none. A match

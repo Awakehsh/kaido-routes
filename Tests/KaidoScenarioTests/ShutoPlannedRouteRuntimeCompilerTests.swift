@@ -163,24 +163,25 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
           && $0.junctionNodeID != 1_694_598_897
       }
     )
-    let namamugiDeadEnd = try #require(
-      ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+    // The 浅田 上り exit ramp leaves K1 at a node listed under 生麦JCT. It is
+    // a surface exit, not a junction movement, and binds 浅田's exit.
+    let asadaExit = try #require(
+      ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
         networkSnapshotID: database.networkSnapshotID,
-        incomingDirectedEdgeID: "osm.32592648.13.forward",
         startDirectedEdgeID: "osm.567321755.0.forward"
       )
     )
-    #expect(namamugiDeadEnd.junctionNodeID == 4_360_978_732)
-    #expect(namamugiDeadEnd.terminalDirectedEdgeID == "osm.1022520297.2.forward")
-    #expect(namamugiDeadEnd.reason == "PROMOTED_MOTORWAY_LINK_DEAD_END")
+    #expect(asadaExit.exitNameJapanese == "浅田出口")
+    #expect(edgesByID[asadaExit.incomingDirectedEdgeID]?.toNodeID == asadaExit.junctionNodeID)
+    #expect(edgesByID[asadaExit.startDirectedEdgeID]?.fromNodeID == asadaExit.junctionNodeID)
     #expect(
-      namamugiDeadEnd.sourceURLs.allSatisfy {
-        $0.hasPrefix("https://www.shutoko.jp/")
-      }
+      database.directionalFacilities.first { $0.facilityID == "shuto.ic.k1.asada" }?
+        .exitEdgeCandidates.map(\.edgeID) == [asadaExit.terminalDirectedEdgeID]
     )
+    #expect(ShutoOperationalBranchCatalog.reviewedNonNavigableBranches.isEmpty)
     #expect(
       coverage.movements.allSatisfy {
-        $0.outgoingDirectedEdgeID != namamugiDeadEnd.startDirectedEdgeID
+        $0.outgoingDirectedEdgeID != asadaExit.startDirectedEdgeID
       }
     )
     #expect(

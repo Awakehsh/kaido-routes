@@ -208,8 +208,9 @@ ramp to the first Shuto occurrence. The default change from
 
 A geofence is a wake-up or candidate signal, never the committing signal. If
 confidence is insufficient, the app retains `ENTRY_TRANSITION`, shows the target
-route shield and direction, and offers a simple voice or CarPlay confirmation at
-a safe point. It must not demand a phone interaction while the vehicle is moving.
+route shield and direction, and offers the "already on the expressway" join,
+which Siri can also trigger. It must not demand a phone interaction while the
+vehicle is moving.
 
 When location is lost soon after a confirmed ramp match, navigation advances
 only along the expected transition with decaying confidence. It must not snap to
@@ -247,10 +248,11 @@ carry no navigation-grade guidance claim; reviewed movements and speech stay
 separately gated, and the driving surface reports an active rejoin objective
 without inventing turn-by-turn reentry instructions.
 
-If no released rejoin exists, the safe fallback is an explicit egress plan. The
-UI marks the original route interrupted, identifies the exit, and warns that
-distance or toll expectations may change. It never describes that result as a
-successful completion of the original route.
+If no released rejoin exists, the UI marks the original route interrupted
+(`ROUTE INTERRUPTED · NO REJOIN PATH`), and only an admitted fix on a later
+occurrence of the same plan resumes it. No egress plan, U-turn, reversal, or
+nearby exit is invented, and the result is never described as a successful
+completion of the original route.
 
 A newly known restriction during `STRICT_ROUTE` uses the same objective. If a
 required upcoming movement or PA path becomes blocked, the plan becomes
@@ -277,9 +279,12 @@ movements to that exit. It never means reverse direction, make a U-turn, cross a
 painted gore, or leave through an arbitrary nearest ramp. Before activation, the
 loop continues and exit ramps remain non-route branches.
 
-If the driver misses the selected exit, guidance continues forward and chooses
-another released egress option. Shuto's own safety guidance likewise instructs a
-driver who misses an exit to continue to the next exit rather than reverse.
+If the driver misses the selected exit, guidance continues forward and never
+finishes the journey there. A whole-Shuto release carries at most one egress
+option, its planned exit, so a missed exit follows a released detour back onto
+the plan if one exists and otherwise interrupts the route. Shuto's own safety
+guidance likewise instructs a driver who misses an exit to continue to the next
+exit rather than reverse.
 
 ## Three-language display and voice contract
 

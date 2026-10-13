@@ -15,17 +15,26 @@ result automatically. Bundled ICs and PAs remain locally searchable, while Apple
 MapKit supplies online place results. Empty results and service failures are
 visible; editing the query invalidates the choice and any pending old results.
 Location updates do not reset the search list or dismiss the ending editor's results.
-Automatic circuit pairing keeps the nearest bounded radial candidates and every
-direction-valid member-route entrance. It prefers a complete foreground-release
-pairing over a closer preview-only pairing, labels access beyond 16 km as long,
+Automatic circuit pairing runs the reachability gates on the nearest bounded
+radial candidates plus every direction-valid member-route entrance, and ranks
+the survivors by the time to reach the course: the straight line from the origin
+to the ramp at the ~27 km/h surface-access reference plus, at the 54 km/h
+expressway reference, the approach and entry the plan drives before its first
+lap or tour pass. A loop's exit is the lowest tariff band among the exits
+reached within 3 km of the soonest exit after the final lap, ties going to the
+earlier forward exit; a tour keeps its soonest course exit. Release coverage
+plays no part in the ranking. Pairing labels access beyond 16 km as long,
 and lets the surface adapter decide whether that exact ramp is drivable instead
 of rejecting it by straight-line distance.
-The selected Kaido-owned `RoutePlan` then drives review and a labeled replay of
+The selected Kaido-owned `RoutePlan` then drives review, live navigation (and,
+in Debug builds, a labeled replay) of
 bounded surface legs, entry, expressway progress, exit, egress, finish, and
-checkpoint reconstruction. Every plannable direction-valid facility route in
-the current snapshot can compile from the 163 released movement bindings into
-one exact foreground release; malformed, mismatched, or incomplete plans remain
-fail-closed with their precise release blocker.
+checkpoint reconstruction. A plannable direction-valid facility route compiles
+into one exact foreground release when every junction decision on it is one of
+the 163 released movement bindings; a route through the two unreviewed 本牧JCT
+movements, such as Bayshore westbound from Daikoku-futo to Isogo, cannot.
+Malformed, mismatched, or incomplete plans remain fail-closed with their
+precise release blocker.
 
 `ShutoNetworkDatabase` preserves graph bounds, explicit limitations, official
 catalog and facility-review hashes, and OSM source/licence metadata rather than
@@ -48,10 +57,11 @@ branch. Known JCT decisions are counted separately from non-JCT graph
 divergences such as directional exit splits, so missing JCT guidance is not
 conflated with missing surface re-entry recovery. The report classifies missing
 release work by intent: a wrong expressway branch, an early surface exit, a missed
-selected exit, or a branch whose first mainline is unavailable. For the first
-C1 inner route this yields six expressway branches, eight surface exits, and
-one missed exit; four expressway branches have graph rejoin candidates, while
-none of those candidates is released. The report grants no authority. Every result
+selected exit, or a branch whose first mainline is unavailable. For the bundled
+C1 inner route (Shibakoen to Shiodome, one lap) this yields six expressway
+branches, eight surface exits, and one missed exit; four of those branches —
+two expressway branches, one surface exit, and the missed exit — have graph
+rejoin candidates, while none of those candidates is released. The report grants no authority. Every result
 carries a deterministic `ShutoRuntimeAssetIdentity`: the
 network-artifact SHA-256 covers
 the complete canonical decoded database, while the route-runtime SHA-256 binds
@@ -65,15 +75,16 @@ realtime, or field authority.
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
 mainlines, 82 incoming approaches, and 165 candidate incoming/outgoing movement
-pairs. 163 exact definitions are source-bound and released; the two 本牧JCT
-movements from the start of K3 that the 2026-10-12 topology review restored
-are not yet reviewed. The inventory leaves out one route decision: the 浅田
-上り exit ramp, which OSM tags ref=K1 and whose diverge node 4360978732 is
-listed under 生麦JCT. The operational branch catalog files that ramp as a
-non-navigable dead end, so the inventory skips it, but a route that exits
-there takes it, and the route classifier reads it as an unreleased junction
-movement; every route to that exit is refused at Start. The opt-in exhaustive
-admission audit pins these three decisions as the only refusals. The former KK
+pairs. 163 of those movements have a source-bound released definition; the
+two 本牧JCT movements from the Bayshore westbound approach — staying on the
+Bayshore, and onto the start of K3 that the 2026-10-12 topology review
+restored — are not yet reviewed. The inventory leaves out one route decision:
+the 浅田 上り exit ramp, which OSM tags ref=K1 and whose diverge node 4360978732
+is listed under 生麦JCT. The operational branch catalog files that ramp as a
+non-navigable dead end, so the inventory skips it, but a route that exits there
+takes it, and the route classifier reads it as an unreleased junction movement;
+every route to that exit is refused at Start. The opt-in exhaustive admission
+audit pins these three decisions as the only refusals. The former KK
 Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and
@@ -92,9 +103,9 @@ those official values to exact incoming and outgoing directed-edge IDs plus the
 operator detail hash; OSM relation member roles are not treated as direction
 authority because most routes do not publish them consistently.
 
-The default App always exposes labeled replay using the deterministic 15 m/s
+Debug builds expose labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
-multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
+multiplier; a Release build has no replay entry. `WholeShutoPlanningLocationController` owns a when-in-use foreground
 Core Location lifecycle only for the planning origin. It stops updating once a
 fix is within 100 m, or 12 seconds after it starts, and restarts on foreground
 return or an explicit current-location request. An admitted live drive
@@ -150,9 +161,11 @@ occurrence. Raw LOW or ambiguous coordinates cannot replace the last accepted
 route projection. This estimate never mutates `NavigationSession`, occurrence
 identity, guidance emission, exit handoff, or completion.
 
-`ShutoJunctionGuidanceCompiler` contains 163 snapshot- and source-hash-bound
-movement definitions. They cover every inventoried available mainline movement
-and admit an exact plan only when its entire decision sequence is covered.
+`ShutoJunctionGuidanceCompiler` compiles against the released catalog
+(`ShutoJunctionMovementCatalog.released`) of 165 snapshot- and
+source-hash-bound movement definitions. They bind 163 of the 165 inventoried
+available mainline movements — all but the two 本牧JCT movements above — and
+admit an exact plan only when its entire decision sequence is covered.
 Admission still requires
 the exact adjacent edges, shared JCT node, route direction, occurrence order,
 and operator-detail hash. The App may render and speak only the reviewed branch
@@ -858,14 +871,16 @@ Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
 Oji-minami to Itabashi-honcho, the Daikoku/Yokohama circuit from
 Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
-Daikoku-Futo. The C1 outer circuit from Kyobashi back to Kyobashi resolves
-through the on-device authoring path. For any other exact selected `RoutePlan`,
-the app rebuilds the complete joint release from the bundled snapshot and
-released evidence,
-content-addresses the encoded plan, and validates a fresh foreground admission.
+Daikoku-Futo. The C1 outer circuit, for example from Kyobashi to Ginza,
+resolves through the on-device authoring path. For any other exact selected
+`RoutePlan`, the app rebuilds the complete joint release from the bundled
+snapshot and released evidence, dates it by the newest evidence it binds
+(2026-09-07 at the earliest), content-addresses the encoded plan, and validates a fresh foreground admission.
 This succeeds only when every junction decision has an exact released guidance
-binding and the plan has a released safe-rejoin recovery; otherwise it fails
-closed with the specific guidance or recovery blocker. No route can inherit
+binding; otherwise it fails closed with the guidance blocker. A released
+recovery is optional: a route with no qualifying detour (every junction
+decision a released movement binding, no exit ramp) carries none, and a wrong
+turn on it is the unavailable-recovery state. No route can inherit
 another route's road evidence or live-input authority merely because location
 permission or device fixes exist.
 
@@ -1008,11 +1023,12 @@ It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor
 catalog, `ReleasedNavigationRuntimePolicy`, `RouteMatcherCorridor`, DecisionZone
 definitions, released guidance, an optional junction-view registry, and an
 optional `ReleasedSurfaceAccessDefinition` in one value. The policy must bind
-the same snapshot and RoutePlan, name the compiled
-directional entrance and first route occurrence, provide a released in-domain
-candidate targeting a later RoutePlan occurrence for `SAFE_REJOIN`, and provide
-no rejoin candidates for any other recovery policy. It must also provide at
-least one released egress whose exit is the compiled RoutePlan exit. The bundle reuses
+the same snapshot and RoutePlan and name the compiled
+directional entrance and first route occurrence. Released rejoin candidates are
+allowed only under `SAFE_REJOIN`, where each must stay in-domain and target a
+later RoutePlan occurrence; a `SAFE_REJOIN` plan may carry none. It must also
+provide at least one released egress whose exit is the compiled RoutePlan exit,
+or no egress at all when the plan ends inside a PA. The bundle reuses
 `NavigationSession`'s route/corridor/zone/guidance validator rather than defining
 a second runtime identity policy. It additionally requires the catalog to use
 the same snapshot and contain the route's directional entrance, initial edge,
@@ -1491,8 +1507,9 @@ That is a development fact, not yet the minimum deployment target.
   context and render accepted provider geometry as overlays. In a foreground
   live drive the app projects the current fix onto that bounded polyline,
   rejects a fix outside the accuracy-scaled corridor, advances its current
-  step instruction, and hands control to the release-owned entry adapter only
-  near the selected directional ramp. Provider steps remain ordinary-road
+  step instruction, and passes every access fix to the release-owned entry
+  adapter, whose route-head test decides entry wherever the provider's leg
+  ends. Provider steps remain ordinary-road
   presentation: they cannot mutate the exact `RoutePlan` or grant expressway
   occurrence authority.
 - The persisted connection preference defaults to `PREFER_HIGHWAYS`. Under
@@ -2246,12 +2263,13 @@ observation. An expressway restore resumes at the saved occurrence but admits
 no new progress until another HIGH replay observation. Replay steps do not
 write the checkpoint; pausing and App inactive/background do.
 App inactive/background cancels replay, stops current speech, and saves
-consumed prompt IDs so reconstruction cannot repeat an admitted command. Any checkpoint marked as live
-is also returned to parked review with
-`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; the candidate product never
-reconstructs `ShutoLiveDriveSession`. This is replay termination recovery, not
-background navigation or released-session evidence, and it cannot mint
-live-input authority.
+consumed prompt IDs so reconstruction cannot repeat an admitted command. This
+is replay termination recovery, not background navigation or released-session
+evidence, and it cannot mint live-input authority. A checkpoint marked as live
+instead carries the release-bound `NavigationSessionCheckpoint` and restores
+as a paused drive (`LIVE_RESUME_REQUIRED`) with no session attached; only an
+explicit resume, against a fresh admission for the same `RoutePlan`, rebuilds
+`ShutoLiveDriveSession` from it.
 
 For the first small graph:
 
@@ -2288,17 +2306,19 @@ The default whole-Shuto planner has a separate current-snapshot resolver.
 `savedRouteAvailability` first requires the exact bundled snapshot ID, then
 reconstructs and validates every ordered occurrence against the current graph,
 including repeated edges, reviewed junction-movement occurrences, directional
-entry/exit bindings, and circuit laps. Only that exact match is labeled
-`CURRENT SNAPSHOT`. `openSavedRoute` is parked-only, preserves the complete
-saved `RoutePlan`, resolves fresh bounded surface legs, and enters Review for a
-labeled replay. Template source is validated separately: a circuit source must
+entry/exit bindings, and circuit laps. Only that exact match
+(`SavedRouteLibraryAvailability.currentSnapshot`) is offered as available to
+open. `openSavedRoute` is parked-only, preserves the complete
+saved `RoutePlan`, resolves fresh bounded surface legs, and enters Review.
+Template source is validated separately: a circuit source must
 name a bundled circuit and legal lap count whose newly planned complete
 `RoutePlan` exactly equals the saved plan; custom and recommendation sources
 cannot carry circuit fields. Valid template parameters survive reopen and
-re-save instead of silently degrading a circuit to custom. None of this selects
-a product release or promotes the saved document's evidence; live start remains
-`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` until an authority-bearing release is
-enrolled.
+re-save instead of silently degrading a circuit to custom. The saved document
+carries no release and its evidence is never promoted. Live start goes through
+the same admission as any selected route: a whole-`RoutePlan`-equal bundled
+foreground release, or a release rebuilt on device from the bundled snapshot
+and released movement bindings.
 
 Do not use SwiftData object relationships as the routing graph. The graph needs
 explicit adjacency, stable IDs, spatial queries, and deterministic snapshot
@@ -2376,7 +2396,7 @@ bounded role it may own.
 ## Drive controls, history, and shared routes
 
 App Intents expose the foreground live model's existing repeat, speech mode,
-route join, lap, rest, resume, and end actions. Joining declares "already on
+route join, lap, finish at the planned exit, rest, resume, and end actions. Joining declares "already on
 the expressway" only where the in-app control is offered. Unmute returns to the voice mode the driver
 had before muting rather than to full guidance. A lap change, exit handoff or
 resume that fails mid-drive is reported as one line on the driving screen, not

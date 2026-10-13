@@ -96,9 +96,10 @@ Simulator, one for the unit target and one for the UI target, each through
 builds for a generic simulator and boots the device only once xcodebuild has
 planned the build: a starting xcodebuild waits while CoreSimulator boots a
 device, so booting first, or alongside a starting build, only delays the
-build. The complete 33-pair foreground-product matrix stays in the
-deterministic compiler suite instead of being repeated through the
-asynchronous App model.
+build. The 33-pair foreground-product matrix — 30 pairs that must build a
+foreground product and 3 routed through the unreviewed Honmoku JCT movement
+that must not — stays in the deterministic compiler suite instead of being
+repeated through the asynchronous App model.
 Documentation-only changes stop after the lightweight `verify/changes` path
 classification. Failed App runs retain raw xcodebuild logs and `.xcresult`
 bundles.
@@ -756,7 +757,7 @@ circuit source, identity, lap count, and exact repeated occurrences while
 rejecting template
 metadata that cannot reproduce the saved plan. A real file-store regression
 also round-trips the default Ginza-to-Yokohama recommendation through encoded
-JSON before reopening all 789 occurrences. A separate UI launch writes a
+JSON before reopening all 706 occurrences. A separate UI launch writes a
 corrupt whole-Shuto checkpoint, requires a clean parked state without a recovery
 banner, and then relaunches without the fault to prove the invalid resume data
 was cleared.
@@ -867,10 +868,11 @@ duplicate identities, zero/one/multiple current matches, unsafe candidate
 identity, and atomic file storage. Retained-path App tests prove that a saved
 released route only selects the release-owned parked editor with no automatic
 choice or compilation. Separate default-product tests require a same-snapshot
-record to reconstruct the complete RoutePlan for parked Review without granting
-release authority. The persistence UI test saves that exact route, terminates
-the App, reopens the real file-backed library, requires `CURRENT SNAPSHOT`, and
-returns to Review with the same directional entrance and exit.
+record to reconstruct the complete RoutePlan for parked Review; the record
+itself carries no release authority. The persistence UI test saves that exact
+route, terminates the App, reopens the real file-backed library, requires the
+record to read `Available`, and returns to Review with the same directional
+entrance and exit.
 
 KR-U19 adds the parked shared-route lifecycle without broadening authority. The
 portable runner exports one complete document, imports it under a fresh record

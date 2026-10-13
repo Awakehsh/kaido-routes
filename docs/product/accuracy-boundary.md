@@ -11,14 +11,16 @@ The product distinguishes what is known from what is still unconfirmed:
 - The line map and junction inset are Kaido-generated vectors. Every JCT keeps
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
-  IDs, shared JCT node, direction, and official content hash. The admitted
-  definitions cover all divergent JCTs in the bundled snapshot; the
-  whole-network inventory resolves 163 of 165 exact movement bindings, all
-  but the two 本牧JCT movements from the restored start of K3. A route that
-  leaves K1 上り at the 浅田 exit is refused as well: OSM tags that ramp
-  ref=K1, so the graph types it mainline, and its diverge node is listed
-  under 生麦JCT, so leaving there reads as an unreviewed junction movement
-  while the inventory files the ramp as a non-navigable dead end. They
+  IDs, shared JCT node, direction, and official content hash. The
+  whole-network inventory has 165 exact movements at divergent JCTs, and
+  reviewed definitions bind 163 of them. The other two are the Bayshore
+  westbound split at 本牧JCT, where the restored start of K3 branches off:
+  neither staying on the Bayshore nor taking K3 has reviewed guidance, so a
+  route through that split builds no foreground release. A route that leaves
+  K1 上り at the 浅田 exit builds none either: OSM tags that ramp ref=K1, so
+  the graph types it mainline, and its diverge node is listed under 生麦JCT,
+  so leaving there reads as an unreviewed junction movement while the
+  inventory files the ramp as a non-navigable dead end. The definitions
   authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
@@ -61,9 +63,10 @@ The product distinguishes what is known from what is still unconfirmed:
   foreground-only, while an explicitly foreground-started live navigation
   session continues through screen lock or temporary app switching and stops
   when the journey ends, permission is revoked, or the pipeline fails. It
-  supplies the planning origin, five prebuilt releases, the C1 outer on-demand release, and other
-  on-device exact routes whose complete decision sequence is covered by the
-  163 released movement bindings. Live admission and replay do not grant
+  supplies the planning origin, the five prebuilt releases, and any other
+  exact route, the C1 outer loop included, whose complete decision sequence
+  is covered by the 163 released movement bindings and whose release is built
+  on the device. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification. Tunnel coasting is an
   explicitly low-confidence presentation aid, not dead-reckoning authority;
   spoken expressway guidance still covers reviewed junction movements only.
@@ -99,7 +102,7 @@ The product distinguishes what is known from what is still unconfirmed:
   the matcher names. With no fixes there, or only cell-grade ones, progress
   resumes after the cover without a wrong commit, but a cue whose whole
   window lies under cover cannot be timed and is not spoken: Nishi-Shinjuku
-  and Ohashi JCT inside the Yamate tunnel on the C2 loop (both laps), and
+  and Ohashi JCT inside the Yamate tunnel on the C2 loop, and
   Kawasaki-Ukishima JCT on the Bayshore run and the Daikoku loop.
 - A receiver that reports half its true error is outside these guarantees.
   In replay it still commits no occurrence the car is not on and never
@@ -144,7 +147,19 @@ The product distinguishes what is known from what is still unconfirmed:
   fixes whose true error is twice the reported accuracy, tunnel outages,
   wrong branches, missed final exits and PAs, and streets beside the route
   head. That is synthetic evidence of deterministic behaviour, not field
-  accuracy.
+  accuracy: no route has yet been driven for field evidence.
+- Known gaps in the bundled data and planning:
+  - The snapshot has no link from C1 内回り onto Route 1 or Route 11 at
+    浜崎橋JCT, so no route takes that turn and fare paths that need it go the
+    long way round (see [network snapshot](network-snapshot.md)).
+  - 加賀 to 東領家 has no directed path, so that pair cannot be planned.
+  - Seven directions the operator lists have no ramp in the snapshot and stay
+    unbound: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り entrance and
+    外回り exit, 新都心西 下り entrance, and 横浜港北 (横浜北線) 下り entrance
+    and 上り exit.
+  - Entrance recommendation does not read the snapshot's ETC-only flag, so a
+    ramp only an ETC car can use, such as 殿町, can be the recommended
+    entrance. Tariff bands are quoted for ETC.
 
 Inspect one exact planned route's expressway release gaps:
 

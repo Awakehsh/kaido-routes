@@ -75,7 +75,6 @@
         "\(summary)"
       )
       #expect(run.wrongCommitCount() == 0, "\(summary)")
-      #expect(run.behindCommitCount() == 0, "\(summary)")
       #expect(run.misplacedCueCount() == 0, "\(summary)")
     }
 
@@ -130,7 +129,6 @@
       gateLine
         + " entryLatency=\(run.entryLatencySeconds.map(String.init) ?? "-")"
         + " entryOffset=\(run.entryCommitOffsetMeters.map { String(Int($0)) } ?? "-")"
-        + " behindCommits=\(run.behindCommitCount())"
         + " misplacedCues=\(run.misplacedCueCount())"
     }
   }

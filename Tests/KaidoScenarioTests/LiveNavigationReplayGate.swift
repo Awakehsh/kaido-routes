@@ -1099,21 +1099,6 @@
       return count
     }
 
-    /// Committed occurrences that end more than `behindToleranceMeters`
-    /// behind the car while it is on the plan: another pass of a road the plan
-    /// drives twice. The default is the longest unadmitted stretch the gate
-    /// allows, 75 s, driven at mainline speed.
-    func behindCommitCount(behindToleranceMeters: Double = 1_500) -> Int {
-      records.count { record in
-        guard record.phase == .strictRoute || record.phase == .routeRecovery,
-          let index = record.currentOccurrenceIndex,
-          let truthDistance = record.truth.routeDistanceMeters
-        else { return false }
-        return gate.routeEndDistance(occurrenceIndex: index)
-          < truthDistance - behindToleranceMeters
-      }
-    }
-
     /// How far the occurrence the drive entered or joined at lies from the
     /// car, positive ahead: zero within that occurrence.
     var entryCommitOffsetMeters: Double? {

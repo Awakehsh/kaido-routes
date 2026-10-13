@@ -14,7 +14,11 @@ The product distinguishes what is known from what is still unconfirmed:
   IDs, shared JCT node, direction, and official content hash. The admitted
   definitions cover all divergent JCTs in the bundled snapshot; the
   whole-network inventory resolves 163 of 165 exact movement bindings, all
-  but the two 本牧JCT movements from the restored start of K3. They
+  but the two 本牧JCT movements from the restored start of K3. A route that
+  leaves K1 上り at the 浅田 exit is refused as well: OSM tags that ramp
+  ref=K1, so the graph types it mainline, and its diverge node is listed
+  under 生麦JCT, so leaving there reads as an unreviewed junction movement
+  while the inventory files the ramp as a non-navigable dead end. They
   authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.

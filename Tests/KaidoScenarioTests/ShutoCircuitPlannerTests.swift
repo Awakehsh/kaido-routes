@@ -1158,47 +1158,51 @@ struct ShutoCircuitPlannerTests {
     )
   }
 
-  @Test("every direction-valid entrance of an experience reaches the same exits after its course, less its own toll point")
-  func experienceExitsDoNotDependOnTheEntrance() throws {
+  @Test(
+    "every direction-valid entrance of an experience reaches the same exits after its course, less its own toll point",
+    arguments: ShutoCircuitDefinition.bundled
+  )
+  func experienceExitsDoNotDependOnTheEntrance(
+    circuit: ShutoCircuitDefinition
+  ) throws {
     let database = try loadDatabase()
     let planner = try ShutoRoutePlanner(database: database)
-    for circuit in ShutoCircuitDefinition.bundled {
-      let entrances = planner.circuitEntranceCandidates(
-        for: circuit,
-        origin: nil
+    let entrances = planner.circuitEntranceCandidates(
+      for: circuit,
+      origin: nil
+    )
+    #expect(entrances.count >= 10, Comment(rawValue: circuit.circuitID))
+    let exitsByEntrance = try entrances.map { entrance in
+      (
+        entrance,
+        try planner.circuitExitCandidates(
+          for: circuit,
+          afterEntering: entrance.facilityID
+        )
       )
-      #expect(entrances.count >= 10, Comment(rawValue: circuit.circuitID))
-      let exitsByEntrance = try entrances.map { entrance in
-        (
-          entrance,
-          try planner.circuitExitCandidates(
-            for: circuit,
-            afterEntering: entrance.facilityID
-          )
-        )
-      }
-      let allExits = exitsByEntrance.reduce(
-        into: [String: ShutoNetworkDatabase.Facility]()
-      ) { result, pair in
-        for exit in pair.1 { result[exit.facilityID] = exit }
-      }
-      #expect(!allExits.isEmpty, Comment(rawValue: circuit.circuitID))
-      // Every entrance reaches the same exits, less the ones sharing its
-      // own toll point.
-      for (entrance, exits) in exitsByEntrance {
-        #expect(
-          Set(exits.map(\.facilityID))
-            == Set(
-              allExits.values.filter {
-                !ShutoRoutePlanner.sharesTollPoint($0, entrance)
-              }
-              .map(\.facilityID)
-            ),
-          Comment(rawValue: "\(circuit.circuitID) \(entrance.facilityID)")
-        )
-      }
+    }
+    let allExits = exitsByEntrance.reduce(
+      into: [String: ShutoNetworkDatabase.Facility]()
+    ) { result, pair in
+      for exit in pair.1 { result[exit.facilityID] = exit }
+    }
+    #expect(!allExits.isEmpty, Comment(rawValue: circuit.circuitID))
+    // Every entrance reaches the same exits, less the ones sharing its
+    // own toll point.
+    for (entrance, exits) in exitsByEntrance {
+      #expect(
+        Set(exits.map(\.facilityID))
+          == Set(
+            allExits.values.filter {
+              !ShutoRoutePlanner.sharesTollPoint($0, entrance)
+            }
+            .map(\.facilityID)
+          ),
+        Comment(rawValue: "\(circuit.circuitID) \(entrance.facilityID)")
+      )
     }
   }
+
 
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let repositoryRoot = URL(fileURLWithPath: #filePath)

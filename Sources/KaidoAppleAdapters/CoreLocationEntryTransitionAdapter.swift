@@ -8,13 +8,18 @@
   /// This adapter produces evidence only. It cannot advance the journey: the
   /// `NavigationSession` actor independently checks release identity, time,
   /// heading, simulation provenance and ordered route-head progression before
-  /// it grants strict-route entry. The matcher's own estimate is passed on
-  /// unchanged; no fix is relabelled onto the first route edge.
+  /// it grants strict-route entry. The matcher's own estimate is passed on;
+  /// no fix is relabelled onto the first route edge. The one correction is
+  /// the pass of a road the plan drives more than once: the car can only be
+  /// on the earliest pass it can have reached since this adapter first saw
+  /// it, and the matcher is restarted there.
   public struct CoreLocationEntryTransitionAdapter: Sendable {
     public let context: EntryTransitionAdmissionContext
 
     private var matcherSession: RouteMatcherSession
     private let edgeByID: [String: RouteMatcherDirectedEdge]
+    private let passReach: RoutePassReach
+    private var firstObservedAtMilliseconds: Int?
 
     public init(
       context: EntryTransitionAdmissionContext,
@@ -32,13 +37,14 @@
         context.matcherCorridor.edges.map { ($0.id, $0) },
         uniquingKeysWith: { first, _ in first }
       )
+      passReach = RoutePassReach(corridor: context.matcherCorridor)
     }
 
     public mutating func adapt(
       _ envelope: CoreLocationObservationEnvelope
     ) throws -> EntryTransitionEvidence {
       let observation = envelope.observation
-      let estimate = try matcherSession.observe(observation)
+      let estimate = try estimate(for: observation)
       return EntryTransitionEvidence(
         context: context,
         observationID: observation.id ?? "",
@@ -63,13 +69,13 @@
     /// step, for a driver who says they are already on the selected route.
     ///
     /// Nothing here is relaxed: the estimate is the matcher's own, including
-    /// the occurrence it resolved, with none of `adapt`'s first-route
-    /// continuity substitution. `RouteJoinAdmission` decides whether it holds.
+    /// the occurrence it resolved on the pass the car can have reached.
+    /// `RouteJoinAdmission` decides whether it holds.
     public mutating func adaptRouteJoin(
       _ envelope: CoreLocationObservationEnvelope
     ) throws -> RouteJoinEvidence {
       let observation = envelope.observation
-      let estimate = try matcherSession.observe(observation)
+      let estimate = try estimate(for: observation)
       return RouteJoinEvidence(
         context: context,
         observationID: observation.id ?? "",
@@ -84,6 +90,32 @@
           observation: observation
         ),
         isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
+      )
+    }
+
+    private mutating func estimate(
+      for observation: RouteMatcherObservation
+    ) throws -> MatcherEstimate {
+      let firstObservedAt =
+        firstObservedAtMilliseconds ?? observation.observedAtMilliseconds
+      firstObservedAtMilliseconds = firstObservedAt
+      let estimate = try matcherSession.observe(observation)
+      guard
+        let pass = passReach.earlierPass(
+          of: estimate,
+          elapsedMilliseconds: observation.observedAtMilliseconds - firstObservedAt
+        )
+      else { return estimate }
+      try matcherSession.restart(at: pass)
+      return MatcherEstimate(
+        observationID: estimate.observationID,
+        estimatedAtMilliseconds: estimate.estimatedAtMilliseconds,
+        directedEdgeID: estimate.directedEdgeID,
+        occurrenceID: pass,
+        candidateEdgeIDs: estimate.candidateEdgeIDs,
+        confidence: estimate.confidence,
+        distanceMeters: estimate.distanceMeters,
+        fractionAlongEdge: estimate.fractionAlongEdge
       )
     }
 

@@ -1030,7 +1030,8 @@
     /// - a new commit that lands more than `passToleranceMeters` behind the
     ///   car: another pass of a road the plan drives twice. The default is
     ///   the longest unadmitted stretch the gate allows, 75 s, at mainline
-    ///   speed.
+    ///   speed. The commit a lap change is asked from is exempt: the truth
+    ///   already drives the lap the driver moves to, on the same road.
     /// Off-plan legs keep their own contract (`offPlanCommitCount`).
     func wrongCommitCount(
       aheadToleranceMeters: Double = 60,
@@ -1058,6 +1059,7 @@
           if ahead > aheadToleranceMeters * errorScale
             || (ahead > aheadToleranceMeters && passesUnreachedJunction)
             || (index != previousIndex
+              && index != lapChangeOutcome?.fromOccurrenceIndex
               && committedEnd < truthDistance - passToleranceMeters)
           {
             count += 1

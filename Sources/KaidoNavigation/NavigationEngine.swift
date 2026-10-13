@@ -518,6 +518,23 @@ public struct NavigationEngine: Sendable {
     snapshot.guidancePlanningStatus = .inactive
   }
 
+  /// The car stayed on the road a mid-route PA stop leaves and rejoins, so
+  /// the stop was not made: its occurrences are skipped rather than driven,
+  /// and progress goes on where that road rejoins the plan.
+  package mutating func skipParkingStop(occurrenceIDs: [String]) {
+    guard snapshot.journeyPhase == .strictRoute
+      || snapshot.journeyPhase == .routeRecovery
+    else { return }
+    for occurrenceID in occurrenceIDs {
+      appendUnique(occurrenceID, to: &snapshot.skippedOccurrenceIDs)
+    }
+    let skipped = Set(snapshot.skippedOccurrenceIDs)
+    snapshot.completedOccurrenceIDs.removeAll(where: skipped.contains)
+    snapshot.activeGuidanceFrame = nil
+    snapshot.guidancePlanningStatus = .inactive
+    refreshPendingOccurrences()
+  }
+
   /// Joins STRICT_ROUTE at an occurrence no reviewed entry ramp proved.
   ///
   /// The driver was already on the expressway when the drive started, so the

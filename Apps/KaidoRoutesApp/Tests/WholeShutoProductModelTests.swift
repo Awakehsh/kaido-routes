@@ -1911,7 +1911,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
-  func testPassingDaikokuPAEndsTheDriveWithOneSpokenLine() async throws {
+  func testPassingDaikokuPAEndsTheDriveNearTheDestination() async throws {
     var nowMilliseconds = 1_000
     let output = SpeechRecoveryAppOutput()
     output.autoFinish = true
@@ -1938,7 +1938,6 @@ final class WholeShutoProductModelTests: XCTestCase {
     await waitForCircuitPairing(model)
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
-    XCTAssertTrue(model.mayEndPastClosedDaikokuPA)
     let route = try XCTUnwrap(model.selectedRoute)
 
     // The plan's last choice before the PA: where its ramp leaves the road
@@ -2010,16 +2009,20 @@ final class WholeShutoProductModelTests: XCTestCase {
     try await drive(passing[passing.count - 1].edgeID)
 
     XCTAssertEqual(model.phase, .completed)
-    XCTAssertTrue(model.passedDestinationParkingArea)
+    XCTAssertTrue(model.endedNearDestination)
     XCTAssertFalse(sawUnavailableRecovery)
-    let notEntered = output.commands.filter {
-      $0.identity.promptID.contains("parkingAreaNotEntered")
+    let nearDestination = output.commands.filter {
+      $0.identity.promptID.contains("nearDestination")
     }
-    XCTAssertEqual(notEntered.map(\.spokenText), ["The PA was not entered. The drive has ended."])
+    XCTAssertEqual(
+      nearDestination.map(\.spokenText),
+      ["You're near your destination. Guidance has ended."]
+    )
     XCTAssertFalse(output.commands.contains { $0.identity.promptID.contains("arrived") })
     model.reset()
     let record = try XCTUnwrap(history.load().first)
     XCTAssertFalse(record.arrived)
+    XCTAssertEqual(record.endedNearDestination, true)
   }
 
   func testC2InnerCircuitAdmitsBundledForegroundNavigation() async throws {

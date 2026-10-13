@@ -238,14 +238,8 @@ struct WholeShutoJourneyReviewView: View {
           english: model.endsAtParkingArea ? "DESTINATION" : "EXIT"
         ),
         title: model.selectedRoute?.destinationNameJA ?? "—",
-        detail: model.mayEndPastClosedDaikokuPA
-          ? copy.resolve(
-            japanese: "大黒PAが閉鎖中なら、大黒ふ頭出口で走行終了",
-            simplifiedChinese: "大黒PA 可能关闭；届时在大黒ふ頭出口结束行程",
-            english: "大黒PA may be closed; if so, the drive ends at the 大黒ふ頭 exit"
-          )
-          : model.selectedRoute?.exitFacility?.exitDirections
-            .joined(separator: " / ") ?? "",
+        detail: model.selectedRoute?.exitFacility?.exitDirections
+          .joined(separator: " / ") ?? "",
         tint: KaidoInk.accentClay
       )
       .accessibilityIdentifier("whole-shuto-route-destination")

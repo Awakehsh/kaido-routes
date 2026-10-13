@@ -655,7 +655,8 @@
         gate: self,
         records: records,
         truthCount: truth.count,
-        lapChangeOutcome: lapChangeOutcome
+        lapChangeOutcome: lapChangeOutcome,
+        finalSnapshot: await runtime.session.snapshot
       )
     }
 
@@ -994,6 +995,7 @@
     let records: [ReplayGateFixRecord]
     let truthCount: Int
     var lapChangeOutcome: ReplayGateLapChangeOutcome? = nil
+    var finalSnapshot: NavigationSnapshot? = nil
 
     var entryRecord: ReplayGateFixRecord? {
       records.first { $0.phase == .strictRoute }

@@ -2464,7 +2464,9 @@ ramp's divergence from the corridor alone: the plan's last choice of road
 before the final PA visit. Off-plan evidence on a road leaving there ends the
 drive with `DESTINATION_PARKING_AREA_NOT_ENTERED` instead of entering
 unavailable recovery: everything after the divergence is skipped, and the App
-speaks one line and completes the journey without claiming arrival. Because
+ends it the way a car navigator does. It speaks "near your destination,
+guidance has ended" once, completes the journey with a NEAR DESTINATION dock,
+and records the drive as ended near the destination, not arrived. Because
 that ends the drive, it needs evidence above LOW matcher confidence (the ramp
 runs beside the road at first), and the car must be able to have reached the
 divergence since its last admitted progress; evidence on that road out of
@@ -2472,6 +2474,19 @@ reach, as when a loop passes near it in an earlier lap, stays an ordinary
 deviation. A plan that drives the road past the ramp elsewhere, such as a loop
 ending in a PA it passed on the way in, keeps the ordinary deviation too. No
 release field carries this, so bundled releases are unchanged.
+
+A mid-route PA stop replaces a stretch of the road the route would otherwise
+drive. The session derives that road from the corridor: walking back along the
+stop's approach to where the plan left another road, the shortest corridor
+path (at most 3 km) that rejoins the plan after the PA without entering it.
+Two consecutive fixes on it above LOW confidence, before admitted progress has
+reached the PA and at a departure the car can have reached, skip the stop:
+its occurrences are recorded as skipped, not driven, and the reach bound stops
+counting their length, so progress resumes where the road rejoins the plan. A
+fix on that road that does not count is not deviation evidence either, so
+passing a stop never enters recovery. A stop whose approach is left elsewhere,
+such as the Daikoku approach diverted to the Daikoku-futou exit, is not covered:
+that road leaves the expressway.
 
 ### Pre-departure journey ending
 

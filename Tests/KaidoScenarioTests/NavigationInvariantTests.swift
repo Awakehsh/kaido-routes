@@ -577,6 +577,45 @@ func passingDestinationParkingAreaEntryEndsTheDrive() {
   #expect(exitRoute.snapshot.journeyPhase == .strictRoute)
 }
 
+@Test("A passed-by PA stop is skipped, not driven, and progress goes on past it")
+func passedParkingStopIsSkippedNotDriven() {
+  let routePlan = RoutePlan(
+    id: "test.plan.parking-stop",
+    networkSnapshotID: "test.snapshot.navigation",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(id: "before", index: 0, kind: .edge, entityID: "test.edge.before"),
+      RouteOccurrence(id: "approach", index: 1, kind: .edge, entityID: "test.edge.approach"),
+      RouteOccurrence(
+        id: "stop", index: 2, kind: .paVisit, entityID: "test.edge.parking",
+        parkingAreaID: "test.pa"),
+      RouteOccurrence(id: "return", index: 3, kind: .edge, entityID: "test.edge.return"),
+      RouteOccurrence(id: "after", index: 4, kind: .edge, entityID: "test.edge.after"),
+    ]
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "approach",
+      locationConfidence: .high
+    )
+  )
+
+  engine.skipParkingStop(occurrenceIDs: ["approach", "stop", "return"])
+  #expect(engine.snapshot.journeyPhase == .strictRoute)
+  #expect(engine.snapshot.skippedOccurrenceIDs == ["approach", "stop", "return"])
+  #expect(engine.snapshot.pendingOccurrenceIDs == ["after"])
+
+  engine.observeLocation(
+    LocationObservation(expectedOccurrenceID: "after", reportedConfidence: .high)
+  )
+  #expect(engine.snapshot.currentOccurrenceID == "after")
+  #expect(engine.snapshot.completedOccurrenceIDs == ["before"])
+}
+
 @Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(

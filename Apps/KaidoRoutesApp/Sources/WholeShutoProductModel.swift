@@ -23,7 +23,7 @@ enum WholeShutoJourneyPhase:
 private enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
   case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
-  case parkingAreaNotEntered
+  case nearDestination
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -50,8 +50,8 @@ private enum WholeShutoJourneyNotice: String {
       )
     case .arrived: words = ("ルートの走行が完了しました。", "本次路线已完成。", "Your route is complete.")
     case .lapNotAdded: words = ("周回を追加できませんでした。", "未能增加一圈。", "The lap could not be added.")
-    case .parkingAreaNotEntered:
-      words = ("PAに入らなかったため、走行を終了しました。", "未进入 PA，行程已结束。", "The PA was not entered. The drive has ended.")
+    case .nearDestination:
+      words = ("目的地周辺です。案内を終了します。", "已在目的地附近，导航结束。", "You're near your destination. Guidance has ended.")
     }
     switch locale {
     case .japanese: return words.0
@@ -889,19 +889,9 @@ final class WholeShutoProductModel: ObservableObject {
 
   var endsAtParkingArea: Bool { selectedRoute?.destinationParkingArea != nil }
 
-  /// The Daikoku recommendations end in Daikoku PA, whose entry ramp leaves
-  /// the road to the Daikoku-futou exit. Kaido has no closure feed: if the PA
-  /// is closed the car stays on that road and the drive ends there.
-  var mayEndPastClosedDaikokuPA: Bool {
-    let daikoku = ShutoCircuitProductReleaseBuilder.daikokuParkingAreaID
-    return isCircuitRouteSelected
-      && selectedCircuit?.defaultDestinationParkingAreaID == daikoku
-      && selectedRoute?.destinationParkingArea?.parkingAreaID == daikoku
-  }
-
-  /// The drive ended because the car went on past its destination PA's
-  /// entry ramp instead of into the PA.
-  @Published private(set) var passedDestinationParkingArea = false
+  /// The drive ended near its destination PA: the car went on past the PA's
+  /// entry ramp instead of into it, closed or missed.
+  @Published private(set) var endedNearDestination = false
 
   var requiresSurfaceEgress: Bool { journeyEnding != .exit && !endsAtParkingArea }
 
@@ -1245,7 +1235,7 @@ final class WholeShutoProductModel: ObservableObject {
     declaredEntryFacilityID = nil
     enteredThroughRamp = false
     driveRecordArrived = false
-    passedDestinationParkingArea = false
+    endedNearDestination = false
   }
 
   var activeSurfaceInstruction: String? {
@@ -1946,7 +1936,7 @@ final class WholeShutoProductModel: ObservableObject {
         fraction: progressFraction
       )
     case .completed:
-      if passedDestinationParkingArea, let runtimeCoordinate {
+      if endedNearDestination, let runtimeCoordinate {
         return runtimeCoordinate
       }
       return destination?.coordinate
@@ -4911,7 +4901,8 @@ final class WholeShutoProductModel: ObservableObject {
       routeName: route.routeIDsInOrder.joined(separator: " · ") + " · "
         + driveEntryNameJA + " → " + route.destinationNameJA,
       templateParameters: savedRouteTemplateParameters,
-      arrived: driveRecordArrived
+      arrived: driveRecordArrived,
+      endedNearDestination: endedNearDestination
     ) else { return }
     do {
       try driveHistoryStore.save(entry)
@@ -5579,13 +5570,13 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryTargetOccurrenceID =
       update.navigationSnapshot.recovery.chosenRejoinOccurrenceID
     if update.navigationSnapshot.journeyPhase == .completed, endsAtParkingArea {
-      passedDestinationParkingArea =
+      endedNearDestination =
         update.navigationSnapshot.lastPhaseTransitionTrigger
         == "DESTINATION_PARKING_AREA_NOT_ENTERED"
       if let progress = runtimeAssets?.project(update.matcherEstimate) {
         recordLapProgress(occurrenceID: progress.occurrenceID, atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds)
       }
-      if !passedDestinationParkingArea {
+      if !endedNearDestination {
         runtimeCoordinate = selectedRoute?.destinationCoordinate
       }
       runtimeOccurrenceID = nil
@@ -5593,7 +5584,7 @@ final class WholeShutoProductModel: ObservableObject {
       clearTunnelEstimate()
       invalidatePlaybackTask()
       completeLiveJourney(
-        notice: passedDestinationParkingArea ? .parkingAreaNotEntered : .arrived
+        notice: endedNearDestination ? .nearDestination : .arrived
       )
       return
     }

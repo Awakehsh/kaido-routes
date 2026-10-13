@@ -4485,11 +4485,11 @@ struct WholeShutoProductView: View {
   }
 
   private var arrivalTitle: String {
-    if model.passedDestinationParkingArea {
+    if model.endedNearDestination {
       return copy.resolve(
-        japanese: "PA未進入・走行終了",
-        simplifiedChinese: "未进入 PA · 行程结束",
-        english: "PA NOT ENTERED · DRIVE ENDED"
+        japanese: "目的地周辺",
+        simplifiedChinese: "目的地附近",
+        english: "NEAR DESTINATION"
       )
     }
     return model.isLiveDrive

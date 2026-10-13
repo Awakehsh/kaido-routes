@@ -794,71 +794,81 @@ final class WholeShutoProductModel: ObservableObject {
     // The cards are the first screen's content, not deferrable housekeeping:
     // at utility priority a saturated CPU held them back for 50 s.
     circuitThumbnailTask = Task.detached(priority: .userInitiated) { [weak self] in
-      var previews: [String: WholeShutoCircuitPreview] = [:]
-      for circuit in ShutoCircuitDefinition.bundled {
-        guard !Task.isCancelled else { return }
-        guard
-          let entranceID =
-            Self.thumbnailEntranceByCircuitID[circuit.circuitID],
-          let exit = try? planner.circuitExitCandidates(
-            for: circuit,
-            afterEntering: entranceID
-          ).first,
-          let route = try? planner.planCircuit(
-            circuit: circuit,
-            entryFacilityID: entranceID,
-            exitFacilityID: circuit.defaultDestinationParkingAreaID == nil ? exit.facilityID : nil,
-            laps: 1
-          ),
-          let layout = RouteTrackMapLayout.make(
-            routeCoordinates: route.coordinates.map {
-              RouteTrackMapLayout.GeoPoint(
-                latitude: $0.latitude,
-                longitude: $0.longitude
-              )
-            },
-            facilities: []
-          )
-        else { continue }
-        let points = layout.trackPoints
-        let stride = max(1, points.count / 64)
-        var sampled: [CGPoint] = []
-        for index in Swift.stride(
-          from: 0,
-          to: points.count,
-          by: stride
-        ) {
-          sampled.append(
-            CGPoint(
-              x: points[index].x / RouteTrackMapLayout.designWidth,
-              y: points[index].y / RouteTrackMapLayout.designHeight
-            )
-          )
-        }
-        if let last = points.last {
-          sampled.append(
-            CGPoint(
-              x: last.x / RouteTrackMapLayout.designWidth,
-              y: last.y / RouteTrackMapLayout.designHeight
-            )
-          )
-        }
-        previews[circuit.circuitID] = WholeShutoCircuitPreview(
-          points: sampled, distanceMeters: route.distanceMeters,
-          junctionCount: ShutoJunctionGuidanceCompiler.compile(
-            database: database, route: route,
-            releasedContext: planner.releasedMovementContext
-          ).count,
-          routeIDsInOrder: route.routeIDsInOrder
-        )
-      }
-      let resolved = previews
+      let resolved = Self.circuitPreviews(planner: planner, database: database)
       guard !Task.isCancelled else { return }
       await MainActor.run { [weak self] in
         self?.circuitPreviewsByID = resolved
         self?.circuitThumbnailTask = nil
       }
     }
+  }
+
+  /// The catalog card previews: one shape, distance and junction count per
+  /// bundled circuit, planned from its reviewed deterministic entrance. It
+  /// stops early when the calling task is cancelled.
+  nonisolated static func circuitPreviews(
+    planner: ShutoRoutePlanner,
+    database: ShutoNetworkDatabase
+  ) -> [String: WholeShutoCircuitPreview] {
+    var previews: [String: WholeShutoCircuitPreview] = [:]
+    for circuit in ShutoCircuitDefinition.bundled {
+      guard !Task.isCancelled else { break }
+      guard
+        let entranceID =
+          Self.thumbnailEntranceByCircuitID[circuit.circuitID],
+        let exit = try? planner.circuitExitCandidates(
+          for: circuit,
+          afterEntering: entranceID
+        ).first,
+        let route = try? planner.planCircuit(
+          circuit: circuit,
+          entryFacilityID: entranceID,
+          exitFacilityID: circuit.defaultDestinationParkingAreaID == nil ? exit.facilityID : nil,
+          laps: 1
+        ),
+        let layout = RouteTrackMapLayout.make(
+          routeCoordinates: route.coordinates.map {
+            RouteTrackMapLayout.GeoPoint(
+              latitude: $0.latitude,
+              longitude: $0.longitude
+            )
+          },
+          facilities: []
+        )
+      else { continue }
+      let points = layout.trackPoints
+      let stride = max(1, points.count / 64)
+      var sampled: [CGPoint] = []
+      for index in Swift.stride(
+        from: 0,
+        to: points.count,
+        by: stride
+      ) {
+        sampled.append(
+          CGPoint(
+            x: points[index].x / RouteTrackMapLayout.designWidth,
+            y: points[index].y / RouteTrackMapLayout.designHeight
+          )
+        )
+      }
+      if let last = points.last {
+        sampled.append(
+          CGPoint(
+            x: last.x / RouteTrackMapLayout.designWidth,
+            y: last.y / RouteTrackMapLayout.designHeight
+          )
+        )
+      }
+      previews[circuit.circuitID] = WholeShutoCircuitPreview(
+        points: sampled, distanceMeters: route.distanceMeters,
+        junctionCount: ShutoJunctionGuidanceCompiler.compile(
+          database: database, route: route,
+          releasedContext: planner.releasedMovementContext
+        ).count,
+        routeIDsInOrder: route.routeIDsInOrder
+      )
+    }
+    return previews
   }
 
   deinit {

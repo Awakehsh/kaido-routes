@@ -83,9 +83,16 @@ recommended C2 circuit, an exact custom route, a long surface access), the
 Daikoku PA ending and a PA chosen through search, the Hatsudai local pairing
 and tariff band, journey endings and onward destinations, place search, a
 denied location permission, the highway preference, the day and night
-catalog, and two accessibility checks. Every other UI test runs in `Full`;
-the default-home accessibility audit stays there because it has timed out
-on a loaded runner.
+catalog, and two accessibility checks. Every other UI test runs in `Full`.
+
+Accessibility audits are split by cost. The gated review audit, and the
+default-home audit in `Full`, run every XCTest audit type except Dynamic Type
+and text clipping. Those two lay the screen out again at every text size,
+which takes about 1.8 s of a 2 s audit locally and runs past XCTest's fixed,
+unconfigurable audit time limit on a loaded CI runner. They run in their own
+`…TextSizeAudit` tests, which only `Full` selects, beside the iPhone SE Large
+and AX5 legs.
+
 `scripts/check_app_test_plans.py`, the first step of `verify/app`, fails when
 an App test runs in no plan or a plan names a test that no longer exists,
 because xcodebuild silently ignores such an entry.

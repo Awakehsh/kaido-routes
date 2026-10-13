@@ -231,10 +231,12 @@
       }
     }
 
-    /// Driving on past the exit, or past the destination PA, is a deviation
-    /// like any other: it must never finish the journey there.
+    /// Driving on past the exit is a deviation like any other: it must never
+    /// finish the journey at the exit it missed. Driving on past the
+    /// destination PA's entry ramp ends the drive there: the PA was not
+    /// entered, and nothing on that road leads back to it.
     @Test(
-      "missing the final exit or PA is detected and never completes",
+      "missing the final exit never completes; passing the destination PA ends the drive",
       arguments: releaseFiles, [UInt64(1), 2]
     )
     func missedFinalExitNeverCompletes(file: String, seed: UInt64) async throws {
@@ -251,17 +253,68 @@
           ),
           seed: seed
         )
-        let summary = branchLine(
-          file: file,
-          movementIndex: movementIndex,
-          alternative: alternative,
-          seed: seed,
-          run: run
-        )
+        let summary =
+          branchLine(
+            file: file,
+            movementIndex: movementIndex,
+            alternative: alternative,
+            seed: seed,
+            run: run
+          )
+          + " endedAfter=\(run.completedAfterOffPlanMeters.map { String(Int($0)) } ?? "never")"
         print("MISSED-FINAL " + summary)
-        expectLeavesThePlan(run, movementIndex: movementIndex, summary: summary)
-        #expect(!run.reachedCompletion, "\(summary)")
+        #expect(run.entryRecord != nil, "\(summary)")
+        #expect(run.offPlanCommitCount(movementIndex: movementIndex) == 0, "\(summary)")
+        #expect(run.offPlanPromptCount(movementIndex: movementIndex) == 0, "\(summary)")
+        if gate.finalStopStartIndex == nil {
+          expectLeavesThePlan(run, movementIndex: movementIndex, summary: summary)
+          #expect(!run.reachedCompletion, "\(summary)")
+        } else {
+          #expect(
+            run.records.last?.phaseTrigger == "DESTINATION_PARKING_AREA_NOT_ENTERED",
+            "\(summary)"
+          )
+          #expect(
+            !run.records.contains { $0.recoveryStatus == .unavailable },
+            "\(summary)"
+          )
+          #expect(
+            (run.completedAfterOffPlanMeters ?? .infinity)
+              <= Self.maximumDeviationDetectionMeters,
+            "\(summary)"
+          )
+        }
       }
+    }
+
+    /// Under accuracy reported at half the real error, these drives ended as
+    /// "PA not entered" before the evidence checks: on the PA's own road
+    /// beside the road past it (scenic seeds 2 and 11), and in the first lap,
+    /// passing near that road (loop seed 14).
+    @Test(
+      "a car on its way into the PA never ends the drive as not entered",
+      arguments: zip(
+        [
+          "scenic-harumi-daikoku-pa-product-release.json",
+          "scenic-harumi-daikoku-pa-product-release.json",
+          "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json",
+        ],
+        [UInt64(2), 11, 14]
+      )
+    )
+    func enteringThePAIsNeverEndedAsNotEntered(
+      file: String,
+      seed: UInt64
+    ) async throws {
+      let gate = try replayGate(file)
+      let run = try await gate.run(
+        legs: gate.plannedLegs(),
+        seed: seed,
+        noise: .underReported
+      )
+      let summary = gateLine(file: file, seed: seed, run: run, label: "UNDER2X")
+      print(summary)
+      expectCompletes(run, summary: summary)
     }
 
     private func expectCompletes(_ run: ReplayGateRun, summary: String) {
@@ -273,6 +326,12 @@
         (run.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds,
         "\(summary)"
       )
+      if run.gate.finalStopStartIndex != nil {
+        #expect(
+          run.records.last?.phaseTrigger == "PARKING_AREA_DESTINATION_REACHED",
+          "\(summary)"
+        )
+      }
     }
 
     private func expectLeavesThePlan(

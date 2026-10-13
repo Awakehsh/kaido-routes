@@ -23,6 +23,7 @@ enum WholeShutoJourneyPhase:
 private enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
   case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
+  case nearDestination
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -49,6 +50,8 @@ private enum WholeShutoJourneyNotice: String {
       )
     case .arrived: words = ("ルートの走行が完了しました。", "本次路线已完成。", "Your route is complete.")
     case .lapNotAdded: words = ("周回を追加できませんでした。", "未能增加一圈。", "The lap could not be added.")
+    case .nearDestination:
+      words = ("目的地周辺です。案内を終了します。", "已在目的地附近，导航结束。", "You're near your destination. Guidance has ended.")
     }
     switch locale {
     case .japanese: return words.0
@@ -895,6 +898,11 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var endsAtParkingArea: Bool { selectedRoute?.destinationParkingArea != nil }
+
+  /// The drive ended near its destination PA: the car went on past the PA's
+  /// entry ramp instead of into it, closed or missed.
+  @Published private(set) var endedNearDestination = false
+
   var requiresSurfaceEgress: Bool { journeyEnding != .exit && !endsAtParkingArea }
 
   var selectedRoute: ShutoPlannedRoute? {
@@ -1237,6 +1245,7 @@ final class WholeShutoProductModel: ObservableObject {
     declaredEntryFacilityID = nil
     enteredThroughRamp = false
     driveRecordArrived = false
+    endedNearDestination = false
   }
 
   var activeSurfaceInstruction: String? {
@@ -1937,6 +1946,9 @@ final class WholeShutoProductModel: ObservableObject {
         fraction: progressFraction
       )
     case .completed:
+      if endedNearDestination, let runtimeCoordinate {
+        return runtimeCoordinate
+      }
       return destination?.coordinate
     }
   }
@@ -4873,8 +4885,8 @@ final class WholeShutoProductModel: ObservableObject {
       <= max(thresholdMeters, horizontalAccuracyMeters * 2)
   }
 
-  private func completeLiveJourney() {
-    finishDriveRecord(arrived: true)
+  private func completeLiveJourney(notice: WholeShutoJourneyNotice = .arrived) {
+    finishDriveRecord(arrived: notice == .arrived)
     cancelSurfaceReroute()
     stopForegroundLiveLocationController()
     phase = .completed
@@ -4887,7 +4899,7 @@ final class WholeShutoProductModel: ObservableObject {
     speechCoordinator?.stop()
     removeCheckpoint()
     speechCoordinator?.resume()
-    announceJourneyNotice(.arrived)
+    announceJourneyNotice(notice)
   }
 
   private func finishDriveRecord(arrived: Bool) {
@@ -4905,7 +4917,8 @@ final class WholeShutoProductModel: ObservableObject {
       routeName: route.routeIDsInOrder.joined(separator: " · ") + " · "
         + driveEntryNameJA + " → " + route.destinationNameJA,
       templateParameters: savedRouteTemplateParameters,
-      arrived: driveRecordArrived
+      arrived: driveRecordArrived,
+      endedNearDestination: endedNearDestination
     ) else { return }
     do {
       try driveHistoryStore.save(entry)
@@ -5573,15 +5586,22 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryTargetOccurrenceID =
       update.navigationSnapshot.recovery.chosenRejoinOccurrenceID
     if update.navigationSnapshot.journeyPhase == .completed, endsAtParkingArea {
+      endedNearDestination =
+        update.navigationSnapshot.lastPhaseTransitionTrigger
+        == "DESTINATION_PARKING_AREA_NOT_ENTERED"
       if let progress = runtimeAssets?.project(update.matcherEstimate) {
         recordLapProgress(occurrenceID: progress.occurrenceID, atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds)
       }
-      runtimeCoordinate = selectedRoute?.destinationCoordinate
+      if !endedNearDestination {
+        runtimeCoordinate = selectedRoute?.destinationCoordinate
+      }
       runtimeOccurrenceID = nil
       presentationProjection = nil
       clearTunnelEstimate()
       invalidatePlaybackTask()
-      completeLiveJourney()
+      completeLiveJourney(
+        notice: endedNearDestination ? .nearDestination : .arrived
+      )
       return
     }
     publishPresentationAndScheduleSpeech(from: update)

@@ -4485,7 +4485,14 @@ struct WholeShutoProductView: View {
   }
 
   private var arrivalTitle: String {
-    model.isLiveDrive
+    if model.endedNearDestination {
+      return copy.resolve(
+        japanese: "目的地周辺",
+        simplifiedChinese: "目的地附近",
+        english: "NEAR DESTINATION"
+      )
+    }
+    return model.isLiveDrive
       ? copy.resolve(
         japanese: "目的地に到着",
         simplifiedChinese: "已到达目的地",

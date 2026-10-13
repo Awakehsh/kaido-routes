@@ -35,6 +35,21 @@ final class DriveHistoryStoreTests: XCTestCase {
     XCTAssertEqual(loaded, [kept])
   }
 
+  func testRecordsSavedBeforeNearDestinationEndingsStillLoad() throws {
+    let saved = try entry(start: 1_000)
+    var object = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(saved)) as? [String: Any]
+    )
+    object.removeValue(forKey: "endedNearDestination")
+    let older = try JSONDecoder().decode(
+      DriveHistoryEntry.self,
+      from: JSONSerialization.data(withJSONObject: object)
+    )
+    XCTAssertEqual(older.id, saved.id)
+    XCTAssertFalse(older.arrived)
+    XCTAssertNil(older.endedNearDestination)
+  }
+
   private func entry(start: Int) throws -> DriveHistoryEntry {
     var record = WholeShutoDriveRecord(startedAtMilliseconds: start)
     record.observe(speedMetersPerSecond: 10, atMilliseconds: start)

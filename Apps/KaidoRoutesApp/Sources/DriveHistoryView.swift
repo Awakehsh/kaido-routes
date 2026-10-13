@@ -98,7 +98,9 @@ private struct DriveHistoryDetailView: View {
         }
         Text(record.arrived
           ? copy.resolve(japanese: "目的地に到着", simplifiedChinese: "已抵达", english: "Arrived")
-          : copy.resolve(japanese: "ナビ終了", simplifiedChinese: "已结束导航", english: "Navigation ended"))
+          : record.endedNearDestination == true
+            ? copy.resolve(japanese: "目的地周辺で終了", simplifiedChinese: "在目的地附近结束", english: "Ended near destination")
+            : copy.resolve(japanese: "ナビ終了", simplifiedChinese: "已结束导航", english: "Navigation ended"))
       }
       Section {
         LabeledContent(copy.resolve(japanese: "記録距離", simplifiedChinese: "已记录距离", english: "Recorded distance")) {

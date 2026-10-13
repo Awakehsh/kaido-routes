@@ -21,7 +21,13 @@ The product distinguishes what is known from what is still unconfirmed:
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
-  `REALTIME_UNCONFIRMED` until a current provider response exists.
+  `REALTIME_UNCONFIRMED` until a current provider response exists. Because a
+  closed PA and a missed entry ramp look the same, a drive that passes its
+  destination PA ends near the destination instead of claiming arrival or
+  rerouting. Ending it takes a fix the matcher places on the road past the
+  ramp above LOW confidence, at a divergence the car can have reached since
+  its last admitted progress. A mid-route PA stop passed on the road it
+  replaced is skipped on the same kind of evidence, and the drive goes on.
 - The driving map draws the planned route in blue, never in the product's warm
   route accent: Apple's congestion layer owns amber and red on that basemap, so
   a warm route line would read as a jam along the whole route. Kaido's own

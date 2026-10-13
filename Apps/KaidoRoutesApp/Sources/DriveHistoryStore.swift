@@ -9,6 +9,9 @@ struct DriveHistoryEntry: Codable, Equatable, Identifiable {
   let startedAtMilliseconds: Int
   let endedAtMilliseconds: Int
   let arrived: Bool
+  /// The drive ended near its destination without arriving: it went on
+  /// past the destination PA's entry ramp. Absent in older records.
+  let endedNearDestination: Bool?
   let recordedDistanceMeters: Double
   let recordedDurationMilliseconds: Int
   let averageSpeedMetersPerSecond: Double?
@@ -27,7 +30,8 @@ struct DriveHistoryEntry: Codable, Equatable, Identifiable {
   }
 
   init?(record: WholeShutoDriveRecord, routePlan: RoutePlan, routeName: String,
-    templateParameters: [String: String], arrived: Bool)
+    templateParameters: [String: String], arrived: Bool,
+    endedNearDestination: Bool = false)
   {
     guard record.hasRecordedIntervals,
       let start = record.startedAtMilliseconds, let end = record.endedAtMilliseconds
@@ -39,6 +43,7 @@ struct DriveHistoryEntry: Codable, Equatable, Identifiable {
     startedAtMilliseconds = start
     endedAtMilliseconds = end
     self.arrived = arrived
+    self.endedNearDestination = endedNearDestination
     recordedDistanceMeters = record.recordedDistanceMeters
     recordedDurationMilliseconds = record.recordedDurationMilliseconds
     averageSpeedMetersPerSecond = record.averageSpeedMetersPerSecond

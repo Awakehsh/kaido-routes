@@ -67,6 +67,15 @@ internal review workbench.
   parking interior. There is no separate stop-selection screen. A PA-ended
   route has no exit, exit handoff, surface egress or entrance/exit tariff quote.
   Arrival completes automatically from resolved position evidence inside the PA.
+  There is no PA closure feed. A car that stays on the road past the
+  destination PA's entry ramp, closed or missed, ends the drive the way a car
+  navigator does: one line in the guidance voice language ("You're near your
+  destination. Guidance has ended."), a NEAR DESTINATION end dock, and a drive
+  record marked as ended near the destination rather than arrived. There is no
+  reroute back to the PA. A car that passes a mid-route PA stop by staying on
+  the road the stop replaced skips the stop silently: the stop is recorded as
+  skipped, not visited, and guidance continues where that road rejoins the
+  route.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

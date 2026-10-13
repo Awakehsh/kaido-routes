@@ -42089,21 +42089,21 @@
                 "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, keep right for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、右方向を保ち、C2 内回りへ",
+                "display_text" : "この先、右方向を保ち、C2 内回りへ",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向を保ち、C2 内回りへ進んでください"
+                "spoken_text" : "この先、板橋JCT・熊野町JCTでは右方向を保ち、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，保持右侧，驶往 C2 内环",
+                "display_text" : "前方，保持右侧，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT保持右侧，驶往 C2 内环"
+                "spoken_text" : "前方，在板桥 JCT・熊野町 JCT保持右侧，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -42201,20 +42201,20 @@
                 "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, branch right for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、右方向へ分岐し、C2 内回りへ",
+                "display_text" : "この先、右方向へ分岐し、C2 内回りへ",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "C2 内回り" : "C2 内回り"
                 },
-                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向へ分岐し、C2 内回りへ進んでください"
+                "spoken_text" : "この先、板橋JCT・熊野町JCTでは右方向へ分岐し、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向右分岔，驶往 C2 内环",
+                "display_text" : "前方，向右分岔，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "中央道・東名",
                 "spoken_forms" : {
                   "C2 内环" : "C2 内环"
                 },
-                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT向右分岔，驶往 C2 内环"
+                "spoken_text" : "前方，在板桥 JCT・熊野町 JCT向右分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -42311,21 +42311,21 @@
                 "spoken_text" : "Ahead at Nishi-shinjuku JCT, continue straight for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、C2 内回りへ",
+                "display_text" : "この先、分岐せず、C2 内回りへ",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、西新宿JCTでは分岐せず、C2 内回りへ進んでください"
+                "spoken_text" : "この先、西新宿JCTでは分岐せず、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，驶往 C2 内环",
+                "display_text" : "前方，不要分岔，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在西新宿 JCT不要分岔，驶往 C2 内环"
+                "spoken_text" : "前方，在西新宿 JCT不要分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -42419,21 +42419,21 @@
                 "spoken_text" : "Ahead at Ohashi JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "display_text" : "この先、左方向へ分岐し、C2 内回りへ",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、大橋JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+                "spoken_text" : "この先、大橋JCTでは左方向へ分岐し、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "display_text" : "前方，向左分岔，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "湾岸線",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在大桥 JCT向左分岔，驶往 C2 内环"
+                "spoken_text" : "前方，在大桥 JCT向左分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -42527,21 +42527,21 @@
                 "spoken_text" : "Ahead at Oi JCT, branch left for the Bayshore Route eastbound"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、湾岸線 東行きへ",
+                "display_text" : "この先、左方向へ分岐し、湾岸線 東行きへ",
                 "preserved_japanese_sign_text" : "東関東道",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、大井JCTでは左方向へ分岐し、湾岸線 東行きへ進んでください"
+                "spoken_text" : "この先、大井JCTでは左方向へ分岐し、湾岸線 東行きへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 湾岸线东行方向",
+                "display_text" : "前方，向左分岔，驶往 湾岸线东行方向",
                 "preserved_japanese_sign_text" : "東関東道",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在大井 JCT向左分岔，驶往 湾岸线东行方向"
+                "spoken_text" : "前方，在大井 JCT向左分岔，驶往 湾岸线东行方向"
               }
             },
             "route_shields" : [
@@ -42635,22 +42635,22 @@
                 "spoken_text" : "Ahead at Ariake JCT, stay on the Bayshore Route toward 葛西"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 葛西方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 葛西方面へ",
                 "preserved_japanese_sign_text" : "葛西",
                 "spoken_forms" : {
                   "有明" : "ありあけ",
                   "湾岸線" : "わんがんせん",
                   "葛西" : "かさい"
                 },
-                "spoken_text" : "この先の分岐で、有明ジャンクションは分岐せず、湾岸線 葛西方面へ進んでください"
+                "spoken_text" : "この先、有明ジャンクションは分岐せず、湾岸線 葛西方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 葛西 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 葛西 方向",
                 "preserved_japanese_sign_text" : "葛西",
                 "spoken_forms" : {
                   "葛西" : "葛西"
                 },
-                "spoken_text" : "前方分岔，在有明 JCT不要分岔，沿湾岸线继续前往 葛西 方向"
+                "spoken_text" : "前方，在有明 JCT不要分岔，沿湾岸线继续前往 葛西 方向"
               }
             },
             "route_shields" : [
@@ -42745,22 +42745,22 @@
                 "spoken_text" : "Ahead at Shinonome JCT, stay on the Bayshore Route toward 浦安"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 浦安方面へ",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "東雲" : "しののめ",
                   "浦安" : "うらやす",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、東雲ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+                "spoken_text" : "この先、東雲ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 浦安 方向",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "浦安" : "浦安"
                 },
-                "spoken_text" : "前方分岔，在东云 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+                "spoken_text" : "前方，在东云 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
               }
             },
             "route_shields" : [
@@ -42855,22 +42855,22 @@
                 "spoken_text" : "Ahead at Tatsumi JCT, stay on the Bayshore Route toward 浦安"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "display_text" : "この先、分岐せず、湾岸線 浦安方面へ",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "浦安" : "うらやす",
                   "湾岸線" : "わんがんせん",
                   "辰巳" : "たつみ"
                 },
-                "spoken_text" : "この先の分岐で、辰巳ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+                "spoken_text" : "この先、辰巳ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "display_text" : "前方，不要分岔，沿湾岸线前往 浦安 方向",
                 "preserved_japanese_sign_text" : "浦安",
                 "spoken_forms" : {
                   "浦安" : "浦安"
                 },
-                "spoken_text" : "前方分岔，在辰巳 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+                "spoken_text" : "前方，在辰巳 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
               }
             },
             "route_shields" : [
@@ -42965,21 +42965,21 @@
                 "spoken_text" : "Ahead at Kasai JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "display_text" : "この先、左方向へ分岐し、C2 内回りへ",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、葛西JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+                "spoken_text" : "この先、葛西JCTでは左方向へ分岐し、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "display_text" : "前方，向左分岔，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在葛西 JCT向左分岔，驶往 C2 内环"
+                "spoken_text" : "前方，在葛西 JCT向左分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -43077,20 +43077,20 @@
                 "spoken_text" : "Ahead at Kosuge and Horikiri Junctions, continue straight for Kosuge Junction for the Tohoku or Joban Expressway"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、分岐せず、小菅JCT 東北道・常磐道方面へ",
+                "display_text" : "この先、分岐せず、小菅JCT 東北道・常磐道方面へ",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "小菅JCT 東北道・常磐道方面" : "小菅JCT 東北道・常磐道方面"
                 },
-                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは分岐せず、小菅JCT 東北道・常磐道方面へ進んでください"
+                "spoken_text" : "この先、小菅JCT・堀切JCTでは分岐せず、小菅JCT 東北道・常磐道方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向",
+                "display_text" : "前方，不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向",
                 "preserved_japanese_sign_text" : "東北道・常磐道",
                 "spoken_forms" : {
                   "小菅 JCT 东北自动车道、常磐自动车道方向" : "小菅 JCT 东北自动车道、常磐自动车道方向"
                 },
-                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向"
+                "spoken_text" : "前方，在小菅 JCT・堀切 JCT不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向"
               }
             },
             "route_shields" : [
@@ -43189,20 +43189,20 @@
                 "spoken_text" : "Ahead at Kosuge and Horikiri Junctions, keep left for the C2 Inner Loop toward the Tohoku Expressway and Omiya"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向を保ち、C2 内回り 東北道・大宮方面へ",
+                "display_text" : "この先、左方向を保ち、C2 内回り 東北道・大宮方面へ",
                 "preserved_japanese_sign_text" : "東北道・大宮",
                 "spoken_forms" : {
                   "C2 内回り 東北道・大宮方面" : "C2 内回り 東北道・大宮方面"
                 },
-                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは左方向を保ち、C2 内回り 東北道・大宮方面へ進んでください"
+                "spoken_text" : "この先、小菅JCT・堀切JCTでは左方向を保ち、C2 内回り 東北道・大宮方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，保持左侧，驶往 C2 内环东北自动车道、大宫方向",
+                "display_text" : "前方，保持左侧，驶往 C2 内环东北自动车道、大宫方向",
                 "preserved_japanese_sign_text" : "東北道・大宮",
                 "spoken_forms" : {
                   "C2 内环东北自动车道、大宫方向" : "C2 内环东北自动车道、大宫方向"
                 },
-                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT保持左侧，驶往 C2 内环东北自动车道、大宫方向"
+                "spoken_text" : "前方，在小菅 JCT・堀切 JCT保持左侧，驶往 C2 内环东北自动车道、大宫方向"
               }
             },
             "route_shields" : [
@@ -43299,21 +43299,21 @@
                 "spoken_text" : "Ahead at Kohoku JCT, branch left for the C2 Inner Loop"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "display_text" : "この先、左方向へ分岐し、C2 内回りへ",
                 "preserved_japanese_sign_text" : "東池袋・東名",
                 "spoken_forms" : {
                   "C2" : "シーツー",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "この先の分岐で、江北JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+                "spoken_text" : "この先、江北JCTでは左方向へ分岐し、C2 内回りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "display_text" : "前方，向左分岔，驶往 C2 内环",
                 "preserved_japanese_sign_text" : "東池袋・東名",
                 "spoken_forms" : {
                   "C2" : "C 二"
                 },
-                "spoken_text" : "前方分岔，在江北 JCT向左分岔，驶往 C2 内环"
+                "spoken_text" : "前方，在江北 JCT向左分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -43407,20 +43407,20 @@
                 "spoken_text" : "Ahead at Itabashi and Kumanocho Junctions, branch left for Route 5 outbound"
               },
               "ja-JP" : {
-                "display_text" : "この先の分岐で、左方向へ分岐し、5 池袋線 下りへ",
+                "display_text" : "この先、左方向へ分岐し、5 池袋線 下りへ",
                 "preserved_japanese_sign_text" : "大宮・関越道",
                 "spoken_forms" : {
                   "5 池袋線 下り" : "5 池袋線 下り"
                 },
-                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは左方向へ分岐し、5 池袋線 下りへ進んでください"
+                "spoken_text" : "この先、板橋JCT・熊野町JCTでは左方向へ分岐し、5 池袋線 下りへ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "前方分岔，向左分岔，驶往 5 池袋线下行方向",
+                "display_text" : "前方，向左分岔，驶往 5 池袋线下行方向",
                 "preserved_japanese_sign_text" : "大宮・関越道",
                 "spoken_forms" : {
                   "5 池袋线下行方向" : "5 池袋线下行方向"
                 },
-                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT向左分岔，驶往 5 池袋线下行方向"
+                "spoken_text" : "前方，在板桥 JCT・熊野町 JCT向左分岔，驶往 5 池袋线下行方向"
               }
             },
             "route_shields" : [

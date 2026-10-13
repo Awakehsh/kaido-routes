@@ -878,12 +878,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(exitRows.firstMatch.waitForExistence(timeout: 5))
     XCTAssertGreaterThan(exitRows.count, 1)
     exitRows.element(boundBy: 1).tap()
+    // Choosing an exit re-derives the pairing, and the pairing row is
+    // replaced by a progress row until it lands, so wait for the row itself
+    // to return; it gets the same bound as the first derivation above.
     let exitChosen = expectation(
-      for: NSPredicate(format: "NOT (label CONTAINS %@)", "推荐出口"),
+      for: NSPredicate(
+        format: "exists == true AND label CONTAINS %@",
+        "已选择的入口和出口"
+      ),
       evaluatedWith: pairing
     )
-    wait(for: [exitChosen], timeout: 10)
-    XCTAssertTrue(pairing.label.contains("已选择的入口和出口"))
+    wait(for: [exitChosen], timeout: 15)
+    XCTAssertFalse(pairing.label.contains("推荐出口"))
     let exitScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )

@@ -92,12 +92,26 @@ jobs:
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
+  # Unit tests and UI journeys run as parallel jobs, each building for itself.
+  # Handing one build to both would put a build job, a second runner
+  # allocation and the simulator boot in series; building in each job lets
+  # the boot overlap the compile.
   app:
-    name: iPhone app unit and journey smoke
+    name: iPhone app ${{ matrix.suite }}
     needs: changes
     if: needs.changes.outputs.verification-required == 'true'
     runs-on: macos-15
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: unit tests
+            slug: unit
+            test-target: KaidoRoutesAppTests
+          - suite: UI journeys
+            slug: ui
+            test-target: KaidoRoutesAppUITests
     steps:
       - uses: actions/checkout@v7
 
@@ -110,6 +124,7 @@ jobs:
           xcodebuild -version
 
       - name: Every App test belongs to a test plan
+        if: matrix.slug == 'unit'
         run: python3 scripts/check_app_test_plans.py
 
       - name: Generate the app project
@@ -117,79 +132,42 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Select the primary simulator
+      - name: Build for testing and boot the simulator alongside it
         id: simulator
-        env:
-          TARGET_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
-        run: |
-          set -euo pipefail
-          SELECTION=$(xcrun simctl list devices available -j | python3 -c '
-          import json, os, sys
-          devices = json.load(sys.stdin)["devices"]
-          candidates = [
-              (runtime, device)
-              for runtime in devices
-              for device in devices[runtime]
-              if device.get("isAvailable")
-              and device.get("deviceTypeIdentifier")
-                  == os.environ["TARGET_DEVICE_TYPE"]
-          ]
-          if not candidates:
-              raise SystemExit(
-                  "target iPhone simulator is unavailable: "
-                  + os.environ["TARGET_DEVICE_TYPE"]
-              )
-          def runtime_version(identifier):
-              tail = identifier.rsplit(".iOS-", 1)[-1]
-              return tuple(int(component) for component in tail.split("-"))
-          runtime, device = max(
-              candidates,
-              key=lambda candidate: runtime_version(candidate[0]),
-          )
-          print("\t".join(
-              (device["udid"], device["name"], runtime, device["state"])
-          ))
-          ')
-          IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID DEVICE_STATE \
-            <<< "$SELECTION"
-          echo "Selected $DEVICE_NAME on $RUNTIME_ID ($DEVICE_STATE)"
-          echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
-          echo "device-state=$DEVICE_STATE" >> "$GITHUB_OUTPUT"
+        run: >-
+          python3 scripts/build_and_boot_for_ci.py
+          --test-plan Verify
+          --device-type com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+          --content-size large
+          --derived-data "$RUNNER_TEMP/DerivedData"
+          --build-log "$RUNNER_TEMP/KaidoRoutesApp-build.log"
 
-      - name: App tests in the Verify test plan
+      - name: Verify test plan (${{ matrix.suite }})
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
-          DEVICE_STATE: ${{ steps.simulator.outputs.device-state }}
+          TEST_TARGET: ${{ matrix.test-target }}
         run: |
           set -euo pipefail
-          (
-            set -euo pipefail
-            if [[ "$DEVICE_STATE" != "Booted" ]]; then
-              xcrun simctl boot "$DEVICE_ID"
-            fi
-            xcrun simctl bootstatus "$DEVICE_ID"
-            xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-            xcrun simctl ui "$DEVICE_ID" content_size large
-          ) &
-          SIMULATOR_PID=$!
-          xcodebuild test \
+          xcodebuild test-without-building \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -testPlan Verify \
             -destination "id=$DEVICE_ID" \
-            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-critical.xcresult" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:"$TEST_TARGET" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
-          wait "$SIMULATOR_PID"
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-test.log"
 
       - name: Upload App test diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: kaido-app-diagnostics-${{ github.run_attempt }}
+          name: kaido-app-${{ matrix.slug }}-diagnostics-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/KaidoRoutesApp-critical.log
-            ${{ runner.temp }}/KaidoRoutesApp-critical.xcresult
+            ${{ runner.temp }}/KaidoRoutesApp-build.log
+            ${{ runner.temp }}/KaidoRoutesApp-test.log
+            ${{ runner.temp }}/KaidoRoutesApp.xcresult
           if-no-files-found: warn
           retention-days: 7
 

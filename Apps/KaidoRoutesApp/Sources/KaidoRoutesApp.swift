@@ -834,7 +834,14 @@ private struct WholeShutoProductPreviewHost: View {
           return
         }
         await Task.yield()
-        model.startNavigationSimulation()
+        // A held replay stays at the start of the surface leg until the
+        // test plays it, so how long the app takes to launch cannot decide
+        // which leg the test finds.
+        model.startNavigationSimulation(
+          autoplay: !ProcessInfo.processInfo.arguments.contains(
+            "-HOLD-NAVIGATION-REPLAY"
+          )
+        )
       }
   }
 }

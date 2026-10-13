@@ -37,6 +37,14 @@ package struct RoutePassReach: Sendable {
     )
   }
 
+  /// The occurrences of the route head the entry gate weighs.
+  package var routeHead: ClosedRange<Int> {
+    let last = distanceBeforeIndex
+      .filter { $0.value <= EntryTransitionEvidenceAdmission.routeHeadMeters }
+      .keys.max() ?? 0
+    return 0...last
+  }
+
   /// The earliest pass of the estimate's road, when the matcher placed the
   /// car on a later one and the car can have reached the earliest within
   /// `elapsedMilliseconds` of being first seen at the route start.

@@ -380,6 +380,10 @@ public struct RouteMatcherSession: Sendable {
   private var lastMeasuredEdges: [String: EdgeMeasurement] = [:]
   private var lastSeparatedOccurrenceIndex: Int?
   private var lastOnPlanOccurrenceIndex: Int?
+  /// The passes of the plan the car can be on, as set by the session from
+  /// admitted progress and reach. A road whose every pass lies outside it is
+  /// matched as an off-plan road. Nil admits every pass.
+  public var occurrenceWindow: ClosedRange<Int>?
 
   fileprivate init(
     corridor: RouteMatcherCorridor,
@@ -452,15 +456,20 @@ public struct RouteMatcherSession: Sendable {
         $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
       }
     let lower = lastSeparatedOccurrenceIndex
+    let window = occurrenceWindow
+    // A pass outside the window is a road the car can drive onto again —
+    // missing a loop's exit carries it onto the lap it already drove.
     let isReachable = { (edgeID: String) in
-      model.branchIsReachable(edgeID, from: lower, through: upper)
+      model.isPassOutsideWindow(edgeID, window: window)
+        || model.branchIsReachable(edgeID, from: lower, through: upper)
     }
     let competing = model.offPlanEdgeIDs(
       within: lastMeasuredEdges,
       observation: observation,
       matchedDistanceMeters: estimate.distanceMeters,
       matcherConfiguration: matcherConfiguration,
-      sessionConfiguration: sessionConfiguration
+      sessionConfiguration: sessionConfiguration,
+      window: window
     ).filter { $0 != estimate.directedEdgeID && isReachable($0) }
     if let selectedIndex, estimate.confidence != .lost {
       lastOnPlanOccurrenceIndex = selectedIndex
@@ -502,7 +511,8 @@ public struct RouteMatcherSession: Sendable {
     let candidates = model.candidates(
       measuredEdges: measuredEdges,
       observation: observation,
-      configuration: matcherConfiguration
+      configuration: matcherConfiguration,
+      window: occurrenceWindow
     )
     let isStale = isStaleObservation(observation)
 
@@ -884,10 +894,30 @@ private struct MatcherModel: Sendable {
     )
   }
 
+  /// The states an edge can be matched as: its passes inside the window, or,
+  /// when every pass lies outside it, the edge as an off-plan road.
+  func states(of edgeID: String, window: ClosedRange<Int>?) -> [MatcherState] {
+    let states = statesByEdgeID[edgeID] ?? []
+    guard let window else { return states }
+    let inside = states.filter { $0.occurrenceIndex.map(window.contains) ?? true }
+    return inside.isEmpty && !states.isEmpty
+      ? [MatcherState(edgeID: edgeID, occurrenceID: nil, occurrenceIndex: nil)]
+      : inside
+  }
+
+  /// A road of the plan whose every pass lies outside the window.
+  func isPassOutsideWindow(_ edgeID: String, window: ClosedRange<Int>?) -> Bool {
+    guard let window, let states = statesByEdgeID[edgeID],
+      states.contains(where: { $0.occurrenceIndex != nil })
+    else { return false }
+    return states.allSatisfy { $0.occurrenceIndex.map { !window.contains($0) } ?? true }
+  }
+
   func candidates(
     measuredEdges: [String: EdgeMeasurement],
     observation: RouteMatcherObservation,
-    configuration: RouteAwareSwiftMatcherConfiguration
+    configuration: RouteAwareSwiftMatcherConfiguration,
+    window: ClosedRange<Int>?
   ) -> [StateCandidate] {
     let radius = min(
       configuration.maximumCandidateRadiusMeters,
@@ -899,7 +929,7 @@ private struct MatcherModel: Sendable {
     return measuredEdges.keys.sorted().flatMap { edgeID -> [StateCandidate] in
       guard let measurement = measuredEdges[edgeID], measurement.distanceMeters <= radius
       else { return [] }
-      return (statesByEdgeID[edgeID] ?? []).map { state in
+      return states(of: edgeID, window: window).map { state in
         let sigma = max(4, observation.horizontalAccuracyMeters)
         let distanceScore = -0.5 * pow(measurement.distanceMeters / sigma, 2)
         let headingScore: Double
@@ -933,7 +963,8 @@ private struct MatcherModel: Sendable {
     observation: RouteMatcherObservation,
     matchedDistanceMeters: Double?,
     matcherConfiguration: RouteAwareSwiftMatcherConfiguration,
-    sessionConfiguration: RouteMatcherSessionConfiguration
+    sessionConfiguration: RouteMatcherSessionConfiguration,
+    window: ClosedRange<Int>?
   ) -> [String] {
     let candidateRadius = min(
       matcherConfiguration.maximumCandidateRadiusMeters,
@@ -960,7 +991,7 @@ private struct MatcherModel: Sendable {
     )
     return measuredEdges.compactMap { edgeID, measurement in
       guard measurement.distanceMeters <= radius,
-        isOffPlan(edgeID),
+        isOffPlan(edgeID) || isPassOutsideWindow(edgeID, window: window),
         course.map({
           angularDifferenceDegrees($0, measurement.bearingDegrees)
             <= headingTolerance

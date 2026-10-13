@@ -1167,10 +1167,30 @@ struct ShutoCircuitPlannerTests {
   ) throws {
     let database = try loadDatabase()
     let planner = try ShutoRoutePlanner(database: database)
+    // The first 16 direction-valid entrances by facility ID plus every
+    // member-route one: the list an origin-less request returned before it
+    // grew to every entrance. The admission invariant drives every entrance;
+    // this comparison keeps its original scope and cost.
+    let firstByID = Set(
+      database.directionalFacilities
+        .filter { facility in
+          facility.canEnter
+            && (!circuit.memberRouteIDs.contains(facility.routeID)
+              || circuit.entranceDirectionsByRouteID[facility.routeID].map {
+                facility.entranceDirections.contains($0)
+              } == true)
+        }
+        .map(\.facilityID)
+        .sorted()
+        .prefix(16)
+    )
     let entrances = planner.circuitEntranceCandidates(
       for: circuit,
       origin: nil
-    )
+    ).filter {
+      firstByID.contains($0.facilityID)
+        || circuit.memberRouteIDs.contains($0.routeID)
+    }
     #expect(entrances.count >= 10, Comment(rawValue: circuit.circuitID))
     let exitsByEntrance = try entrances.map { entrance in
       (

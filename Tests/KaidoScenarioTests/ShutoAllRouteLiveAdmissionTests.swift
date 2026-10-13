@@ -281,10 +281,10 @@ struct ShutoAllRouteLiveAdmissionTests {
     let runtimeContext = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
       database: database
     )
+    let planner = try ShutoRoutePlanner(database: database)
     // Without an origin the planner gates every direction-valid entrance:
     // every entrance some origin can be recommended.
-    let entrances = try ShutoRoutePlanner(database: database)
-      .circuitEntranceCandidates(for: circuit)
+    let entrances = planner.circuitEntranceCandidates(for: circuit)
       .map(\.facilityID)
     #expect(!entrances.isEmpty)
     let chunkSize = max(1, entrances.count / 4)
@@ -295,19 +295,23 @@ struct ShutoAllRouteLiveAdmissionTests {
       for start in stride(from: 0, to: entrances.count, by: chunkSize) {
         let chunk = entrances[start..<min(start + chunkSize, entrances.count)]
         group.addTask {
-          let planner = try! ShutoRoutePlanner(database: database)
           var refusals: [String] = []
           for entranceID in chunk {
             do {
-              let pairing = try planner.recommendedCircuitPairing(
-                for: circuit,
-                entranceFacilityID: entranceID,
-                evidence: .etcNormalCarFrom2026October
-              )
+              // Start passes no exit for an experience that ends in its
+              // parking area, so that pairing's exit is never computed.
+              let exitFacilityID =
+                circuit.defaultDestinationParkingAreaID == nil
+                ? try planner.recommendedCircuitPairing(
+                  for: circuit,
+                  entranceFacilityID: entranceID,
+                  evidence: .etcNormalCarFrom2026October
+                ).exit.facilityID
+                : nil
               let route = try planner.planCircuit(
                 circuit: circuit,
                 entryFacilityID: entranceID,
-                exitFacilityID: Self.startedExitFacilityID(circuit, pairing),
+                exitFacilityID: exitFacilityID,
                 laps: 1
               )
               let release =

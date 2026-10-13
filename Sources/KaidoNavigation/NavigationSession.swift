@@ -329,7 +329,12 @@ public actor NavigationSession {
 
     let wasRecovering = engine.snapshot.journeyPhase == .routeRecovery
     let returnOccurrenceID = wasRecovering ? earliestReturnOccurrenceID(for: estimate) : nil
-    let observed = returnOccurrenceID.map { estimate.replacingOccurrenceID($0) } ?? estimate
+    let lapPassOccurrenceID =
+      wasRecovering
+      ? nil
+      : passNearProgress(for: estimate, atMilliseconds: observation.observedAtMilliseconds)
+    let lapCorrected = lapPassOccurrenceID.map { estimate.replacingOccurrenceID($0) } ?? estimate
+    let observed = returnOccurrenceID.map { estimate.replacingOccurrenceID($0) } ?? lapCorrected
     let isWithinReach = isWithinReachOfProgress(
       observed,
       atMilliseconds: observation.observedAtMilliseconds
@@ -356,6 +361,8 @@ public actor NavigationSession {
       let returnOccurrenceID
     {
       try matcherSession.restart(at: returnOccurrenceID)
+    } else if let lapPassOccurrenceID {
+      try matcherSession.restart(at: lapPassOccurrenceID)
     } else if !isWithinReach, let currentOccurrenceID = engine.snapshot.currentOccurrenceID {
       // The matcher followed a repeated traversal, or a misplaced fix, to a
       // place the car cannot have reached; anchor it back on admitted progress.
@@ -391,7 +398,7 @@ public actor NavigationSession {
       !observeParkingStopBypass(estimate: estimate, observation: observation)
     {
       observeOffPlanEvidence(
-        estimate: estimate,
+        estimate: lapCorrected,
         isOnReachableOffPlanEdge: matched.isOnReachableOffPlanEdge,
         edgeDistancesMeters: matched.edgeDistancesMeters,
         observation: observation
@@ -676,6 +683,29 @@ public actor NavigationSession {
       earliest < matched.index
     else { return nil }
     return routePlan.occurrences.first { $0.index == earliest }?.id
+  }
+
+  /// The plan's next pass of the matched road from around admitted
+  /// progress, when the matcher placed the car on a pass well behind it.
+  /// Every pass of a repeated road is a candidate, and noise can tip the
+  /// matcher onto one already driven; the car can only be on the first pass
+  /// it has not driven, and only if it can have reached it. A road with no
+  /// such pass keeps its match: driving it again is a deviation.
+  private func passNearProgress(
+    for estimate: MatcherEstimate,
+    atMilliseconds observedAt: Int
+  ) -> String? {
+    let window = RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    guard let edgeID = estimate.directedEdgeID,
+      let matchedIndex = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] }),
+      let progressIndex = engine.snapshot.currentOccurrenceIndex,
+      matchedIndex < progressIndex - window,
+      let pass = occurrenceIndexesByEdgeID[edgeID]?.first(where: {
+        $0 >= progressIndex - window
+      }),
+      isWithinReachOfProgress(index: pass, atMilliseconds: observedAt)
+    else { return nil }
+    return routePlan.occurrences.first { $0.index == pass }?.id
   }
 
   /// Whether an off-plan edge is reached only through the route's terminal

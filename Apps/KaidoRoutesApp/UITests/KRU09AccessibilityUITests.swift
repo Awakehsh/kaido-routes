@@ -2,7 +2,34 @@ import XCTest
 
 @MainActor
 final class KRU09AccessibilityUITests: XCTestCase {
+  /// Dynamic Type and text-clipping audits lay the screen out again at every
+  /// text size: about 1.8 s of a 2 s audit locally, and past XCTest's fixed,
+  /// unconfigurable audit time limit on a loaded CI runner. They run in
+  /// their own tests, which the Verify plan does not select, so the Full plan
+  /// runs them beside the iPhone SE Large and AX5 legs.
+  private static let textSizeAudits: XCUIAccessibilityAuditType = [
+    .dynamicType, .textClipped,
+  ]
+
   func testWholeShutoDefaultHomeAccessibilityAudit() throws {
+    try auditDefaultHome(for: .all.subtracting(Self.textSizeAudits))
+  }
+
+  func testWholeShutoDefaultHomeTextSizeAudit() throws {
+    try auditDefaultHome(for: Self.textSizeAudits)
+  }
+
+  func testWholeShutoDeterministicReviewAccessibilityAudit() throws {
+    try auditDeterministicReview(for: .all.subtracting(Self.textSizeAudits))
+  }
+
+  func testWholeShutoDeterministicReviewTextSizeAudit() throws {
+    try auditDeterministicReview(for: Self.textSizeAudits)
+  }
+
+  private func auditDefaultHome(
+    for auditTypes: XCUIAccessibilityAuditType
+  ) throws {
     continueAfterFailure = true
     for isLoading in [true, false] {
       let app = XCUIApplication()
@@ -21,12 +48,14 @@ final class KRU09AccessibilityUITests: XCTestCase {
       } else {
         XCTAssertTrue(metrics.waitForExistence(timeout: 30))
       }
-      try performAccessibilityAudit(in: app)
+      try performAccessibilityAudit(in: app, for: auditTypes)
       app.terminate()
     }
   }
 
-  func testWholeShutoDeterministicReviewAccessibilityAudit() throws {
+  private func auditDeterministicReview(
+    for auditTypes: XCUIAccessibilityAuditType
+  ) throws {
     continueAfterFailure = true
     let app = XCUIApplication()
     app.launchArguments = [
@@ -42,7 +71,7 @@ final class KRU09AccessibilityUITests: XCTestCase {
         .waitForExistence(timeout: 5)
     )
 
-    try performAccessibilityAudit(in: app)
+    try performAccessibilityAudit(in: app, for: auditTypes)
   }
 
   func testCriticalDrivingSurfaceExposesAccessibleSemantics() {
@@ -93,8 +122,11 @@ final class KRU09AccessibilityUITests: XCTestCase {
     )
   }
 
-  private func performAccessibilityAudit(in app: XCUIApplication) throws {
-    try app.performAccessibilityAudit { issue in
+  private func performAccessibilityAudit(
+    in app: XCUIApplication,
+    for auditTypes: XCUIAccessibilityAuditType
+  ) throws {
+    try app.performAccessibilityAudit(for: auditTypes) { issue in
       let element = issue.element
       let identifier = element?.identifier ?? "<none>"
       let label = element?.label ?? "<none>"

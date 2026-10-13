@@ -6,33 +6,26 @@ import XCTest
 
 @MainActor
 final class RouteExperiencePresentationTests: XCTestCase {
-  func testCatalogReferencesDescribeDifferentActualRoutes() async throws {
+  func testCatalogReferencesDescribeDifferentActualRoutes() throws {
     let model = WholeShutoProductModel(checkpointStore: nil)
-    // The catalog publishes its previews in one write, after planning every
-    // bundled circuit over the whole network and compiling each one's
-    // junction guidance — the heaviest warm-up in the App. Until that write
-    // lands the count is 0, not partial, so a bound that is merely generous
-    // on a developer's machine reads as "no previews at all" on a loaded CI
-    // runner. This waited 10 s, the shortest bound in the suite for the
-    // longest job in it; 30 s matches the work, and costs nothing when the
-    // work is quick because the loop stops sleeping as soon as it lands.
-    for _ in 0..<600 where model.circuitPreviewsByID.count != model.bundledCircuits.count {
-      try await Task.sleep(for: .milliseconds(50))
-    }
-    XCTAssertEqual(
-      model.circuitPreviewsByID.count,
-      model.bundledCircuits.count,
-      "catalog previews did not finish within 30 s"
+    // The previews are built here rather than awaited from the model's
+    // launch warm-up, so this checks what the cards say without timing how
+    // soon a background task is scheduled. The home UI tests wait for the
+    // cards' metrics, which is where a warm-up that never lands shows.
+    let previews = WholeShutoProductModel.circuitPreviews(
+      planner: model.planner,
+      database: model.database
     )
-    let c1 = try XCTUnwrap(model.circuitPreviewsByID["shuto.circuit.c1-inner"])
-    let c2 = try XCTUnwrap(model.circuitPreviewsByID["shuto.circuit.c2-inner-bayshore"])
+    XCTAssertEqual(previews.count, model.bundledCircuits.count)
+    let c1 = try XCTUnwrap(previews["shuto.circuit.c1-inner"])
+    let c2 = try XCTUnwrap(previews["shuto.circuit.c2-inner-bayshore"])
     XCTAssertGreaterThan(c1.points.count, 2)
     XCTAssertGreaterThan(c1.junctionCount, 0)
     XCTAssertGreaterThan(c2.distanceMeters, c1.distanceMeters)
     XCTAssertGreaterThan(c2.referenceMinutes, c1.referenceMinutes)
     XCTAssertEqual(c1.routeIDsInOrder, ["C1"])
     XCTAssertEqual(c2.routeIDsInOrder, ["C2", "B", "C2"])
-    for preview in model.circuitPreviewsByID.values {
+    for preview in previews.values {
       XCTAssertFalse(preview.routeIDsInOrder.isEmpty)
       XCTAssertFalse(
         preview.routeIDsInOrder.contains(where: \.isEmpty),

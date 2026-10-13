@@ -3228,10 +3228,16 @@ final class WholeShutoProductModel: ObservableObject {
 
   func refreshCircuitEntrances() {
     guard phase == .planning, selectedCircuit != nil, let origin else { return }
+    // A pairing for this origin that is resolved, or still resolving, stands.
+    // A circuit card tap with a measured location asks again for the origin
+    // the selection just used, and restarting the in-flight derivation would
+    // not stop its planner work: the tap would pay for it twice.
     if let previous = circuitPairingOriginCoordinate,
       Self.distance(previous, origin.coordinate) < 50,
-      circuitEntryFacilityID != nil,
-      (circuitExitFacilityID != nil || selectedCircuit?.defaultDestinationParkingAreaID != nil)
+      isResolvingCircuitPairing
+        || (circuitEntryFacilityID != nil
+          && (circuitExitFacilityID != nil
+            || selectedCircuit?.defaultDestinationParkingAreaID != nil))
     {
       return
     }

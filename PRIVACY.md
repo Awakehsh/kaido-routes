@@ -1,6 +1,6 @@
 # Kaido Routes Privacy Policy
 
-Effective date: September 7, 2026
+Effective date: October 13, 2026
 
 Kaido Routes is a route-first driving navigation app. This policy describes
 the behavior of the current open-source iPhone release.
@@ -62,10 +62,12 @@ no server-side account or personal-data record to delete.
 Kaido Routes has no server of its own: neither location nor route progress is
 sent to a Kaido Routes service. Two network paths do exist.
 
-Apple Maps supplies the ordinary-road legs between the driver's position and
-the chosen entrance, and the exit and destination, and it backs destination
-search. Those requests go to Apple and carry the coordinates or search text
-they need; Apple's privacy practices apply to them.
+Apple Maps draws the map, supplies the ordinary-road legs between the driver's
+position and the chosen entrance, and the exit and destination, and backs
+destination search. Drawing the map loads map tiles, points of interest, and
+live traffic for the area on screen. Those requests go to Apple and carry the
+map area, coordinates, or search text they need; Apple's privacy practices
+apply to them.
 
 Links to official road information, map-data attribution, licences, and this
 policy open external websites; those sites apply their own privacy practices.

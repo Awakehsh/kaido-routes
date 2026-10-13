@@ -298,19 +298,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testMapAttributionStaysVisibleAboveTheDock() {
     continueAfterFailure = false
     let app = XCUIApplication()
+    // The replay is held on the surface leg, before any junction inset
+    // rises over the foot of the map. Pausing it after launch raced the
+    // 20x replay: on a slow runner it reached the expressway, and the
+    // track map that replaces the geographic one there, first.
     app.launchArguments = [
       "-WHOLE-SHUTO-NAVIGATION-PREVIEW",
+      "-HOLD-NAVIGATION-REPLAY",
       "-app.kaidoroutes.language.interface",
       "ja-JP",
     ]
     app.launchSilently()
     let map = element("whole-shuto-geographic-map", in: app)
     XCTAssertTrue(map.waitForExistence(timeout: 15))
-    // Hold the replay on the surface leg, before any junction inset rises
-    // over the foot of the map.
     let playback = app.buttons["whole-shuto-preview-playback"]
     XCTAssertTrue(playback.waitForExistence(timeout: 5))
-    playback.tap()
     XCTAssertEqual(playback.value as? String, "PAUSED")
     XCTAssertFalse(element("whole-shuto-junction-inset", in: app).exists)
 
@@ -329,6 +331,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
     portrait.name = "Geographic map attribution, portrait"
     portrait.lifetime = .keepAlways
     add(portrait)
+
+    // The credit clears the dock on the track map too. This is checked
+    // before the rotation: a tap synthesized while the interface is still
+    // rotating back to portrait can miss the map toggle.
+    element("whole-shuto-map-network", in: app).tap()
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: app).waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(credit.isHittable)
+    XCTAssertLessThanOrEqual(credit.frame.maxY, dockTop.frame.minY)
+    element("whole-shuto-map-geographic", in: app).tap()
+    XCTAssertTrue(legal.waitForExistence(timeout: 15))
 
     addTeardownBlock { XCUIDevice.shared.orientation = .portrait }
     XCUIDevice.shared.orientation = .landscapeLeft
@@ -352,14 +366,6 @@ final class KaidoProductJourneyUITests: XCTestCase {
     landscape.name = "Geographic map attribution, landscape"
     landscape.lifetime = .keepAlways
     add(landscape)
-
-    XCUIDevice.shared.orientation = .portrait
-    element("whole-shuto-map-network", in: app).tap()
-    XCTAssertTrue(
-      element("whole-shuto-track-map", in: app).waitForExistence(timeout: 5)
-    )
-    XCTAssertTrue(credit.isHittable)
-    XCTAssertLessThanOrEqual(credit.frame.maxY, dockTop.frame.minY)
   }
 
   func testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion() {

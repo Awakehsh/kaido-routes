@@ -16,15 +16,10 @@ struct ShutoAllRouteLiveAdmissionTests {
   /// Route decisions no released movement covers yet; a route through one is
   /// refused at Start and nothing else may refuse a planned pair. The two
   /// Honmoku JCT Bayshore-westbound movements wait for review against the
-  /// operator's junction diagram. The third is the Asada 上り exit ramp: OSM
-  /// tags it ref=K1, so the graph types it mainline, and its diverge node is
-  /// listed under Namamugi JCT, so the route classifier reads leaving there
-  /// as a junction movement; the operational branch catalog files the same
-  /// ramp as a non-navigable dead end. Shrink this set when a review lands.
+  /// operator's junction diagram. Shrink this set when a review lands.
   private static let knownUnreleasedDecisions: Set<String> = [
     "osm.31711323.6.forward->osm.32403531.0.forward",
     "osm.31711323.6.forward->osm.340606274.0.forward",
-    "osm.32592648.13.forward->osm.567321755.0.forward",
   ]
 
   private struct CircuitAudit: Sendable {

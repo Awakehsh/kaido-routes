@@ -78,13 +78,10 @@ mainlines, 82 incoming approaches, and 165 candidate incoming/outgoing movement
 pairs. 163 of those movements have a source-bound released definition; the
 two 本牧JCT movements from the Bayshore westbound approach — staying on the
 Bayshore, and onto the start of K3 that the 2026-10-12 topology review
-restored — are not yet reviewed. The inventory leaves out one route decision:
-the 浅田 上り exit ramp, which OSM tags ref=K1 and whose diverge node 4360978732
-is listed under 生麦JCT. The operational branch catalog files that ramp as a
-non-navigable dead end, so the inventory skips it, but a route that exits there
-takes it, and the route classifier reads it as an unreleased junction movement;
-every route to that exit is refused at Start. The opt-in exhaustive admission
-audit pins these three decisions as the only refusals. The former KK
+restored — are not yet reviewed. The opt-in exhaustive admission audit pins
+these two as the only decisions that refuse Start. The 浅田 上り exit ramp,
+which OSM tags ref=K1 and which leaves K1 at node 4360978732, a node listed
+under 生麦JCT, is a reviewed surface exit branch rather than a movement. The former KK
 Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and

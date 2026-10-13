@@ -33,26 +33,28 @@ public struct ShutoReviewedNonNavigableBranch: Equatable, Sendable {
 }
 
 public enum ShutoOperationalBranchCatalog {
-  public static let reviewedNonNavigableBranches = [
-    ShutoReviewedNonNavigableBranch(
-      id: "shuto.non-navigable.namamugi-k1-promoted-link-dead-end",
+  public static let reviewedNonNavigableBranches:
+    [ShutoReviewedNonNavigableBranch] = []
+
+  public static let reviewedSurfaceExitBranches = [
+    // The operator's network map lists 浅田 with a 上り exit only (checked
+    // 2026-07-29). Its ramp leaves K1 上り at a node the snapshot lists under
+    // 生麦JCT, and OSM tags it ref=K1, so the graph types it mainline; it
+    // ends 37 m from the operator's facility point, where 浅田 binds its exit.
+    ShutoReviewedSurfaceExitBranch(
+      id: "shuto.exit.asada.from-k1-nobori",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-08-04",
       junctionNodeID: 4_360_978_732,
       incomingDirectedEdgeID: "osm.32592648.13.forward",
       startDirectedEdgeID: "osm.567321755.0.forward",
       terminalDirectedEdgeID: "osm.1022520297.2.forward",
-      reason: "PROMOTED_MOTORWAY_LINK_DEAD_END",
-      checkedAt: "2026-08-15",
-      sourceURLs: [
-        "https://www.shutoko.jp/-/media/images/responsive/"
-          + "customer/use/network/jct/routeguide/jct_namamugi",
-        "https://www.shutoko.jp/use/network/map/route-k1/asada",
-      ]
-    )
-  ]
-
-  public static let reviewedSurfaceExitBranches = [
+      exitNameJapanese: "浅田出口",
+      effectiveAt: "2026-10-13T00:00:00+09:00",
+      checkedAt: "2026-10-13",
+      officialSourceURL:
+        "https://www.shutoko.jp/use/network/map/route-k1/asada"
+    ),
     ShutoReviewedSurfaceExitBranch(
       id: "shuto.exit.higashiginza.from-kyobashi",
       networkSnapshotID:

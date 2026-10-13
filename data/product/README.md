@@ -1,8 +1,34 @@
-# K7 product release
+# Product releases
 
-This directory contains the joint product release that independently
+## Whole-Shuto foreground releases
+
+Five prebuilt foreground releases over the bundled whole-Shuto snapshot:
+
+- `c1-inner-shibakoen-to-shiodome-product-release.json`;
+- `c2-inner-oujiminami-itabashihoncho-product-release.json`;
+- `wangan-westbound-chidoricho-daikoku-pa-product-release.json`;
+- `daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json`; and
+- `scenic-harumi-daikoku-pa-product-release.json`.
+
+Each has its own build command, for example:
+
+```sh
+swift run kaido-release build-c1-foreground-product \
+  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
+  --output <product-release.json>
+```
+
+with `build-c2-`, `build-wangan-`, `build-daikoku-`, and
+`build-scenic-foreground-product` for the others. The App bundles all five,
+including in Release, and `scripts/validate_ios_release_bundle.py` requires
+the bundled bytes to equal these files. Any other exact route is authored on
+device.
+
+## K7 product release
+
+This directory also contains the joint product release that independently
 revalidates and binds the exact K7 navigation-semantic Route Atlas and K7
-navigation release.
+navigation release. It is a retained regression fixture.
 
 The product has:
 
@@ -31,7 +57,7 @@ Release ID:
 Artifact SHA-256:
 `5fe54b002b7f70e4c4086eeee6328440115e6c512f3693d68ae275250831d060`
 
-The App bundle contains those exact bytes and a compile-time
+The Debug App bundle contains those exact bytes and a compile-time
 `FOREGROUND_NAVIGATION` descriptor pinned to the filename, release ID, and
 SHA-256. The generated staging configuration additionally pins one dated,
 hash-bound pre-drive evidence manifest with all five vehicle classes and

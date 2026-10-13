@@ -96,17 +96,17 @@ The whole-Shuto planning layer is the default candidate product surface: a
 bundled dated network snapshot covering all 26 official routes with directional
 IC facilities, JCTs, and PAs; deterministic route search and exact custom
 selection; fail-closed surface access and egress legs; and pre-drive review.
-The selected journey can be replayed as an explicitly labeled preview through
-the route-aware reducer. Live navigation is not enrolled: **Start navigation**
-fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`, and foreground Core
-Location supplies the planning origin only rather than admitting route progress.
+**Start navigation** runs live navigation for a route whose every junction
+decision is a released movement binding: five representative foreground
+releases are bundled, and the App authors any other such route's
+`KaidoProductRelease` on device from the same snapshot. A route with an
+uncovered decision stays blocked as
+`WHOLE_SHUTO_NAVIGATION_GUIDANCE_INCOMPLETE`. Debug builds can also replay the
+selected journey as an explicitly labeled preview.
 
 Guidance remains movement-by-movement: only reviewed junction movements produce
 insets and speech, and that coverage grows after evidence review rather than
-shipping a visually complete but unevenly verified guidance layer. In labeled
-replay, a route without reviewed movements gets route-bound replay position,
-progress, and the next facility with its distance, and no spoken turn
-instruction — the product says less rather than guessing.
+shipping a visually complete but unevenly verified guidance layer.
 
 Coverage is extended by reviewing the operator's own junction detail diagrams.
 They are published as images rather than machine-readable text, so each review
@@ -119,16 +119,17 @@ mainline continuation that asserts no lane; releasing a left or right branch
 instruction additionally requires the diagram to show that branch treatment
 unambiguously for that exact approach.
 
-Coverage today: both C1 catalog loops and the Bayshore corridor in both
-directions are reviewed at every junction where another route diverges from
-them. At Hakozaki, the Route 9 inbound split now binds the operator's separate
+Coverage today: 163 of the 165 junction movements in the bundled snapshot are
+reviewed and released (`kaido-release inspect-network-live-coverage`). At
+Hakozaki, the Route 9 inbound split now binds the operator's separate
 C1 Ginza and Routes 6/7 arrows; the two Hakozaki rotary approaches are instead
 classified as exit/PA branches and never counted as expressway movements. Both
 Yokohama Kohoku approaches now bind the operator's exact Tomei,
-Daisan-Keihin, exit, Bayshore, and Yokohama Park branches. The movements that
-remain unreviewed are at Namamugi, where the operator publishes explicit
-per-approach lane advice and sequential forks that a generic no-lane prompt
-would under-serve. A movement that changes route rather than continuing on one
+Daisan-Keihin, exit, Bayshore, and Yokohama Park branches. The two movements
+that remain unreviewed are at 本牧JCT on the Bayshore westbound approach: the
+split onto K3, whose start the 2026-10-12 topology review restored, and the
+Bayshore continuation past it. A route through either builds no foreground
+release. A movement that changes route rather than continuing on one
 still requires the diagram to show the branch treatment for that exact
 approach.
 

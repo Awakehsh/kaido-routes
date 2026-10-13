@@ -13,8 +13,8 @@ exists so a Simulator result, an offline device listing, a dirty checkout, an
 incomplete Debug baseline, or a Debug-only result cannot be reported as the
 physical-device App qualification.
 
-Real audio tests are excluded from this default scheme. This is an App baseline
-only. Even a passing receipt grants no road-release,
+Real audio tests are skipped by this scheme's default `Full` test plan. This
+is an App baseline only. Even a passing receipt grants no road-release,
 acoustic-quality, pronunciation, CarPlay, lock-screen location-delivery,
 background-speech, location-accuracy, or driver-comprehension authority.
 
@@ -155,8 +155,8 @@ The combined receipt uses schema 1.11. `qualification-run.json` retains:
   `app.kaidoroutes` bundle identifier, `ENABLE_TESTABILITY=false`, its exact
   version/build, one-test counts and UTC interval, and independent result,
   summary, test-tree, log, build-settings, validated App-tree, whole-Shuto,
-  exact C1, Bayshore-westbound, and C2 Inner/Bayshore foreground product
-  releases,
+  exact C1 inner, Bayshore-westbound, C2 Inner/Bayshore, Daikoku loop, and
+  scenic-tour foreground product releases,
   privacy-manifest, software-licence, map-data-licence, and bundle-validation
   hashes; and
 - an explicit authority matrix.

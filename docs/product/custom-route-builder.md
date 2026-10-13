@@ -207,8 +207,11 @@ which exit will be used before any branch instruction changes.
 For a repeated loop, the compiler stores safe egress choices at eligible
 occurrences. Until an egress plan is activated, an exit ramp is not a valid
 substitute for a missed mainline movement. If the chosen exit is missed, the
-driver continues safely and the system searches for another checked egress; it
-never asks for stopping, reversing, or a U-turn.
+driver continues safely and the journey never finishes there; it never asks
+for stopping, reversing, or a U-turn. A whole-Shuto release carries at most one
+egress option, its planned exit, so missing that exit follows a released
+detour back onto the plan if one exists and otherwise interrupts the route; the
+App does not search for another exit.
 
 ## Validation result
 
@@ -278,8 +281,9 @@ Primary references:
 - Never promise that a toll stays constant as laps or elapsed time increase.
 - When a branch is missed, do not ask for an abrupt correction. Continue safely,
   first find a checked path to a later occurrence in the active route plan, and
-  make skipped occurrences and the recovery path explicit. Use a safe exit only
-  when no released rejoin is available; mark the original route interrupted.
+  make skipped occurrences and the recovery path explicit. When no released
+  rejoin is available, mark the original route interrupted; never invent an
+  exit.
 
 ## Sharing and community routes
 
@@ -312,11 +316,12 @@ The default whole-Shuto planner has a separate parked-only reopening path. When
 the saved document names the exact bundled current snapshot, the planner
 reconstructs and revalidates the complete `RoutePlan` against that snapshot,
 including repeated occurrences and circuit laps. The library labels this
-availability **CURRENT SNAPSHOT** and may reopen it for parked review and the
-clearly labeled replay. It does not create a `KaidoProductRelease`, release any
-movement, or enable live navigation; **Start navigation** remains blocked until
-an exact authority-bearing release is enrolled. Saving, importing, or matching
-the current snapshot never upgrades evidence.
+availability **Available** and reopens it into parked review. From there
+**Start navigation** is prepared exactly as for any other selected route: the
+App authors a `KaidoProductRelease` on device from the bundled snapshot and its
+released movement bindings, and keeps the start blocked when a junction
+decision is not covered. Reopening releases no movement, and saving,
+importing, or matching the current snapshot never upgrades evidence.
 
 The App surface supports local save, listing, rename, confirmation-gated delete,
 deterministic JSON export, validated JSON import, and exact-release reopening.

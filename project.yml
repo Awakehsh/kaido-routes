@@ -19,8 +19,11 @@ settings:
     MARKETING_VERSION: "1.0.0"
 
 packages:
+  # XcodeGen names a local package's folder reference after the checkout
+  # directory, so the app target adds the reference under a fixed name instead.
   KaidoRoutesCore:
     path: .
+    excludeFromProject: true
 
 targets:
   KaidoRoutesApp:
@@ -28,6 +31,11 @@ targets:
     platform: iOS
     productName: KaidoRoutes
     sources:
+      - path: .
+        name: KaidoRoutesCore
+        type: folder
+        buildPhase: none
+        group: Packages
       - path: Apps/KaidoRoutesApp/Sources
       - path: Apps/KaidoRoutesApp/Resources
       - path: LICENSE

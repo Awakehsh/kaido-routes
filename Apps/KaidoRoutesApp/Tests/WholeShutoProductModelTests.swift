@@ -3511,7 +3511,7 @@ final class WholeShutoProductModelTests: XCTestCase {
   func testReplacedRouteStopsItsLivePreparationAndNeverPublishes()
     async throws
   {
-    let hold = FirstAdmissionHold()
+    let hold = ReplacedRouteAdmissionHold()
     let model = WholeShutoProductModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil,
@@ -3520,21 +3520,22 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.preparePreviewJourney()
     XCTAssertGreaterThan(model.recommendations.count, 1)
     let firstRoute = try XCTUnwrap(model.selectedRoute)
+    hold.holdRoute(planID: firstRoute.routePlan.id)
 
     model.selectRecommendation(at: 1)
     XCTAssertNotEqual(model.selectedRoute, firstRoute)
     for _ in 0..<200
     where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
-      || !hold.firstFinished
+      || !hold.heldFinished
     {
       try? await Task.sleep(nanoseconds: 50_000_000)
     }
 
-    XCTAssertTrue(hold.firstFinished)
-    XCTAssertTrue(hold.firstSawCancellation)
+    XCTAssertTrue(hold.heldFinished)
+    XCTAssertTrue(hold.heldSawCancellation)
     XCTAssertEqual(
       model.liveNavigationBlockerCode,
-      FirstAdmissionHold.laterRouteCode
+      ReplacedRouteAdmissionHold.laterRouteCode
     )
   }
 
@@ -7129,39 +7130,48 @@ private actor WholeShutoGatedSurfaceRouteResolver: WholeShutoSurfaceRouteResolvi
 
 /// Holds the first route's admission until the model cancels it, and answers
 /// every later route at once.
-private final class FirstAdmissionHold: Sendable {
-  static let firstRouteCode = "TEST_FIRST_ROUTE"
+/// Holds the resolver call for the route the test replaces until that
+/// resolution is cancelled. Each route's resolver runs in its own detached
+/// task, so calls arrive in no fixed order: the held route is named by its
+/// plan, not by which call comes first.
+private final class ReplacedRouteAdmissionHold: Sendable {
+  static let heldRouteCode = "TEST_HELD_ROUTE"
   static let laterRouteCode = "TEST_LATER_ROUTE"
   private struct State {
-    var firstRoutePlanID: String?
-    var firstFinished = false
-    var firstSawCancellation = false
+    var heldRoutePlanID: String?
+    var heldFinished = false
+    var heldSawCancellation = false
   }
   private let state = Mutex(State())
 
-  var firstFinished: Bool { state.withLock { $0.firstFinished } }
-  var firstSawCancellation: Bool { state.withLock { $0.firstSawCancellation } }
+  var heldFinished: Bool { state.withLock { $0.heldFinished } }
+  var heldSawCancellation: Bool { state.withLock { $0.heldSawCancellation } }
+
+  func holdRoute(planID: String) {
+    state.withLock { $0.heldRoutePlanID = planID }
+  }
 
   func resolve(
     _ route: ShutoPlannedRoute
   ) -> WholeShutoLiveJourneyAdmissionResolution {
-    let isFirst = state.withLock { state in
-      if state.firstRoutePlanID == nil {
-        state.firstRoutePlanID = route.routePlan.id
-        return true
-      }
-      return false
-    }
-    guard isFirst else { return .unavailable(Self.laterRouteCode) }
     let deadline = Date().addingTimeInterval(10)
+    // The held route's own resolution can start before the test names it.
+    var heldID = state.withLock { $0.heldRoutePlanID }
+    while heldID == nil, Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.005)
+      heldID = state.withLock { $0.heldRoutePlanID }
+    }
+    guard route.routePlan.id == heldID else {
+      return .unavailable(Self.laterRouteCode)
+    }
     while !Task.isCancelled, Date() < deadline {
       Thread.sleep(forTimeInterval: 0.005)
     }
     let cancelled = Task.isCancelled
     state.withLock { state in
-      state.firstFinished = true
-      state.firstSawCancellation = cancelled
+      state.heldFinished = true
+      state.heldSawCancellation = cancelled
     }
-    return .unavailable(Self.firstRouteCode)
+    return .unavailable(Self.heldRouteCode)
   }
 }

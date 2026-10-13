@@ -345,6 +345,10 @@ public enum ShutoEntranceAccessTier: Equatable, Sendable {
 /// the home card shows before any manual adjustment.
 public struct ShutoCircuitPairing: Equatable, Sendable {
   public let entrance: ShutoNetworkDatabase.Facility
+  /// The recommended exit. An experience with a default destination parking
+  /// area ends there instead, so its recommended drive has no exit; this is
+  /// then only the soonest course exit after the last anchor, for a driver
+  /// who explicitly asks to end at an exit.
   public let exit: ShutoNetworkDatabase.Facility
   public let tariffBand: ShutoTariffBand?
   /// Geodesic origin-to-entrance distance when an origin was provided.
@@ -465,7 +469,9 @@ extension ShutoRoutePlanner {
   /// reachability gate runs on the nearest `entranceCandidateLimit`
   /// candidates plus every direction-valid member-route entrance, so a
   /// distant origin never loses the route's own ramps behind nearer radial
-  /// approaches.
+  /// approaches. Without an origin there is no nearness to bound by: every
+  /// direction-valid entrance is gated, so the list holds every entrance
+  /// some origin can be offered.
   public func circuitEntranceCandidates(
     for circuit: ShutoCircuitDefinition,
     origin: ShutoCoordinate? = nil,
@@ -502,7 +508,8 @@ extension ShutoRoutePlanner {
         viability: &viability
       )
     else { return [] }
-    let boundedCandidates = Array(ranked.prefix(Self.entranceCandidateLimit))
+    let boundedCandidates =
+      origin == nil ? ranked : Array(ranked.prefix(Self.entranceCandidateLimit))
     let candidateIDs = Set(boundedCandidates.map(\.facilityID))
     let candidates = boundedCandidates + ranked.filter {
       circuit.memberRouteIDs.contains($0.routeID)

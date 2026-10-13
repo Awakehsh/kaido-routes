@@ -12,7 +12,7 @@
   /// no fix is relabelled onto the first route edge. The one correction is
   /// the pass of a road the plan drives more than once: the car can only be
   /// on the earliest pass it can have reached since this adapter first saw
-  /// it, and the matcher is restarted there.
+  /// it, and that is the pass the evidence names.
   public struct CoreLocationEntryTransitionAdapter: Sendable {
     public let context: EntryTransitionAdmissionContext
 
@@ -106,7 +106,6 @@
           elapsedMilliseconds: observation.observedAtMilliseconds - firstObservedAt
         )
       else { return estimate }
-      try matcherSession.restart(at: pass)
       return MatcherEstimate(
         observationID: estimate.observationID,
         estimatedAtMilliseconds: estimate.estimatedAtMilliseconds,

@@ -458,8 +458,8 @@ beside its entrance again near its end, and a matcher that settles on that
 later pass cannot move back, so the route head would never be confirmed. The
 car can only be on the earliest pass it can have reached since the adapter
 first saw it, under the session's 40 m/s-plus-100 m reach rule
-(`RoutePassReach`); the adapter reports that pass and restarts its matcher
-there. Because the
+(`RoutePassReach`); the adapter reports that pass with the matcher's own
+confidence and leaves the matcher's state untouched. Because the
 corridor holds expressway roads only, a street beneath or beside a ramp can
 match the ramp as confidently as the ramp itself, so presence near the ramp is
 never entry. Entry needs at least three ordered, heading-compatible MEDIUM or

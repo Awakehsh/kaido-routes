@@ -19,12 +19,14 @@ public struct KaidoLiveJourneyAdmission: Sendable {
   public let selectedRoutePlan: RoutePlan
   public let journeyPlan: JourneyPlan
   public let foregroundLiveInputAuthority: KaidoForegroundLiveInputAuthority
+  private let expresswayRoads: [[MatcherCoordinate]]
   private let validatedRuntime: KaidoProductNavigationRuntime
 
   public init(
     release: KaidoProductRelease,
     selectedRoutePlan: RoutePlan,
-    journeyPlan: JourneyPlan
+    journeyPlan: JourneyPlan,
+    expresswayRoads: [[MatcherCoordinate]] = []
   ) throws {
     guard release.navigation.bundle.routePlan == selectedRoutePlan else {
       throw KaidoLiveJourneyAdmissionError.selectedRoutePlanMismatch
@@ -47,13 +49,15 @@ public struct KaidoLiveJourneyAdmission: Sendable {
     // the same validation used to create a live runtime.
     let validatedRuntime = try KaidoProductNavigationRuntime(
       release: release,
-      journeyPlan: journeyPlan
+      journeyPlan: journeyPlan,
+      expresswayRoads: expresswayRoads
     )
 
     self.release = release
     self.selectedRoutePlan = selectedRoutePlan
     self.journeyPlan = journeyPlan
     foregroundLiveInputAuthority = authority
+    self.expresswayRoads = expresswayRoads
     self.validatedRuntime = validatedRuntime
   }
 
@@ -67,7 +71,8 @@ public struct KaidoLiveJourneyAdmission: Sendable {
     try KaidoProductNavigationRuntime(
       release: release,
       journeyPlan: journeyPlan,
-      checkpoint: checkpoint
+      checkpoint: checkpoint,
+      expresswayRoads: expresswayRoads
     )
   }
 }

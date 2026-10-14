@@ -76,6 +76,16 @@ internal review workbench.
   the road the stop replaced skips the stop silently: the stop is recorded as
   skipped, not visited, and guidance continues where that road rejoins the
   route.
+- Leaving the expressway at an exit the plan does not take ends the
+  expressway portion instead of leaving the drive in route recovery. The car
+  says "You've left the route. Rerouting." once (in the guidance voice
+  language) and ordinary-road guidance, avoiding highways, takes it from where
+  it is to the journey's own end: the origin for a return, the searched place
+  for a destination. An exit-only or PA-ended journey has no point beyond the
+  expressway, so it ends there: "You're near your destination. Guidance has
+  ended." within 1 km of the planned exit or PA, otherwise "You've left the
+  route. Guidance has ended." The ordinary-road leg survives a relaunch and
+  completes on arrival like any other.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

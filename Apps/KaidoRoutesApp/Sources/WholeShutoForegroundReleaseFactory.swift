@@ -65,7 +65,8 @@ enum WholeShutoForegroundReleaseFactory {
                 selectedRoutePlan: route.routePlan,
                 journeyPlan: JourneyPlanCompiler.expresswayOnly(
                   release: release
-                )
+                ),
+                expresswayRoads: resolvedAuthority.runtimeContext.roadPolylines
               )
               try Task.checkCancellation()
               return .available(

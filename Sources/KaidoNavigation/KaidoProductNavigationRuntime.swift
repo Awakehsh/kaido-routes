@@ -53,12 +53,14 @@ public struct KaidoProductNavigationRuntime: Sendable {
 
   public init(
     release: KaidoProductRelease,
-    journeyPlan: JourneyPlan
+    journeyPlan: JourneyPlan,
+    expresswayRoads: [[MatcherCoordinate]] = []
   ) throws {
     try self.init(
       release: release,
       journeyPlan: journeyPlan,
-      checkpoint: nil
+      checkpoint: nil,
+      expresswayRoads: expresswayRoads
     )
   }
 
@@ -76,19 +78,22 @@ public struct KaidoProductNavigationRuntime: Sendable {
   public init(
     release: KaidoProductRelease,
     journeyPlan: JourneyPlan,
-    checkpoint: NavigationSessionCheckpoint
+    checkpoint: NavigationSessionCheckpoint,
+    expresswayRoads: [[MatcherCoordinate]] = []
   ) throws {
     try self.init(
       release: release,
       journeyPlan: journeyPlan,
-      checkpoint: Optional(checkpoint)
+      checkpoint: Optional(checkpoint),
+      expresswayRoads: expresswayRoads
     )
   }
 
   private init(
     release: KaidoProductRelease,
     journeyPlan: JourneyPlan,
-    checkpoint: NavigationSessionCheckpoint?
+    checkpoint: NavigationSessionCheckpoint?,
+    expresswayRoads: [[MatcherCoordinate]] = []
   ) throws {
     let bundle = release.navigation.bundle
     let journeyPlanIssues = journeyPlan.runtimeAdmissionIssues(for: release)
@@ -195,7 +200,8 @@ public struct KaidoProductNavigationRuntime: Sendable {
       surfaceEgressAdmissionContext:
         surfaceEgressAdmissionContext,
       requiresRestorationReacquisition:
-        requiresRestorationReacquisition
+        requiresRestorationReacquisition,
+      expresswayRoads: expresswayRoads
     )
   }
 

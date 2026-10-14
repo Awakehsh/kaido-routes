@@ -71,7 +71,8 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
         selectedRoutePlan: selectedRoute.routePlan,
         journeyPlan: JourneyPlanCompiler.expresswayOnly(
           release: product.release
-        )
+        ),
+        expresswayRoads: runtimeContext.roadPolylines
       )
       return .available(
         try WholeShutoLiveJourneyAdmission(

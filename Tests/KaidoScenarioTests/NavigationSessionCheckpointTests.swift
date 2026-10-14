@@ -93,6 +93,39 @@ func navigationCheckpointRestoresConservatively() async throws {
   #expect(third.navigationSnapshot.emittedGuidancePromptIDs == ["test.prompt.loop-1"])
 }
 
+@Test("A drive handed over after an unplanned exit restores with its expressway portion ended")
+func navigationCheckpointRestoresUnplannedExit() async throws {
+  let release = try checkpointProductRelease()
+  let bundle = release.navigation.bundle
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: bundle.routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      activeRoutePlanID: bundle.routePlan.id,
+      currentOccurrenceID: "test.occurrence.entry",
+      locationConfidence: .high
+    )
+  )
+  engine.leaveAtUnplannedExit()
+
+  let checkpoint = try NavigationSessionCheckpoint.capture(
+    release: release,
+    journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
+    snapshot: engine.snapshot,
+    savedAtMilliseconds: 2_000
+  )
+  let restoredRuntime = try KaidoProductNavigationRuntime(
+    release: release,
+    checkpoint: NavigationSessionCheckpointCodec.decode(
+      NavigationSessionCheckpointCodec.encode(checkpoint)
+    )
+  )
+  let restored = await restoredRuntime.session.snapshot
+  #expect(restored.journeyPhase == .surfaceEgress)
+  #expect(restored.lastPhaseTransitionTrigger == "UNPLANNED_EXIT")
+  #expect(restored.recovery.status == .inactive)
+}
+
 @Test("Checkpoint cannot inject an unknown released-guidance prompt")
 func navigationCheckpointRejectsPromptLedgerInjection() throws {
   let release = try checkpointProductRelease()

@@ -23,7 +23,7 @@ enum WholeShutoJourneyPhase:
 private enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
   case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
-  case nearDestination
+  case nearDestination, leftRouteRerouting, leftRouteEnded
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -52,6 +52,10 @@ private enum WholeShutoJourneyNotice: String {
     case .lapNotAdded: words = ("周回を追加できませんでした。", "未能增加一圈。", "The lap could not be added.")
     case .nearDestination:
       words = ("目的地周辺です。案内を終了します。", "已在目的地附近，导航结束。", "You're near your destination. Guidance has ended.")
+    case .leftRouteRerouting:
+      words = ("ルートを外れました。新しいルートで案内します。", "已偏离路线，重新规划路线。", "You've left the route. Rerouting.")
+    case .leftRouteEnded:
+      words = ("ルートを外れました。案内を終了します。", "已偏离路线，导航结束。", "You've left the route. Guidance has ended.")
     }
     switch locale {
     case .japanese: return words.0
@@ -903,6 +907,12 @@ final class WholeShutoProductModel: ObservableObject {
   /// entry ramp instead of into it, closed or missed.
   @Published private(set) var endedNearDestination = false
 
+  /// The car left the expressway where the plan does not. Ordinary-road
+  /// guidance has taken over, or the drive ended there.
+  @Published private(set) var leftRouteAtUnplannedExit = false
+  /// The drive ended where the car left the route, away from its destination.
+  @Published private(set) var endedOffRoute = false
+
   var requiresSurfaceEgress: Bool { journeyEnding != .exit && !endsAtParkingArea }
 
   var selectedRoute: ShutoPlannedRoute? {
@@ -1246,6 +1256,8 @@ final class WholeShutoProductModel: ObservableObject {
     enteredThroughRamp = false
     driveRecordArrived = false
     endedNearDestination = false
+    leftRouteAtUnplannedExit = false
+    endedOffRoute = false
   }
 
   var activeSurfaceInstruction: String? {
@@ -1946,7 +1958,7 @@ final class WholeShutoProductModel: ObservableObject {
         fraction: progressFraction
       )
     case .completed:
-      if endedNearDestination, let runtimeCoordinate {
+      if endedNearDestination || endedOffRoute, let runtimeCoordinate {
         return runtimeCoordinate
       }
       return destination?.coordinate
@@ -4421,6 +4433,15 @@ final class WholeShutoProductModel: ObservableObject {
         {
           return
         }
+        if update.navigationSnapshot.journeyPhase == .surfaceEgress,
+          update.navigationSnapshot.lastPhaseTransitionTrigger == "UNPLANNED_EXIT"
+        {
+          handOverAfterUnplannedExit(
+            at: coordinate,
+            attemptedAtMilliseconds: observation.receivedAtMilliseconds
+          )
+          break
+        }
         // The session recognises the exit from where the car went.
         if update.navigationSnapshot.journeyPhase == .exitTransition {
           applyLiveActorSnapshot(update.navigationSnapshot)
@@ -4483,9 +4504,15 @@ final class WholeShutoProductModel: ObservableObject {
           route: egressRoute,
           completesJourney: true
         ) {
-          applyLiveActorSnapshot(
-            await session.completeAtExitHandoff()
-          )
+          // After an unplanned exit the session's part is over; the surface
+          // arrival alone ends the drive.
+          if leftRouteAtUnplannedExit {
+            completeLiveJourney()
+          } else {
+            applyLiveActorSnapshot(
+              await session.completeAtExitHandoff()
+            )
+          }
         }
       case .planning, .review, .completed:
         return
@@ -4928,6 +4955,44 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  /// The session saw the car leave the expressway where the plan does not.
+  /// A journey that goes on beyond the expressway, back to its origin or to
+  /// a searched place, continues on ordinary roads from where the car is. An
+  /// exit-only or PA-ended journey has nowhere beyond the exit to go, so the
+  /// drive ends there: near the destination when it is close to it.
+  private func handOverAfterUnplannedExit(
+    at coordinate: ShutoCoordinate,
+    attemptedAtMilliseconds: Int
+  ) {
+    leftRouteAtUnplannedExit = true
+    clearTunnelEstimate()
+    presentationProjection = nil
+    runtimeOccurrenceID = nil
+    isHoldingLivePosition = false
+    guard requiresSurfaceEgress, destination != nil else {
+      let isNearDestination = selectedRoute.map {
+        Self.distance(coordinate, $0.destinationCoordinate)
+          <= Self.unplannedExitNearDestinationMeters
+      } ?? false
+      endedNearDestination = isNearDestination
+      endedOffRoute = !isNearDestination
+      runtimeCoordinate = coordinate
+      completeLiveJourney(notice: isNearDestination ? .nearDestination : .leftRouteEnded)
+      return
+    }
+    phase = .surfaceEgress
+    progressFraction = 0
+    egressRoute = nil
+    beginSurfaceReroute(
+      from: coordinate,
+      phase: .surfaceEgress,
+      attemptedAtMilliseconds: attemptedAtMilliseconds,
+      notice: .leftRouteRerouting
+    )
+  }
+
+  static let unplannedExitNearDestinationMeters = 1_000.0
+
   private func continueAfterExpresswayExit(
     using session: ShutoLiveDriveSession
   ) async {
@@ -5281,7 +5346,8 @@ final class WholeShutoProductModel: ObservableObject {
   private func beginSurfaceReroute(
     from coordinate: ShutoCoordinate,
     phase requestedPhase: WholeShutoJourneyPhase,
-    attemptedAtMilliseconds: Int
+    attemptedAtMilliseconds: Int,
+    notice: WholeShutoJourneyNotice = .rerouting
   ) {
     guard
       let selectedRoute,
@@ -5317,7 +5383,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationState = .degraded
     liveLocationIssueCode = Self.surfaceRouteReroutingCode
     speechCoordinator?.invalidateGuidance()
-    announceJourneyNotice(.rerouting)
+    announceJourneyNotice(notice)
     surfaceRerouteTask = Task { [weak self] in
       var resolved = await resolver.route(from: coordinate, to: destination)
       if resolved == nil,
@@ -6119,6 +6185,8 @@ final class WholeShutoProductModel: ObservableObject {
       matcherConfidence = .low
       runtimeOccurrenceID = checkpoint.runtimeOccurrenceID
       runtimeJourneyPhase = navigationCheckpoint.state.journeyPhase
+      leftRouteAtUnplannedExit =
+        navigationCheckpoint.state.lastPhaseTransitionTrigger == "UNPLANNED_EXIT"
       runtimeRecoveryStatus = navigationCheckpoint.state.recovery.status
       runtimeRecoveryTargetOccurrenceID =
         navigationCheckpoint.state.recovery.chosenRejoinOccurrenceID

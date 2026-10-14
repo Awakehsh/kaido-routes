@@ -497,6 +497,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     package let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
     package let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
     package let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
+    public let roadPolylines: [[MatcherCoordinate]]
 
     public init(database: ShutoNetworkDatabase) throws {
       try database.validate()
@@ -526,6 +527,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       )
       releasedMovementContext =
         ShutoJunctionMovementCatalog.ReleasedContext(database: database)
+      roadPolylines = database.roadPolylines()
     }
 
     public func compile(
@@ -1825,5 +1827,18 @@ private struct RouteProximityIndex {
 
   private static func cell(_ point: SIMD2<Double>, size: Double) -> SIMD2<Int> {
     SIMD2(Int(floor(point.x / size)), Int(floor(point.y / size)))
+  }
+}
+
+extension ShutoNetworkDatabase {
+  /// Every way as a polyline: the roads a car can drive without having left
+  /// the expressway.
+  public func roadPolylines() -> [[MatcherCoordinate]] {
+    let nodesByID = Dictionary(uniqueKeysWithValues: nodes.map { ($0.nodeID, $0) })
+    return ways.map { way in
+      way.nodeIDs.compactMap { nodesByID[$0] }.map {
+        MatcherCoordinate(latitude: $0.latitude, longitude: $0.longitude)
+      }
+    }
   }
 }

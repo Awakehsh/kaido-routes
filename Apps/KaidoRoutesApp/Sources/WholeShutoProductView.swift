@@ -4492,6 +4492,13 @@ struct WholeShutoProductView: View {
         english: "NEAR DESTINATION"
       )
     }
+    if model.endedOffRoute {
+      return copy.resolve(
+        japanese: "ルート外で案内終了",
+        simplifiedChinese: "偏离路线 · 导航结束",
+        english: "LEFT ROUTE · GUIDANCE ENDED"
+      )
+    }
     return model.isLiveDrive
       ? copy.resolve(
         japanese: "目的地に到着",
@@ -4711,11 +4718,17 @@ struct WholeShutoProductView: View {
         english: "EXIT THE EXPRESSWAY"
       )
     case .surfaceEgress:
-      copy.resolve(
-        japanese: "一般道",
-        simplifiedChinese: "一般道路",
-        english: "SURFACE ROAD"
-      )
+      model.leftRouteAtUnplannedExit
+        ? copy.resolve(
+          japanese: "ルート外・一般道",
+          simplifiedChinese: "偏离路线 · 一般道路",
+          english: "OFF ROUTE · SURFACE ROAD"
+        )
+        : copy.resolve(
+          japanese: "一般道",
+          simplifiedChinese: "一般道路",
+          english: "SURFACE ROAD"
+        )
     case .completed:
       copy.resolve(
         japanese: "到着",

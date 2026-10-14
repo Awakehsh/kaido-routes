@@ -616,6 +616,36 @@ func passedParkingStopIsSkippedNotDriven() {
   #expect(engine.snapshot.completedOccurrenceIDs == ["before"])
 }
 
+@Test("An unplanned exit ends the expressway portion without recovery or completion")
+func unplannedExitEndsTheExpresswayPortion() {
+  let routePlan = testRoutePlan()
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+  engine.observeBranch(
+    BranchObservation(observedMovementID: "test.movement.unplanned", confidence: .high)
+  )
+  #expect(engine.snapshot.recovery.status == .unavailable)
+
+  engine.leaveAtUnplannedExit()
+
+  #expect(engine.snapshot.journeyPhase == .surfaceEgress)
+  #expect(engine.snapshot.lastPhaseTransitionTrigger == "UNPLANNED_EXIT")
+  #expect(engine.snapshot.recovery.status == .inactive)
+  #expect(engine.snapshot.egress.status == .inactive)
+  #expect(engine.snapshot.currentOccurrenceID == "first")
+  #expect(engine.snapshot.completedOccurrenceIDs.isEmpty)
+
+  engine.leaveAtUnplannedExit()
+  engine.completeAtExitHandoff()
+  #expect(engine.snapshot.journeyPhase == .surfaceEgress)
+}
+
 @Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(

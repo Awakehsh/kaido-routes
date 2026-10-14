@@ -28,6 +28,14 @@ The product distinguishes what is known from what is still unconfirmed:
   ramp above LOW confidence, at a divergence the car can have reached since
   its last admitted progress. A mid-route PA stop passed on the road it
   replaced is skipped on the same kind of evidence, and the drive goes on.
+- An unplanned exit is recognised from position alone: two consecutive fixes
+  better than 30 m that the matcher places on no corridor road and that lie
+  at least 100 m from every road of the bundled Shuto network. An ordinary
+  road running within 100 m of any Shuto road, such as a frontage road or a
+  street under a viaduct, keeps the drive where it was until it turns away.
+  The network holds Shuto roads only: a car that drives on past a Shuto
+  route's end onto another operator's expressway is handed over as if it had
+  left the expressway.
 - The driving map draws the planned route in blue, never in the product's warm
   route accent: Apple's congestion layer owns amber and red on that basemap, so
   a warm route line would read as a jam along the whole route. Kaido's own

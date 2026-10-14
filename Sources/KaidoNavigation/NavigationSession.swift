@@ -79,6 +79,10 @@ public actor NavigationSession {
   private var skippedParkingStops: [Range<Int>] = []
   private var parkingStopBypassRun: (count: Int, lastObservedAtMilliseconds: Int, stop: Range<Int>)?
   private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String)?
+  private var unplannedExitRun: (count: Int, lastObservedAtMilliseconds: Int)?
+  /// Every road the car can drive without having left the expressway: the
+  /// plan's own and those of the rest of the network.
+  private let expresswayRoads: [[MatcherCoordinate]]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
   /// When the engine last admitted a position on the plan. Nothing the car
@@ -95,7 +99,8 @@ public actor NavigationSession {
     initialMatcherOccurrenceID: String? = nil,
     entryTransitionAdmissionContext: EntryTransitionAdmissionContext? = nil,
     surfaceEgressAdmissionContext: SurfaceEgressAdmissionContext? = nil,
-    requiresRestorationReacquisition: Bool = false
+    requiresRestorationReacquisition: Bool = false,
+    expresswayRoads: [[MatcherCoordinate]] = []
   ) throws {
     guard let routePlan = navigationConfiguration.routePlan else {
       throw NavigationSessionConfigurationError.invalid(["route plan is missing"])
@@ -267,6 +272,10 @@ public actor NavigationSession {
       routePlan.destinationParkingAreaID == nil
       ? RouteEndGeometry(routePlan: routePlan, corridor: matcherCorridor)
       : nil
+    let planEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
+    self.expresswayRoads =
+      matcherCorridor.edges.filter { planEdgeIDs.contains($0.id) }.map(\.coordinates)
+      + expresswayRoads
     destinationParkingAreaEntry = DestinationParkingAreaEntry(
       routePlan: routePlan,
       corridor: matcherCorridor
@@ -361,6 +370,17 @@ public actor NavigationSession {
       // place the car cannot have reached; anchor it back on admitted progress.
       try matcherSession.restart(at: currentOccurrenceID)
     }
+    // A car that left the expressway right after a tunnel never reacquires
+    // the plan, so this runs before reacquisition holds everything else back.
+    if detectsOffPlanDeviation,
+      engine.snapshot.journeyPhase == .strictRoute
+        || engine.snapshot.journeyPhase == .routeRecovery
+    {
+      observeUnplannedExit(estimate: estimate, observation: observation)
+      if engine.snapshot.journeyPhase == .surfaceEgress {
+        return update(estimate: estimate, guidanceProgressState: .notApplicable)
+      }
+    }
     if engine.snapshot.signalReacquisitionStatus == .pending {
       return update(
         estimate: Self.restorationEstimate(from: estimate),
@@ -441,6 +461,43 @@ public actor NavigationSession {
         guidanceBridgeError: error
       )
     }
+  }
+
+  /// Fixes on no corridor road and far from every expressway road: the car
+  /// left the expressway where the plan does not, and the expressway portion
+  /// ends there. A car on a junction branch the plan does not take is still
+  /// on the expressway and stays in recovery. Fixes scattered off the expressway by GPS error come within
+  /// the margin. As for any deviation, one such fix can be a reflection;
+  /// consecutive ones mean the car left.
+  static let unplannedExitMarginMeters = 100.0
+
+  private func observeUnplannedExit(
+    estimate: MatcherEstimate,
+    observation: RouteMatcherObservation
+  ) {
+    guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters,
+      estimate.confidence == .lost,
+      metersFromExpressway(observation.coordinate) >= Self.unplannedExitMarginMeters
+    else {
+      unplannedExitRun = nil
+      return
+    }
+    let continues = unplannedExitRun.map {
+      observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
+        <= Self.offPlanDeviationMaximumGapMilliseconds
+    } ?? false
+    let count = continues ? (unplannedExitRun?.count ?? 0) + 1 : 1
+    unplannedExitRun = (count, observation.observedAtMilliseconds)
+    guard count >= Self.offPlanDeviationObservationCount else { return }
+    unplannedExitRun = nil
+    offPlanRun = nil
+    engine.leaveAtUnplannedExit()
+  }
+
+  private func metersFromExpressway(_ coordinate: MatcherCoordinate) -> Double {
+    expresswayRoads.map {
+      RouteEndGeometry.meters(from: coordinate, toPolyline: $0)
+    }.min() ?? .infinity
   }
 
   /// Fixes that place the car where the plan cannot be: on an off-plan road
@@ -1521,7 +1578,7 @@ private struct RouteEndGeometry: Sendable {
     Self.meters(from: coordinate, toPolyline: exit)
   }
 
-  private static func meters(
+  static func meters(
     from coordinate: MatcherCoordinate,
     toPolyline polyline: [MatcherCoordinate]
   ) -> Double {

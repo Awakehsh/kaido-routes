@@ -22,6 +22,7 @@
     /// Edges of ways tagged tunnel or covered: where the App's tunnel hooks
     /// apply and where a tunnel outage withholds fixes.
     let coveredEdgeIDs: Set<String>
+    let roadPolylines: [[MatcherCoordinate]]
     let routeEdgeIDs: [String]
     let routeStartDistances: [Double]
     let routeLengthMeters: Double
@@ -51,6 +52,7 @@
       coveredEdgeIDs = Set(
         database.edges.filter { coveredWayIDs.contains($0.wayID) }.map(\.edgeID)
       )
+      roadPolylines = database.roadPolylines()
       routeEdgeIDs = corridor.occurrences.sorted { $0.index < $1.index }
         .map(\.directedEdgeID)
       var starts: [Double] = []
@@ -139,6 +141,58 @@
 
     /// The planned drive up to `movementIndex - 1`, then the alternative
     /// outgoing edge at that junction followed for `branchMeters`.
+    /// A wrong branch followed to the end of the expressway network, then on
+    /// along an ordinary road: straight ahead for 100 m, then turning away
+    /// from the plan by `turnDegrees` for the rest of `surfaceMeters`. A turn
+    /// of 0 keeps going straight, which beside a parallel expressway stays
+    /// close to it.
+    func unplannedExitLegs(
+      movementIndex: Int,
+      alternativeEdgeID: String,
+      surfaceMeters: Double = 800,
+      turnDegrees: Double = 90
+    ) -> [ReplayGateLeg] {
+      var legs = wrongBranchLegs(
+        movementIndex: movementIndex,
+        alternativeEdgeID: alternativeEdgeID,
+        branchMeters: 2_500
+      )
+      guard let last = legs.last?.coordinates, last.count >= 2 else { return legs }
+      let end = last[last.count - 1]
+      let before = last[last.count - 2]
+      let metersPerDegree = 6_371_000.0 * .pi / 180
+      let scale = cos(end.latitude * .pi / 180)
+      func offset(_ from: MatcherCoordinate, bearing: Double, meters: Double) -> MatcherCoordinate {
+        MatcherCoordinate(
+          latitude: from.latitude + cos(bearing) * meters / metersPerDegree,
+          longitude: from.longitude + sin(bearing) * meters / (metersPerDegree * scale)
+        )
+      }
+      let heading = atan2(
+        (end.longitude - before.longitude) * scale,
+        end.latitude - before.latitude
+      )
+      let straight = offset(end, bearing: heading, meters: min(100, surfaceMeters))
+      let turn = turnDegrees * .pi / 180
+      let candidates = [heading + turn, heading - turn].map {
+        offset(straight, bearing: $0, meters: max(0, surfaceMeters - 100))
+      }
+      let planPoints = routeEdgeIDs.compactMap { corridorEdgesByID[$0]?.coordinates }.flatMap { $0 }
+      func nearestPlanMeters(_ point: MatcherCoordinate) -> Double {
+        planPoints.map {
+          hypot(
+            ($0.longitude - point.longitude) * metersPerDegree * scale,
+            ($0.latitude - point.latitude) * metersPerDegree
+          )
+        }.min() ?? .infinity
+      }
+      let away = candidates.max { nearestPlanMeters($0) < nearestPlanMeters($1) } ?? candidates[0]
+      legs.append(
+        ReplayGateLeg(kind: .egress, coordinates: [end, straight, away], speedMetersPerSecond: Self.surfaceSpeed)
+      )
+      return legs
+    }
+
     func wrongBranchLegs(
       movementIndex: Int,
       alternativeEdgeID: String,
@@ -505,7 +559,8 @@
       let truth = ReplayGateTruthSampler.sample(legs: legs, gate: self)
       let runtime = try KaidoProductNavigationRuntime(
         release: release,
-        journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release)
+        journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release),
+        expresswayRoads: roadPolylines
       )
       let session = try ShutoLiveDriveSession(runtime: runtime)
       var entryAdapter = try CoreLocationEntryTransitionAdapter(
@@ -1111,6 +1166,15 @@
       records.first {
         $0.phase == .routeRecovery && $0.truth.offPlanDistanceMeters != nil
       }?.truth.offPlanDistanceMeters
+    }
+
+    /// Whether the session handed the drive over after an unplanned exit,
+    /// and how far past its divergence the car was then: along the branch,
+    /// or onto the ordinary road beyond it.
+    var handedOver: Bool {
+      records.last.map {
+        $0.phase == .surfaceEgress && $0.phaseTrigger == "UNPLANNED_EXIT"
+      } == true
     }
 
     /// How far past its divergence the car had driven when the drive ended.

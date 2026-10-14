@@ -1797,8 +1797,11 @@ Shiodome and C2 Itabashi-honcho do), so neither the matcher's choice of
 pass nor its confidence tells them apart before the ramp ends; the evidence
 is where the car goes after it. The check runs before post-tunnel
 reacquisition holds the fix back, because a ramp beside a covered earlier
-pass can leave reacquisition pending; the unplanned-exit handover is
-checked after it on the same fix, so the planned exit's own evidence wins.
+pass can leave reacquisition pending. The unplanned-exit handover is
+checked after it on the same fix and does not fire while a run of the exit's
+evidence is open: the same fixes past the exit are often both, and the exit
+needs one more of them than the handover. That run finishes the drive
+within two more fixes or breaks, and a break lets the handover fire.
 The drive then finishes at the terminal occurrence and enters `EXIT_TRANSITION`. Driving on past the exit
 is a deviation and never finishes the journey. The Finish control and its
 Siri action remain a fallback gated on an admitted position near the end.

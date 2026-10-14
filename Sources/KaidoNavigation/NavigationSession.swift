@@ -499,7 +499,9 @@ public actor NavigationSession {
     } ?? false
     let count = continues ? (unplannedExitRun?.count ?? 0) + 1 : 1
     unplannedExitRun = (count, observation.observedAtMilliseconds)
-    guard count >= Self.offPlanDeviationObservationCount else { return }
+    // Past the planned exit the same fixes are its own evidence, which takes
+    // one more of them; the handover waits for that run to finish or break.
+    guard count >= Self.offPlanDeviationObservationCount, exitRun == nil else { return }
     unplannedExitRun = nil
     offPlanRun = nil
     engine.leaveAtUnplannedExit()

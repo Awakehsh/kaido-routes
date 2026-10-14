@@ -1797,25 +1797,32 @@ search from exact exit facilities. Runtime `FINISH_DRIVE` selects the next legal
 option consistent with the accepted return policy. It never reverses the graph or
 unlocks an arbitrary exit connector.
 
-`NavigationSession` recognises the released exit itself. Once admitted
-progress, or the matcher's own placement, is within the final 300 m of the
-route, it needs two consecutive accurate fixes, no more than three seconds
-apart, that place the car on the exit side of every road it could have taken
-instead: matched after the plan's last choice of road, or on a road reached
-only through the terminal edge, with no reachable off-plan road within twice
-the fix's allowance; or matching no corridor road at all within the exit's
-coverage, less twice the fix's accuracy. The coverage is read from the
-corridor itself — the nearest point near the exit where it stops following a
-road — and the compiler follows the roads leaving the exit decision until
-300 m from the exit, so a car off all of them there has taken it. The second
-fix must be past the end of the last edge, on its road, or off the corridor;
-the drive then finishes at the terminal occurrence and enters
-`EXIT_TRANSITION`, also from a deviation the exit's own road read as. A 15 m
-terminal edge is crossed between 1 Hz fixes, so the exit is recognised by
-where the car went rather than by one exact match on that edge. Driving on
-past the exit is a deviation and never finishes the journey. The Finish
-control and its Siri action remain a fallback gated on an admitted position
-near the end.
+`NavigationSession` recognises the released exit itself. The exit side
+starts after the plan's last choice of road: the last occurrence whose
+predecessor has any other successor, a road the plan drives on another pass
+included, since a route can end beside its own start. Once admitted
+progress, or the matcher's own placement, is past that choice, it needs
+three consecutive accurate fixes, no more than three seconds apart, that
+match no corridor road within the exit's coverage less four times the fix's
+accuracy, or lie on a road reached only through the terminal edge. Each
+must also lie at least four times its accuracy from every other corridor
+road, earlier passes of the plan included. The coverage is read from the
+corridor itself — the nearest point near the exit where it stops following
+a road — and the compiler follows the roads leaving the exit decision until
+300 m from the exit, so a car off all of them there has taken it. An exit
+ramp can run within metres of the road it leaves for its whole length (C1
+Shiodome and C2 Itabashi-honcho do), so neither the matcher's choice of
+pass nor its confidence tells them apart before the ramp ends; the evidence
+is where the car goes after it. The check runs before post-tunnel
+reacquisition holds the fix back, because a ramp beside a covered earlier
+pass can leave reacquisition pending. The unplanned-exit handover is
+checked after it on the same fix and does not fire while a run of the exit's
+evidence is open: the same fixes past the exit are often both, and the exit
+needs one more of them than the handover. That run finishes the drive
+within two more fixes or breaks, and a break lets the handover fire.
+The drive then finishes at the terminal occurrence and enters `EXIT_TRANSITION`. Driving on past the exit
+is a deviation and never finishes the journey. The Finish control and its
+Siri action remain a fallback gated on an admitted position near the end.
 
 ## Route-aware map matching
 

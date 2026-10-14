@@ -139,16 +139,17 @@ The product distinguishes what is known from what is still unconfirmed:
   and the driver's "already on the expressway" join remains the way to start
   (one direction of Toda-minami, along one route-head path within 1.5 km, of
   138 directional entrances).
-- The drive finishes at a released exit on consecutive fixes that show the
-  car on the exit side of every road it could have taken instead: on the
-  plan after its last choice of road, or on the road its exit leads onto,
-  with no reachable alternative within twice the fix's allowance; or on no
-  corridor road at all near the exit, where the corridor still holds every
-  alternative (it follows them for 300 m past the exit decision). A single
-  exact match on a short terminal edge is not required. Driving on past the
-  exit is a deviation like any other and never finishes the journey. In
-  replay the bundled exit-ended releases (C1 at Shiodome, C2 at
-  Itabashi-honcho) finish within 9 seconds of the exit. A route ending in a
+- The drive finishes at a released exit once the car is past the plan's
+  last choice of road, on three consecutive fixes that are on no corridor
+  road near the exit, where the corridor still holds every alternative (it
+  follows them for 300 m past the exit decision), and at least four times
+  their accuracy from every alternative, earlier passes of the plan
+  included. An exit ramp that runs beside the road it leaves cannot be told
+  from it before the ramp ends, so such a drive finishes after the ramp.
+  Driving on past the exit is a deviation like any other and never
+  finishes the journey. In replay over seeds 1–40 the bundled exit-ended
+  releases (C1 at Shiodome, C2 at Itabashi-honcho) finish 7 seconds after
+  the exit on average and within 21 seconds. A route ending in a
   PA completes on an admitted fix inside the final PA visit.
 - These behaviours are proven by a deterministic 1 Hz replay of every bundled
   foreground release through the Core Location adapters, the App's tunnel

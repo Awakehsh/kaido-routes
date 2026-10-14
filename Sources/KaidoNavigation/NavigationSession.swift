@@ -373,43 +373,36 @@ public actor NavigationSession {
       // place the car cannot have reached; anchor it back on admitted progress.
       try matcherSession.restart(at: currentOccurrenceID)
     }
-    if engine.snapshot.signalReacquisitionStatus == .pending {
-      // A car that left the expressway right after a tunnel never reacquires
-      // the plan, so its exit is looked for while reacquisition holds
-      // everything else back.
-      if detectsOffPlanDeviation,
-        let handedOver = handOverAtUnplannedExit(estimate: estimate, observation: observation)
-      {
-        return handedOver
-      }
-      return update(
-        estimate: Self.restorationEstimate(from: estimate),
-        guidanceProgressState: .insufficientMatcherEvidence
-      )
-    }
     let continuesPastRouteEnd =
       estimate.occurrenceID == nil
       && estimate.confidence != .lost
       && estimate.directedEdgeID.map(continuesPastRouteEnd) == true
-    // A road crossing over the exit can read as the branch the car missed
-    // it for; once the car is then off every corridor road beside the exit,
-    // it took the exit after all.
+    // A ramp beside an earlier pass can read as that pass, even one under
+    // cover that leaves reacquisition pending; the car's position past the
+    // exit decides it.
     if engine.snapshot.journeyPhase == .strictRoute
       || engine.snapshot.journeyPhase == .routeRecovery
     {
       observeRouteEnd(
         estimate: estimate,
         continuesPastRouteEnd: continuesPastRouteEnd,
-        separatedFromOffPlanRoads: separatedFromOffPlanRoads,
         observation: observation
       )
     }
     // A fix past the planned exit can also be clear of every expressway road;
-    // the planned exit's own evidence, just weighed, wins.
+    // the planned exit's own evidence, just weighed, wins. A car that left
+    // the expressway right after a tunnel never reacquires the plan, so this
+    // runs before reacquisition holds everything else back.
     if detectsOffPlanDeviation,
       let handedOver = handOverAtUnplannedExit(estimate: estimate, observation: observation)
     {
       return handedOver
+    }
+    if engine.snapshot.signalReacquisitionStatus == .pending {
+      return update(
+        estimate: Self.restorationEstimate(from: estimate),
+        guidanceProgressState: .insufficientMatcherEvidence
+      )
     }
     if detectsOffPlanDeviation,
       engine.snapshot.journeyPhase == .strictRoute
@@ -509,7 +502,9 @@ public actor NavigationSession {
     } ?? false
     let count = continues ? (unplannedExitRun?.count ?? 0) + 1 : 1
     unplannedExitRun = (count, observation.observedAtMilliseconds)
-    guard count >= Self.offPlanDeviationObservationCount else { return }
+    // Past the planned exit the same fixes are its own evidence, which takes
+    // one more of them; the handover waits for that run to finish or break.
+    guard count >= Self.offPlanDeviationObservationCount, exitRun == nil else { return }
     unplannedExitRun = nil
     offPlanRun = nil
     engine.leaveAtUnplannedExit()
@@ -805,23 +800,22 @@ public actor NavigationSession {
     }
   }
 
-  /// The exit is recognised by consecutive fixes that show the car on the
-  /// exit side of every road it could have taken instead: after the plan's
-  /// last choice of road, or on the road reached only through its terminal
-  /// edge, with no reachable off-plan road within twice the error the fix
-  /// allows; or matching no corridor road at all near the route end, where
-  /// the corridor holds every road the car could be on instead, the plan
-  /// itself included. The run finishes the route once a fix is past the end
-  /// or off the corridor there: a car turning at the foot of the ramp leaves
-  /// sideways, and a 15 m terminal edge is crossed between two 1 Hz fixes,
-  /// so no exact match on it is needed.
-  static let exitEvidenceObservationCount = 2
+  /// The exit is recognised once the car is past the plan's last choice of
+  /// road, by consecutive fixes off every corridor road near the exit, where
+  /// the corridor holds every road the car could be on instead of it, or on
+  /// the road reached only through the route's terminal edge. Each must also
+  /// lie clear of every such road, earlier passes of the plan included, by
+  /// four times the fix's accuracy: beside the exit the road the car missed
+  /// it for can be a pass of the plan the matcher does not consider, and an
+  /// exit ramp runs within metres of the road it leaves, so only fixes past
+  /// its end can tell them apart. A finished drive cannot be resumed, so the
+  /// bar is higher than for a deviation.
+  static let exitEvidenceObservationCount = 3
   static let coarseFixAccuracyMeters = 30.0
 
   private func observeRouteEnd(
     estimate: MatcherEstimate,
     continuesPastRouteEnd: Bool,
-    separatedFromOffPlanRoads: Bool,
     observation: RouteMatcherObservation
   ) {
     let matchedIndex =
@@ -833,13 +827,13 @@ public actor NavigationSession {
     guard let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex
     else { return }
-    // Parallel exit ramps can withhold admitted progress for the whole
-    // tail; the matcher's own placement there is enough to look for the car
-    // having driven past the end.
-    let isInTail =
+    // Parallel exit ramps can withhold admitted progress past the last
+    // choice; the matcher's own placement there is enough to look for the
+    // car having taken the exit.
+    let isPastLastChoice =
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
-      >= routeEnd.tailStartIndex
-    guard isInTail || continuesPastRouteEnd else {
+      >= routeEnd.exitSideStartIndex
+    guard isPastLastChoice || continuesPastRouteEnd else {
       exitRun = nil
       return
     }
@@ -849,30 +843,20 @@ public actor NavigationSession {
       observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
         <= Self.offPlanDeviationMaximumGapMilliseconds
     } ?? false
-    // The fix itself may lie up to twice its accuracy from the car.
+    let clearance = 4 * max(5, observation.horizontalAccuracyMeters)
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && routeEnd.metersFromExit(observation.coordinate)
-        <= routeEnd.exitCoverageMeters - 2 * max(5, observation.horizontalAccuracyMeters)
-    let isEvidence: Bool
-    if estimate.confidence == .lost {
-      isEvidence = isOffCorridorAtEnd
-    } else {
-      let isOnExitSide =
-        continuesPastRouteEnd
-        || matchedIndex.map { $0 >= routeEnd.exitSideStartIndex } == true
-      isEvidence = isOnExitSide && separatedFromOffPlanRoads
-    }
-    guard isEvidence else {
+        <= routeEnd.exitCoverageMeters - clearance
+    guard isOffCorridorAtEnd || continuesPastRouteEnd,
+      routeEnd.metersFromOtherRoads(observation.coordinate) >= clearance
+    else {
       exitRun = nil
       return
     }
     let count = continues ? (exitRun?.count ?? 0) + 1 : 1
     exitRun = (count, observation.observedAtMilliseconds)
-    guard count >= Self.exitEvidenceObservationCount,
-      continuesPastRouteEnd || isOffCorridorAtEnd
-        || routeEnd.metersPastEnd(observation.coordinate) >= RouteEndGeometry.beyondEndMeters
-    else { return }
+    guard count >= Self.exitEvidenceObservationCount else { return }
     exitRun = nil
     engine.finishAtRouteEnd()
   }
@@ -1543,24 +1527,20 @@ private struct DestinationParkingAreaEntry: Sendable {
 /// Where a route with a released exit ends, for recognising that the car has
 /// driven past it.
 private struct RouteEndGeometry: Sendable {
-  /// Occurrences that begin within this distance of the route end form the
-  /// exit tail; admitted progress must have reached it.
-  static let tailMeters = 300.0
-  static let beyondEndMeters = 15.0
-
-  let tailStartIndex: Int
   /// The first occurrence after the plan's last choice of road: from here on
   /// the car can only be on the exit.
   let exitSideStartIndex: Int
   /// The plan from `exitSideStartIndex` to its end.
   private let exit: [MatcherCoordinate]
+  /// Every corridor road but the exit and what continues past its end: the
+  /// roads the car could be on instead of the exit, earlier passes of the
+  /// plan included.
+  private let otherRoads: [[MatcherCoordinate]]
   /// How close to the exit the corridor holds every road the car could be
   /// on instead of it: the nearest point where it stops following one.
   /// Within this distance a fix matching no corridor road is on none of
   /// them.
   let exitCoverageMeters: Double
-  private let end: MatcherCoordinate
-  private let direction: (east: Double, north: Double)
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1573,30 +1553,27 @@ private struct RouteEndGeometry: Sendable {
       let last = routeEdges.last,
       last.coordinates.count >= 2
     else { return nil }
-    var remaining = 0.0
-    var tailStart = routeEdges.count - 1
-    for index in stride(from: routeEdges.count - 1, through: 0, by: -1) {
-      remaining += routeEdges[index].lengthMeters
-      guard remaining <= Self.tailMeters else { break }
-      tailStart = index
-    }
     let routeEdgeIDs = Set(routeEdges.map(\.id))
+    // A road the plan drives on another pass is still a choice here: on a
+    // route that ends beside its start, the road past the exit is the plan.
     let exitSideStartIndex =
       routeEdges.indices.dropFirst().last { index in
-        routeEdges[index - 1].successorEdgeIDs.contains { !routeEdgeIDs.contains($0) }
+        routeEdges[index - 1].successorEdgeIDs.contains { $0 != routeEdges[index].id }
       } ?? 0
     self.exitSideStartIndex = exitSideStartIndex
     let exit = routeEdges[exitSideStartIndex...].flatMap(\.coordinates)
     self.exit = exit
-    let end = last.coordinates[last.coordinates.count - 1]
-    let before = last.coordinates[last.coordinates.count - 2]
-    let offset = Self.planarOffset(from: before, to: end)
-    let length = hypot(offset.east, offset.north)
-    guard length > 0 else { return nil }
-    tailStartIndex = tailStart
-    self.end = end
-    direction = (offset.east / length, offset.north / length)
     let exitRoadIDs = last.successorEdgeIDs.filter { !routeEdgeIDs.contains($0) }
+    var pastEndIDs: Set<String> = []
+    var pending = Array(exitRoadIDs)
+    while let edgeID = pending.popLast() {
+      guard pastEndIDs.insert(edgeID).inserted, let edge = edgesByID[edgeID] else { continue }
+      pending += edge.successorEdgeIDs
+    }
+    let exitEdgeIDs = Set(routeEdges[exitSideStartIndex...].map(\.id))
+    otherRoads = corridor.edges.filter {
+      !exitEdgeIDs.contains($0.id) && !pastEndIDs.contains($0.id)
+    }.map(\.coordinates)
     exitCoverageMeters =
       corridor.edges.filter {
         !routeEdgeIDs.contains($0.id) && !exitRoadIDs.contains($0.id)
@@ -1606,16 +1583,15 @@ private struct RouteEndGeometry: Sendable {
       }.min() ?? .infinity
   }
 
-  /// Signed distance of a point past the route end, along the direction the
-  /// last edge arrives in.
-  func metersPastEnd(_ coordinate: MatcherCoordinate) -> Double {
-    let offset = Self.planarOffset(from: end, to: coordinate)
-    return offset.east * direction.east + offset.north * direction.north
-  }
-
   /// Distance from a point to the plan after its last choice of road.
   func metersFromExit(_ coordinate: MatcherCoordinate) -> Double {
     Self.meters(from: coordinate, toPolyline: exit)
+  }
+
+  /// Distance from a point to the nearest road the car could be on instead
+  /// of the exit.
+  func metersFromOtherRoads(_ coordinate: MatcherCoordinate) -> Double {
+    otherRoads.map { Self.meters(from: coordinate, toPolyline: $0) }.min() ?? .infinity
   }
 
   static func meters(

@@ -1,6 +1,7 @@
 #if canImport(CoreLocation)
   import Foundation
   import KaidoNavigation
+  import KaidoRouting
   import Testing
 
   /// The exit ramps at C1 Shiodome and C2 Itabashihoncho run within a few
@@ -87,6 +88,75 @@
       let summary = gateLine(file: file, seed: 32, run: run, label: "ROUTE-END-UNDER2X")
       print(summary)
       #expect(!run.completedEarly(), "\(summary)")
+    }
+
+    /// On the last lap the matcher can still hold the car on an earlier
+    /// lap's pass of the same road when it takes the exit, so neither
+    /// progress nor the matcher's placement reaches the exit side. These
+    /// drives were handed over as having left the route at an unplanned exit.
+    @Test(
+      "a loop whose matcher is laps behind at the exit still completes there",
+      arguments: [("c1-inner", "URBAN", UInt64(3)), ("c1-outer", "UNDER2X", 38)]
+    )
+    func lapsBehindAtTheExitCompletes(loop: String, noise: String, seed: UInt64) async throws {
+      let gate = try Self.threeLapGate(loop)
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: Self.noise(noise))
+      let summary = gateLine(file: "\(loop):3", seed: seed, run: run, label: "ROUTE-END-\(noise)")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+      #expect(run.records.last?.phaseTrigger == "USER_CONFIRMED_EXIT_HANDOFF_COMPLETED", "\(summary)")
+      #expect(
+        (run.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds,
+        "\(summary)"
+      )
+    }
+
+    @Test(
+      "a first-pass placement beside the exit never starts a false recovery",
+      arguments: ["bundled", "c1-inner:3"]
+    )
+    func firstPassBesideTheExitNeverRecovers(fixture: String) async throws {
+      let gate = fixture == "bundled"
+        ? try replayGate("c1-inner-shibakoen-to-shiodome-product-release.json")
+        : try Self.threeLapGate("c1-inner")
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 27, noise: .underReported)
+      let summary = gateLine(file: fixture, seed: 27, run: run, label: "ROUTE-END-UNDER2X")
+      print(summary)
+      #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+    }
+
+    /// Three laps of C1 inner from Shibakoen to Shiodome, or of C1 outer
+    /// from its first C1 entrance to the exit the planner recommends.
+    private static func threeLapGate(_ loop: String) throws -> LiveNavigationReplayGate {
+      let database = try replayGateDatabase()
+      let planner = try ShutoRoutePlanner(database: database)
+      let route: ShutoPlannedRoute
+      if loop == "c1-inner" {
+        route = try planner.planCircuit(
+          circuit: .c1Inner,
+          entryFacilityID: "shuto.ic.c1.shibakouen",
+          exitFacilityID: "shuto.ic.c1.shiodome",
+          laps: 3
+        )
+      } else {
+        let entry = try #require(
+          planner.circuitEntranceCandidates(for: .c1Outer).first { $0.routeID == "C1" }
+        ).facilityID
+        let exit = try planner.recommendedCircuitPairing(
+          for: .c1Outer, entranceFacilityID: entry, evidence: .etcNormalCarFrom2026October
+        ).exit.facilityID
+        route = try planner.planCircuit(
+          circuit: .c1Outer, entryFacilityID: entry, exitFacilityID: exit, laps: 3
+        )
+      }
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      return LiveNavigationReplayGate(release: release, database: database)
     }
 
     private static func noise(_ label: String) -> ReplayGateNoiseModel {

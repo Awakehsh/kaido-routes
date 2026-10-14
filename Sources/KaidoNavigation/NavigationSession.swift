@@ -370,18 +370,15 @@ public actor NavigationSession {
       // place the car cannot have reached; anchor it back on admitted progress.
       try matcherSession.restart(at: currentOccurrenceID)
     }
-    // A car that left the expressway right after a tunnel never reacquires
-    // the plan, so this runs before reacquisition holds everything else back.
-    if detectsOffPlanDeviation,
-      engine.snapshot.journeyPhase == .strictRoute
-        || engine.snapshot.journeyPhase == .routeRecovery
-    {
-      observeUnplannedExit(estimate: estimate, observation: observation)
-      if engine.snapshot.journeyPhase == .surfaceEgress {
-        return update(estimate: estimate, guidanceProgressState: .notApplicable)
-      }
-    }
     if engine.snapshot.signalReacquisitionStatus == .pending {
+      // A car that left the expressway right after a tunnel never reacquires
+      // the plan, so its exit is looked for while reacquisition holds
+      // everything else back.
+      if detectsOffPlanDeviation,
+        let handedOver = handOverAtUnplannedExit(estimate: estimate, observation: observation)
+      {
+        return handedOver
+      }
       return update(
         estimate: Self.restorationEstimate(from: estimate),
         guidanceProgressState: .insufficientMatcherEvidence
@@ -403,6 +400,13 @@ public actor NavigationSession {
         separatedFromOffPlanRoads: separatedFromOffPlanRoads,
         observation: observation
       )
+    }
+    // A fix past the planned exit can also be clear of every expressway road;
+    // the planned exit's own evidence, just weighed, wins.
+    if detectsOffPlanDeviation,
+      let handedOver = handOverAtUnplannedExit(estimate: estimate, observation: observation)
+    {
+      return handedOver
     }
     if detectsOffPlanDeviation,
       engine.snapshot.journeyPhase == .strictRoute
@@ -470,6 +474,20 @@ public actor NavigationSession {
   /// the margin. As for any deviation, one such fix can be a reflection;
   /// consecutive ones mean the car left.
   static let unplannedExitMarginMeters = 100.0
+
+  /// The update for a fix that ended the expressway portion at an unplanned
+  /// exit, or nil when it did not.
+  private func handOverAtUnplannedExit(
+    estimate: MatcherEstimate,
+    observation: RouteMatcherObservation
+  ) -> NavigationSessionUpdate? {
+    guard engine.snapshot.journeyPhase == .strictRoute
+      || engine.snapshot.journeyPhase == .routeRecovery
+    else { return nil }
+    observeUnplannedExit(estimate: estimate, observation: observation)
+    guard engine.snapshot.journeyPhase == .surfaceEgress else { return nil }
+    return update(estimate: estimate, guidanceProgressState: .notApplicable)
+  }
 
   private func observeUnplannedExit(
     estimate: MatcherEstimate,

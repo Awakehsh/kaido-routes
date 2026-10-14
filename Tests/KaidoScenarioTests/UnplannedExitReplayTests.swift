@@ -35,6 +35,28 @@
       #expect(run.wrongCommitCount() == 0, "\(summary)")
     }
 
+    /// A fix past the planned exit can be both the exit's own evidence and
+    /// clear of every expressway road. These drives took their exit and once
+    /// heard "left the route" on the fix that completes it.
+    @Test(
+      "taking the planned exit completes it, never hands over",
+      arguments: [("daikoku-loop-lap-one-stop:1", "URBAN", UInt64(29)), ("c2-inner-oujiminami-itabashihoncho-product-release.json", "UNDER2X", 37)]
+    )
+    func plannedExitCompletes(fixture: String, noise: String, seed: UInt64) async throws {
+      let gate =
+        fixture == "daikoku-loop-lap-one-stop:1"
+        ? try Self.daikokuLoopWithLapOneStop(laps: 1) : try replayGate(fixture)
+      let run = try await gate.run(
+        legs: gate.plannedLegs(),
+        seed: seed,
+        noise: noise == "UNDER2X" ? .underReported : .urban
+      )
+      let summary = Self.line(file: fixture, seed: seed, run: run)
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(run.records.last?.phaseTrigger == "USER_CONFIRMED_EXIT_HANDOFF_COMPLETED", "\(summary)")
+    }
+
     /// The lap-1 Daikoku PA stop's approach diverted down the road to the
     /// Daikoku-futou exit: that road leaves the expressway.
     @Test("a PA stop's approach diverted off the expressway hands the drive over", arguments: [UInt64(1), 2])
@@ -85,14 +107,14 @@
 
     /// Three laps of the Daikoku loop from Wangan-Kanpachi to Haneda with the
     /// Daikoku PA stop, which the planner places in the first lap.
-    static func daikokuLoopWithLapOneStop() throws -> LiveNavigationReplayGate {
+    static func daikokuLoopWithLapOneStop(laps: Int = 3) throws -> LiveNavigationReplayGate {
       let database = try replayGateDatabase()
       let planner = try ShutoRoutePlanner(database: database)
       let base = try planner.planCircuit(
         circuit: .daikokuYokohamaLoop,
         entryFacilityID: "shuto.ic.b.wangankanpachi",
         exitFacilityID: "shuto.ic.1-haneda.haneda",
-        laps: 3
+        laps: laps
       )
       let route = try planner.addingParkingStops(["shuto.pa.daikoku"], to: base)
       let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(

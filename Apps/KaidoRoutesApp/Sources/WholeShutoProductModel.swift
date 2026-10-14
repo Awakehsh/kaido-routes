@@ -2754,7 +2754,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard canFinishLiveExpressway, let session = liveDriveSession else {
       return false
     }
-    let snapshot = await session.finishDrive()
+    let snapshot = await session.finishAtRouteEnd()
     guard snapshot.journeyPhase == .exitTransition,
       snapshot.egress.status == .active
     else {

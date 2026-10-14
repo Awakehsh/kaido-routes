@@ -2171,6 +2171,120 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(record.arrived)
   }
 
+  // Finish is offered within 150 m of the route end on admitted progress,
+  // which can still be short of the terminal occurrence; pressing it there
+  // must still let the drive complete, with or without a surface leg.
+  func testFinishPressedShortOfTheTerminalOccurrenceCompletesTheDrive() async throws {
+    for ending in [WholeShutoJourneyEnding.exit, .returnToOrigin] {
+      var nowMilliseconds = 1_000
+      let output = SpeechRecoveryAppOutput()
+      output.autoFinish = true
+      let model = WholeShutoForegroundReleaseFactory.makeModel(
+        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+        checkpointStore: WholeShutoMemoryCheckpointStore(),
+        liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+        speechOutput: output,
+        nowMillisecondsProvider: { nowMilliseconds },
+        languageSelectionProvider: {
+          NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+        },
+        driveHistoryStore: MemoryDriveHistoryStore()
+      )
+      model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+      model.selectCircuit(.c1Outer)
+      await waitForCircuitPairing(model)
+      XCTAssertTrue(model.startCircuitJourney())
+      await waitForLiveNavigationPreparation(model)
+      if ending == .exit {
+        model.selectJourneyEnding(.exit)
+        await waitForLiveNavigationPreparation(model)
+      }
+      let route = try XCTUnwrap(model.selectedRoute)
+      let nodes = Dictionary(uniqueKeysWithValues: model.database.nodes.map { ($0.nodeID, $0.coordinate) })
+      let terminalEdgeID = try XCTUnwrap(route.edges.last?.edgeID)
+      let started = await model.startLiveJourney()
+      XCTAssertTrue(started, model.failureCode ?? "no failure code")
+      var index = 0
+      var pressed = false
+      var lastPosition: ShutoCoordinate?
+      var heading = 0.0
+      edges: for edge in route.edges[(route.edges.count - 40)...] {
+        let start = nodes[edge.fromNodeID]!, end = nodes[edge.toNodeID]!
+        for fraction in Self.oneHertzFractions(from: start, to: end) {
+          index += 1
+          nowMilliseconds += 1_000
+          let coordinate = Self.interpolate(from: start, to: end, fraction: fraction)
+          heading = Self.bearing(from: start, to: end)
+          lastPosition = coordinate
+          await model.consumeLiveObservationForTesting(
+            Self.liveLocationEnvelope(
+              id: "finish.\(index)", coordinate: coordinate, atMilliseconds: nowMilliseconds,
+              courseDegrees: heading, speedMetersPerSecond: 15
+            )
+          )
+          if model.phase == .surfaceAccess, model.routeJoinState == .offered {
+            _ = await model.declareAlreadyOnRoute()
+          }
+          let onTerminal = model.runtimeOccurrenceID?.hasSuffix(terminalEdgeID) == true
+          if model.canFinishLiveExpressway, !onTerminal {
+            let finished = await model.finishLiveExpressway()
+            XCTAssertTrue(finished, "\(ending): \(model.failureCode ?? "no failure code")")
+            pressed = true
+            break edges
+          }
+        }
+      }
+      XCTAssertTrue(pressed, "Finish never offered short of the terminal occurrence (\(ending))")
+      guard pressed, let from = lastPosition else { continue }
+      // Keep driving along the same heading, off the end of the route.
+      let metersPerDegree = 6_371_000.0 * .pi / 180
+      for step in 1...5 where model.phase != .completed {
+        nowMilliseconds += 1_000
+        let distance = Double(step) * 15
+        let coordinate = ShutoCoordinate(
+          latitude: from.latitude + cos(heading * .pi / 180) * distance / metersPerDegree,
+          longitude: from.longitude + sin(heading * .pi / 180) * distance / (metersPerDegree * cos(from.latitude * .pi / 180))
+        )
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "finish.after.\(step)", coordinate: coordinate, atMilliseconds: nowMilliseconds,
+            courseDegrees: heading, speedMetersPerSecond: 15
+          )
+        )
+      }
+      if ending == .returnToOrigin {
+        XCTAssertEqual(model.phase, .surfaceEgress)
+        let egress = try XCTUnwrap(model.egressRoute)
+        var surface = 0
+        for (start, end) in zip(egress.coordinates, egress.coordinates.dropFirst()) where model.phase == .surfaceEgress {
+          for fraction in Self.oneHertzFractions(from: start, to: end) where model.phase == .surfaceEgress {
+            surface += 1
+            nowMilliseconds += 1_000
+            await model.consumeLiveObservationForTesting(
+              Self.liveLocationEnvelope(
+                id: "finish.surface.\(surface)", coordinate: Self.interpolate(from: start, to: end, fraction: fraction),
+                atMilliseconds: nowMilliseconds, courseDegrees: Self.bearing(from: start, to: end), speedMetersPerSecond: 10
+              )
+            )
+          }
+        }
+        for step in 1...3 where model.phase != .completed {
+          nowMilliseconds += 1_000
+          await model.consumeLiveObservationForTesting(
+            Self.liveLocationEnvelope(
+              id: "finish.arrived.\(step)", coordinate: egress.coordinates.last!,
+              atMilliseconds: nowMilliseconds, speedMetersPerSecond: 2
+            )
+          )
+        }
+      }
+      XCTAssertEqual(model.phase, .completed, "\(ending)")
+      XCTAssertEqual(model.runtimeJourneyPhase, .completed, "\(ending)")
+      XCTAssertNil(model.failureCode, "\(ending)")
+      model.reset()
+    }
+  }
+
   func testPassingDaikokuPAEndsTheDriveNearTheDestination() async throws {
     var nowMilliseconds = 1_000
     let output = SpeechRecoveryAppOutput()

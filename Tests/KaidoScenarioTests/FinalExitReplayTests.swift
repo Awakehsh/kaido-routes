@@ -30,7 +30,9 @@
       #expect(run.reachedCompletion, "\(summary)")
       #expect(!run.completedEarly(), "\(summary)")
       #expect(run.wrongCommitCount() == 0, "\(summary)")
-      #expect(run.longestUnadmittedSeconds <= 30, "\(summary)")
+      // Past the route end the drive waits on completion, which
+      // RouteEndReplayTests bounds; this pin is about the ramp.
+      #expect(run.longestUnadmittedSecondsBeforeEgress <= 30, "\(summary)")
     }
 
     /// Main completed these drives at the exit the car had driven past.

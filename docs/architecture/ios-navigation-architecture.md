@@ -124,6 +124,19 @@ fix's accuracy allowance of the matched edge. A reachable road is a branch
 leaving the plan at or after the last occurrence where the car was matched
 clear of every such branch; a ramp merging into the plan or a stacked road
 the car never left the plan for is geometry, not a place it can be.
+The matcher weighs only the passes of a repeated road the car can be on: from
+twelve occurrences behind admitted progress to the farthest occurrence it can
+have reached since, under the session's 40 m/s-plus-100 m reach rule. A road
+whose every pass lies outside that window is matched as an off-plan road. It
+competes, and counts as a road the car can drive onto, only where the car can
+leave the plan for it within 3 km of an occurrence in the window — the lap a
+loop already drove after a missed exit, or the road a passed-by PA stop leaves
+for the next lap — never a road beside the plan that only another lap leads
+to, and the next stretch of it is no rival to it. Past the plan's final exit,
+the road the plan leaves there — on a loop, the lap it began on — runs beside
+the exit ramp: it holds back only the final occurrence, so the ramp's own
+progress is admitted while completion still waits for the car to be clear of
+that road, which stays one the car can drive onto until then.
 `NavigationSessionUpdate.admittedConfidence` carries that decision, and
 presentation reads it, never the raw matcher value. The seam cannot mint
 `EntryTransitionAdmissionContext`,
@@ -452,14 +465,14 @@ against the exact release-bound corridor, and emits a package-only
 receive-reversed observations, release identity drift, fixes away from every
 corridor road or resolved to a road the plan does not use, mismatched heading,
 and backward progression. The adapter passes the matcher's own estimate on;
-nothing is relabelled onto the first route edge. The one correction is the
-pass of a road the plan drives more than once: a loop can drive the road
-beside its entrance again near its end, and a matcher that settles on that
-later pass cannot move back, so the route head would never be confirmed. The
-car can only be on the earliest pass it can have reached since the adapter
-first saw it, under the session's 40 m/s-plus-100 m reach rule
-(`RoutePassReach`); the adapter reports that pass with the matcher's own
-confidence and leaves the matcher's state untouched. Because the
+nothing is relabelled onto the first route edge. A road the plan drives more
+than once — a loop can drive the road beside its entrance again near its end —
+is matched only on its passes in the route head the entry gate weighs
+(`RoutePassReach.routeHead`); its later passes are an off-plan road there, so
+the matcher cannot settle on a pass the car has not reached. A driver's join
+has no route head to bound it: the adapter reports the earliest pass the car
+can have reached since the adapter first saw it, under the session's
+40 m/s-plus-100 m reach rule, with the matcher's own confidence. Because the
 corridor holds expressway roads only, a street beneath or beside a ramp can
 match the ramp as confidently as the ramp itself, so presence near the ramp is
 never entry. Entry needs at least three ordered, heading-compatible MEDIUM or

@@ -14,7 +14,7 @@
   struct LaterLapBranchReplayTests {
     @Test(
       "a later lap's wrong branch at 西新宿 never advances the plan",
-      arguments: [(2, 2, UInt64(2)), (2, 2, 40), (3, 3, 10)]
+      arguments: [(2, 2, UInt64(2)), (2, 2, 40), (3, 3, 2), (3, 3, 10)]
     )
     func laterLapBranchNeverAdvances(laps: Int, lap: Int, seed: UInt64) async throws {
       let (gate, lapRange) = try Self.c2Loop(laps: laps, lap: lap)

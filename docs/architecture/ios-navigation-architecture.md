@@ -136,7 +136,12 @@ to, and the next stretch of it is no rival to it. Past the plan's final exit,
 the road the plan leaves there — on a loop, the lap it began on — runs beside
 the exit ramp: it holds back only the final occurrence, so the ramp's own
 progress is admitted while completion still waits for the car to be clear of
-that road, which stays one the car can drive onto until then.
+that road, which stays one the car can drive onto until then. Once the
+matcher has placed the car on an off-plan road it could have left the plan
+for, that road keeps competing with any match on the plan it does not lead to
+within the 40 m/s-plus-100 m reach since that placement, for up to 30 s and
+while a road it leads to stays near the fix: a match beside a branch the car
+took is a jump between roads, not the car rejoining the plan.
 `NavigationSessionUpdate.admittedConfidence` carries that decision, and
 presentation reads it, never the raw matcher value. The seam cannot mint
 `EntryTransitionAdmissionContext`,

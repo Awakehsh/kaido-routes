@@ -384,6 +384,9 @@ public struct RouteMatcherSession: Sendable {
   /// admitted progress and reach. A road whose every pass lies outside it is
   /// matched as an off-plan road. Nil admits every pass.
   public var occurrenceWindow: ClosedRange<Int>?
+  /// The off-plan road the matcher last placed the car on with confidence,
+  /// one it can have left the plan for, and when.
+  private var offPlanPlacement: (edgeID: String, observedAtMilliseconds: Int)?
 
   fileprivate init(
     corridor: RouteMatcherCorridor,
@@ -428,6 +431,7 @@ public struct RouteMatcherSession: Sendable {
     lastMeasuredEdges = [:]
     lastSeparatedOccurrenceIndex = nil
     lastOnPlanOccurrenceIndex = nil
+    offPlanPlacement = nil
   }
 
   public mutating func restart(at initialOccurrenceID: String?) throws {
@@ -478,7 +482,7 @@ public struct RouteMatcherSession: Sendable {
       && selectedIndex.map { index in
         model.finalExitIndex.map { index > $0 } == true && index < model.finalOccurrenceIndex
       } == true
-    let competing = model.offPlanEdgeIDs(
+    var competing = model.offPlanEdgeIDs(
       within: lastMeasuredEdges,
       observation: observation,
       matchedDistanceMeters: estimate.distanceMeters,
@@ -488,6 +492,34 @@ public struct RouteMatcherSession: Sendable {
     ).filter {
       $0 != estimate.directedEdgeID && isReachable($0)
         && !(isOnFinalExit && model.isDrivenBeforeFinalExit($0))
+    }
+    // A match on the plan right after the car was placed on an off-plan road
+    // it could have left the plan for is a jump between roads unless that
+    // road leads there in the distance the car can have driven since: while
+    // a road it leads to is still near the fix, the car may be on it.
+    if estimate.occurrenceID == nil, estimate.confidence == .high || estimate.confidence == .medium,
+      let edgeID = estimate.directedEdgeID, isReachable(edgeID)
+    {
+      offPlanPlacement = (edgeID, observation.observedAtMilliseconds)
+    } else if let selectedIndex, let placement = offPlanPlacement,
+      estimate.confidence != .lost
+    {
+      let elapsed = observation.observedAtMilliseconds - placement.observedAtMilliseconds
+      let roads = model.roadsAhead(
+        of: placement.edgeID,
+        withinMeters: Double(elapsed) / 1_000
+          * NavigationSession.maximumPlausibleSpeedMetersPerSecond
+          + NavigationSession.reachMarginMeters
+      )
+      let nearby = roads.filter { lastMeasuredEdges[$0] != nil }
+      let rejoins =
+        roads.contains(model.routeStatesByIndex[selectedIndex]?.edgeID ?? "")
+        || nearby.contains { !model.isOffPlan($0) && !model.isPassOutsideWindow($0, window: window) }
+      if elapsed > Self.offPlanPlacementMilliseconds || rejoins || nearby.isEmpty {
+        offPlanPlacement = nil
+      } else if let road = nearby.min() {
+        competing.append(road)
+      }
     }
     if let selectedIndex, estimate.confidence != .lost {
       lastOnPlanOccurrenceIndex = selectedIndex
@@ -506,6 +538,10 @@ public struct RouteMatcherSession: Sendable {
       edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters)
     )
   }
+
+  /// How long a confident placement on an off-plan road outweighs the plan
+  /// matches beside it.
+  static let offPlanPlacementMilliseconds = 30_000
 
   private mutating func estimate(
     for observation: RouteMatcherObservation
@@ -955,6 +991,28 @@ private struct MatcherModel: Sendable {
     departureRootOccurrenceIndexes[edgeID]?.contains { root in
       root >= lower && upper.map { root <= $0 } != false
     } == true
+  }
+
+  /// The edge and every road the car can have driven onto from it within
+  /// the distance, counted from the edge's end: the car may be anywhere
+  /// along the edge itself.
+  func roadsAhead(of edgeID: String, withinMeters limit: Double) -> Set<String> {
+    var queue = (edges[edgeID]?.successorEdgeIDs ?? []).sorted()
+    var meters = Dictionary(uniqueKeysWithValues: queue.map { ($0, 0.0) })
+    meters[edgeID] = 0
+    var position = 0
+    while position < queue.count {
+      let current = queue[position]
+      position += 1
+      let reached = meters[current]! + (edges[current]?.lengthMeters ?? 0)
+      guard reached <= limit else { continue }
+      for successor in edges[current]?.successorEdgeIDs ?? []
+      where meters[successor].map({ reached < $0 }) ?? true {
+        meters[successor] = reached
+        queue.append(successor)
+      }
+    }
+    return Set(meters.keys)
   }
 
   /// A road the plan drove before its final exit and does not drive again.

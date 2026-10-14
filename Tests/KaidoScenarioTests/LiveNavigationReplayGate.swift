@@ -520,6 +520,11 @@
 
     // MARK: Route geometry helpers
 
+    func routeEndDistance(occurrenceIndex index: Int) -> Double {
+      index + 1 < routeStartDistances.count
+        ? routeStartDistances[index + 1] : routeLengthMeters
+    }
+
     func routeDistance(occurrenceIndex: Int, fraction: Double) -> Double {
       routeStartDistances[occurrenceIndex]
         + fraction
@@ -554,7 +559,8 @@
       seed: UInt64,
       noise: ReplayGateNoiseModel = .urban,
       tunnelOutage: ReplayGateTunnelOutage = .none,
-      lapChange: ReplayGateLapChange? = nil
+      lapChange: ReplayGateLapChange? = nil,
+      driverJoin: ReplayGateDriverJoin? = nil
     ) async throws -> ReplayGateRun {
       let truth = ReplayGateTruthSampler.sample(legs: legs, gate: self)
       let runtime = try KaidoProductNavigationRuntime(
@@ -585,6 +591,7 @@
         }
       )
       var isInTunnel = false
+      var isJoinDeclared = false
       var lapChangeOutcome: ReplayGateLapChangeOutcome?
       for (second, point) in truth.enumerated() {
         if let lapChange, lapChangeOutcome == nil,
@@ -653,9 +660,24 @@
         var estimate: MatcherEstimate?
         switch before.journeyPhase {
         case .planning, .approachToEntry, .entryTransition:
-          let evidence = try entryAdapter.adapt(envelope)
-          _ = try await session.observeEntryTransitionEvidence(evidence)
-          rawConfidence = evidence.confidence
+          if let driverJoin, second >= driverJoin.declaredAtSecond, !isJoinDeclared {
+            isJoinDeclared = await session.declareAlreadyOnRoute(atMilliseconds: observedAt)
+          }
+          if isJoinDeclared {
+            // While the declaration stands the App offers each fix to the
+            // join, from the same adapter that watched the approach.
+            let evidence = try entryAdapter.adaptRouteJoin(envelope)
+            _ = try await session.observeRouteJoinEvidence(evidence)
+            rawConfidence = evidence.confidence
+          } else if driverJoin != nil {
+            // The reviewed ramp never confirms in this drive; the adapter
+            // still sees every fix, as it does in the App.
+            rawConfidence = try entryAdapter.adapt(envelope).confidence
+          } else {
+            let evidence = try entryAdapter.adapt(envelope)
+            _ = try await session.observeEntryTransitionEvidence(evidence)
+            rawConfidence = evidence.confidence
+          }
         case .strictRoute, .routeRecovery:
           let update = try await session.observe(envelope.observation)
           rawConfidence = update.matcherEstimate.confidence
@@ -720,6 +742,12 @@
 
   enum ReplayGateError: Error {
     case observationRejected(Int)
+  }
+
+  /// The driver says "already on the expressway" at a given second of a drive
+  /// whose reviewed ramp never confirms.
+  struct ReplayGateDriverJoin: Sendable {
+    let declaredAtSecond: Int
   }
 
   /// What Core Location delivers under a tunnel or covered road.
@@ -1126,6 +1154,49 @@
         }
       }
       return count
+    }
+
+    /// How far the occurrence the drive entered or joined at lies from the
+    /// car, positive ahead: zero within that occurrence.
+    var entryCommitOffsetMeters: Double? {
+      guard let entry = entryRecord,
+        let index = entry.currentOccurrenceIndex,
+        let truthDistance = entry.truth.routeDistanceMeters
+      else { return nil }
+      let start = gate.routeStartDistances[index]
+      let end = gate.routeEndDistance(occurrenceIndex: index)
+      if truthDistance < start { return start - truthDistance }
+      if truthDistance > end { return end - truthDistance }
+      return 0
+    }
+
+    /// Cues spoken while the car is on the plan for a maneuver it has already
+    /// driven past or that lies beyond the longest cue window ahead of it.
+    func misplacedCueCount(
+      passedToleranceMeters: Double = 300,
+      maximumLeadMeters: Double = 1_000
+    ) -> Int {
+      let plan = gate.release.navigation.bundle.routePlan
+      return records.reduce(0) { count, record in
+        guard let truthDistance = record.truth.routeDistanceMeters else { return count }
+        return count
+          + record.emittedMovementOccurrenceIDs.count { movementID in
+            guard let movement = plan.occurrence(id: movementID) else { return true }
+            let lead = gate.routeStartDistances[movement.index] - truthDistance
+            return lead < -passedToleranceMeters || lead > maximumLeadMeters
+          }
+      }
+    }
+
+    /// Seconds from the first fix on the RoutePlan to strict-route entry.
+    var entryLatencySeconds: Int? {
+      guard let entry = entryRecord,
+        let onRoute = records.first(where: {
+          if case .occurrence = $0.truth.kind { return true }
+          return false
+        })
+      else { return nil }
+      return entry.second - onRoute.second
     }
 
     /// Fixes at which the car was on the plan, or still approaching it, yet

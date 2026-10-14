@@ -2517,7 +2517,23 @@ counting their length, so progress resumes where the road rejoins the plan. A
 fix on that road that does not count is not deviation evidence either, so
 passing a stop never enters recovery. A stop whose approach is left elsewhere,
 such as the Daikoku approach diverted to the Daikoku-futou exit, is not covered:
-that road leaves the expressway.
+that road leaves the expressway, and the unplanned-exit handover below takes
+it.
+
+An unplanned exit ends the expressway portion. The session watches strict
+route and recovery for fixes the matcher puts on no corridor road, at least
+100 m from every road of the bundled expressway network, which the App passes
+in with the live admission. Two consecutive ones, as for any deviation, move
+the actor to `SURFACE_EGRESS` with `UNPLANNED_EXIT`: neither a recovery nor a
+completion. A wrong junction branch onto another expressway leaves the
+corridor too, but stays within the network, so it stays in recovery until
+the car leaves the expressway.
+The check runs before post-tunnel reacquisition holds the rest of the fix
+back, because a car that left right after a tunnel never reacquires the plan.
+The App then speaks once and either starts a provider-only ordinary-road leg
+(highways avoided) from the car to the journey's end, or ends an exit-only or
+PA-ended journey there. That leg completes on arrival without the session,
+and a relaunch restores it from the session checkpoint's trigger.
 
 ### Pre-departure journey ending
 

@@ -535,6 +535,22 @@ public struct NavigationEngine: Sendable {
     refreshPendingOccurrences()
   }
 
+  /// The car left the expressway where the plan does not. The expressway
+  /// portion ends there: it is neither a recovery back onto the plan nor a
+  /// completion of it. Progress stays where it stood.
+  package mutating func leaveAtUnplannedExit() {
+    guard snapshot.journeyPhase == .strictRoute
+      || snapshot.journeyPhase == .routeRecovery
+    else { return }
+    snapshot.recovery = RecoveryState()
+    snapshot.egress = EgressState()
+    snapshot.finishConfirmationExitFacilityID = nil
+    snapshot.activeGuidanceFrame = nil
+    snapshot.guidancePlanningStatus = .inactive
+    snapshot.journeyPhase = .surfaceEgress
+    snapshot.lastPhaseTransitionTrigger = "UNPLANNED_EXIT"
+  }
+
   /// Joins STRICT_ROUTE at an occurrence no reviewed entry ramp proved.
   ///
   /// The driver was already on the expressway when the drive started, so the

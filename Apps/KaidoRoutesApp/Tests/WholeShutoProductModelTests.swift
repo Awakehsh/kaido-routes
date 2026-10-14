@@ -1911,6 +1911,266 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  /// A C1 outer loop that returns to its origin, driven until the car takes
+  /// an exit the plan does not. Returns the model on the expressway road just
+  /// before that exit, with the exit's own road and a way off it.
+  private func driveC1OuterToAnUnplannedExit(
+    ending: WholeShutoJourneyEnding,
+    exitFartherThanMeters minimumExitMeters: Double = 0,
+    store: WholeShutoMemoryCheckpointStore,
+    output: SpeechRecoveryAppOutput,
+    history: MemoryDriveHistoryStore,
+    clock: @escaping () -> Int,
+    advance: @escaping () -> Void
+  ) async throws -> (
+    model: WholeShutoProductModel,
+    drive: (ShutoCoordinate, ShutoCoordinate) async -> Void,
+    rampEnd: ShutoCoordinate,
+    heading: Double
+  ) {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output,
+      nowMillisecondsProvider: clock,
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      },
+      driveHistoryStore: history
+    )
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6777, longitude: 139.7708))
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
+    if ending == .exit {
+      model.selectJourneyEnding(.exit)
+      await waitForLiveNavigationPreparation(model)
+    }
+    let route = try XCTUnwrap(model.selectedRoute)
+    let database = model.database
+    let edges = Dictionary(uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) })
+    let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let nodes = Dictionary(uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0.coordinate) })
+    let exitEdges = Set(
+      database.directionalFacilities.filter(\.canExit).flatMap { $0.exitEdgeCandidates.map(\.edgeID) }
+    )
+    // The last choice of road before the plan's end whose other road leads,
+    // without a further choice, to an exit the plan does not take.
+    func exitPath(from edge: ShutoNetworkDatabase.Edge) -> [ShutoNetworkDatabase.Edge]? {
+      var path = [edge]
+      while path.count < 60 {
+        if exitEdges.contains(path[path.count - 1].edgeID) { return path }
+        let next = (outgoing[path[path.count - 1].toNodeID] ?? []).filter {
+          $0.toNodeID != path[path.count - 1].fromNodeID
+        }
+        guard next.count == 1 else { return nil }
+        path.append(next[0])
+      }
+      return nil
+    }
+    let plannedEnd = route.destinationCoordinate
+    var found: (index: Int, path: [ShutoNetworkDatabase.Edge])?
+    for index in stride(from: route.edges.count - 2, through: 40, by: -1) where found == nil {
+      for alternative in (outgoing[route.edges[index].toNodeID] ?? [])
+      where alternative.edgeID != route.edges[index + 1].edgeID
+        && alternative.toNodeID != route.edges[index].fromNodeID
+      {
+        if let path = exitPath(from: alternative),
+          let end = nodes[path[path.count - 1].toNodeID],
+          Self.meters(end, plannedEnd) > minimumExitMeters
+        {
+          found = (index, path)
+          break
+        }
+      }
+    }
+    let (divergence, exitRoad) = try XCTUnwrap(found)
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    var observationIndex = 0
+    func drive(from start: ShutoCoordinate, to end: ShutoCoordinate) async {
+      for fraction in Self.oneHertzFractions(from: start, to: end)
+      where model.phase != .completed {
+        observationIndex += 1
+        advance()
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "unplanned-exit.\(observationIndex)",
+            coordinate: Self.interpolate(from: start, to: end, fraction: fraction),
+            atMilliseconds: clock(),
+            courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 15
+          )
+        )
+      }
+    }
+    // Join the loop a little before the exit, then take it.
+    for edge in route.edges[(divergence - 30)...divergence] {
+      await drive(from: nodes[edge.fromNodeID]!, to: nodes[edge.toNodeID]!)
+      if model.phase == .surfaceAccess, model.routeJoinState == .offered {
+        let declared = await model.declareAlreadyOnRoute()
+        XCTAssertTrue(declared)
+      }
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    for edge in exitRoad {
+      await drive(from: nodes[edge.fromNodeID]!, to: nodes[edge.toNodeID]!)
+    }
+    let last = exitRoad[exitRoad.count - 1]
+    let rampEnd = nodes[last.toNodeID]!
+    return (
+      model, { await drive(from: $0, to: $1) }, rampEnd,
+      Self.bearing(from: nodes[last.fromNodeID]!, to: rampEnd) * .pi / 180
+    )
+  }
+
+  private static func meters(_ a: ShutoCoordinate, _ b: ShutoCoordinate) -> Double {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    return hypot(
+      (a.longitude - b.longitude) * metersPerDegree * cos(a.latitude * .pi / 180),
+      (a.latitude - b.latitude) * metersPerDegree
+    )
+  }
+
+  /// Off the end of the exit ramp, straight on 100 m and then turned away
+  /// from the plan, until the session hands over or `meters` run out.
+  private func driveAwayFromThePlan(
+    _ model: WholeShutoProductModel,
+    from rampEnd: ShutoCoordinate,
+    heading: Double,
+    meters: Double,
+    drive: (ShutoCoordinate, ShutoCoordinate) async -> Void
+  ) async {
+    let metersPerDegree = 6_371_000.0 * .pi / 180
+    let scale = cos(rampEnd.latitude * .pi / 180)
+    func offset(_ from: ShutoCoordinate, _ bearing: Double, _ distance: Double) -> ShutoCoordinate {
+      ShutoCoordinate(
+        latitude: from.latitude + cos(bearing) * distance / metersPerDegree,
+        longitude: from.longitude + sin(bearing) * distance / (metersPerDegree * scale)
+      )
+    }
+    let straight = offset(rampEnd, heading, 100)
+    let candidates = [heading + .pi / 2, heading - .pi / 2].map { offset(straight, $0, meters) }
+    let plan = model.selectedRoute?.coordinates ?? []
+    func nearest(_ point: ShutoCoordinate) -> Double {
+      plan.map { Self.meters($0, point) }.min() ?? .infinity
+    }
+    let away = candidates.max { nearest($0) < nearest($1) }!
+    await drive(rampEnd, straight)
+    await drive(straight, away)
+  }
+
+  func testLeavingTheExpresswayHandsOverToOrdinaryRoadsAndArrives() async throws {
+    var nowMilliseconds = 1_000
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let history = MemoryDriveHistoryStore()
+    let store = WholeShutoMemoryCheckpointStore()
+    let (model, drive, rampEnd, heading) = try await driveC1OuterToAnUnplannedExit(
+      ending: .returnToOrigin, store: store, output: output, history: history,
+      clock: { nowMilliseconds }, advance: { nowMilliseconds += 1_000 }
+    )
+    XCTAssertTrue(model.requiresSurfaceEgress)
+    await driveAwayFromThePlan(model, from: rampEnd, heading: heading, meters: 600, drive: drive)
+    XCTAssertTrue(model.leftRouteAtUnplannedExit)
+    XCTAssertEqual(model.phase, .surfaceEgress)
+    let leftRoute = output.commands.filter { $0.identity.promptID.contains("leftRouteRerouting") }
+    XCTAssertEqual(leftRoute.map(\.spokenText), ["You've left the route. Rerouting."])
+    for _ in 0..<200 where model.egressRoute == nil {
+      try? await Task.sleep(nanoseconds: 25_000_000)
+    }
+    let egress = try XCTUnwrap(model.egressRoute)
+    XCTAssertEqual(
+      try XCTUnwrap(egress.coordinates.last),
+      try XCTUnwrap(model.destination?.coordinate)
+    )
+
+    // Relaunched here, the drive comes back on its ordinary-road leg with
+    // the expressway session ended.
+    await model.handleScenePhase(.background)
+    let restoredOutput = SpeechRecoveryAppOutput()
+    restoredOutput.autoFinish = true
+    let restored = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: restoredOutput,
+      nowMillisecondsProvider: { nowMilliseconds },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      },
+      driveHistoryStore: history
+    )
+    model.reset()
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .surfaceEgress)
+    XCTAssertTrue(restored.leftRouteAtUnplannedExit)
+    await waitForLiveNavigationPreparation(restored)
+    let resumed = await restored.resumeLiveJourney()
+    XCTAssertTrue(resumed, restored.failureCode ?? "no failure code")
+    var observationIndex = 0
+    for (start, end) in zip(egress.coordinates, egress.coordinates.dropFirst())
+    where restored.phase != .completed {
+      for fraction in Self.oneHertzFractions(from: start, to: end) where restored.phase != .completed {
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        await restored.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "unplanned-exit.surface.\(observationIndex)",
+            coordinate: Self.interpolate(from: start, to: end, fraction: fraction),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 10
+          )
+        )
+      }
+    }
+    // At the destination itself.
+    if restored.phase != .completed, let end = egress.coordinates.last {
+      nowMilliseconds += 1_000
+      await restored.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "unplanned-exit.surface.arrival",
+          coordinate: end,
+          atMilliseconds: nowMilliseconds,
+          speedMetersPerSecond: 2
+        )
+      )
+    }
+    XCTAssertEqual(restored.phase, .completed)
+    XCTAssertFalse(restored.endedOffRoute)
+    XCTAssertFalse(restored.endedNearDestination)
+    XCTAssertFalse(restoredOutput.commands.contains { $0.identity.promptID.contains("leftRoute") })
+    restored.reset()
+    let record = try XCTUnwrap(history.load().first)
+    XCTAssertTrue(record.arrived)
+  }
+
+  func testLeavingAnExitOnlyDriveFarFromItsExitEndsGuidance() async throws {
+    var nowMilliseconds = 1_000
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let history = MemoryDriveHistoryStore()
+    let (model, drive, rampEnd, heading) = try await driveC1OuterToAnUnplannedExit(
+      ending: .exit, exitFartherThanMeters: 1_500,
+      store: WholeShutoMemoryCheckpointStore(), output: output, history: history,
+      clock: { nowMilliseconds }, advance: { nowMilliseconds += 1_000 }
+    )
+    XCTAssertFalse(model.requiresSurfaceEgress)
+    await driveAwayFromThePlan(model, from: rampEnd, heading: heading, meters: 600, drive: drive)
+    XCTAssertEqual(model.phase, .completed)
+    XCTAssertTrue(model.endedOffRoute)
+    XCTAssertFalse(model.endedNearDestination)
+    let ended = output.commands.filter { $0.identity.promptID.contains("leftRouteEnded") }
+    XCTAssertEqual(ended.map(\.spokenText), ["You've left the route. Guidance has ended."])
+    model.reset()
+    let record = try XCTUnwrap(history.load().first)
+    XCTAssertFalse(record.arrived)
+  }
+
   func testPassingDaikokuPAEndsTheDriveNearTheDestination() async throws {
     var nowMilliseconds = 1_000
     let output = SpeechRecoveryAppOutput()
@@ -3189,11 +3449,17 @@ final class WholeShutoProductModelTests: XCTestCase {
       output.commands.filter { $0.identity.promptID.contains(fragment) }.count
     }
 
-    // Two kilometres from every corridor road: the matcher is lost, but the
-    // fixes are fresh, so the drive is off the plan, not out of position.
-    let away = ShutoCoordinate(
+    // On another expressway about two kilometres from every corridor road:
+    // the matcher is lost, but the fixes are fresh, so the drive is off the
+    // plan, not out of position, and not off the expressway either.
+    let north = ShutoCoordinate(
       latitude: last.latitude + 0.018,
       longitude: last.longitude
+    )
+    let away = try XCTUnwrap(
+      model.database.nodes.map(\.coordinate).min {
+        Self.meters($0, north) < Self.meters($1, north)
+      }
     )
     for _ in 0..<15 {
       clock.milliseconds += 1_000

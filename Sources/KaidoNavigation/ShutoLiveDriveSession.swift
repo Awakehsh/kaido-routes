@@ -120,6 +120,12 @@ public actor ShutoLiveDriveSession {
     return await session.finishDrive()
   }
 
+  @discardableResult
+  public func finishAtRouteEnd() async -> NavigationSnapshot {
+    await start()
+    return await session.finishAtRouteEnd()
+  }
+
   public func observeSurfaceEgressHandoffEvidence(
     _ evidence: SurfaceEgressHandoffEvidence
   ) async -> SurfaceEgressHandoffSessionUpdate {

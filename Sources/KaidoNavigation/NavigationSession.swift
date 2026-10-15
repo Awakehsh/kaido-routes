@@ -1229,6 +1229,16 @@ public actor NavigationSession {
     return engine.snapshot
   }
 
+  /// Ends strict route at the released exit on the driver's Finish command,
+  /// which is offered only near the route end. Progress advances to the
+  /// terminal occurrence first, as route-end recognition does, so the exit
+  /// handoff can complete.
+  @discardableResult
+  public func finishAtRouteEnd() -> NavigationSnapshot {
+    engine.finishAtRouteEnd()
+    return engine.snapshot
+  }
+
   /// Applies the explicit route-only exit-handoff completion boundary.
   ///
   /// The reducer refuses completion unless the runtime configuration permits

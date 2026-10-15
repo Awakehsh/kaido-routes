@@ -100,10 +100,10 @@ because xcodebuild silently ignores such an entry.
 `verify/app` runs `Verify` as two parallel jobs on the newest iPhone 17 Pro
 Simulator, one for the unit target and one for the UI target, each through
 `scripts/build_and_boot_for_ci.py` and then `test-without-building`. The script
-builds for a generic simulator and boots the device only once xcodebuild has
-planned the build: a starting xcodebuild waits while CoreSimulator boots a
-device, so booting first, or alongside a starting build, only delays the
-build. The 33-pair foreground-product matrix — 30 pairs that must build a
+builds for a generic simulator and boots the device only once the build has
+finished: a starting xcodebuild waits while CoreSimulator boots a device, and
+a booting simulator's daemons take every core of the three-core runner, so a
+build beside the boot stalls for as long as the boot lasts. The 33-pair foreground-product matrix — 30 pairs that must build a
 foreground product and 3 routed through the unreviewed Honmoku JCT movement
 that must not — stays in the deterministic compiler suite instead of being
 repeated through the asynchronous App model.

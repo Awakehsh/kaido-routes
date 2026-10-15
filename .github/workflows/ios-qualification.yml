@@ -68,7 +68,7 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Build for testing and boot the simulator alongside it
+      - name: Build for testing, then boot the simulator
         id: simulator
         env:
           DEVICE_TYPE: ${{ matrix.device_type }}

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Build the App for testing on CI and boot the test simulator alongside it.
+"""Build the App for testing on CI, then boot the test simulator.
 
 A starting `xcodebuild` waits while CoreSimulator boots or reconfigures a
-device, even when it builds for a generic simulator, so booting first and
-building in parallel only delays the build. The boot therefore starts once
-xcodebuild has planned the build and runs alongside compilation. The chosen
-device's UDID is written to `$GITHUB_OUTPUT` as `device-id`.
+device, and a booting simulator starts dozens of daemons that take every core
+of a three-core runner, so a build running beside the boot makes almost no
+progress until it ends. The boot therefore starts once the build has
+finished. The chosen device's UDID is written to `$GITHUB_OUTPUT` as
+`device-id`.
 """
 
 from __future__ import annotations
@@ -15,11 +16,9 @@ import json
 import os
 import subprocess
 import sys
-import threading
 from pathlib import Path
 from typing import Callable
 
-BUILD_PLANNED_MARKER = "ComputeTargetDependencyGraph"
 TEST_LOCATION = "35.6586,139.7454"
 
 
@@ -68,18 +67,7 @@ def build_and_boot(
     build_log: Path,
     start_boot: Callable[[], str],
 ) -> tuple[int, str | None]:
-    """Run the build, starting `start_boot` on a thread once the build is planned."""
-    outcome: dict[str, object] = {}
-
-    def run_boot() -> None:
-        try:
-            outcome["udid"] = start_boot()
-        # SystemExit from an unavailable simulator included; reported once
-        # the build has finished so its log stays whole.
-        except BaseException as error:
-            outcome["error"] = error
-
-    boot_thread = threading.Thread(target=run_boot)
+    """Run the build, then `start_boot` once it has succeeded."""
     with build_log.open("w", encoding="utf-8") as log, subprocess.Popen(
         build_command,
         stdout=subprocess.PIPE,
@@ -92,20 +80,15 @@ def build_and_boot(
             sys.stdout.write(line)
             sys.stdout.flush()
             log.write(line)
-            if line.startswith(BUILD_PLANNED_MARKER) and boot_thread.ident is None:
-                boot_thread.start()
         status = build.wait()
-    if boot_thread.ident is None:
-        print(
-            f"[simulator] not booted: xcodebuild ended without {BUILD_PLANNED_MARKER}",
-            file=sys.stderr,
-        )
-        return status or 1, None
-    boot_thread.join()
-    if "error" in outcome:
-        print(f"[simulator] boot failed: {outcome['error']}", file=sys.stderr)
-        return status or 1, None
-    return status, str(outcome["udid"])
+    if status != 0:
+        return status, None
+    try:
+        return 0, start_boot()
+    # SystemExit from an unavailable simulator included.
+    except BaseException as error:
+        print(f"[simulator] boot failed: {error}", file=sys.stderr)
+        return 1, None
 
 
 def main() -> int:

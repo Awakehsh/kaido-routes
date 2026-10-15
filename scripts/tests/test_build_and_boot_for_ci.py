@@ -62,29 +62,22 @@ class BuildAndBootTests(unittest.TestCase):
         self.boots.append("boot")
         return "UDID"
 
-    def test_boots_only_after_the_build_is_planned(self) -> None:
+    def test_boots_after_the_build_succeeds(self) -> None:
         status, udid = ci.build_and_boot(
-            script("print('Resolve Package Graph')", "print('ComputeTargetDependencyGraph')",
-                   "print('** TEST BUILD SUCCEEDED **')"),
+            script("print('ComputeTargetDependencyGraph')", "print('** TEST BUILD SUCCEEDED **')"),
             self.log,
             self.boot,
         )
         self.assertEqual((status, udid, self.boots), (0, "UDID", ["boot"]))
         self.assertIn("TEST BUILD SUCCEEDED", self.log.read_text())
 
-    def test_a_build_that_fails_before_planning_boots_nothing(self) -> None:
-        status, udid = ci.build_and_boot(
-            script("print('error: no scheme')", "raise SystemExit(65)"), self.log, self.boot
-        )
-        self.assertEqual((status, udid, self.boots), (65, None, []))
-
-    def test_a_failed_build_keeps_its_status_after_booting(self) -> None:
+    def test_a_failed_build_boots_nothing(self) -> None:
         status, udid = ci.build_and_boot(
             script("print('ComputeTargetDependencyGraph')", "raise SystemExit(65)"),
             self.log,
             self.boot,
         )
-        self.assertEqual((status, self.boots), (65, ["boot"]))
+        self.assertEqual((status, udid, self.boots), (65, None, []))
 
     def test_a_failed_boot_fails_a_successful_build(self) -> None:
         def broken_boot() -> str:

@@ -72,11 +72,14 @@ jobs:
           sudo xcode-select -s "$latest"
           swift --version
 
+      # Optimized code runs the suite in about a seventh of the debug CPU
+      # time, and the package has no assert() or #if DEBUG that -O would
+      # change. Every swift command shares the one release build.
       - name: Swift tests and portable scenarios
         run: |
           set -euo pipefail
-          swift test
-          swift run kaido-scenarios e2e/scenarios
+          swift test -c release
+          swift run -c release kaido-scenarios e2e/scenarios
 
       - name: Scenario and data contracts
         run: |
@@ -88,14 +91,13 @@ jobs:
 
       - name: Retained joint product release
         run: >-
-          swift run kaido-release validate-product
+          swift run -c release kaido-release validate-product
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
   # Unit tests and UI journeys run as parallel jobs, each building for itself.
-  # Handing one build to both would put a build job, a second runner
-  # allocation and the simulator boot in series; building in each job lets
-  # the boot overlap the compile.
+  # Handing one build to both would put a build job and a second runner
+  # allocation in series before any simulator could boot.
   app:
     name: iPhone app ${{ matrix.suite }}
     needs: changes
@@ -132,7 +134,7 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Build for testing and boot the simulator alongside it
+      - name: Build for testing, then boot the simulator
         id: simulator
         run: >-
           python3 scripts/build_and_boot_for_ci.py

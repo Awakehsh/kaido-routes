@@ -822,10 +822,16 @@ public actor NavigationSession {
         <= Self.offPlanDeviationMaximumGapMilliseconds
     } ?? false
     let clearance = 4 * max(5, observation.horizontalAccuracyMeters)
+    let metersFromExit = routeEnd.metersFromExit(observation.coordinate)
+    // In recovery the car has already been seen off the plan, on the road
+    // past the exit as often as on the exit itself; a fix scattered off that
+    // road can clear it by the fix's own error, so it has to lie nearer the
+    // exit than any other road.
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
-      && routeEnd.metersFromExit(observation.coordinate)
-        <= routeEnd.exitCoverageMeters - clearance
+      && metersFromExit <= routeEnd.exitCoverageMeters - clearance
+      && (engine.snapshot.journeyPhase != .routeRecovery
+        || metersFromExit < routeEnd.metersFromOtherRoads(observation.coordinate))
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       routeEnd.metersFromOtherRoads(observation.coordinate) >= clearance
     else {

@@ -1788,7 +1788,12 @@ three consecutive accurate fixes, no more than three seconds apart, that
 match no corridor road within the exit's coverage less four times the fix's
 accuracy, or lie on a road reached only through the terminal edge. Each
 must also lie at least four times its accuracy from every other corridor
-road, earlier passes of the plan included. The coverage is read from the
+road, earlier passes of the plan included. In `ROUTE_RECOVERY` a fix off
+every corridor road also has to lie nearer the exit than any other road:
+the car has already been seen off the plan, as often on the road past the
+exit as on the exit, and a receiver reporting half its real error scatters
+fixes off that road by as much as four times the error it reports. A drive
+that took the exit after recovery started still finishes there. The coverage is read from the
 corridor itself — the nearest point near the exit where it stops following
 a road — and the compiler follows the roads leaving the exit decision until
 300 m from the exit, so a car off all of them there has taken it. An exit

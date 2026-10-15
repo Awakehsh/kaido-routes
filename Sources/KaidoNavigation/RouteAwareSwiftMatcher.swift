@@ -380,6 +380,13 @@ public struct RouteMatcherSession: Sendable {
   private var lastMeasuredEdges: [String: EdgeMeasurement] = [:]
   private var lastSeparatedOccurrenceIndex: Int?
   private var lastOnPlanOccurrenceIndex: Int?
+  /// The passes of the plan the car can be on, as set by the session from
+  /// admitted progress and reach. A road whose every pass lies outside it is
+  /// matched as an off-plan road. Nil admits every pass.
+  public var occurrenceWindow: ClosedRange<Int>?
+  /// The off-plan road the matcher last placed the car on with confidence,
+  /// one it can have left the plan for, and when.
+  private var offPlanPlacement: (edgeID: String, observedAtMilliseconds: Int)?
 
   fileprivate init(
     corridor: RouteMatcherCorridor,
@@ -424,6 +431,7 @@ public struct RouteMatcherSession: Sendable {
     lastMeasuredEdges = [:]
     lastSeparatedOccurrenceIndex = nil
     lastOnPlanOccurrenceIndex = nil
+    offPlanPlacement = nil
   }
 
   public mutating func restart(at initialOccurrenceID: String?) throws {
@@ -452,16 +460,68 @@ public struct RouteMatcherSession: Sendable {
         $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
       }
     let lower = lastSeparatedOccurrenceIndex
+    let window = occurrenceWindow
     let isReachable = { (edgeID: String) in
-      model.branchIsReachable(edgeID, from: lower, through: upper)
+      if let window, model.isPassOutsideWindow(edgeID, window: window) {
+        // Progress along the final exit can run ahead of a car that missed
+        // it; the road it leaves there stays one the car can be on.
+        let from = model.finalExitIndex.map {
+          window.upperBound > $0 ? min(window.lowerBound, $0) : window.lowerBound
+        } ?? window.lowerBound
+        return model.passIsReachable(edgeID, from: from, through: upper)
+      }
+      return model.branchIsReachable(edgeID, from: lower, through: upper)
     }
-    let competing = model.offPlanEdgeIDs(
+    // From the occurrence the plan leaves at its final exit, the road it
+    // leaves there is one it has already driven, and runs beside the exit as
+    // far as the corridor goes. A car that missed the exit is on it, and
+    // still raises deviation evidence there; it holds back the final
+    // occurrence, which completes the drive, but not the exit's own progress,
+    // nor that occurrence's, which a car drives whichever way it goes.
+    let isOnFinalExit =
+      window != nil
+      && selectedIndex.map { index in
+        model.finalExitIndex.map { index >= $0 } == true && index < model.finalOccurrenceIndex
+      } == true
+    var competing = model.offPlanEdgeIDs(
       within: lastMeasuredEdges,
       observation: observation,
       matchedDistanceMeters: estimate.distanceMeters,
       matcherConfiguration: matcherConfiguration,
-      sessionConfiguration: sessionConfiguration
-    ).filter { $0 != estimate.directedEdgeID && isReachable($0) }
+      sessionConfiguration: sessionConfiguration,
+      window: window
+    ).filter {
+      $0 != estimate.directedEdgeID && isReachable($0)
+        && !(isOnFinalExit && model.isDrivenBeforeFinalExit($0))
+    }
+    // A match on the plan right after the car was placed on an off-plan road
+    // it could have left the plan for is a jump between roads unless that
+    // road leads there in the distance the car can have driven since: while
+    // a road it leads to is still near the fix, the car may be on it.
+    if estimate.occurrenceID == nil, estimate.confidence == .high || estimate.confidence == .medium,
+      let edgeID = estimate.directedEdgeID, isReachable(edgeID)
+    {
+      offPlanPlacement = (edgeID, observation.observedAtMilliseconds)
+    } else if let selectedIndex, let placement = offPlanPlacement,
+      estimate.confidence != .lost
+    {
+      let elapsed = observation.observedAtMilliseconds - placement.observedAtMilliseconds
+      let roads = model.roadsAhead(
+        of: placement.edgeID,
+        withinMeters: Double(elapsed) / 1_000
+          * NavigationSession.maximumPlausibleSpeedMetersPerSecond
+          + NavigationSession.reachMarginMeters
+      )
+      let nearby = roads.filter { lastMeasuredEdges[$0] != nil }
+      let rejoins =
+        roads.contains(model.routeStatesByIndex[selectedIndex]?.edgeID ?? "")
+        || nearby.contains { !model.isOffPlan($0) && !model.isPassOutsideWindow($0, window: window) }
+      if elapsed > Self.offPlanPlacementMilliseconds || rejoins || nearby.isEmpty {
+        offPlanPlacement = nil
+      } else if let road = nearby.min() {
+        competing.append(road)
+      }
+    }
     if let selectedIndex, estimate.confidence != .lost {
       lastOnPlanOccurrenceIndex = selectedIndex
       if estimate.confidence == .high || estimate.confidence == .medium,
@@ -479,6 +539,10 @@ public struct RouteMatcherSession: Sendable {
       edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters)
     )
   }
+
+  /// How long a confident placement on an off-plan road outweighs the plan
+  /// matches beside it.
+  static let offPlanPlacementMilliseconds = 30_000
 
   private mutating func estimate(
     for observation: RouteMatcherObservation
@@ -502,7 +566,8 @@ public struct RouteMatcherSession: Sendable {
     let candidates = model.candidates(
       measuredEdges: measuredEdges,
       observation: observation,
-      configuration: matcherConfiguration
+      configuration: matcherConfiguration,
+      window: occurrenceWindow
     )
     let isStale = isStaleObservation(observation)
 
@@ -680,13 +745,23 @@ public struct RouteMatcherSession: Sendable {
     var candidateEdgeIDs = measuredEdges.compactMap { edgeID, measurement in
       measurement.distanceMeters <= bestMeasuredDistance + geometryAllowance ? edgeID : nil
     }
-    if let selectedIndex = selected.state.occurrenceIndex {
+    // A road of the plan matched outside the window is where the car has
+    // come since its last place on the plan; an off-plan road it cannot have
+    // reached from there is no rival to it either.
+    let reachedIndex =
+      selected.state.occurrenceIndex
+      ?? (model.isOffPlan(selected.state.edgeID)
+        ? nil
+        : lastOnPlanOccurrenceIndex.map {
+          $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+        })
+    if let reachedIndex {
       candidateEdgeIDs.removeAll {
         model.isOffPlan($0)
           && !model.branchIsReachable(
             $0,
             from: lastSeparatedOccurrenceIndex,
-            through: selectedIndex
+            through: reachedIndex
           )
       }
     }
@@ -770,8 +845,21 @@ private struct MatcherModel: Sendable {
   /// For each off-plan edge, the RoutePlan occurrences from whose end it is
   /// reachable through off-plan edges only.
   let branchRootOccurrenceIndexes: [String: [Int]]
+  /// For each road of the plan, the occurrences from whose end the car can
+  /// leave the plan and drive onto it within `passDepartureMeters`.
+  let departureRootOccurrenceIndexes: [String: [Int]]
+  /// The last occurrence at which the plan leaves for good a road it has
+  /// already driven: on a loop, its final exit.
+  let finalExitIndex: Int?
   /// Route length before each occurrence index, plus the total at the end.
   let routeDistanceBeforeIndex: [Double]
+
+  /// How far from where it leaves the plan the car can be on a road the plan
+  /// drives on another pass: past a PA stop's bypass and a missed exit until
+  /// deviation evidence, short of the lap a loop needs to come back round.
+  static let passDepartureMeters = 3_000.0
+
+  var finalOccurrenceIndex: Int { routeStatesByIndex.count - 1 }
 
   init(corridor: RouteMatcherCorridor, spatialCellSizeMeters: Double) {
     self.edges = Dictionary(
@@ -825,6 +913,53 @@ private struct MatcherModel: Sendable {
       }
     }
     self.branchRootOccurrenceIndexes = roots.mapValues { $0.sorted() }
+    let departureRoots = Self.departureRoots(
+      occurrences: corridor.occurrences.sorted { $0.index < $1.index },
+      edges: edges,
+      planEdgeIDs: Set(occurrencesByEdgeID.keys)
+    )
+    self.departureRootOccurrenceIndexes = departureRoots
+    self.finalExitIndex = departureRoots.compactMap { edgeID, roots -> Int? in
+      guard let lastPass = occurrencesByEdgeID[edgeID]?.map(\.index).max() else { return nil }
+      return roots.last { $0 > lastPass }
+    }.max()
+  }
+
+  /// Walks the network from every place the plan can be left: each
+  /// occurrence's successors other than the next occurrence's road. The
+  /// final occurrence is where the plan ends, not a place it is left.
+  private static func departureRoots(
+    occurrences: [RouteMatcherOccurrence],
+    edges: [String: MeasuredRouteEdge],
+    planEdgeIDs: Set<String>
+  ) -> [String: [Int]] {
+    var departures: [[String]: [Int]] = [:]
+    for (position, occurrence) in occurrences.enumerated().dropLast() {
+      let next = occurrences[position + 1].directedEdgeID
+      departures[[occurrence.directedEdgeID, next], default: []].append(occurrence.index)
+    }
+    var roots: [String: Set<Int>] = [:]
+    for (pair, indexes) in departures {
+      var meters: [String: Double] = [:]
+      var queue = (edges[pair[0]]?.successorEdgeIDs ?? []).filter { $0 != pair[1] }.sorted()
+      for start in queue { meters[start] = 0 }
+      var position = 0
+      while position < queue.count {
+        let current = queue[position]
+        position += 1
+        let reached = meters[current]! + (edges[current]?.lengthMeters ?? 0)
+        guard reached <= passDepartureMeters else { continue }
+        for successor in edges[current]?.successorEdgeIDs ?? []
+        where meters[successor].map({ reached < $0 }) ?? true {
+          meters[successor] = reached
+          queue.append(successor)
+        }
+      }
+      for edgeID in meters.keys where planEdgeIDs.contains(edgeID) {
+        roots[edgeID, default: []].formUnion(indexes)
+      }
+    }
+    return roots.mapValues { $0.sorted() }
   }
 
   func isOffPlan(_ edgeID: String) -> Bool {
@@ -846,6 +981,46 @@ private struct MatcherModel: Sendable {
     return branchRootOccurrenceIndexes[edgeID]?.contains { root in
       root >= lower && upper.map { root <= $0 } != false
     } == true
+  }
+
+  /// A road of the plan, outside the window, the car can have left the plan
+  /// for between `lower` and `upper`: missing a loop's exit carries it onto
+  /// the lap it already drove, and passing a PA stop by onto the road the
+  /// next lap takes. A road beside the plan that only another lap leads to
+  /// is not one it can be on.
+  func passIsReachable(_ edgeID: String, from lower: Int, through upper: Int?) -> Bool {
+    departureRootOccurrenceIndexes[edgeID]?.contains { root in
+      root >= lower && upper.map { root <= $0 } != false
+    } == true
+  }
+
+  /// The edge and every road the car can have driven onto from it within
+  /// the distance, counted from the edge's end: the car may be anywhere
+  /// along the edge itself.
+  func roadsAhead(of edgeID: String, withinMeters limit: Double) -> Set<String> {
+    var queue = (edges[edgeID]?.successorEdgeIDs ?? []).sorted()
+    var meters = Dictionary(uniqueKeysWithValues: queue.map { ($0, 0.0) })
+    meters[edgeID] = 0
+    var position = 0
+    while position < queue.count {
+      let current = queue[position]
+      position += 1
+      let reached = meters[current]! + (edges[current]?.lengthMeters ?? 0)
+      guard reached <= limit else { continue }
+      for successor in edges[current]?.successorEdgeIDs ?? []
+      where meters[successor].map({ reached < $0 }) ?? true {
+        meters[successor] = reached
+        queue.append(successor)
+      }
+    }
+    return Set(meters.keys)
+  }
+
+  /// A road the plan drove before its final exit and does not drive again.
+  func isDrivenBeforeFinalExit(_ edgeID: String) -> Bool {
+    guard let finalExitIndex else { return false }
+    let passes = (statesByEdgeID[edgeID] ?? []).compactMap(\.occurrenceIndex)
+    return !passes.isEmpty && passes.allSatisfy { $0 < finalExitIndex }
   }
 
   func occurrenceIndex(id: String?) throws -> Int? {
@@ -884,10 +1059,30 @@ private struct MatcherModel: Sendable {
     )
   }
 
+  /// The states an edge can be matched as: its passes inside the window, or,
+  /// when every pass lies outside it, the edge as an off-plan road.
+  func states(of edgeID: String, window: ClosedRange<Int>?) -> [MatcherState] {
+    let states = statesByEdgeID[edgeID] ?? []
+    guard let window else { return states }
+    let inside = states.filter { $0.occurrenceIndex.map(window.contains) ?? true }
+    return inside.isEmpty && !states.isEmpty
+      ? [MatcherState(edgeID: edgeID, occurrenceID: nil, occurrenceIndex: nil)]
+      : inside
+  }
+
+  /// A road of the plan whose every pass lies outside the window.
+  func isPassOutsideWindow(_ edgeID: String, window: ClosedRange<Int>?) -> Bool {
+    guard let window, let states = statesByEdgeID[edgeID],
+      states.contains(where: { $0.occurrenceIndex != nil })
+    else { return false }
+    return states.allSatisfy { $0.occurrenceIndex.map { !window.contains($0) } ?? true }
+  }
+
   func candidates(
     measuredEdges: [String: EdgeMeasurement],
     observation: RouteMatcherObservation,
-    configuration: RouteAwareSwiftMatcherConfiguration
+    configuration: RouteAwareSwiftMatcherConfiguration,
+    window: ClosedRange<Int>?
   ) -> [StateCandidate] {
     let radius = min(
       configuration.maximumCandidateRadiusMeters,
@@ -899,7 +1094,7 @@ private struct MatcherModel: Sendable {
     return measuredEdges.keys.sorted().flatMap { edgeID -> [StateCandidate] in
       guard let measurement = measuredEdges[edgeID], measurement.distanceMeters <= radius
       else { return [] }
-      return (statesByEdgeID[edgeID] ?? []).map { state in
+      return states(of: edgeID, window: window).map { state in
         let sigma = max(4, observation.horizontalAccuracyMeters)
         let distanceScore = -0.5 * pow(measurement.distanceMeters / sigma, 2)
         let headingScore: Double
@@ -933,7 +1128,8 @@ private struct MatcherModel: Sendable {
     observation: RouteMatcherObservation,
     matchedDistanceMeters: Double?,
     matcherConfiguration: RouteAwareSwiftMatcherConfiguration,
-    sessionConfiguration: RouteMatcherSessionConfiguration
+    sessionConfiguration: RouteMatcherSessionConfiguration,
+    window: ClosedRange<Int>?
   ) -> [String] {
     let candidateRadius = min(
       matcherConfiguration.maximumCandidateRadiusMeters,
@@ -960,7 +1156,7 @@ private struct MatcherModel: Sendable {
     )
     return measuredEdges.compactMap { edgeID, measurement in
       guard measurement.distanceMeters <= radius,
-        isOffPlan(edgeID),
+        isOffPlan(edgeID) || isPassOutsideWindow(edgeID, window: window),
         course.map({
           angularDifferenceDegrees($0, measurement.bearingDegrees)
             <= headingTolerance
@@ -1075,19 +1271,24 @@ private struct MatcherModel: Sendable {
     _ edgeID: String,
     selectedState: MatcherState
   ) -> Bool {
-    guard let selectedIndex = selectedState.occurrenceIndex else {
-      return edgeID == selectedState.edgeID
-    }
-    let lower = max(
-      0,
-      selectedIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
-    )
-    let upper = min(
-      routeStatesByIndex.count - 1,
-      selectedIndex + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
-    )
-    return (lower...upper).contains {
-      routeStatesByIndex[$0]?.edgeID == edgeID
+    // A road of the plan matched outside the window is judged as its own
+    // passes are: the next stretch of the same road is no rival to it.
+    let selectedIndexes =
+      selectedState.occurrenceIndex.map { [$0] }
+      ?? (statesByEdgeID[selectedState.edgeID] ?? []).compactMap(\.occurrenceIndex)
+    guard !selectedIndexes.isEmpty else { return edgeID == selectedState.edgeID }
+    return selectedIndexes.contains { selectedIndex in
+      let lower = max(
+        0,
+        selectedIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      )
+      let upper = min(
+        routeStatesByIndex.count - 1,
+        selectedIndex + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      )
+      return (lower...upper).contains {
+        routeStatesByIndex[$0]?.edgeID == edgeID
+      }
     }
   }
 

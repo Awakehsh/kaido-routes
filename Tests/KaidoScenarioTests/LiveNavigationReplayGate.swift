@@ -1362,6 +1362,14 @@
       }
     }
 
+    /// The same stretch, counting only fixes taken before the car is past
+    /// the route end.
+    var longestUnadmittedSecondsBeforeEgress: Int {
+      longestRun(
+        in: openSkyRecords.filter { $0.phase == .strictRoute && $0.truth.kind != .egress }
+      ) { $0.engineConfidence != .high }
+    }
+
     /// Longest open-sky stretch on the expressway in which no fix placed the
     /// car on any corridor road: the only gap the App may label weak
     /// position.

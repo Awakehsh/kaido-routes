@@ -299,6 +299,9 @@ public actor NavigationSession {
   public func observe(
     _ observation: RouteMatcherObservation
   ) throws -> NavigationSessionUpdate {
+    matcherSession.occurrenceWindow = occurrenceWindow(
+      atMilliseconds: observation.observedAtMilliseconds
+    )
     let matched = try matcherSession.observeWithContext(observation)
     let estimate = matched.estimate
     let separatedFromOffPlanRoads = matched.competingOffPlanEdgeIDs.isEmpty
@@ -730,6 +733,25 @@ public actor NavigationSession {
     let elapsedSeconds = Double(max(0, observedAt - progressAt)) / 1_000
     return gapMeters
       <= elapsedSeconds * Self.maximumPlausibleSpeedMetersPerSecond + Self.reachMarginMeters
+  }
+
+  /// The passes the car can be on: from the longitudinal window behind
+  /// admitted progress to the farthest occurrence it can have reached since,
+  /// under the reach rule. In recovery progress stands still and the reach
+  /// keeps growing, so a car rejoining after a detour can still return.
+  private func occurrenceWindow(atMilliseconds observedAt: Int) -> ClosedRange<Int>? {
+    guard let progressIndex = engine.snapshot.currentOccurrenceIndex else { return nil }
+    var reached = progressIndex
+    var beyond = routePlan.occurrences.count
+    while beyond - reached > 1 {
+      let middle = (reached + beyond) / 2
+      if isWithinReachOfProgress(index: middle, atMilliseconds: observedAt) {
+        reached = middle
+      } else {
+        beyond = middle
+      }
+    }
+    return max(0, progressIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow)...reached
   }
 
   /// The earliest occurrence of the matched edge after current progress. Off

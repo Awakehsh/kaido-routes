@@ -14,10 +14,31 @@
       arguments: [UInt64(1), 2]
     )
     func passingAStopSkipsIt(seed: UInt64) async throws {
+      try await expectStopSkipped(noise: "URBAN", seed: seed)
+    }
+
+    /// The road the stop replaced is driven again on the next lap, outside
+    /// the passes the matcher weighs while the car is still on the first:
+    /// these fixes matched it as an off-plan road too unsure to skip the stop
+    /// on, and the stop was recorded as visited.
+    @Test(
+      "passing a stop by on a road the next lap drives still skips it",
+      arguments: [("URBAN", UInt64(4)), ("URBAN", 39), ("MULTIPATH", 23)]
+    )
+    func passingAStopOnTheNextLapsRoadSkipsIt(noise: String, seed: UInt64) async throws {
+      try await expectStopSkipped(noise: noise, seed: seed)
+    }
+
+    private func expectStopSkipped(noise: String, seed: UInt64) async throws {
       let fixture = try StopFixture.daikokuLoopWithLapOneStop()
-      let run = try await fixture.gate.run(legs: fixture.bypassLegs(), seed: seed)
+      let run = try await fixture.gate.run(
+        legs: fixture.bypassLegs(),
+        seed: seed,
+        noise: noise == "MULTIPATH" ? .multipath : .urban
+      )
       let summary = gateLine(
-        file: "daikoku-loop-lap-one-stop", seed: seed, run: run, label: "STOP-BYPASS"
+        file: "daikoku-loop-lap-one-stop", seed: seed, run: run,
+        label: noise == "URBAN" ? "STOP-BYPASS" : "STOP-BYPASS-\(noise)"
       )
       print(summary)
       #expect(run.reachedCompletion, "\(summary)")
@@ -55,6 +76,36 @@
         !fixture.stopOccurrenceIDs.contains(where: Set(snapshot.skippedOccurrenceIDs).contains),
         "\(summary)"
       )
+    }
+  }
+
+  extension ParkingStopBypassReplayTests {
+    /// Main caught a car turning into the stop's PA again on the next lap
+    /// within 28 s in every replay; a window that left the PA's road out of
+    /// the competing roads took up to 38 s.
+    static let maximumReentryDetectionSeconds = 30
+
+    @Test(
+      "turning into the stop's PA again on the next lap is caught",
+      arguments: [("URBAN", UInt64(12)), ("MULTIPATH", 5)]
+    )
+    func reenteringTheStopIsCaught(noise: String, seed: UInt64) async throws {
+      let fixture = try StopFixture.daikokuLoopWithLapOneStop()
+      let run = try await fixture.gate.run(
+        legs: fixture.reentryLegs(),
+        seed: seed,
+        noise: noise == "MULTIPATH" ? .multipath : .urban
+      )
+      let summary = gateLine(
+        file: "daikoku-loop-lap-one-stop", seed: seed, run: run, label: "STOP-REENTRY-\(noise)"
+      )
+      print(summary)
+      let left = try #require(run.records.first { $0.truth.offPlanDistanceMeters != nil })
+      let detected = try #require(
+        run.records.first { $0.second >= left.second && $0.phase == .routeRecovery },
+        "\(summary)"
+      )
+      #expect(detected.second - left.second <= Self.maximumReentryDetectionSeconds, "\(summary)")
     }
   }
 
@@ -99,6 +150,38 @@
         stopIndices: stop.departureIndex..<(stop.departureIndex + stopLength),
         bypass: Array(base.edges[stop.departureIndex..<stop.returnIndex])
       )
+    }
+
+    /// The planned drive with the next lap's pass of the road the stop
+    /// replaced driven along the stop's own path instead.
+    func reentryLegs() -> [ReplayGateLeg] {
+      let ids = gate.routeEdgeIDs
+      let bypassIDs = bypass.map(\.edgeID)
+      let start = (stopIndices.upperBound..<(ids.count - bypassIDs.count)).first {
+        Array(ids[$0..<($0 + bypassIDs.count)]) == bypassIDs
+      }!
+      let replaced = start..<(start + bypassIDs.count)
+      let planned = gate.plannedLegs()
+      let stopLegs: [ReplayGateLeg] = planned.compactMap { leg in
+        guard case .occurrence(let index) = leg.kind, stopIndices.contains(index) else {
+          return nil
+        }
+        return ReplayGateLeg(
+          kind: .offPlan(ids[index]),
+          coordinates: leg.coordinates,
+          speedMetersPerSecond: leg.speedMetersPerSecond,
+          dwellSeconds: leg.dwellSeconds
+        )
+      }
+      var legs: [ReplayGateLeg] = []
+      for leg in planned {
+        if case .occurrence(let index) = leg.kind, replaced.contains(index) {
+          if index == replaced.lowerBound { legs += stopLegs }
+          continue
+        }
+        legs.append(leg)
+      }
+      return legs
     }
 
     /// The planned drive with the stop's own path replaced by the road it

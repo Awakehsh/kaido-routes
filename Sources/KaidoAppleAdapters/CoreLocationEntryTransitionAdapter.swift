@@ -44,6 +44,7 @@
       _ envelope: CoreLocationObservationEnvelope
     ) throws -> EntryTransitionEvidence {
       let observation = envelope.observation
+      matcherSession.occurrenceWindow = passReach.routeHead
       let estimate = try estimate(for: observation)
       return EntryTransitionEvidence(
         context: context,
@@ -75,6 +76,7 @@
       _ envelope: CoreLocationObservationEnvelope
     ) throws -> RouteJoinEvidence {
       let observation = envelope.observation
+      matcherSession.occurrenceWindow = nil
       let estimate = try estimate(for: observation)
       return RouteJoinEvidence(
         context: context,

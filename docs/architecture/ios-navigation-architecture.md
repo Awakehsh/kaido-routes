@@ -132,11 +132,12 @@ competes, and counts as a road the car can drive onto, only where the car can
 leave the plan for it within 3 km of an occurrence in the window — the lap a
 loop already drove after a missed exit, or the road a passed-by PA stop leaves
 for the next lap — never a road beside the plan that only another lap leads
-to, and the next stretch of it is no rival to it. Past the plan's final exit,
-the road the plan leaves there — on a loop, the lap it began on — runs beside
-the exit ramp: it holds back only the final occurrence, so the ramp's own
-progress is admitted while completion still waits for the car to be clear of
-that road, which stays one the car can drive onto until then. Once the
+to, and the next stretch of it is no rival to it. From the occurrence the
+plan leaves at its final exit, the road it leaves there — on a loop, the lap
+it began on — runs beside the exit ramp: it holds back only the final
+occurrence, so the progress of that occurrence and of the ramp is admitted
+while completion still waits for the car to be clear of that road, which
+stays one the car can drive onto until then. Once the
 matcher has placed the car on an off-plan road it could have left the plan
 for, that road keeps competing with any match on the plan it does not lead to
 within the 40 m/s-plus-100 m reach since that placement, for up to 30 s and

@@ -97,6 +97,40 @@
       #expect(run.longestUnadmittedSeconds <= 25, "\(summary)")
     }
 
+    /// C1 outer from Kyobashi to Ginza leaves the loop at the end of the
+    /// occurrence before the exit ramp. With every fix on the road, that
+    /// occurrence is admitted as the car drives it, whichever way it goes
+    /// next. The lap road beside the ramp held it back until the ramp turned
+    /// away, and with it a lap change waiting for the drive to pass it.
+    @Test("the occurrence the final exit leaves from is admitted", arguments: [1, 2])
+    func admitsTheOccurrenceTheFinalExitLeavesFrom(laps: Int) async throws {
+      let gate = try Self.kyobashiToGinza(laps: laps)
+      let rampStart = gate.finalDivergenceIndex
+      let exact = ReplayGateNoiseModel(
+        accuracyRange: 5...5,
+        burstAccuracyRange: 5...5,
+        burstStartProbability: 0,
+        burstSecondsRange: 1...1,
+        errorCorrelation: 0,
+        courseAccuracyRange: 3...3,
+        burstCourseAccuracyRange: 3...3,
+        speedAccuracyRange: 0.3...0.3,
+        burstSpeedAccuracyRange: 0.3...0.3,
+        errorScale: 0
+      )
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 1, noise: exact)
+      let onRamp = try #require(
+        run.records.first {
+          if case .occurrence(let index) = $0.truth.kind { return index >= rampStart }
+          return false
+        }
+      )
+      let summary =
+        "laps=\(laps) rampStart=\(rampStart) t=\(onRamp.second) progress=\(onRamp.currentOccurrenceIndex.map(String.init) ?? "-")"
+      print("FINAL-EXIT-SPLIT " + summary)
+      #expect((onRamp.currentOccurrenceIndex ?? 0) >= rampStart - 1, "\(summary)")
+    }
+
     /// Admitted progress ran down the exit ahead of a car that had missed
     /// it, until the road the car was on no longer counted as one it could
     /// be on, and the drive never left the plan.
@@ -129,6 +163,21 @@
           "\(summary)"
         )
       }
+    }
+
+    private static func kyobashiToGinza(laps: Int) throws -> LiveNavigationReplayGate {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: .c1Outer,
+        entryFacilityID: "shuto.ic.c1.kyoubashi",
+        exitFacilityID: "shuto.ic.c1.ginza",
+        laps: laps
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      return LiveNavigationReplayGate(release: release, database: database)
     }
 
     private static func outerLap() throws -> LiveNavigationReplayGate {

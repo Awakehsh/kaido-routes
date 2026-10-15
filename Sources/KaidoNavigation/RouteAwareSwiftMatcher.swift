@@ -472,15 +472,16 @@ public struct RouteMatcherSession: Sendable {
       }
       return model.branchIsReachable(edgeID, from: lower, through: upper)
     }
-    // Past the plan's final exit, the road it leaves there is one it has
-    // already driven, and runs beside the exit as far as the corridor goes.
-    // A car that missed the exit is on it, and still raises deviation
-    // evidence there; it holds back the final occurrence, which completes
-    // the drive, but not the exit's own progress.
+    // From the occurrence the plan leaves at its final exit, the road it
+    // leaves there is one it has already driven, and runs beside the exit as
+    // far as the corridor goes. A car that missed the exit is on it, and
+    // still raises deviation evidence there; it holds back the final
+    // occurrence, which completes the drive, but not the exit's own progress,
+    // nor that occurrence's, which a car drives whichever way it goes.
     let isOnFinalExit =
       window != nil
       && selectedIndex.map { index in
-        model.finalExitIndex.map { index > $0 } == true && index < model.finalOccurrenceIndex
+        model.finalExitIndex.map { index >= $0 } == true && index < model.finalOccurrenceIndex
       } == true
     var competing = model.offPlanEdgeIDs(
       within: lastMeasuredEdges,

@@ -97,9 +97,14 @@ and AX5 legs.
 an App test runs in no plan or a plan names a test that no longer exists,
 because xcodebuild silently ignores such an entry.
 
-`verify/app` runs `Verify` as two parallel jobs on the newest iPhone 17 Pro
-Simulator, one for the unit target and one for the UI target, each through
-`scripts/build_and_boot_for_ci.py` and then `test-without-building`. The script
+`verify/app` runs `Verify` as three parallel jobs on the newest iPhone 17 Pro
+Simulator, two for the unit target and one for the UI target, each through
+`scripts/build_and_boot_for_ci.py` and then `test-without-building`.
+`scripts/app_test_balance.py` splits the unit target by the measured
+durations in `TestPlans/verify-unit-test-durations.json`: the first shard
+runs its tests by name and the second runs the rest of the target, so a test
+the durations do not name still runs once. Refreshing the durations only
+rebalances the shards. The script
 builds for a generic simulator and boots the device only once xcodebuild has
 planned the build: a starting xcodebuild waits while CoreSimulator boots a
 device, so booting first, or alongside a starting build, only delays the

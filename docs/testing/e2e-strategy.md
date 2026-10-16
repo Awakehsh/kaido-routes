@@ -123,8 +123,9 @@ app removes its preferences domain and its Application Support files
 (checkpoints, saved routes, drive history). A relaunch that proves something
 survives passes `keepingAppState: true`.
 
-`iOS qualification` runs the intentionally slower gates nightly on `main`,
-and manually once the same commit passes `verify`: the `Full` plan, the App
+`iOS qualification` runs the intentionally slower gates when dispatched by
+hand, once the same commit passes `verify`, before a road test or release:
+the `Full` plan, the App
 unit tests on iOS 18, iPhone SE accessibility audits at Large and AX5, and a
 validated unsigned Release archive. `Full` runs on the primary simulator as
 three parallel legs: the unit target, and the UI target dealt by name into two

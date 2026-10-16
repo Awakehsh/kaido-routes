@@ -97,10 +97,10 @@ jobs:
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
-  # Unit tests and UI journeys run as parallel jobs, each building for itself.
-  # Handing one build to both would put a build job, a second runner
-  # allocation and the simulator boot in series; building in each job lets
-  # the boot overlap the compile.
+  # Unit tests, in two shards of about equal measured duration, and UI
+  # journeys run as parallel jobs, each building for itself. Handing one
+  # build to all would put a build job and a second runner allocation in
+  # series before any test could start.
   app:
     name: iPhone app ${{ matrix.suite }}
     needs: changes
@@ -111,9 +111,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - suite: unit tests
-            slug: unit
+          - suite: unit tests (1/2)
+            slug: unit-1
             test-target: KaidoRoutesAppTests
+            shard: 1/2
+          - suite: unit tests (2/2)
+            slug: unit-2
+            test-target: KaidoRoutesAppTests
+            shard: 2/2
           - suite: UI journeys
             slug: ui
             test-target: KaidoRoutesAppUITests
@@ -129,7 +134,7 @@ jobs:
           xcodebuild -version
 
       - name: Every App test belongs to a test plan
-        if: matrix.slug == 'unit'
+        if: matrix.slug == 'unit-1'
         run: python3 scripts/check_app_test_plans.py
 
       - name: Generate the app project
@@ -151,15 +156,26 @@ jobs:
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
           TEST_TARGET: ${{ matrix.test-target }}
+          SHARD: ${{ matrix.shard }}
         run: |
           set -euo pipefail
+          test_selection=("-only-testing:$TEST_TARGET")
+          if [[ -n "$SHARD" ]]; then
+            python3 scripts/app_test_balance.py select \
+              Apps/KaidoRoutesApp/TestPlans/verify-unit-test-durations.json \
+              "$TEST_TARGET" "$SHARD" > "$RUNNER_TEMP/shard-selection.txt"
+            test_selection=()
+            while IFS= read -r argument; do
+              test_selection+=("$argument")
+            done < "$RUNNER_TEMP/shard-selection.txt"
+          fi
           xcodebuild test-without-building \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -testPlan Verify \
             -destination "id=$DEVICE_ID" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -only-testing:"$TEST_TARGET" \
+            "${test_selection[@]}" \
             -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-test.log"

@@ -527,7 +527,9 @@ struct WholeShutoProductView: View {
   /// kilobytes, and every enclosing builder closure of the layouts and of
   /// `GeometryReader` reserves stack for copies of it: a Release launch used
   /// all of the iPhone's 1 MB main-thread stack and crashed. Its body now runs
-  /// from the attribute graph, not nested inside the layout's frames.
+  /// from the attribute graph, not nested inside the layout's frames, and so
+  /// does each of its three phases, which would otherwise reserve the largest
+  /// of them for whichever one is shown.
   private var dockContent: some View {
     SeparatelyEvaluatedView { dockStack }
   }
@@ -545,7 +547,7 @@ struct WholeShutoProductView: View {
       }
 
       if model.phase == .completed {
-        arrivalDock
+        SeparatelyEvaluatedView { arrivalDock }
       } else if isDriving {
         if model.isLiveDrive,
           model.liveLocationState == .resumeRequired
@@ -554,9 +556,9 @@ struct WholeShutoProductView: View {
         {
           liveResumeBanner
         }
-        drivingDock
+        SeparatelyEvaluatedView { drivingDock }
       } else {
-        planningDock
+        SeparatelyEvaluatedView { planningDock }
       }
     }
     .environment(\.colorScheme, .dark)

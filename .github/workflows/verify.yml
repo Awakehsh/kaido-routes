@@ -98,8 +98,9 @@ jobs:
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 
   # Unit tests and UI journeys run as parallel jobs, each building for itself.
-  # Handing one build to both would put a build job and a second runner
-  # allocation in series before any simulator could boot.
+  # Handing one build to both would put a build job, a second runner
+  # allocation and the simulator boot in series; building in each job lets
+  # the boot overlap the compile.
   app:
     name: iPhone app ${{ matrix.suite }}
     needs: changes
@@ -136,7 +137,7 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Build for testing, then boot the simulator
+      - name: Build for testing and boot the simulator alongside it
         id: simulator
         run: >-
           python3 scripts/build_and_boot_for_ci.py

@@ -523,7 +523,16 @@ struct WholeShutoProductView: View {
     .background(KaidoInk.surface)
   }
 
+  /// The dock is its own view body. Built inline, its value is tens of
+  /// kilobytes, and every enclosing builder closure of the layouts and of
+  /// `GeometryReader` reserves stack for copies of it: a Release launch used
+  /// all of the iPhone's 1 MB main-thread stack and crashed. Its body now runs
+  /// from the attribute graph, not nested inside the layout's frames.
   private var dockContent: some View {
+    SeparatelyEvaluatedView { dockStack }
+  }
+
+  private var dockStack: some View {
     VStack(spacing: 0) {
       if let checkpointIssueCode = model.checkpointIssueCode {
         checkpointIssueBanner(checkpointIssueCode)
@@ -5534,6 +5543,16 @@ struct WholeShutoProductView: View {
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: languageSettings.interfaceLocale)
   }
+}
+
+/// Evaluates `content` as the body of its own view, so SwiftUI runs it from
+/// the attribute graph when it updates this view, instead of inline in the
+/// enclosing builder. The stored closure never compares equal, so the body is
+/// re-evaluated whenever the enclosing view's is, exactly as inline content is.
+private struct SeparatelyEvaluatedView<Content: View>: View {
+  let content: () -> Content
+
+  var body: Content { content() }
 }
 
 private struct WholeShutoCustomRouteSheet: View {

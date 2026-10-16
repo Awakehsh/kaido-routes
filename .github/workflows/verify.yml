@@ -192,9 +192,80 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  # The simulator gives the main thread 8 MB of stack; an iPhone gives it
+  # 1 MB. Release SwiftUI reserves stack for every inline view value, so a
+  # Release build can overflow on the phone at launch while every simulator
+  # test passes. This job links the Release app with the iPhone's stack size
+  # and requires it to survive its first seconds.
+  release-launch:
+    name: iPhone Release launch
+    needs: changes
+    if: needs.changes.outputs.verification-required == 'true'
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d -print | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      - name: Generate the app project
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate
+
+      - name: Build Release with an iPhone-sized main-thread stack
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            "OTHER_LDFLAGS=\$(inherited) -Wl,-stack_size,0x100000" \
+            > "$RUNNER_TEMP/KaidoRoutesApp-release-build.log" 2>&1 \
+            || { tail -50 "$RUNNER_TEMP/KaidoRoutesApp-release-build.log"; exit 1; }
+
+      # Booted only after the build: a starting xcodebuild waits on a booting
+      # simulator (see scripts/build_and_boot_for_ci.py).
+      - name: Launch and require the app to stay up for 15 s
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/KaidoRoutes.app"
+          udid=$(xcrun simctl create release-launch com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro)
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" >/dev/null
+          xcrun simctl install "$udid" "$app"
+          pid=$(xcrun simctl launch "$udid" app.kaidoroutes | awk '{print $NF}')
+          sleep 15
+          if ! kill -0 "$pid" 2>/dev/null; then
+            echo "::error::The Release app exited within 15 s of launch on a 1 MB main-thread stack"
+            exit 1
+          fi
+          echo "Release app still running after 15 s (pid $pid)"
+
+      - name: Upload Release launch diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kaido-release-launch-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/KaidoRoutesApp-release-build.log
+            ~/Library/Logs/DiagnosticReports/KaidoRoutes-*.ips
+          if-no-files-found: warn
+          retention-days: 7
+
   gate:
     name: Verification gate
-    needs: [changes, deterministic, app]
+    needs: [changes, deterministic, app, release-launch]
     if: always()
     runs-on: ubuntu-latest
     steps:

@@ -94,7 +94,10 @@ Every pull request runs the `verify` workflow, which classifies the changed
 paths, then runs the deterministic suites and the `Verify` Xcode test plan —
 every App unit test except the device-only physical-audio checks, plus
 route-selection, PA-ending, pairing, and live-navigation UI journeys — as
-parallel unit and UI jobs. Documentation-only changes
+parallel unit and UI jobs. A parallel job builds the Release app for the
+simulator with the iPhone's 1 MB main-thread stack and fails if it does not
+stay up for 15 s after launch; the simulator's own 8 MB stack hides Release
+stack overflows. Documentation-only changes
 finish after the lightweight classification. The `Verification gate` job
 reports the single required result. The production joint-release validator
 checks the retained K7 product artifact as a deterministic regression anchor;

@@ -74,12 +74,14 @@ jobs:
 
       # Optimized code runs the suite in about a seventh of the debug CPU
       # time, and the package has no assert() or #if DEBUG that -O would
-      # change. Every swift command shares the one release build.
+      # change. Every swift command reuses the one release build: swift run
+      # after swift test would build again without testing enabled.
       - name: Swift tests and portable scenarios
         run: |
           set -euo pipefail
-          swift test -c release
-          swift run -c release kaido-scenarios e2e/scenarios
+          swift build -c release --build-tests
+          swift test -c release --skip-build
+          swift run -c release --skip-build kaido-scenarios e2e/scenarios
 
       - name: Scenario and data contracts
         run: |
@@ -91,7 +93,7 @@ jobs:
 
       - name: Retained joint product release
         run: >-
-          swift run -c release kaido-release validate-product
+          swift run -c release --skip-build kaido-release validate-product
           --artifact
           data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 

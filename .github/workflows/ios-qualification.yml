@@ -2,16 +2,13 @@ name: iOS qualification
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '17 18 * * *'
 
 permissions:
   contents: read
 
-# The nightly run waits behind a manual qualification instead of cancelling it.
 concurrency:
   group: ios-qualification-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+  cancel-in-progress: true
 
 jobs:
   simulator:

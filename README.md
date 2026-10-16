@@ -101,8 +101,8 @@ checks the retained K7 product artifact as a deterministic regression anchor;
 it does not enroll the candidate whole-Shuto graph or grant live-navigation
 authority.
 
-The `iOS qualification` workflow runs nightly on `main` (scheduled for 18:17
-UTC); before a road test or release, run it manually once `verify` is green.
+The `iOS qualification` workflow runs only when dispatched by hand: run it
+once `verify` is green, before a road test or release.
 It runs the `Full` test plan — every App unit and UI test except the
 device-only physical-audio checks — on iOS 26, the App unit tests on iOS 18, and a
 compact accessibility matrix, and publishes a validated unsigned Release

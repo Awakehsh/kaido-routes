@@ -18,6 +18,12 @@ later patch that reintroduces one fails CI instead of shipping:
   entrance back reach another's entrance. OSM draws some interchanges' exit
   and entrance as one chain across the surface road, which let routes and
   fare paths turn back without leaving the toll road.
+- No ramp that OSM names after an interchange is left unbound: a link chain
+  between a carriageway and the surface that no facility binds must not
+  pass a toll booth or junction node carrying a facility's name. The
+  2026-10-12 facility review dropped 扇大橋's exit from S1 as another
+  interchange's ramp and never bound its S1 entrance or 浦安's second exit,
+  though OSM names each after its interchange.
 
 Exceptions live in `data/network/shuto-network-audit-exceptions.json`, bound to
 the snapshot's `database_id` so a changed snapshot forces their review. Stale
@@ -59,6 +65,7 @@ def mainline_termini(network: dict[str, Any]) -> dict[tuple[int, str], str]:
 
 
 SURFACE_SEARCH_METERS = 3_000.0
+NAME_SUFFIXES = ("出入口", "出口", "入口", "料金所", "IC")
 
 
 def surface_ends(
@@ -114,6 +121,85 @@ def continues_to_other_toll_point(
             seen.add(following["edge_id"])
             frontier.append(following)
     return False
+
+
+def facility_named(name: str, facility_names: set[str]) -> str | None:
+    """The facility an OSM node name refers to, ignoring the ramp-role and
+    IC suffixes OSM adds (扇大橋, 浦安出口, 高井戸IC)."""
+    for suffix in ("",) + NAME_SUFFIXES:
+        if name.endswith(suffix) and name[: len(name) - len(suffix)] in facility_names:
+            return name[: len(name) - len(suffix)]
+    return None
+
+
+def named_unbound_ramps(
+    network: dict[str, Any],
+    owned_surface_ends: set[tuple[str, int]],
+    closed_edge_ids: set[str],
+    outgoing: dict[int, list[dict[str, Any]]],
+    incoming: dict[int, list[dict[str, Any]]],
+) -> dict[tuple[str, int], set[str]]:
+    """(side, surface node) -> facility names on the link chain of a ramp
+    whose surface end no facility binds. The chain runs from the surface end
+    to the carriageway it leaves or joins; its junction and toll-booth nodes
+    are where OSM names an interchange. A chain that reaches no carriageway
+    is no ramp. Parking-area ramps, which end at a PA interior rather than
+    the surface, and ramps a closure review closed are unbound by design."""
+    facility_names = {facility["name_ja"] for facility in network["directional_facilities"]}
+    node_names: dict[int, str] = {}
+    for node in network["nodes"]:
+        tags = node.get("tags") or {}
+        if tags.get("name") and (
+            tags.get("highway") == "motorway_junction" or tags.get("barrier") == "toll_booth"
+        ):
+            node_names[node["node_id"]] = tags["name"]
+    parking_nodes = {
+        node
+        for edge in network["edges"]
+        if edge["kind"] == "PARKING"
+        for node in (edge["from_node_id"], edge["to_node_id"])
+    }
+    found: dict[tuple[str, int], set[str]] = {}
+    for node_id in (set(outgoing) | set(incoming)) - parking_nodes:
+        if incoming[node_id] and not outgoing[node_id]:
+            side, toward_carriageway = "exit", incoming
+        elif outgoing[node_id] and not incoming[node_id]:
+            side, toward_carriageway = "entry", outgoing
+        else:
+            continue
+        if (side, node_id) in owned_surface_ends or any(
+            edge["kind"] != "LINK" for edge in toward_carriageway[node_id]
+        ):
+            # A carriageway terminus is the terminus check's, not a ramp.
+            continue
+        names: set[str] = set()
+        closed = False
+        reaches_carriageway = False
+        seen: set[str] = set()
+        frontier = [(node_id, 0.0)]
+        while frontier:
+            node, travelled = frontier.pop()
+            if node in node_names:
+                named = facility_named(node_names[node], facility_names)
+                if named:
+                    names.add(named)
+            for following in toward_carriageway[node]:
+                distance = travelled + following["length_meters"]
+                reaches_carriageway = reaches_carriageway or following["kind"] == "MAINLINE"
+                if (
+                    following["kind"] != "LINK"
+                    or following["edge_id"] in seen
+                    or distance > SURFACE_SEARCH_METERS
+                ):
+                    continue
+                seen.add(following["edge_id"])
+                closed = closed or following["edge_id"] in closed_edge_ids
+                frontier.append(
+                    (following["from_node_id"] if side == "exit" else following["to_node_id"], distance)
+                )
+        if names and reaches_carriageway and not closed:
+            found[(side, node_id)] = names
+    return found
 
 
 def audit(
@@ -214,6 +300,19 @@ def audit(
                 f"{side} ramp meeting the surface at node {node} is bound to "
                 + ", ".join(sorted(names))
             )
+    named_exceptions = {
+        (item["side"], item["node_id"]): item for item in exceptions["named_unbound_ramps"]
+    }
+    named = named_unbound_ramps(network, set(owners), closed_edge_ids, outgoing, incoming)
+    for key, names in sorted(named.items()):
+        exception = named_exceptions.get(key)
+        if exception is None or not exception.get("reason"):
+            findings.append(
+                f"unbound {key[0]} ramp meeting the surface at node {key[1]} is named "
+                + ", ".join(sorted(names))
+            )
+    for key in sorted(set(named_exceptions) - set(named)):
+        findings.append(f"named unbound ramp exception {key[0]} {key[1]} no longer applies")
     for key in sorted(set(distance_exceptions) - used_distance):
         findings.append(f"distance exception {key[0]} {key[1]} no longer applies")
     for key in sorted(set(continuation_exceptions) - used_continuation):

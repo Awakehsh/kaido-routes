@@ -4,7 +4,7 @@ import XCTest
 /// start of a live drive and its end, on the real path: Release ignores the
 /// launch arguments the Debug journeys use. The `iPhone Release stack` CI job
 /// runs it against a build linked with the iPhone's main-thread stack size
-/// and samples the stack's high-water mark while it runs.
+/// and reads the stack's high-water mark at the end.
 final class ReleaseStackJourneyUITests: XCTestCase {
   func testHomeRouteReviewStartAndEnd() {
     continueAfterFailure = false
@@ -48,9 +48,13 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     XCTAssertTrue(endJourney.waitForNonExistence(timeout: 15))
     assertRunning(app, after: "end of the drive")
 
-    // The job samples the stack from outside once a second; the high-water
-    // mark only grows, so a few samples after the last screen cover it all.
-    sleep(5)
+    // The job reads the stack's high-water mark from outside once this
+    // activity starts. The mark only grows, so one reading here covers every
+    // screen before it; vmmap suspends the app while it reads, which is why
+    // it waits for this idle hold instead of sampling throughout.
+    XCTContext.runActivity(named: "Hold the last screen for the stack reading") { _ in
+      sleep(45)
+    }
   }
 
   /// A fresh simulator asks for location the first time the app wants it.

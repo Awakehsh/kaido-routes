@@ -17,6 +17,11 @@ final class ReleaseStackJourneyUITests: XCTestCase {
 
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 30))
+    // The cards lay out again when their previews arrive; a tap before that
+    // can land on the moving row and select nothing.
+    XCTAssertTrue(
+      element("whole-shuto-circuit-metrics-shuto.circuit.c1-inner", in: app)
+        .waitForExistence(timeout: 60))
     circuit.tap()
     allowLocationIfAsked()
     let startCircuit = element("whole-shuto-start-circuit", in: app)

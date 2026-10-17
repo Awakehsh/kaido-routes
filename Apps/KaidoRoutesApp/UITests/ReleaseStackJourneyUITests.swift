@@ -18,34 +18,37 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 30))
     let startCircuit = element("whole-shuto-start-circuit", in: app)
-    tap(circuit, until: startCircuit)
+    tap(circuit, until: startCircuit, step: "route card")
     waitUntilEnabled(startCircuit)
     assertRunning(app, after: "route choice")
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
-    tap(startCircuit, until: startLiveDrive)
+    tap(startCircuit, until: startLiveDrive, step: "use this route")
     waitUntilEnabled(startLiveDrive)
     assertRunning(app, after: "review")
 
     let endJourney = element("whole-shuto-end-journey", in: app)
-    tap(startLiveDrive, until: endJourney)
+    tap(startLiveDrive, until: endJourney, step: "start live drive")
     assertRunning(app, after: "start of the live drive")
 
     // The confirmation's destructive action carries the same label as the
     // button that asks for it, in whatever language the simulator runs.
     let endLabel = endJourney.label
     let confirmation = app.alerts.firstMatch
-    tap(endJourney, until: confirmation)
-    confirmation.buttons[endLabel].tap()
-    XCTAssertTrue(endJourney.waitForNonExistence(timeout: 15))
+    tap(endJourney, until: confirmation, step: "end drive")
+    tap(
+      confirmation.buttons[endLabel],
+      until: element("whole-shuto-planning-dock", in: app),
+      step: "confirm end")
     assertRunning(app, after: "end of the drive")
 
     // The job reads the stack's high-water mark from outside once this
     // activity starts. The mark only grows, so one reading here covers every
     // screen before it; vmmap suspends the app while it reads, which is why
-    // it waits for this idle hold instead of sampling throughout.
+    // it waits for this idle hold instead of sampling throughout. On a runner
+    // shared by two jobs a reading outlasted a 45 s hold (run 39057314823).
     XCTContext.runActivity(named: "Hold the last screen for the stack reading") { _ in
-      sleep(45)
+      sleep(120)
     }
   }
 
@@ -57,10 +60,22 @@ final class ReleaseStackJourneyUITests: XCTestCase {
   /// catalog. A tap that took effect has replaced or covered `control`, so it
   /// is never repeated, and a control that never responds still fails after
   /// the last attempt.
-  private func tap(_ control: XCUIElement, until opened: XCUIElement, attempts: Int = 3) {
+  ///
+  /// This is a fallback for XCUITest's event delivery, not for the app: every
+  /// retap is attached as a screenshot and printed as a `RELEASE-JOURNEY-RETAP`
+  /// line, which the CI job copies into its summary, so a rising retap rate is
+  /// seen rather than absorbed.
+  private func tap(
+    _ control: XCUIElement, until opened: XCUIElement, step: String, attempts: Int = 3
+  ) {
     for attempt in 1...attempts {
       if attempt > 1 {
         guard control.exists, control.isHittable else { break }
+        let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screen.name = "Retap \(step), attempt \(attempt)"
+        screen.lifetime = .keepAlways
+        add(screen)
+        print("RELEASE-JOURNEY-RETAP step=\(step) attempt=\(attempt)")
       }
       control.tap()
       allowLocationIfAsked()

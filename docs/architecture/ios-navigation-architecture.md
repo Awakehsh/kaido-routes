@@ -1978,6 +1978,15 @@ IDs; contradictory resolved evidence fails closed. A later explicit singleton
 may clear that ambiguity. This prevents a stacked carriageway or repeated route
 entity from being committed merely because one provisional candidate was first.
 
+A pass of the plan whose direction opposes the car's moving course by more
+than the off-plan heading tolerance (60°, or the fix's course accuracy when
+wider) is not a candidate for that ambiguity. A drive out along a radial
+route and back meets its own other carriageway there — stacked over the
+road the car is on, as on C2 between Itabashi and Kohoku, or a few metres
+beside it — and counting it held progress LOW for minutes. Off-plan roads
+keep counting regardless of direction; the evidence covers only the plan's
+own passes.
+
 Valhalla Meili implements an HMM/Viterbi matcher and exposes configurable emission
 and transition parameters, so it is the first external oracle. Its output still
 uses Valhalla edges and must be translated before comparison with Kaido occurrences.

@@ -84,10 +84,17 @@ over the 16,798 pairings the app may quote, fares now come out more than
 500 yen off for 0.6% (6.5%); none is falsely quoted at the minimum (16
 before) and 52 at the cap (321). Known residuals: C1 内回り has no link to
 Route 1 and Route 11 at 浜崎橋 (芝公園 to 平和島 measures about twice the
-operator's distance); 加賀 to 東領家, which the operator prices at the
-minimum, has no path; and the directions the operator lists without a ramp
+operator's distance); and the directions the operator lists without a ramp
 in the snapshot stay unbound rather than borrowing a neighbour's: 新都心西 下り
 entrance, and 横浜港北 (横浜北線) 下り entrance and 上り exit.
+
+加賀 to 東領家 is a recorded restriction, not a gap: 東領家's exit (OSM way
+563799388) leaves S1 上り at the junction node named 東領家, and 加賀's 上り
+entrance (ways 1023900268, 633246083, 28188014) runs alongside and joins the
+carriageway (way 438367463) about 100 m after that split. The snapshot and
+the OSM ways current on 2026-10-17 agree, so the pair has no drivable path
+and is not planned, although the operator's fare table still prices it at
+the minimum.
 
 All PA interiors are bound to exact ordered source segments as `PARKING`
 edges with no route membership. Route planning traverses an explicitly requested

@@ -38,13 +38,19 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     XCTAssertTrue(endJourney.waitForExistence(timeout: 15))
     assertRunning(app, after: "start of the live drive")
 
+    // The confirmation's destructive action carries the same label as the
+    // button that asks for it, in whatever language the simulator runs.
+    let endLabel = endJourney.label
     endJourney.tap()
     let confirmation = app.alerts.firstMatch
     XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
-    // The destructive "end" action is the alert's second button.
-    confirmation.buttons.element(boundBy: 1).tap()
+    confirmation.buttons[endLabel].tap()
     XCTAssertTrue(endJourney.waitForNonExistence(timeout: 15))
     assertRunning(app, after: "end of the drive")
+
+    // The job samples the stack from outside once a second; the high-water
+    // mark only grows, so a few samples after the last screen cover it all.
+    sleep(5)
   }
 
   /// A fresh simulator asks for location the first time the app wants it.

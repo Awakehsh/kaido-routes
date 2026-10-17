@@ -266,10 +266,9 @@ jobs:
           # plus swapped pages is how much of the stack has been touched.
           (
             while :; do
-              pid=$(xcrun simctl spawn "$udid" launchctl list 2>/dev/null \
-                | awk '/UIKitApplication:app\.kaidoroutes\[/ {print $1}')
-              if [[ -n "$pid" && "$pid" != "-" ]]; then
-                vmmap "$pid" 2>/dev/null | awk '/^Stack .*thread 0$/ {
+              pid=$(pgrep -f "Devices/$udid/.*/KaidoRoutes\.app/KaidoRoutes$" | head -1 || true)
+              if [[ -n "$pid" ]]; then
+                vmmap "$pid" 2>> "$RUNNER_TEMP/vmmap-errors.txt" | awk '/^Stack .*thread 0$/ {
                   for (i = 1; i <= NF; i++) if ($i == "[") {
                     r = $(i + 2); s = $(i + 4); sub(/K/, "", r); sub(/K]?/, "", s)
                     print r + s
@@ -298,8 +297,8 @@ jobs:
             echo "::error::The Release journey failed on a $STACK_SIZE-byte main-thread stack"
             exit 1
           fi
-          if [[ -z "$peak" ]]; then
-            echo "::error::No main-thread stack sample was taken"
+          if (( $(wc -l < "$samples") < 5 )); then
+            echo "::error::Too few main-thread stack samples to trust the high-water mark"
             exit 1
           fi
           if (( peak > HIGH_WATER_LIMIT_KB )); then
@@ -317,6 +316,7 @@ jobs:
             ${{ runner.temp }}/KaidoRoutesApp-release-stack-test.log
             ${{ runner.temp }}/ReleaseStack.xcresult
             ${{ runner.temp }}/main-thread-stack.txt
+            ${{ runner.temp }}/vmmap-errors.txt
             ~/Library/Logs/DiagnosticReports/KaidoRoutes-*.ips
           if-no-files-found: warn
           retention-days: 7

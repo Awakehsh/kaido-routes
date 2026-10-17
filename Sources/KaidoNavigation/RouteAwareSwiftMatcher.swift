@@ -652,7 +652,8 @@ public struct RouteMatcherSession: Sendable {
                 + model.transitionScore(
                   from: previous,
                   to: candidate,
-                  observation: observation
+                  observation: observation,
+                  lastOnPlanOccurrenceIndex: lastOnPlanOccurrenceIndex
                 )
             }.max() ?? negativeInfinityScore
           return (
@@ -742,8 +743,25 @@ public struct RouteMatcherSession: Sendable {
       sessionConfiguration.ambiguityMarginMeters,
       min(observation.horizontalAccuracyMeters, 25)
     )
-    var candidateEdgeIDs = measuredEdges.compactMap { edgeID, measurement in
-      measurement.distanceMeters <= bestMeasuredDistance + geometryAllowance ? edgeID : nil
+    // A drive out along a radial and back passes its own other carriageway,
+    // stacked over this one or beside it: that pass of the plan runs against
+    // the car's course and is no rival to where it is driving.
+    let course =
+      (observation.speedMetersPerSecond ?? 0) >= 2 ? observation.courseDegrees : nil
+    let headingTolerance = max(
+      MatcherModel.offPlanHeadingToleranceDegrees,
+      observation.courseAccuracyDegrees ?? 0
+    )
+    var candidateEdgeIDs = measuredEdges.compactMap { edgeID, measurement -> String? in
+      guard measurement.distanceMeters <= bestMeasuredDistance + geometryAllowance else {
+        return nil
+      }
+      if let course, !model.isOffPlan(edgeID),
+        angularDifferenceDegrees(course, measurement.bearingDegrees) > headingTolerance
+      {
+        return nil
+      }
+      return edgeID
     }
     // A road of the plan matched outside the window is where the car has
     // come since its last place on the plan; an off-plan road it cannot have
@@ -1185,7 +1203,8 @@ private struct MatcherModel: Sendable {
   func transitionScore(
     from previous: PathState,
     to candidate: StateCandidate,
-    observation: RouteMatcherObservation
+    observation: RouteMatcherObservation,
+    lastOnPlanOccurrenceIndex: Int?
   ) -> Double {
     let elapsed =
       observation.observedAtMilliseconds
@@ -1257,7 +1276,15 @@ private struct MatcherModel: Sendable {
     if previous.state.occurrenceIndex != nil, candidate.state.occurrenceIndex == nil {
       return connected ? -2 : -12
     }
-    if previous.state.occurrenceIndex == nil, candidate.state.occurrenceIndex != nil {
+    if previous.state.occurrenceIndex == nil, let candidateIndex = candidate.state.occurrenceIndex {
+      // A road of the plan matched off it because every pass lay outside the
+      // window is that later pass, not a detour: joining the plan there skips
+      // to it from where the car was last on the plan, and costs that skip.
+      if !isOffPlan(previous.state.edgeID), let lastOnPlanOccurrenceIndex,
+        candidateIndex > lastOnPlanOccurrenceIndex + 1
+      {
+        return (connected ? -2 : -12) - Double(candidateIndex - lastOnPlanOccurrenceIndex - 1)
+      }
       return connected ? -2 : -12
     }
     return connected ? -1.5 : -12

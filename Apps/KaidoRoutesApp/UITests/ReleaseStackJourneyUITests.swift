@@ -36,16 +36,19 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     let endLabel = endJourney.label
     let confirmation = app.alerts.firstMatch
     tap(endJourney, until: confirmation, step: "end drive")
-    confirmation.buttons[endLabel].tap()
-    XCTAssertTrue(endJourney.waitForNonExistence(timeout: 15))
+    tap(
+      confirmation.buttons[endLabel],
+      until: element("whole-shuto-planning-dock", in: app),
+      step: "confirm end")
     assertRunning(app, after: "end of the drive")
 
     // The job reads the stack's high-water mark from outside once this
     // activity starts. The mark only grows, so one reading here covers every
     // screen before it; vmmap suspends the app while it reads, which is why
-    // it waits for this idle hold instead of sampling throughout.
+    // it waits for this idle hold instead of sampling throughout. On a runner
+    // shared by two jobs a reading outlasted a 45 s hold (run 39057314823).
     XCTContext.runActivity(named: "Hold the last screen for the stack reading") { _ in
-      sleep(45)
+      sleep(120)
     }
   }
 

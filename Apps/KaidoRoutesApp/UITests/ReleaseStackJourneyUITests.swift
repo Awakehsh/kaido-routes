@@ -13,7 +13,7 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(element("whole-shuto-product", in: app).waitForExistence(timeout: 30))
-    allowLocationIfAsked()
+    assertNoSystemAlert()
     assertRunning(app, after: "home")
 
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
@@ -98,17 +98,23 @@ final class ReleaseStackJourneyUITests: XCTestCase {
         print("RELEASE-JOURNEY-RETAP step=\(step) attempt=\(attempt)")
       }
       control.tap()
-      allowLocationIfAsked()
+      assertNoSystemAlert()
       if opened.waitForExistence(timeout: 15) { return }
     }
     XCTFail("\(opened) did not appear after tapping \(control)")
   }
 
-  /// A fresh simulator asks for location the first time the app wants it.
-  private func allowLocationIfAsked() {
+  /// The job grants location before the app launches, so no permission
+  /// alert should ever appear. Tapping one was itself a lost-tap risk (run
+  /// 39069554350 left it on screen and the route never enabled); one that
+  /// appears now means the grant did not take effect, and the run says so.
+  private func assertNoSystemAlert() {
     let alert = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
-    // Allow once, allow while using, don't allow.
-    if alert.waitForExistence(timeout: 3) { alert.buttons.element(boundBy: 1).tap() }
+    if alert.waitForExistence(timeout: 3) {
+      XCTFail(
+        "a system alert appeared (\(alert.label)); the job grants location before launch, "
+          + "so the grant did not take effect")
+    }
   }
 
   private func waitUntilEnabled(_ element: XCUIElement) {

@@ -5,6 +5,8 @@ catalog lists every cell the harness can drive. Cells tagged `default` are what
 a comparison runs unless `--select` says otherwise.
 """
 
+import itertools
+
 GROUPS = ("planned", "missedFinal", "wrongBranch", "stopBypass", "lapChange", "paReentry")
 PROFILES = ("URBAN", "MULTIPATH", "UNDER2X")
 LOOPS = ("c1-inner", "c1-outer", "c2", "daikoku", "stop")
@@ -18,6 +20,7 @@ BUNDLED = {
     "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json": "daikoku",
     "scenic-harumi-daikoku-pa-product-release.json": "scenic",
 }
+BUNDLED_PA_ENDINGS = ("wangan-", "daikoku-", "scenic-")
 # The bundled releases' reviewed divergent junctions.
 BUNDLED_WRONG_BRANCHES = {
     "c1-inner-shibakoen-to-shiodome-product-release.json": ("m=283", "m=487"),
@@ -54,6 +57,8 @@ FIXES = {
 def _loop_cells(loop, laps):
     route = f"loop:{loop}:{laps}"
     family = ["loop", loop, f"laps{laps}"] + (["radial"] if loop in RADIAL_LOOPS else [])
+    if loop == "daikoku":
+        family.append("pa-end")
     # Final-lap logic needs one and two laps; a third lap only repeats them.
     default = laps <= 2
     yield "planned", route, "", family, default
@@ -77,20 +82,33 @@ def _route_cells():
             yield from _loop_cells(loop, laps)
     for file, name in BUNDLED.items():
         route = f"bundled:{file}"
-        family = ["bundled", f"bundled:{name}"]
+        family = ["bundled", f"bundled:{name}"] + (["pa-end"] if file.startswith(BUNDLED_PA_ENDINGS) else [])
         yield "planned", route, "", family, True
         yield "missedFinal", route, "", family, True
         for spec in BUNDLED_WRONG_BRANCHES.get(file, ()):
             yield "wrongBranch", route, spec, family, True
     for spec in LAP_CHANGES:
         # The lap-change fixtures are three-lap drives by construction.
-        yield "lapChange", f"lapchange:{spec}", spec, ["lapchange"], True
+        yield "lapChange", f"lapchange:{spec}", spec, ["lapchange"] + (["pa-end"] if "PA" in spec else []), True
 
 
-def cells():
+def _via_cells(routes_file):
+    """Planned and missed-final cells for `via:` routes listed one per line (first column)."""
+    for line in open(routes_file):
+        route = line.split("\t")[0].strip()
+        if not route or route.startswith("#"):
+            continue
+        _, circuit, _, exit_id, laps = route.split(":")
+        family = ["via", "sweep", f"via:{circuit}", f"laps{laps}"] + (["pa-end"] if exit_id == "-" else [])
+        yield "planned", route, "", family, False
+        yield "missedFinal", route, "", family, False
+
+
+def cells(routes_file=None):
     """Every cell with its tags, in a stable order."""
     result = []
-    for group, route, extra, family, default in _route_cells():
+    extra_cells = _via_cells(routes_file) if routes_file else ()
+    for group, route, extra, family, default in itertools.chain(_route_cells(), extra_cells):
         for profile in PROFILES:
             tags = {group, profile, route, *family}
             if default:
@@ -99,7 +117,7 @@ def cells():
     return result
 
 
-def select(expression):
+def select(expression, routes_file=None):
     """Cells matching a selection.
 
     Comma-separated terms. A term is one or more tags joined by `+` (a cell
@@ -110,12 +128,13 @@ def select(expression):
     for term in filter(None, (t.strip() for t in expression.split(","))):
         target = exclude if term.startswith("-") else include
         target.append(set(term.lstrip("-").split("+")) - {"all"})
-    known = set().union(*(c["tags"] for c in cells())) | {"all"}
+    universe = cells(routes_file)
+    known = set().union(*(c["tags"] for c in universe)) | {"all"}
     unknown = set().union(*include, *exclude) - known
     if unknown:
         raise ValueError(f"unknown tags: {', '.join(sorted(unknown))}")
     return [
-        c for c in cells()
+        c for c in universe
         if any(t <= c["tags"] for t in include) and not any(t <= c["tags"] for t in exclude)
     ]
 

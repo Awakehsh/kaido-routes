@@ -75,6 +75,24 @@ class StressCatalogTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             catalog.select("planned+nonsense")
 
+    def test_pa_end_marks_drives_that_finish_inside_a_pa(self):
+        routes = {c["route"] for c in catalog.select("pa-end")}
+        self.assertIn("loop:daikoku:1", routes)
+        self.assertIn("lapchange:endPA:finish", routes)
+        self.assertNotIn("loop:stop:1", routes)
+        self.assertNotIn("bundled:c1-inner-shibakoen-to-shiodome-product-release.json", routes)
+
+    def test_via_routes_come_from_a_file_and_stay_out_of_the_default(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".tsv") as routes:
+            routes.write("# comment\nvia:c1i:shuto.ic.11.daiba:shuto.ic.c1.shiodome:1\tin\nvia:daikoku:shuto.ic.b.x:-:2\n")
+            routes.flush()
+            sweep = catalog.select("sweep", routes.name)
+            self.assertEqual(len(sweep), 2 * 2 * 3)
+            self.assertEqual({c["route"] for c in catalog.select("sweep+pa-end", routes.name)},
+                             {"via:daikoku:shuto.ic.b.x:-:2"})
+            self.assertFalse(any(c["route"].startswith("via:") for c in catalog.select("default", routes.name)))
+
 
 if __name__ == "__main__":
     unittest.main()

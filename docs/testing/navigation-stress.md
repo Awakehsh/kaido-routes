@@ -21,6 +21,7 @@ beyond tolerance, 2 that the comparison could not run (the report says why).
 | Option | Effect |
 |---|---|
 | `--select EXPR` | Which cells to drive (default `default`; see below) |
+| `--routes FILE` | Add `via:` routes, one per line (first tab-separated column) |
 | `--seeds 1-40` | Seeds, as ranges or a list (`1-10`, `3,7,21`) |
 | `--all-stages` | Run seeds 11–40 even when seeds 1–10 already fail |
 | `--jobs N` | Worker processes (default: every core) |
@@ -49,16 +50,23 @@ entered from a radial route (`c1-inner-s1`, `c1-outer-s1`, `c2-s1` from
 新郷, `c1-inner-r4`, `c1-outer-r4` from 代々木), each at one, two or three laps.
 Profiles are `URBAN`, `MULTIPATH` and `UNDER2X`.
 
+`--routes FILE` adds any planned circuit as
+`via:<circuit>:<entry facility>:<exit facility or ->:<laps>`, with circuit
+`c1i`, `c1o`, `c2`, `wangan`, `daikoku` or `scenic` and `-` for the circuit's
+default destination. Each gets `planned` and `missedFinal` cells tagged `via`,
+`sweep`, `via:<circuit>` and its lap count; none is in the default set.
+
 ### Selection
 
 Every cell carries tags: its group, profile and route (`loop:c2:2`), its
 family (`loop`, `radial`, `bundled`, `lapchange`, `c1-inner`, `bundled:c2`, …),
-its lap count (`laps1`, `laps2`, `laps3`), and `default` when the default set
-includes it. A selection is comma-separated terms; `+` joins tags a cell must
+its lap count (`laps1`, `laps2`, `laps3`), `pa-end` when the drive ends inside
+a PA rather than at an exit, and `default` when the default set includes it. A selection is comma-separated terms; `+` joins tags a cell must
 all carry, a leading `-` removes cells, and `all` matches everything:
 
 ```sh
 --select 'default,-radial'                 # the default set without radial entries
+--select 'default,-pa-end'                 # only drives that end at an exit
 --select 'wrongBranch+c2'                  # every C2 wrong-branch cell
 --select 'default,planned+laps3'           # add three-lap planned drives
 --select all                               # every cell the harness knows

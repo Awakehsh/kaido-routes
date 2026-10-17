@@ -93,6 +93,9 @@
       if route.hasPrefix("lapchange:") {
         return try lapChangeFixture(route, planner: planner, database: database)
       }
+      if route.hasPrefix("via:") {
+        return try viaFixture(route, planner: planner, database: database)
+      }
       let parts = route.split(separator: ":")
       let laps = Int(parts[2])!
       let circuit: ShutoCircuitDefinition
@@ -144,6 +147,32 @@
         gate: LiveNavigationReplayGate(release: release, database: database),
         stopIndices: stopIndices,
         bypass: bypass,
+        laps: lapRanges(planned)
+      )
+    }
+
+    static let viaCircuits: [String: ShutoCircuitDefinition] = [
+      "c1i": .c1Inner, "c1o": .c1Outer, "c2": .c2InnerWithBayshore,
+      "wangan": .wanganDaikokuRun, "daikoku": .daikokuYokohamaLoop, "scenic": .scenicGrandTour,
+    ]
+
+    /// `via:<circuit>:<entry>:<exit or ->:<laps>`: any planned circuit, `-`
+    /// ending at the circuit's default destination.
+    static func viaFixture(
+      _ route: String,
+      planner: ShutoRoutePlanner,
+      database: ShutoNetworkDatabase
+    ) throws -> Fixture {
+      let parts = route.split(separator: ":").map(String.init)
+      let planned = try planner.planCircuit(
+        circuit: viaCircuits[parts[1]]!, entryFacilityID: parts[2],
+        exitFacilityID: parts[3] == "-" ? nil : parts[3], laps: Int(parts[4])!
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try context(), route: planned
+      )
+      return Fixture(
+        gate: LiveNavigationReplayGate(release: release, database: database),
         laps: lapRanges(planned)
       )
     }

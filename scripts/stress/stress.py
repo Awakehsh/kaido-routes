@@ -191,7 +191,7 @@ def compare(args):
     commits = {"base": base_commit, "branch": branch_commit}
     refs = {"base": args.base, "branch": args.branch}
     results = {side: Results(keys[side]).load() for side in keys}
-    cells = catalog.select(args.select)
+    cells = catalog.select(args.select, args.routes)
     seeds = parse_seeds(args.seeds)
     stages = [seeds[:STAGE_ONE_SEEDS], seeds[STAGE_ONE_SEEDS:]] if len(seeds) > STAGE_ONE_SEEDS else [seeds]
 
@@ -240,7 +240,7 @@ def compare(args):
         lines = [f"- Base: `{refs['base']}` {base_commit[:12]}, inputs key `{keys['base']}`",
                  f"- Branch: `{refs['branch']}` {branch_commit[:12]}, inputs key `{keys['branch']}`"
                  + (" (same inputs as base: rows identical by construction)" if len(sides) == 1 else ""),
-                 f"- Selection: `{args.select}`: {len(cells)} cells, seeds {stage_seeds[0]}–{stage_seeds[-1]} "
+                 f"- Selection: `{args.select}`{f' with routes from {args.routes}' if args.routes else ''}: {len(cells)} cells, seeds {stage_seeds[0]}–{stage_seeds[-1]} "
                  f"({len(stage_seeds)} seeds)"]
         return lines + [f"- {t}" for t in timings]
 
@@ -295,6 +295,7 @@ def main():
     listing = sub.add_parser("list", help="list the selected cells")
     for p in (run, listing):
         p.add_argument("--select", default="default", help="tag selection (default: %(default)s)")
+        p.add_argument("--routes", type=Path, help="extra via: routes, one per line, tagged via and sweep")
     run.add_argument("--seeds", default="1-40", help="seeds, e.g. 1-40 or 1,5,9 (default: %(default)s)")
     run.add_argument("--all-stages", action="store_true", help="run every seed even when seeds 1-10 already fail")
     run.add_argument("--jobs", type=int, default=os.cpu_count(), help="worker processes (default: %(default)s)")
@@ -303,7 +304,7 @@ def main():
 
     if args.command == "list":
         try:
-            cells = catalog.select(args.select)
+            cells = catalog.select(args.select, args.routes)
         except ValueError as error:
             sys.exit(f"error: {error}")
         for c in cells:

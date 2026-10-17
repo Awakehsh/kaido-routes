@@ -115,6 +115,53 @@ struct ShutoTariffEvidenceTests {
     }
   }
 
+  @Test("扇大橋 pairs with S1 through its ramps either side of 江北JCT")
+  func ogiOhashiPairsWithTheKawaguchiRoute() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // 扇大橋's 外回り exit leaves S1 上り before 江北JCT, and its 内回り
+    // entrance joins S1 下り after it. With either ramp unbound, the pairing
+    // with 鹿浜橋, the next interchange on S1, priced about 1,290 yen for a
+    // 3 km drive.
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.s1.shikahamabashi", "shuto.ic.c2.oogioohashi"),
+      ("shuto.ic.c2.oogioohashi", "shuto.ic.s1.shikahamabashi"),
+    ] {
+      let band = try planner.tariffBand(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        evidence: .etcNormalCarFrom2026October
+      )
+      #expect(band == .minimum(yen: 300))
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      #expect(route.distanceMeters < 5_000)
+    }
+  }
+
+  @Test("浦安 pairs with 千鳥町 through its 美浜 ramps")
+  func urayasuPairsWithChidorichoThroughItsMihamaRamps() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // 浦安's 東行き entrance and 西行き exit sit at its second ramp site,
+    // 1.9 km from the operator point. Without them the pairing with
+    // 千鳥町, the next interchange east, priced about 1,270 yen for
+    // neighbours 2.5 km apart.
+    for (entryFacilityID, exitFacilityID) in [
+      ("shuto.ic.b.urayasu", "shuto.ic.b.chidoricho"),
+      ("shuto.ic.b.chidoricho", "shuto.ic.b.urayasu"),
+    ] {
+      let band = try planner.tariffBand(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        evidence: .etcNormalCarFrom2026October
+      )
+      #expect(band.quotedYen < 400)
+    }
+  }
+
   @Test("interchanges the operator bills together are one toll point")
   func operatorTollPointsSpanTheirNames() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())

@@ -163,11 +163,12 @@ The product distinguishes what is known from what is still unconfirmed:
   - The snapshot has no link from C1 内回り onto Route 1 or Route 11 at
     浜崎橋JCT, so no route takes that turn and fare paths that need it go the
     long way round (see [network snapshot](network-snapshot.md)).
-  - 加賀 to 東領家 has no directed path, so that pair cannot be planned.
-  - Seven directions the operator lists have no ramp in the snapshot and stay
-    unbound: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り entrance and
-    外回り exit, 新都心西 下り entrance, and 横浜港北 (横浜北線) 下り entrance
-    and 上り exit.
+  - 加賀 to 東領家 cannot be planned: 加賀's entrance joins S1 上り about
+    100 m after 東領家's exit has left it, so the pair has no drivable path,
+    although the operator's fare table prices it.
+  - Three directions the operator lists have no ramp in the snapshot and stay
+    unbound: 新都心西 下り entrance, and 横浜港北 (横浜北線) 下り entrance and
+    上り exit.
   - Entrance recommendation does not read the snapshot's ETC-only flag, so a
     ramp only an ETC car can use, such as 殿町, can be the recommended
     entrance. Tariff bands are quoted for ETC.

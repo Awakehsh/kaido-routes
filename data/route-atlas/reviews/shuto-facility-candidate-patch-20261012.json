@@ -10,7 +10,7 @@
     "finding": "The builder bound every edge of the facility's route within 750 m, and 613 of 1,376 candidates sat more than 200 m away: facilities started or ended on a neighbour's ramp (一ツ橋 on 西神田's, 鈴ヶ森 on 勝島's, 宝町 and 京橋 on the KK branch now called 東銀座), on the opposite direction's ramp, on parking-area return ramps (平和島 on 平和島PA's), on bare carriageway segments (大黒ふ頭 on the Bayshore through lanes, 千鳥町, 三溪園), or on links of the connecting expressways. After this review every ramp binds at most one interchange name.",
     "fare_check": "Checked against the operator's 2026-10 fare and distance table (https://www.shutoko.jp/ss/2026ryoukin-kaitei/gallery/ryoukin-kaitei_toll_rates.pdf), which is not distributed here; see the review notes in docs/product/network-snapshot.md.",
     "distance_limit_meters": 400,
-    "not_resolved": "Directions the operator lists but the snapshot has no ramp for stay unbound rather than borrowing a neighbour's: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り entrance and 外回り exit, 新都心西 下り entrance, 横浜港北 (横浜北線) 下り entrance and 上り exit."
+    "not_resolved": "Directions the operator lists but the snapshot has no ramp for stay unbound rather than borrowing a neighbour's: 新都心西 下り entrance, 横浜港北 (横浜北線) 下り entrance and 上り exit. The 浦安 東行き entrance and 西行き exit (its 美浜 ramps, 1.8 km from the operator point) and the 扇大橋 内回り entrance and 外回り exit (its ramps on S1, either side of 江北JCT) were first listed here and bound on 2026-10-17."
   },
   "added_facilities": [
     {
@@ -4016,14 +4016,18 @@
     {
       "facility_id": "shuto.ic.b.urayasu",
       "entry_edge_candidates": [
-        "osm.38028908.0.forward"
+        "osm.38028908.0.forward",
+        "osm.38028978.0.forward"
       ],
       "exit_edge_candidates": [
-        "osm.1126982258.1.forward"
+        "osm.1126982258.1.forward",
+        "osm.38028977.9.forward"
       ],
       "evidence": [
         "osm.38028908.0.forward: entry ramp starts at node 288769760; unnamed, the nearest facility offering this role; 107 m from the facility point as built",
-        "osm.1126982258.1.forward: exit ramp ends at node 288706350; junction node 浦安; 64 m from the facility point as built"
+        "osm.1126982258.1.forward: exit ramp ends at node 288706350; junction node 浦安; 64 m from the facility point as built",
+        "osm.38028977.9.forward: exit ramp ends at node 281676598; the 西行き exit, which leaves the B 西行き carriageway (way 46912948) at junction node 281676594 浦安 (ref B31); 1.9 km north-east of the facility point. Bound 2026-10-17 from non-operator sources (no operator page was read): ja.wikipedia gives 浦安 two ramp sites, 新木場方 弁天4丁目 at the facility point and 東関東道方 美浜3丁目 (https://ja.wikipedia.org/wiki/%E6%B5%A6%E5%AE%89%E5%87%BA%E5%85%A5%E5%8F%A3); NAVITIME lists 浦安 on 首都湾岸線 in both directions (https://www.navitime.co.jp/highway/iclist?roadId=17954&direction=up, https://www.navitime.co.jp/highway/iclist?roadId=17954&direction=down).",
+        "osm.38028978.0.forward: entry ramp starts at node 446785587, 95 m from the 西行き exit's surface end, and runs through a toll booth onto the B 東行き carriageway (way 46913088); 1.8 km north-east of the facility point. Bound 2026-10-17: the 東行き entrance at the 美浜 site, with the same sources."
       ],
       "dropped": [
         {
@@ -4636,9 +4640,12 @@
     {
       "facility_id": "shuto.ic.c2.oogioohashi",
       "entry_edge_candidates": [
-        "osm.491252135.0.forward"
+        "osm.491252135.0.forward",
+        "osm.62004313.0.forward",
+        "osm.631625170.0.forward"
       ],
       "exit_edge_candidates": [
+        "osm.62004305.0.forward",
         "osm.62004315.1.forward",
         "osm.62004320.0.forward",
         "osm.891243453.0.forward"
@@ -4647,7 +4654,10 @@
         "osm.491252135.0.forward: entry ramp starts at node 772434835; way name 首都高速道路; 136 m from the facility point as built",
         "osm.62004315.1.forward: exit ramp ends at node 773008268; unnamed, the nearest facility offering this role; 145 m from the facility point as built",
         "osm.62004320.0.forward: exit ramp ends at node 773008268; unnamed, the nearest facility offering this role; 220 m from the facility point as built",
-        "osm.891243453.0.forward: exit ramp ends at node 8283660608; unnamed, the nearest facility offering this role; 180 m from the facility point as built"
+        "osm.891243453.0.forward: exit ramp ends at node 8283660608; unnamed, the nearest facility offering this role; 180 m from the facility point as built",
+        "osm.62004305.0.forward: exit ramp ends at node 773008280; the 外回り exit, which leaves the S1 上り carriageway (way 867182414) at junction node 309603951 扇大橋 (ref C35) before 江北JCT; 188 m from the facility point. Bound 2026-10-17 from non-operator sources (no operator page was read): ja.wikipedia records 扇大橋 as a full interchange and the sign on C2 外回り before 江北JCT that its traffic cannot leave at 扇大橋 (https://ja.wikipedia.org/wiki/%E6%89%87%E5%A4%A7%E6%A9%8B%E5%87%BA%E5%85%A5%E5%8F%A3), so the operator's 外回り exit is the one reached from S1 上り; NAVITIME lists 扇大橋 on 首都川口線（上り） between 鹿浜橋 and 江北JCT (https://www.navitime.co.jp/highway/iclist?roadId=17953&direction=up).",
+        "osm.62004313.0.forward: entry ramp starts at node 773008249 and runs through toll booth node 773008218 扇大橋 onto the S1 下り carriageway (way 44179919) after 江北JCT; 148 m from the facility point. Bound 2026-10-17: the 内回り entrance, which ja.wikipedia records as not connecting toward 板橋JCT at 江北JCT (https://ja.wikipedia.org/wiki/%E6%89%87%E5%A4%A7%E6%A9%8B%E5%87%BA%E5%85%A5%E5%8F%A3); NAVITIME lists 扇大橋 on 首都川口線（下り） between 江北JCT and 鹿浜橋 (https://www.navitime.co.jp/highway/iclist?roadId=17953&direction=down).",
+        "osm.631625170.0.forward: the second surface start (node 5964587886) of the same entrance, joining it before toll booth 扇大橋; 161 m from the facility point. Bound 2026-10-17 with osm.62004313.0.forward."
       ],
       "dropped": [
         {
@@ -4672,19 +4682,18 @@
         },
         {
           "side": "exit",
-          "edge_id": "osm.62004305.0.forward",
-          "reason": "not a ramp of this interchange"
-        },
-        {
-          "side": "exit",
           "edge_id": "osm.28188173.6.forward",
-          "reason": "not a ramp of this interchange"
+          "reason": "another segment of a ramp already bound, farther from the facility point"
         }
       ],
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
         "reachable_exits": 133
+      },
+      "cross_route": {
+        "osm.62004313.0.forward": "扇大橋's 内回り entrance ramp carries only S1 relation membership: it merges into 首都高速川口線 下り just after 江北JCT.",
+        "osm.631625170.0.forward": "扇大橋's 内回り entrance ramp carries only S1 relation membership: it merges into 首都高速川口線 下り just after 江北JCT."
       }
     },
     {

@@ -740,6 +740,159 @@ struct ShutoCircuitPlannerTests {
     }
   }
 
+  @Test(
+    "a return trip keeps the bounded approach and drives no tail longer than its approach",
+    arguments: [
+      ("Tokyo Station", 35.6812, 139.7671), ("Shinjuku", 35.69, 139.7003),
+      ("Oji-minami", 35.755249, 139.742524), ("Kinshicho", 35.6969, 139.8146),
+      ("Oi", 35.6, 139.743), ("Kawasaki", 35.5308, 139.7029),
+      ("Kawaguchi station", 35.8079, 139.7241),
+    ],
+    [
+      ShutoCircuitDefinition.c1Inner,
+      ShutoCircuitDefinition.c1Outer,
+      ShutoCircuitDefinition.c2InnerWithBayshore,
+    ]
+  )
+  func boundsReturnTripDetours(
+    origin: (name: String, latitude: Double, longitude: Double),
+    circuit: ShutoCircuitDefinition
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let coordinate = ShutoCoordinate(
+      latitude: origin.latitude,
+      longitude: origin.longitude
+    )
+    func approachAndTail(
+      _ entryFacilityID: String,
+      _ exitFacilityID: String
+    ) throws -> (approach: Double, tail: Double) {
+      let route = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        laps: 1
+      )
+      let marks = route.lapBoundaryOccurrenceIndices
+      let first = try #require(marks.first)
+      let last = try #require(marks.last)
+      return (
+        route.edges[..<first].reduce(0) { $0 + $1.lengthMeters },
+        route.edges[last...].reduce(0) { $0 + $1.lengthMeters }
+      )
+    }
+    let ownRamp = try #require(
+      planner.returnTripCircuitPairings(
+        for: circuit,
+        origin: coordinate,
+        includeConnectingEntrances: false,
+        evidence: .etcNormalCarFrom2026October
+      ).first
+    )
+    let ownRampDistance = try #require(ownRamp.entranceDistanceMeters)
+    let connecting = try #require(
+      planner.returnTripCircuitPairings(
+        for: circuit,
+        origin: coordinate,
+        evidence: .etcNormalCarFrom2026October
+      ).first
+    )
+    for recommended in [ownRamp, connecting] {
+      let entryID = recommended.entrance.facilityID
+      let label = "\(origin.name): \(entryID) → \(recommended.exit.facilityID)"
+      let drive = try approachAndTail(entryID, recommended.exit.facilityID)
+      #expect(drive.approach <= 2 * ownRampDistance + 1_000, "\(label)")
+      // The way home is the approach driven back: at most one ramp spacing
+      // longer, or else the soonest-exit bound.
+      let soonest = try #require(
+        planner.circuitExitCandidates(for: circuit, afterEntering: entryID).first
+      )
+      let soonestTail = try approachAndTail(entryID, soonest.facilityID).tail
+      #expect(
+        drive.tail <= max(drive.approach, soonestTail) + 3_000,
+        "\(label)"
+      )
+    }
+  }
+
+  @Test(
+    "a return trip from the Saitama side enters and leaves on the Kawaguchi Route",
+    arguments: [
+      ShutoCircuitDefinition.c1Inner,
+      ShutoCircuitDefinition.c1Outer,
+      ShutoCircuitDefinition.c2InnerWithBayshore,
+    ]
+  )
+  func returnTripUsesTheRampsBesideTheOrigin(
+    circuit: ShutoCircuitDefinition
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    // Kawaguchi station. The fare prices only 新郷 to 安行, both on S1
+    // beside the origin, so the cheapest return trip drives S1 out and back.
+    let origin = ShutoCoordinate(latitude: 35.8079, longitude: 139.7241)
+    let pairings = planner.returnTripCircuitPairings(
+      for: circuit,
+      origin: origin,
+      evidence: .etcNormalCarFrom2026October
+    )
+    #expect(pairings.prefix(3).allSatisfy { $0.entrance.routeID == "S1" })
+    let first = try #require(pairings.first)
+    #expect(first.entrance.facilityID == "shuto.ic.s1.shingou")
+    #expect(first.exit.facilityID == "shuto.ic.s1.angyou")
+    #expect(first.tariffBand == .minimum(yen: 300))
+    let route = try planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: first.entrance.facilityID,
+      exitFacilityID: first.exit.facilityID,
+      laps: 1
+    )
+    let last = try #require(route.lapBoundaryOccurrenceIndices.last)
+    let isMember: (ShutoNetworkDatabase.Edge) -> Bool = { edge in
+      edge.routeMemberships.contains { circuit.memberRouteIDs.contains($0.routeID) }
+    }
+    // The way home leaves the course where the lap ends.
+    #expect(route.edges[last...].allSatisfy { !isMember($0) })
+  }
+
+  @Test(
+    "the final lap ends at the branch back onto the approach's radial",
+    arguments: [
+      (ShutoCircuitDefinition.c1Inner, "shuto.ic.s1.shingou", "shuto.ic.s1.angyou"),
+      (ShutoCircuitDefinition.c1Outer, "shuto.ic.s1.shingou", "shuto.ic.s1.angyou"),
+      (ShutoCircuitDefinition.c2InnerWithBayshore, "shuto.ic.s1.shingou", "shuto.ic.s1.angyou"),
+      (ShutoCircuitDefinition.c1Inner, "shuto.ic.4.yoyogi", "shuto.ic.4.gaien"),
+    ]
+  )
+  func endsTheFinalLapAtTheReturnBranch(
+    circuit: ShutoCircuitDefinition,
+    entryFacilityID: String,
+    exitFacilityID: String
+  ) throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let route = try planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      laps: 2
+    )
+    #expect(assertContinuity(route.edges))
+    let marks = route.lapBoundaryOccurrenceIndices
+    #expect(marks.count == 3)
+    let length: (Range<Int>) -> Double = { range in
+      route.edges[range].reduce(0) { $0 + $1.lengthMeters }
+    }
+    let firstLap = length(marks[0]..<marks[1])
+    let finalLap = length(marks[1]..<marks[2])
+    // Every lap but the last closes at the merge; the last stops at most
+    // 900 m short of it, where the radial back branches off.
+    #expect(finalLap < firstLap)
+    #expect(finalLap >= firstLap - 900)
+    let isMember: (ShutoNetworkDatabase.Edge) -> Bool = { edge in
+      edge.routeMemberships.contains { circuit.memberRouteIDs.contains($0.routeID) }
+    }
+    #expect(route.edges[marks[2]...].allSatisfy { !isMember($0) })
+  }
+
   @Test("a distant origin retains a direction-valid surface access candidate")
   func retainsDistantOriginCandidate() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())

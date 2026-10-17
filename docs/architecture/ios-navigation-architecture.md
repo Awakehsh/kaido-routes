@@ -22,7 +22,18 @@ to the ramp at the ~27 km/h surface-access reference plus, at the 54 km/h
 expressway reference, the approach and entry the plan drives before its first
 lap or tour pass. A loop's exit is the lowest tariff band among the exits
 reached within 3 km of the soonest exit after the final lap, ties going to the
-earlier forward exit; a tour keeps its soonest course exit. Release coverage
+earlier forward exit; a tour keeps its soonest course exit. A loop whose
+journey returns to the origin is paired by `returnTripCircuitPairings`
+instead: the three gated entrances nearest by straight line, less any whose
+approach exceeds twice the straight line to the course's nearest own ramp plus
+1 km, each with the lowest band among the exits whose tail is at most its
+approach plus 3 km and at most 3 km on the course (ties to the exit nearer
+the origin, then the shorter tail; the soonest-exit rule when none
+qualifies), the lowest band of the three first. `planCircuit` and the exit
+tails end a loop's final lap at a branch back onto the approach's radial that
+leaves the lap within 900 m of its merge (`finalLapReturnGapMeters`); every
+other lap closes at the merge, and the last lap boundary marks where the tail
+begins. Release coverage
 plays no part in the ranking. Pairing labels access beyond 16 km as long,
 and lets the surface adapter decide whether that exact ramp is drivable instead
 of rejecting it by straight-line distance.

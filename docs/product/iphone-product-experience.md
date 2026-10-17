@@ -150,7 +150,13 @@ rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
 radial is only reachable through a full circuit — so recommendations never
 repeat that folklore: the exit search covers the exits reached within 3 km of
 the soonest one after the final lap and picks the lowest honestly-priced band
-among them, so a cheaper quote never costs another pass of the course.
+among them, so a cheaper quote never costs another pass of the course. A loop
+that returns to its start is paired for the drive home instead: of the three
+nearest entrances whose approach is no detour, the one whose cheapest exit —
+with a tail no longer than its approach plus 3 km and at most 3 km on the
+course — bands lowest. The final lap of any loop ends where the approach's
+radial branches back off, when that branch is at most 900 m before the merge,
+so driving the approach back is the way home, never another pass.
 Same-named ramps bill as one toll point, as the operator's Daikoku-Futo
 page and fare search confirm across its Bayshore and Daikoku Line ramps, and
 its fare table bills 王子南 with 王子北, 箱崎 with 浜町 and 清洲橋, and 大井南
@@ -177,7 +183,9 @@ must resolve the exact directional ramp, and a missing access route blocks
 review and start. Automatic selection always starts with the reachable,
 direction-valid entrance that reaches the course soonest from the current
 origin: straight-line surface access at city speed plus the expressway
-approach to the course at expressway speed. Navigation authority is
+approach to the course at expressway speed. A loop that returns to its start
+takes the cheapest of the three nearest entrances whose approach is no detour
+instead. Navigation authority is
 evaluated only after that exact pairing is formed and cannot replace the
 location recommendation with a distant released sample entrance. An explicit
 driver override remains honored and retains its precise release blocker. The

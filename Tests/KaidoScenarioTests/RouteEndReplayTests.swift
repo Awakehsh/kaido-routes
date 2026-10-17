@@ -170,6 +170,54 @@
       #expect(!run.completedEarly(), "\(summary)")
     }
 
+    /// The Route 4 down exit at Gaien continues as ramp past the plan's last
+    /// edge, and the fixes there run coarse (30–60 m). They denied the
+    /// planned exit its own evidence until the car was off the expressway,
+    /// where the unplanned-exit rule took the drive first.
+    @Test(
+      "a drive whose exit fixes turn coarse still completes at its planned exit",
+      arguments: [
+        ("c1-inner", 2, "URBAN", UInt64(11)),
+        ("c1-inner", 2, "MULTIPATH", 26),
+        ("c1-inner", 1, "UNDER2X", 39),
+        ("c1-outer", 2, "URBAN", 11),
+      ]
+    )
+    func coarseFixesAtTheExitStillComplete(
+      loop: String,
+      laps: Int,
+      noise: String,
+      seed: UInt64
+    ) async throws {
+      let gate = try Self.gaienGate(loop, laps: laps)
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: Self.noise(noise))
+      let summary = gateLine(file: "\(loop)-yoyogi-gaien:\(laps)", seed: seed, run: run, label: "ROUTE-END-\(noise)")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+      #expect(
+        (run.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds,
+        "\(summary)"
+      )
+    }
+
+    /// Yoyogi to Gaien round C1: Route 4 up onto the loop and back down it.
+    private static func gaienGate(_ loop: String, laps: Int) throws -> LiveNavigationReplayGate {
+      let database = try replayGateDatabase()
+      let planner = try ShutoRoutePlanner(database: database)
+      let route = try planner.planCircuit(
+        circuit: loop == "c1-inner" ? .c1Inner : .c1Outer,
+        entryFacilityID: "shuto.ic.4.yoyogi",
+        exitFacilityID: "shuto.ic.4.gaien",
+        laps: laps
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      return LiveNavigationReplayGate(release: release, database: database)
+    }
+
     /// Three laps of C1 inner from Shibakoen to Shiodome, or of C1 outer
     /// from its first C1 entrance to the exit the planner recommends.
     private static func threeLapGate(_ loop: String) throws -> LiveNavigationReplayGate {

@@ -393,6 +393,16 @@
       "reason": "Ramp whose junction node is named 臨海副都心."
     },
     {
+      "facility_id": "shuto.ic.b.urayasu",
+      "edge_id": "osm.38028977.9.forward",
+      "reason": "浦安's 西行き exit at its 美浜 ramp site (junction node 浦安, ref B31), 1.9 km north-east of the operator point at the 弁天 site."
+    },
+    {
+      "facility_id": "shuto.ic.b.urayasu",
+      "edge_id": "osm.38028978.0.forward",
+      "reason": "浦安's 東行き entrance at its 美浜 ramp site, 1.8 km north-east of the operator point at the 弁天 site."
+    },
+    {
       "facility_id": "shuto.ic.k7-yokohama-kita.yokohamakohoku",
       "edge_id": "osm.693933987.2.forward",
       "reason": "横浜港北's ramps (横浜北線) spread around 横浜港北JCT."

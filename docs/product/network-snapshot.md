@@ -57,11 +57,18 @@ The [facility candidate patch](../../data/route-atlas/reviews/README.md) of
 of the facility's route within 750 m, so 613 of 1,376 candidates sat more than
 200 m away and interchanges started or ended on a neighbour's ramp, the
 opposite direction's ramp, a PA return ramp, bare carriageway, or a connecting
-expressway's link. Each ramp now binds at most one interchange name: 748
-candidates, 28 of them beyond 400 m with a reviewed reason. The patch adds the
+expressway's link. Each ramp now binds at most one interchange name: 753
+candidates, 30 of them beyond 400 m with a reviewed reason. The patch adds the
 東銀座 exit (外回り), which the operator lists and the KK line closure kept
 open, and drops two stray nodes that a name-substring match had added to
-大橋JCT, which had moved its point 4.8 km. `scripts/audit_shuto_network.py`
+大橋JCT, which had moved its point 4.8 km. Two interchanges keep ramps the
+first derivation missed, bound on 2026-10-17 from ja.wikipedia and NAVITIME's
+per-direction interchange lists: 扇大橋's 外回り exit and 内回り entrance are
+on S1, either side of 江北JCT (the exit had been dropped as another
+interchange's ramp, so 鹿浜橋 to 扇大橋 priced 1,290 yen instead of 300), and
+浦安's 東行き entrance and 西行き exit sit at its second ramp site 1.9 km from
+the operator point (浦安 to 千鳥町 priced 1,270 yen instead of 340).
+`scripts/audit_shuto_network.py`
 fails CI if a carriageway ends or starts outside a listed terminus, a ramp is
 bound to two interchanges, a candidate exceeds the limit without a reviewed
 exception, or an exit ramp runs on to another interchange's exit.
@@ -79,9 +86,8 @@ before) and 52 at the cap (321). Known residuals: C1 内回り has no link to
 Route 1 and Route 11 at 浜崎橋 (芝公園 to 平和島 measures about twice the
 operator's distance); 加賀 to 東領家, which the operator prices at the
 minimum, has no path; and the directions the operator lists without a ramp
-in the snapshot stay unbound rather than borrowing a neighbour's: 浦安 東行き entrance and 西行き exit, 扇大橋 内回り
-entrance and 外回り exit, 新都心西 下り entrance, and 横浜港北 (横浜北線) 下り
-entrance and 上り exit.
+in the snapshot stay unbound rather than borrowing a neighbour's: 新都心西 下り
+entrance, and 横浜港北 (横浜北線) 下り entrance and 上り exit.
 
 All PA interiors are bound to exact ordered source segments as `PARKING`
 edges with no route membership. Route planning traverses an explicitly requested

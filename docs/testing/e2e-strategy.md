@@ -72,11 +72,13 @@ App tests are selected by Xcode test plans under
 | `Verify` | every `verify/app` run | every App unit test, plus 14 listed UI journeys |
 | `Full` (scheme default) | `iOS qualification` | every App unit and UI test |
 | `PhysicalAudio` | `KaidoRoutesPhysicalAudioQualification` scheme | the real-audio tests only |
+| `ReleaseSmoke` | `KaidoRoutesReleaseSmoke` scheme (`iPhone Release stack` job, device qualification) | every UI test, run by name against the Release app |
 
 A plan includes each test target whole and names only what it skips, so a new
 test runs without anyone listing it. `Verify` and `Full` skip
 `PhysicalAudioQualification*` because those tests need a connected phone's
-real audio route. `Verify` lists its UI journeys instead, because each costs
+real audio route. `Full` also skips `ReleaseStackJourneyUITests`, which drives
+the Release app and runs only through `ReleaseSmoke`. `Verify` lists its UI journeys instead, because each costs
 20–40 seconds on a CI runner and the list is sized so the UI job takes about
 as long as the unit job. They cover route selection to live navigation (the
 recommended C2 circuit, an exact custom route, a long surface access), the

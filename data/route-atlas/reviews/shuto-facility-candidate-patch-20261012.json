@@ -10,7 +10,7 @@
     "finding": "The builder bound every edge of the facility's route within 750 m, and 613 of 1,376 candidates sat more than 200 m away: facilities started or ended on a neighbour's ramp (一ツ橋 on 西神田's, 鈴ヶ森 on 勝島's, 宝町 and 京橋 on the KK branch now called 東銀座), on the opposite direction's ramp, on parking-area return ramps (平和島 on 平和島PA's), on bare carriageway segments (大黒ふ頭 on the Bayshore through lanes, 千鳥町, 三溪園), or on links of the connecting expressways. After this review every ramp binds at most one interchange name.",
     "fare_check": "Checked against the operator's 2026-10 fare and distance table (https://www.shutoko.jp/ss/2026ryoukin-kaitei/gallery/ryoukin-kaitei_toll_rates.pdf), which is not distributed here; see the review notes in docs/product/network-snapshot.md.",
     "distance_limit_meters": 400,
-    "not_resolved": "Directions the operator lists but the snapshot has no ramp for stay unbound rather than borrowing a neighbour's: 新都心西 下り entrance, 横浜港北 (横浜北線) 下り entrance and 上り exit. The 浦安 東行き entrance and 西行き exit (its 美浜 ramps, 1.8 km from the operator point) and the 扇大橋 内回り entrance and 外回り exit (its ramps on S1, either side of 江北JCT) were first listed here and bound on 2026-10-17."
+    "not_resolved": "Directions the operator lists but the snapshot has no ramp for stay unbound rather than borrowing a neighbour's: 新都心西 下り entrance, 横浜港北 (横浜北線) 下り entrance and 上り exit, and 八潮 下り exit (unbound 2026-10-18: its only link rejoins the carriageway). The 浦安 東行き entrance and 西行き exit (its 美浜 ramps, 1.8 km from the operator point) and the 扇大橋 内回り entrance and 外回り exit (its ramps on S1, either side of 江北JCT) were first listed here and bound on 2026-10-17."
   },
   "added_facilities": [
     {
@@ -153,7 +153,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -197,7 +197,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -237,7 +237,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -301,7 +301,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -323,7 +323,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -369,7 +369,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -391,7 +391,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -521,7 +521,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -539,7 +539,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -659,7 +659,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -681,7 +681,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -772,7 +772,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -902,7 +902,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -920,7 +920,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1015,7 +1015,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1145,7 +1145,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1234,7 +1234,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -1262,7 +1262,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1280,7 +1280,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1298,7 +1298,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -1332,7 +1332,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -1364,7 +1364,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1415,7 +1415,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -1534,7 +1534,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1554,7 +1554,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -1620,7 +1620,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1646,7 +1646,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1723,7 +1723,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1753,7 +1753,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1783,7 +1783,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1847,7 +1847,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1865,7 +1865,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1891,7 +1891,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1921,7 +1921,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -1941,7 +1941,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2060,7 +2060,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2078,7 +2078,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2190,7 +2190,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2321,7 +2321,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2329,23 +2329,26 @@
       "entry_edge_candidates": [
         "osm.1023817978.0.forward"
       ],
-      "exit_edge_candidates": [
-        "osm.1463660809.6.forward"
-      ],
+      "exit_edge_candidates": [],
       "evidence": [
         "osm.1023817978.0.forward: entry ramp starts at node 746491118; way name 首都高速道路; 18 m from the facility point as built",
-        "osm.1463660809.6.forward: exit edge; way name 首都高速道路; 16 m from the facility point as built"
+        "No 下り exit ramp in the snapshot (unbound 2026-10-18): way 1463660809 (motorway_link, destination=八潮入口, OSM version 1 of 2026-01-02), which the 2026-09-14 patch bound pending aerial confirmation, leaves the 6号三郷線 carriageway (way 846888239) at node 13426271751 and rejoins that same way at node 559433465; no other OSM way meets any of its nodes (OSM API, 2026-10-18). ja.wikipedia records the exit meeting 埼玉県道116号 (https://ja.wikipedia.org/wiki/%E5%85%AB%E6%BD%AE%E5%87%BA%E5%85%A5%E5%8F%A3); NAVITIME places 八潮 about 30 m from node 559433465 (https://www.navitime.co.jp/highway/iclist?roadId=17964&direction=down). Rebind when OSM draws the ramp's descent to 県道116号 or aerial imagery shows where it leaves the carriageway system."
       ],
       "dropped": [
         {
           "side": "entry",
           "edge_id": "osm.81816303.0.forward",
           "reason": "parking-area ramp"
+        },
+        {
+          "side": "exit",
+          "edge_id": "osm.1463660809.6.forward",
+          "reason": "rejoins the 6号三郷線 carriageway; no surface end in the snapshot"
         }
       ],
       "reason": "Re-bound to its own ramps only.",
       "expect": {
-        "reaching_entrances": 131,
+        "reaching_entrances": 0,
         "reachable_exits": 133
       }
     },
@@ -2410,7 +2413,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2445,7 +2448,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2480,7 +2483,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2525,7 +2528,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2559,7 +2562,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2703,7 +2706,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2725,7 +2728,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2767,7 +2770,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2792,7 +2795,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2888,7 +2891,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2960,7 +2963,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -2981,7 +2984,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -3023,7 +3026,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3092,7 +3095,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3236,7 +3239,7 @@
       },
       "expect": {
         "reaching_entrances": 130,
-        "reachable_exits": 132
+        "reachable_exits": 131
       }
     },
     {
@@ -3258,7 +3261,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3298,7 +3301,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3324,7 +3327,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -3361,7 +3364,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3431,7 +3434,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3482,7 +3485,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -3546,7 +3549,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3579,7 +3582,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3616,7 +3619,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3646,7 +3649,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3728,7 +3731,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -3860,7 +3863,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -3919,7 +3922,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -4010,7 +4013,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4054,7 +4057,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4086,7 +4089,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4108,7 +4111,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4155,7 +4158,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4187,7 +4190,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4209,7 +4212,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4231,7 +4234,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4271,7 +4274,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4301,7 +4304,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4331,7 +4334,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4356,7 +4359,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4371,7 +4374,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -4393,7 +4396,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4483,7 +4486,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4512,7 +4515,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4534,7 +4537,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4556,7 +4559,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4580,7 +4583,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4598,7 +4601,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4634,7 +4637,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4689,7 +4692,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       },
       "cross_route": {
         "osm.62004313.0.forward": "扇大橋's 内回り entrance ramp carries only S1 relation membership: it merges into 首都高速川口線 下り just after 江北JCT.",
@@ -4774,7 +4777,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4864,7 +4867,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -4928,7 +4931,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5000,7 +5003,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5030,7 +5033,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -5069,7 +5072,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -5089,7 +5092,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5143,7 +5146,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5161,7 +5164,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5189,7 +5192,7 @@
       },
       "expect": {
         "reaching_entrances": 130,
-        "reachable_exits": 132
+        "reachable_exits": 131
       }
     },
     {
@@ -5211,7 +5214,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5262,7 +5265,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5298,7 +5301,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5360,7 +5363,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5407,7 +5410,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5436,7 +5439,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5472,7 +5475,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5533,7 +5536,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5615,7 +5618,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5648,7 +5651,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -5746,7 +5749,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -5779,7 +5782,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 0,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -5808,7 +5811,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -5879,7 +5882,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6064,7 +6067,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 130,
-        "reachable_exits": 132
+        "reachable_exits": 131
       }
     },
     {
@@ -6082,7 +6085,7 @@
       "reason": "Bindings confirmed unchanged, less the 大師道 westbound exit branch the topology review cuts.",
       "expect": {
         "reaching_entrances": 130,
-        "reachable_exits": 132
+        "reachable_exits": 131
       }
     },
     {
@@ -6115,7 +6118,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6194,7 +6197,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6273,7 +6276,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6301,7 +6304,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6363,7 +6366,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6452,7 +6455,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6517,7 +6520,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 135
+        "reachable_exits": 134
       }
     },
     {
@@ -6635,7 +6638,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 135
+        "reachable_exits": 134
       }
     },
     {
@@ -6680,7 +6683,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6710,7 +6713,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -6831,7 +6834,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 135
+        "reachable_exits": 134
       }
     },
     {
@@ -6931,7 +6934,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -6955,7 +6958,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -6990,7 +6993,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     },
     {
@@ -7036,7 +7039,7 @@
       "reason": "Bindings confirmed unchanged.",
       "expect": {
         "reaching_entrances": 131,
-        "reachable_exits": 133
+        "reachable_exits": 132
       }
     },
     {
@@ -7075,7 +7078,7 @@
       "reason": "Re-bound to its own ramps only.",
       "expect": {
         "reaching_entrances": 132,
-        "reachable_exits": 134
+        "reachable_exits": 133
       }
     }
   ]

@@ -297,7 +297,7 @@ jobs:
           done
           status=0
           wait "$test_pid" || status=$?
-          grep -E "Test Case|error:" "$log" || true
+          grep -E "Test Case|error:|RELEASE-JOURNEY-RETAP" "$log" || true
           echo "Main-thread stack high-water: ${peak:-not read} KB (limit $HIGH_WATER_LIMIT_KB KB)"
           # A retap is the journey's fallback for a synthesized tap that did
           # nothing; list every one so a rising rate is visible.

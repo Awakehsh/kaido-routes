@@ -27,7 +27,8 @@
     },
     {
       "skippedTests" : [
-        "PhysicalAudioQualificationUITests"
+        "PhysicalAudioQualificationUITests",
+        "ReleaseStackJourneyUITests"
       ],
       "target" : {
         "containerPath" : "container:KaidoRoutesApp.xcodeproj",

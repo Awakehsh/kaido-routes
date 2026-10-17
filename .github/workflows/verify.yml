@@ -193,19 +193,23 @@ jobs:
           retention-days: 7
 
   # The simulator gives the main thread 8 MB of stack; an iPhone gives it
-  # 1 MB. Release SwiftUI reserves stack for every inline view value, so a
-  # Release build can overflow on the phone at launch while every simulator
-  # test passes. This job links the Release app with the iPhone's stack size
-  # and requires it to survive its first seconds. Stack use depends on the
-  # SwiftUI runtime: on macos-15 (Xcode 26.3, iOS 26.2) the build that crashed
-  # the phone still fits in 1 MB, on macos-26 (Xcode 26.6, iOS 26.5) it does
-  # not, so this job runs on the newer image.
-  release-launch:
-    name: iPhone Release launch
+  # 1008 KB. Release SwiftUI reserves stack for every inline view value, so a
+  # Release build can overflow on the phone while every simulator test
+  # passes. This job links the Release app with the iPhone's stack size, drives
+  # it from the home to the end of a live drive, and fails on a crash or when
+  # the main thread's stack high-water mark passes 640 KB, which keeps
+  # headroom below the phone's limit. Stack use depends on the SwiftUI
+  # runtime: on macos-15 (Xcode 26.3, iOS 26.2) the build that crashed the
+  # phone still fit, on macos-26 (Xcode 26.6, iOS 26.5) it does not.
+  release-stack:
+    name: iPhone Release stack
     needs: changes
     if: needs.changes.outputs.verification-required == 'true'
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 40
+    env:
+      STACK_SIZE: "0xfc000"
+      HIGH_WATER_LIMIT_KB: "640"
     steps:
       - uses: actions/checkout@v7
 
@@ -222,53 +226,104 @@ jobs:
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
-      - name: Build Release with an iPhone-sized main-thread stack
+      - name: Build Release for testing, then relink the app with the iPhone's stack
         run: |
           set -euo pipefail
+          log="$RUNNER_TEMP/KaidoRoutesApp-release-build.log"
+          xcodebuild build-for-testing \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesReleaseSmoke \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 CODE_SIGNING_ALLOWED=NO \
+            > "$log" 2>&1 || { tail -50 "$log"; exit 1; }
           xcodebuild build \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -configuration Release \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            ARCHS=arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            "OTHER_LDFLAGS=\$(inherited) -Wl,-stack_size,0x100000" \
-            > "$RUNNER_TEMP/KaidoRoutesApp-release-build.log" 2>&1 \
-            || { tail -50 "$RUNNER_TEMP/KaidoRoutesApp-release-build.log"; exit 1; }
+            ARCHS=arm64 CODE_SIGNING_ALLOWED=NO \
+            "OTHER_LDFLAGS=\$(inherited) -Wl,-stack_size,$STACK_SIZE" \
+            >> "$log" 2>&1 || { tail -50 "$log"; exit 1; }
+          binary="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/KaidoRoutes.app/KaidoRoutes"
+          linked=$(otool -l "$binary" | awk '/stacksize/ {print $2; exit}')
+          echo "Main-thread stack linked: $linked bytes"
+          test "$linked" -eq $((STACK_SIZE))
 
       # Booted only after the build: a starting xcodebuild waits on a booting
       # simulator (see scripts/build_and_boot_for_ci.py).
-      - name: Launch and require the app to stay up for 15 s
+      - name: Drive the Release journey and sample the main-thread stack
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/KaidoRoutes.app"
-          udid=$(xcrun simctl create release-launch com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro)
+          udid=$(xcrun simctl create release-stack com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro)
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" >/dev/null
-          xcrun simctl install "$udid" "$app"
-          pid=$(xcrun simctl launch "$udid" app.kaidoroutes | awk '{print $NF}')
-          sleep 15
-          if ! kill -0 "$pid" 2>/dev/null; then
-            echo "::error::The Release app exited within 15 s of launch on a 1 MB main-thread stack"
+          xcrun simctl location "$udid" set 35.6586,139.7454
+          samples="$RUNNER_TEMP/main-thread-stack.txt"
+          : > "$samples"
+          # vmmap's thread-0 Stack row: [ VSIZE RSDNT DIRTY SWAP ]. Resident
+          # plus swapped pages is how much of the stack has been touched.
+          (
+            while :; do
+              pid=$(xcrun simctl spawn "$udid" launchctl list 2>/dev/null \
+                | awk '/UIKitApplication:app\.kaidoroutes\[/ {print $1}')
+              if [[ -n "$pid" && "$pid" != "-" ]]; then
+                vmmap "$pid" 2>/dev/null | awk '/^Stack .*thread 0$/ {
+                  for (i = 1; i <= NF; i++) if ($i == "[") {
+                    r = $(i + 2); s = $(i + 4); sub(/K/, "", r); sub(/K]?/, "", s)
+                    print r + s
+                  }
+                }' >> "$samples" || true
+              fi
+              sleep 1
+            done
+          ) &
+          sampler=$!
+          status=0
+          xcodebuild test-without-building \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesReleaseSmoke \
+            -destination "id=$udid" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:KaidoRoutesAppUITests/ReleaseStackJourneyUITests \
+            -resultBundlePath "$RUNNER_TEMP/ReleaseStack.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            > "$RUNNER_TEMP/KaidoRoutesApp-release-stack-test.log" 2>&1 || status=$?
+          kill "$sampler"
+          grep -E "Test Case|error:" "$RUNNER_TEMP/KaidoRoutesApp-release-stack-test.log" || true
+          peak=$(sort -n "$samples" | tail -1)
+          echo "Main-thread stack high-water: ${peak:-none} KB from $(wc -l < "$samples" | tr -d ' ') samples (limit $HIGH_WATER_LIMIT_KB KB)"
+          if [[ "$status" -ne 0 ]]; then
+            echo "::error::The Release journey failed on a $STACK_SIZE-byte main-thread stack"
             exit 1
           fi
-          echo "Release app still running after 15 s (pid $pid)"
+          if [[ -z "$peak" ]]; then
+            echo "::error::No main-thread stack sample was taken"
+            exit 1
+          fi
+          if (( peak > HIGH_WATER_LIMIT_KB )); then
+            echo "::error::Main-thread stack high-water ${peak} KB exceeds ${HIGH_WATER_LIMIT_KB} KB"
+            exit 1
+          fi
 
-      - name: Upload Release launch diagnostics
+      - name: Upload Release stack diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: kaido-release-launch-diagnostics-${{ github.run_attempt }}
+          name: kaido-release-stack-diagnostics-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/KaidoRoutesApp-release-build.log
+            ${{ runner.temp }}/KaidoRoutesApp-release-stack-test.log
+            ${{ runner.temp }}/ReleaseStack.xcresult
+            ${{ runner.temp }}/main-thread-stack.txt
             ~/Library/Logs/DiagnosticReports/KaidoRoutes-*.ips
           if-no-files-found: warn
           retention-days: 7
 
   gate:
     name: Verification gate
-    needs: [changes, deterministic, app, release-launch]
+    needs: [changes, deterministic, app, release-stack]
     if: always()
     runs-on: ubuntu-latest
     steps:

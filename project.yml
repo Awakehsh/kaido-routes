@@ -202,8 +202,9 @@ schemes:
           - test
     test:
       config: Release
-      targets:
-        - KaidoRoutesAppUITests
+      testPlans:
+        - path: Apps/KaidoRoutesApp/TestPlans/ReleaseSmoke.xctestplan
+          defaultPlan: true
     run:
       config: Release
     analyze:

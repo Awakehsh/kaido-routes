@@ -43,6 +43,7 @@ def network():
             facility("f.ko", "甲", exit_=["x.out"]),
             facility("f.otsu", "乙", entry=["e.in"]),
         ],
+        "nodes": [],
     }
 
 
@@ -56,6 +57,7 @@ def exceptions(**changes):
         ],
         "candidate_distance_exceptions": [],
         "ramp_continuations": [],
+        "named_unbound_ramps": [],
     }
     base.update(changes)
     return base
@@ -153,6 +155,38 @@ class AuditShutoNetworkTests(unittest.TestCase):
         findings = AUDIT.audit(parked, exceptions(), {"x.out"})
         self.assertIn("f.ko exit x.out binds a closed ramp", findings)
         self.assertIn("f.hei exit pa is not a drivable edge", findings)
+
+    def test_an_unbound_ramp_named_after_an_interchange_needs_a_reasoned_exception(self):
+        # 乙's second entrance comes from the surface at 20 through a toll
+        # booth OSM names after it, and no facility binds it.
+        named = network()
+        named["edges"] += [edge("f.in", 20, 21), edge("f.on", 21, 2)]
+        named["nodes"].append({"node_id": 21, "tags": {"barrier": "toll_booth", "name": "乙入口"}})
+        self.assertEqual(
+            AUDIT.audit(named, exceptions(), set()),
+            ["unbound entry ramp meeting the surface at node 20 is named 乙"],
+        )
+        reviewed = exceptions(named_unbound_ramps=[
+            {"side": "entry", "node_id": 20, "reason": "a second surface start of a bound ramp"},
+        ])
+        self.assertEqual(AUDIT.audit(named, reviewed, set()), [])
+        self.assertEqual(
+            AUDIT.audit(network(), reviewed, set()),
+            ["named unbound ramp exception entry 20 no longer applies"],
+        )
+
+    def test_closed_parking_and_carriageway_free_chains_are_not_unbound_ramps(self):
+        named = network()
+        named["edges"] += [
+            edge("c.in", 20, 21), edge("c.on", 21, 2),  # closed ramp
+            edge("p.ret", 30, 31, kind="PARKING"), edge("p.on", 31, 2),  # PA return
+            edge("s.in", 40, 41), edge("s.out", 41, 42),  # reaches no carriageway
+        ]
+        named["nodes"] += [
+            {"node_id": node, "tags": {"highway": "motorway_junction", "name": "乙"}}
+            for node in (21, 31, 41)
+        ]
+        self.assertEqual(AUDIT.audit(named, exceptions(), {"c.in"}), [])
 
 
 if __name__ == "__main__":

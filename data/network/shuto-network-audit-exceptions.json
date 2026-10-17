@@ -440,5 +440,12 @@
       "edge_id": "osm.1463660809.6.forward",
       "reason": "OSM joins the 下り exit ramp (way 1463660809, destination 八潮入口) straight onto the 6号三郷線 carriageway at plaza node 559433465, as bound by the 2026-09-14 patch. No surface road meets that node in OSM, so it is not cut as a surface crossing; the continuation stays listed until it is reviewed against the plaza layout."
     }
+  ],
+  "named_unbound_ramps": [
+    {
+      "side": "exit",
+      "node_id": 448040999,
+      "reason": "Second surface branch of 大師's K6 exit: it splits at node 3365189268 from the bound branch osm.1041332729.3.forward, which ends at the same toll point; the 2026-10-12 topology review (#50) cut the median link and the westbound branch past it."
+    }
   ]
 }

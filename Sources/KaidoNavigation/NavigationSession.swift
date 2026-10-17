@@ -516,7 +516,7 @@ public actor NavigationSession {
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
         >= routeEnd.exitSideStartIndex,
       routeEnd.metersFromExit(observation.coordinate)
-        < routeEnd.metersFromOtherRoads(observation.coordinate)
+        < routeEnd.metersFromOtherRoads(observation.coordinate, fromProgress: currentIndex)
     {
       engine.finishAtRouteEnd()
       return
@@ -558,7 +558,8 @@ public actor NavigationSession {
       // route end leaving the corridor is what taking the exit looks like.
       guard continues, let lastEdgeID = offPlanRun?.edgeID,
         routeEnd.map({
-          $0.metersFromExit(observation.coordinate) > $0.exitCoverageMeters
+          $0.metersFromExit(observation.coordinate)
+            > $0.exitCoverageMeters(fromProgress: engine.snapshot.currentOccurrenceIndex ?? 0)
         }) ?? true
       else {
         offPlanRun = nil
@@ -859,17 +860,20 @@ public actor NavigationSession {
     } ?? false
     let clearance = 4 * max(5, observation.horizontalAccuracyMeters)
     let metersFromExit = routeEnd.metersFromExit(observation.coordinate)
+    let metersFromOtherRoads = routeEnd.metersFromOtherRoads(
+      observation.coordinate, fromProgress: currentIndex
+    )
     // In recovery the car has already been seen off the plan, on the road
     // past the exit as often as on the exit itself; a fix scattered off that
     // road can clear it by the fix's own error, so it has to lie nearer the
     // exit than any other road.
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
-      && metersFromExit <= routeEnd.exitCoverageMeters - clearance
+      && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
       && (engine.snapshot.journeyPhase != .routeRecovery
-        || metersFromExit < routeEnd.metersFromOtherRoads(observation.coordinate))
+        || metersFromExit < metersFromOtherRoads)
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
-      routeEnd.metersFromOtherRoads(observation.coordinate) >= clearance
+      metersFromOtherRoads >= clearance
     else {
       exitRun = nil
       return
@@ -1562,15 +1566,17 @@ private struct RouteEndGeometry: Sendable {
   let exitSideStartIndex: Int
   /// The plan from `exitSideStartIndex` to its end.
   private let exit: [MatcherCoordinate]
-  /// Every corridor road but the exit and what continues past its end: the
-  /// roads the car could be on instead of the exit, earlier passes of the
-  /// plan included.
-  private let otherRoads: [[MatcherCoordinate]]
-  /// How close to the exit the corridor holds every road the car could be
-  /// on instead of it: the nearest point where it stops following one.
-  /// Within this distance a fix matching no corridor road is on none of
-  /// them.
-  let exitCoverageMeters: Double
+  /// Every corridor road but the exit and what continues past its end, with
+  /// the last occurrence of the plan it can be reached from: the roads the
+  /// car could be on instead of the exit, earlier passes of the plan
+  /// included. A road no occurrence from admitted progress on leads to —
+  /// the other carriageway of a radial the drive came in on, and that
+  /// carriageway's own exit — is not one of them.
+  private let otherRoads: [(coordinates: [MatcherCoordinate], lastReachingIndex: Int)]
+  /// Where the corridor stops following each road the car could be on
+  /// instead of the exit: that point's distance from the exit, and the last
+  /// occurrence of the plan the road can be reached from.
+  private let roadEnds: [(metersFromExit: Double, lastReachingIndex: Int)]
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1601,16 +1607,40 @@ private struct RouteEndGeometry: Sendable {
       pending += edge.successorEdgeIDs
     }
     let exitEdgeIDs = Set(routeEdges[exitSideStartIndex...].map(\.id))
-    otherRoads = corridor.edges.filter {
-      !exitEdgeIDs.contains($0.id) && !pastEndIDs.contains($0.id)
-    }.map(\.coordinates)
-    exitCoverageMeters =
-      corridor.edges.filter {
-        !routeEdgeIDs.contains($0.id) && !exitRoadIDs.contains($0.id)
-          && $0.successorEdgeIDs.isEmpty
-      }.compactMap(\.coordinates.last).map {
-        Self.meters(from: $0, toPolyline: exit)
-      }.min() ?? .infinity
+    // From the plan's end backwards, each road takes the latest occurrence
+    // that leads to it; one already taken is reached from later on, and so
+    // is everything it leads to.
+    var lastReachingIndex: [String: Int] = [:]
+    for index in routeEdges.indices.reversed() {
+      pending = [routeEdges[index].id]
+      while let edgeID = pending.popLast() {
+        guard lastReachingIndex[edgeID] == nil, let edge = edgesByID[edgeID] else { continue }
+        lastReachingIndex[edgeID] = index
+        pending += edge.successorEdgeIDs
+      }
+    }
+    otherRoads = corridor.edges.compactMap {
+      guard !exitEdgeIDs.contains($0.id), !pastEndIDs.contains($0.id),
+        let reachingIndex = lastReachingIndex[$0.id]
+      else { return nil }
+      return ($0.coordinates, reachingIndex)
+    }
+    roadEnds = corridor.edges.compactMap {
+      guard !routeEdgeIDs.contains($0.id), !exitRoadIDs.contains($0.id),
+        $0.successorEdgeIDs.isEmpty, let end = $0.coordinates.last,
+        let reachingIndex = lastReachingIndex[$0.id]
+      else { return nil }
+      return (Self.meters(from: end, toPolyline: exit), reachingIndex)
+    }
+  }
+
+  /// How close to the exit the corridor holds every road a car at
+  /// `progressIndex` could be on instead of it: the nearest point where it
+  /// stops following one. Within this distance a fix matching no corridor
+  /// road is on none of them.
+  func exitCoverageMeters(fromProgress progressIndex: Int) -> Double {
+    roadEnds.filter { $0.lastReachingIndex >= progressIndex }.map(\.metersFromExit).min()
+      ?? .infinity
   }
 
   /// Distance from a point to the plan after its last choice of road.
@@ -1618,10 +1648,14 @@ private struct RouteEndGeometry: Sendable {
     Self.meters(from: coordinate, toPolyline: exit)
   }
 
-  /// Distance from a point to the nearest road the car could be on instead
-  /// of the exit.
-  func metersFromOtherRoads(_ coordinate: MatcherCoordinate) -> Double {
-    otherRoads.map { Self.meters(from: coordinate, toPolyline: $0) }.min() ?? .infinity
+  /// Distance from a point to the nearest road a car at `progressIndex`
+  /// could be on instead of the exit.
+  func metersFromOtherRoads(
+    _ coordinate: MatcherCoordinate,
+    fromProgress progressIndex: Int
+  ) -> Double {
+    otherRoads.filter { $0.lastReachingIndex >= progressIndex }
+      .map { Self.meters(from: coordinate, toPolyline: $0.coordinates) }.min() ?? .infinity
   }
 
   static func meters(

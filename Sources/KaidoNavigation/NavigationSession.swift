@@ -507,6 +507,20 @@ public actor NavigationSession {
     guard count >= Self.offPlanDeviationObservationCount, exitRun == nil else { return }
     unplannedExitRun = nil
     offPlanRun = nil
+    // Past the plan's last choice of road the only way off the expressway is
+    // the planned exit. Coarse fixes along its ramp can withhold the exit's
+    // own evidence until the car is already off the expressway; a fix still
+    // nearer that exit than any other road is the exit taken.
+    if let routeEnd,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
+        >= routeEnd.exitSideStartIndex,
+      routeEnd.metersFromExit(observation.coordinate)
+        < routeEnd.metersFromOtherRoads(observation.coordinate)
+    {
+      engine.finishAtRouteEnd()
+      return
+    }
     engine.leaveAtUnplannedExit()
   }
 

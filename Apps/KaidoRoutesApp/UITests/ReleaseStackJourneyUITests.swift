@@ -17,38 +17,25 @@ final class ReleaseStackJourneyUITests: XCTestCase {
 
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 30))
-    // The cards lay out again when their previews arrive; a tap before that
-    // can land on the moving row and select nothing.
-    XCTAssertTrue(
-      element("whole-shuto-circuit-metrics-shuto.circuit.c1-inner", in: app)
-        .waitForExistence(timeout: 60))
-    circuit.tap()
-    allowLocationIfAsked()
     let startCircuit = element("whole-shuto-start-circuit", in: app)
-    XCTAssertTrue(startCircuit.waitForExistence(timeout: 10))
+    tap(circuit, until: startCircuit)
     waitUntilEnabled(startCircuit)
     assertRunning(app, after: "route choice")
 
-    startCircuit.tap()
-    XCTAssertTrue(element("whole-shuto-journey-review", in: app).waitForExistence(timeout: 15))
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
-    XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 10))
+    tap(startCircuit, until: startLiveDrive)
     waitUntilEnabled(startLiveDrive)
     assertRunning(app, after: "review")
 
-    startLiveDrive.tap()
-    allowLocationIfAsked()
-    XCTAssertTrue(startLiveDrive.waitForNonExistence(timeout: 15))
     let endJourney = element("whole-shuto-end-journey", in: app)
-    XCTAssertTrue(endJourney.waitForExistence(timeout: 15))
+    tap(startLiveDrive, until: endJourney)
     assertRunning(app, after: "start of the live drive")
 
     // The confirmation's destructive action carries the same label as the
     // button that asks for it, in whatever language the simulator runs.
     let endLabel = endJourney.label
-    endJourney.tap()
     let confirmation = app.alerts.firstMatch
-    XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+    tap(endJourney, until: confirmation)
     confirmation.buttons[endLabel].tap()
     XCTAssertTrue(endJourney.waitForNonExistence(timeout: 15))
     assertRunning(app, after: "end of the drive")
@@ -60,6 +47,26 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     XCTContext.runActivity(named: "Hold the last screen for the stack reading") { _ in
       sleep(45)
     }
+  }
+
+  /// Taps `control` and waits for the element the tap opens, tapping again
+  /// while `control` is still on screen and hittable. On a starved CI runner a
+  /// synthesized tap can land on a still screen and do nothing: in run
+  /// 39033273128 the C1 card was tapped at the frame it still had, after the
+  /// app took 21 s to answer the element query, and the screen stayed on the
+  /// catalog. A tap that took effect has replaced or covered `control`, so it
+  /// is never repeated, and a control that never responds still fails after
+  /// the last attempt.
+  private func tap(_ control: XCUIElement, until opened: XCUIElement, attempts: Int = 3) {
+    for attempt in 1...attempts {
+      if attempt > 1 {
+        guard control.exists, control.isHittable else { break }
+      }
+      control.tap()
+      allowLocationIfAsked()
+      if opened.waitForExistence(timeout: 15) { return }
+    }
+    XCTFail("\(opened) did not appear after tapping \(control)")
   }
 
   /// A fresh simulator asks for location the first time the app wants it.

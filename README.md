@@ -118,7 +118,7 @@ delivery, or an App Store submission.
 |---|---|
 | Product | [principles](docs/product/principles.md) · [iPhone experience](docs/product/iphone-product-experience.md) · [current capabilities](docs/product/current-capabilities.md) · [accuracy boundary](docs/product/accuracy-boundary.md) |
 | Architecture | [domain contract](docs/architecture/domain-contract.md) · [iOS navigation](docs/architecture/ios-navigation-architecture.md) · [journey lifecycle](docs/architecture/journey-lifecycle.md) |
-| Testing | [E2E strategy](docs/testing/e2e-strategy.md) · [scenario catalog](docs/testing/scenario-catalog.md) · [device qualification](docs/testing/ios-physical-device-qualification.md) |
+| Testing | [E2E strategy](docs/testing/e2e-strategy.md) · [scenario catalog](docs/testing/scenario-catalog.md) · [device qualification](docs/testing/ios-physical-device-qualification.md) · [navigation stress](docs/testing/navigation-stress.md) |
 | Data and releases | [rebuilding the network](docs/contributing/rebuilding-the-network.md) · [route evidence](docs/contributing/route-evidence.md) · [product release authoring](docs/contributing/product-release-authoring.md) · [App release](docs/contributing/release.md) · [licensing](docs/contributing/licensing.md) |
 | Working in this repo | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`AGENTS.md`](AGENTS.md) · [`SECURITY.md`](SECURITY.md) |
 

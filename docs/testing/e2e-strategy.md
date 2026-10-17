@@ -546,6 +546,12 @@ correlated horizontal error consistent with a 5–15 m reported accuracy,
 
 These are synthetic regression bounds, not road or field evidence.
 
+CI runs this gate at a few seeds. A change to matcher, session, entry, join or
+routing behaviour also needs the main-versus-branch
+[navigation stress comparison](navigation-stress.md): the same gate over seeds
+1–40, many more drives, and a pass/fail report, run on a developer Mac and
+never in CI.
+
 Core Location adapter tests additionally require valid `courseAccuracy` and
 `speedAccuracy` to reach the matcher observation. A focused opposing-direction
 fixture proves that a highly uncertain course cannot overpower route continuity

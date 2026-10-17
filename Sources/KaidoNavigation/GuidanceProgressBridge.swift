@@ -18,6 +18,59 @@ public enum GuidanceProgressBridgeError: Error, Equatable, Sendable {
 /// Converts an unambiguous route-bound matcher result into route distance to a reviewed zone.
 /// Lateral match error is never interpreted as route progress.
 public enum GuidanceProgressBridge {
+  /// The lookups `resolve` needs from one plan and corridor. Building them
+  /// is linear in the route, so a session that resolves every fix against
+  /// the same pair builds them once.
+  package struct Route: Sendable {
+    let routePlan: RoutePlan
+    let corridor: RouteMatcherCorridor
+    let isComplete: Bool
+    /// The first occurrence with each ID, as `RoutePlan.occurrence(id:)` finds it.
+    let routePositionByID: [String: Int]
+    let corridorOccurrencesByID: [String: RouteMatcherOccurrence]
+    let corridorOccurrencesByIndex: [Int: RouteMatcherOccurrence]
+    let routeOccurrencesByIndex: [Int: RouteOccurrence]
+    let edgesByID: [String: RouteMatcherDirectedEdge]
+
+    package init(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
+      self.routePlan = routePlan
+      self.corridor = corridor
+      let routeOccurrenceIDs = routePlan.occurrences.map(\.id)
+      let routeOccurrenceIndexes = routePlan.occurrences.map(\.index)
+      isComplete =
+        corridor.validationIssues.isEmpty
+        && Set(routeOccurrenceIDs).count == routeOccurrenceIDs.count
+        && Set(routeOccurrenceIndexes).count == routeOccurrenceIndexes.count
+      routePositionByID = Dictionary(
+        routeOccurrenceIDs.enumerated().map { ($1, $0) },
+        uniquingKeysWith: { first, _ in first }
+      )
+      // Unique keys are only guaranteed once the corridor is complete;
+      // `resolve` reads these only then.
+      guard isComplete else {
+        corridorOccurrencesByID = [:]
+        corridorOccurrencesByIndex = [:]
+        routeOccurrencesByIndex = [:]
+        edgesByID = [:]
+        return
+      }
+      corridorOccurrencesByID = Dictionary(
+        uniqueKeysWithValues: corridor.occurrences.map { ($0.id, $0) }
+      )
+      corridorOccurrencesByIndex = Dictionary(
+        uniqueKeysWithValues: corridor.occurrences.map { ($0.index, $0) }
+      )
+      routeOccurrencesByIndex = Dictionary(
+        uniqueKeysWithValues: routePlan.occurrences.map { ($0.index, $0) }
+      )
+      edgesByID = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    }
+
+    func routeOccurrence(id: String) -> RouteOccurrence? {
+      routePositionByID[id].map { routePlan.occurrences[$0] }
+    }
+  }
+
   public static func resolve(
     estimate: MatcherEstimate,
     routePlan: RoutePlan,
@@ -25,6 +78,22 @@ public enum GuidanceProgressBridge {
     decisionZone: DecisionZoneProgressDefinition,
     skippedOccurrenceIDs: Set<String> = []
   ) throws -> GuidanceProgressObservation {
+    try resolve(
+      estimate: estimate,
+      route: Route(routePlan: routePlan, corridor: corridor),
+      decisionZone: decisionZone,
+      skippedOccurrenceIDs: skippedOccurrenceIDs
+    )
+  }
+
+  package static func resolve(
+    estimate: MatcherEstimate,
+    route: Route,
+    decisionZone: DecisionZoneProgressDefinition,
+    skippedOccurrenceIDs: Set<String> = []
+  ) throws -> GuidanceProgressObservation {
+    let routePlan = route.routePlan
+    let corridor = route.corridor
     guard estimate.confidence == .high || estimate.confidence == .medium,
       let currentOccurrenceID = estimate.occurrenceID,
       let directedEdgeID = estimate.directedEdgeID,
@@ -51,34 +120,22 @@ public enum GuidanceProgressBridge {
     guard !decisionZone.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
       decisionZone.entryOffsetMeters.isFinite,
       decisionZone.entryOffsetMeters >= 0,
-      let targetRouteOccurrence = routePlan.occurrence(
+      let targetRouteOccurrence = route.routeOccurrence(
         id: decisionZone.movementOccurrenceID
       ),
       targetRouteOccurrence.kind == .junctionMovement
     else {
       throw GuidanceProgressBridgeError.invalidDecisionZone
     }
-    let routeOccurrenceIDs = routePlan.occurrences.map(\.id)
-    let routeOccurrenceIndexes = routePlan.occurrences.map(\.index)
-    guard corridor.validationIssues.isEmpty,
-      Set(routeOccurrenceIDs).count == routeOccurrenceIDs.count,
-      Set(routeOccurrenceIndexes).count == routeOccurrenceIndexes.count
-    else {
+    guard route.isComplete else {
       throw GuidanceProgressBridgeError.incompleteCorridor
     }
+    let corridorOccurrencesByID = route.corridorOccurrencesByID
+    let corridorOccurrencesByIndex = route.corridorOccurrencesByIndex
+    let routeOccurrencesByIndex = route.routeOccurrencesByIndex
+    let edgesByID = route.edgesByID
 
-    let corridorOccurrencesByID = Dictionary(
-      uniqueKeysWithValues: corridor.occurrences.map { ($0.id, $0) }
-    )
-    let corridorOccurrencesByIndex = Dictionary(
-      uniqueKeysWithValues: corridor.occurrences.map { ($0.index, $0) }
-    )
-    let routeOccurrencesByIndex = Dictionary(
-      uniqueKeysWithValues: routePlan.occurrences.map { ($0.index, $0) }
-    )
-    let edgesByID = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
-
-    guard let currentRouteOccurrence = routePlan.occurrence(id: currentOccurrenceID),
+    guard let currentRouteOccurrence = route.routeOccurrence(id: currentOccurrenceID),
       let currentBinding = corridorOccurrencesByID[currentOccurrenceID]
     else {
       throw GuidanceProgressBridgeError.unknownCurrentOccurrence

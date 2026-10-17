@@ -58,6 +58,7 @@ public actor NavigationSession {
   private var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
+  private let guidanceProgressRoute: GuidanceProgressBridge.Route
   private let configuredEntryTransition: EntryTransition?
   private let configuredRoutePlan: RoutePlan?
   private let configuredLapBoundaryOccurrenceIDs: [String]
@@ -207,6 +208,9 @@ public actor NavigationSession {
 
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
+    guidanceProgressRoute = GuidanceProgressBridge.Route(
+      routePlan: routePlan, corridor: matcherCorridor
+    )
     configuredEntryTransition = navigationConfiguration.entryTransition
     configuredRoutePlan = navigationConfiguration.routePlan
     configuredLapBoundaryOccurrenceIDs =
@@ -438,8 +442,7 @@ public actor NavigationSession {
     do {
       let progress = try GuidanceProgressBridge.resolve(
         estimate: estimate,
-        routePlan: routePlan,
-        corridor: matcherCorridor,
+        route: guidanceProgressRoute,
         decisionZone: decisionZone,
         skippedOccurrenceIDs: Set(engine.snapshot.skippedOccurrenceIDs)
       )

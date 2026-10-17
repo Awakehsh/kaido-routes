@@ -66,17 +66,36 @@ public struct NavigationEngine: Sendable {
   private var entryTransitionProgress = -1
   private var emittedGuidanceAnchorKeys: Set<GuidanceAnchorKey> = []
   private let occurrencePositions: [String: Int]
+  /// The plan's occurrence IDs and indexes in plan order, for the lists
+  /// rebuilt on every admitted fix.
+  private let occurrenceIDs: [String]
+  private let occurrenceIndexes: [Int]
+  private let releasedGuidanceIsValid: Bool
+  /// The completed and pending lists `advance` last built, and the inputs
+  /// it built them from. Most fixes stay on the same occurrence, and an
+  /// array compares equal to its own unchanged copy without a scan.
+  private var builtOccurrenceLists:
+    (targetIndex: Int, skipped: [String], completed: [String], pending: [String])?
 
   public init(
     configuration: NavigationConfiguration,
     initialSnapshot: NavigationSnapshot = NavigationSnapshot()
   ) {
     self.configuration = configuration
-    occurrencePositions = Dictionary(
+    let positions = Dictionary(
       (configuration.routePlan?.occurrences ?? []).enumerated()
         .map { ($1.id, $0) },
       uniquingKeysWith: { first, _ in first }
     )
+    occurrencePositions = positions
+    occurrenceIDs = (configuration.routePlan?.occurrences ?? []).map(\.id)
+    occurrenceIndexes = (configuration.routePlan?.occurrences ?? []).map(\.index)
+    releasedGuidanceIsValid =
+      configuration.routePlan.map {
+        GuidanceFramePlanner.definitionsAreValid(
+          configuration.releasedGuidance, routePlan: $0, occurrencePositions: positions
+        )
+      } ?? false
     self.snapshot = initialSnapshot
     self.snapshot.activeRoutePlanID =
       configuration.routePlan?.id
@@ -166,6 +185,7 @@ public struct NavigationEngine: Sendable {
       routePlan: configuration.routePlan,
       occurrencePositions: occurrencePositions,
       definitions: configuration.releasedGuidance,
+      definitionsAreValid: releasedGuidanceIsValid,
       observation: observation
     )
     snapshot.guidancePlanningStatus = result.status
@@ -956,7 +976,7 @@ public struct NavigationEngine: Sendable {
 
   private mutating func advance(to occurrenceID: String) {
     guard let routePlan = configuration.routePlan,
-      let target = routePlan.occurrence(id: occurrenceID)
+      let target = occurrence(id: occurrenceID, in: routePlan)
     else {
       return
     }
@@ -980,7 +1000,7 @@ public struct NavigationEngine: Sendable {
     if snapshot.journeyPhase == .routeRecovery,
       snapshot.recovery.status == .active,
       let rejoin = snapshot.recovery.chosenRejoinOccurrenceID
-        .flatMap(routePlan.occurrence(id:)),
+        .flatMap({ occurrence(id: $0, in: routePlan) }),
       target.index > currentIndex
     {
       if target.index >= rejoin.index {
@@ -1004,13 +1024,38 @@ public struct NavigationEngine: Sendable {
     }
     snapshot.currentOccurrenceID = target.id
     snapshot.currentOccurrenceIndex = target.index
-    // A dropped lap leaves hundreds of skipped occurrences; this runs on
-    // every admitted fix.
-    let skipped = Set(snapshot.skippedOccurrenceIDs)
-    snapshot.completedOccurrenceIDs = routePlan.occurrences
-      .filter { $0.index < target.index && !skipped.contains($0.id) }
-      .map(\.id)
+    if let built = builtOccurrenceLists, built.targetIndex == target.index,
+      built.skipped == snapshot.skippedOccurrenceIDs,
+      built.completed == snapshot.completedOccurrenceIDs,
+      built.pending == snapshot.pendingOccurrenceIDs
+    {
+      return
+    }
+    snapshot.completedOccurrenceIDs = unskippedOccurrenceIDs { $0 < target.index }
     refreshPendingOccurrences()
+    builtOccurrenceLists = (
+      target.index, snapshot.skippedOccurrenceIDs,
+      snapshot.completedOccurrenceIDs, snapshot.pendingOccurrenceIDs
+    )
+  }
+
+  /// The first occurrence with this ID, as `RoutePlan.occurrence(id:)`
+  /// finds it, without searching a long plan on every fix.
+  private func occurrence(id: String, in routePlan: RoutePlan) -> RouteOccurrence? {
+    occurrencePositions[id].map { routePlan.occurrences[$0] }
+  }
+
+  /// IDs of the occurrences whose index passes `include`, in plan order,
+  /// less the skipped ones. Runs on every admitted fix, and a dropped lap
+  /// leaves hundreds of skipped occurrences.
+  private func unskippedOccurrenceIDs(where include: (Int) -> Bool) -> [String] {
+    let skipped = Set(snapshot.skippedOccurrenceIDs)
+    var ids: [String] = []
+    for position in occurrenceIDs.indices
+    where include(occurrenceIndexes[position]) && !skipped.contains(occurrenceIDs[position]) {
+      ids.append(occurrenceIDs[position])
+    }
+    return ids
   }
 
   private mutating func synchronizeOccurrenceIndex() {
@@ -1025,17 +1070,12 @@ public struct NavigationEngine: Sendable {
   }
 
   private mutating func refreshPendingOccurrences() {
-    guard let routePlan = configuration.routePlan else {
+    guard configuration.routePlan != nil else {
       snapshot.pendingOccurrenceIDs = []
       return
     }
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
-    let skipped = Set(snapshot.skippedOccurrenceIDs)
-    snapshot.pendingOccurrenceIDs = routePlan.occurrences
-      .filter { occurrence in
-        occurrence.index >= currentIndex && !skipped.contains(occurrence.id)
-      }
-      .map(\.id)
+    snapshot.pendingOccurrenceIDs = unskippedOccurrenceIDs { $0 >= currentIndex }
   }
 
   private func appendUnique(_ value: String, to array: inout [String]) {

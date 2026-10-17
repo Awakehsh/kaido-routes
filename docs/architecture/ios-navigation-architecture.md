@@ -132,7 +132,12 @@ competes, and counts as a road the car can drive onto, only where the car can
 leave the plan for it within 3 km of an occurrence in the window — the lap a
 loop already drove after a missed exit, or the road a passed-by PA stop leaves
 for the next lap — never a road beside the plan that only another lap leads
-to, and the next stretch of it is no rival to it. From the occurrence the
+to, and the next stretch of it is no rival to it. Matched off the plan, such
+a road is still that later pass: joining the plan there from it costs the
+matcher the same skip from where the car was last on the plan as a jump
+along the plan would, so a later pass beside the car — the Ohashi spiral
+above the C2 approach — does not become the car's place once the window
+grows to include it. From the occurrence the
 plan leaves at its final exit, the road it leaves there — on a loop, the lap
 it began on — runs beside the exit ramp: it holds back only the final
 occurrence, so the progress of that occurrence and of the ramp is admitted

@@ -31,18 +31,26 @@ public enum GuidanceFramePlanner {
       routePlan: routePlan,
       occurrencePositions: nil,
       definitions: definitions,
+      definitionsAreValid: routePlan.map {
+        definitionsAreValid(
+          definitions, for: $0, lookup: OccurrenceLookup(routePlan: $0, positions: nil)
+        )
+      } ?? false,
       observation: observation
     )
   }
 
   /// `occurrencePositions` maps occurrence IDs to their position in
-  /// `routePlan.occurrences`; a caller planning every fix for one plan passes
-  /// it so a long plan is not searched linearly per definition.
+  /// `routePlan.occurrences`, and `definitionsAreValid` is
+  /// `definitionsAreValid(_:routePlan:occurrencePositions:)`: a
+  /// caller planning every fix for one plan computes both once, so a long
+  /// plan is not searched or revalidated per fix.
   package static func plan(
     snapshot: NavigationSnapshot,
     routePlan: RoutePlan?,
     occurrencePositions: [String: Int]?,
     definitions: [ReleasedGuidanceDefinition],
+    definitionsAreValid: Bool,
     observation: GuidanceProgressObservation
   ) -> GuidancePlanningResult {
     guard let routePlan else {
@@ -54,7 +62,7 @@ public enum GuidanceFramePlanner {
     )
     guard observation.distanceToDecisionPointMeters.isFinite,
       observation.distanceToDecisionPointMeters >= 0,
-      definitionsAreValid(definitions, for: routePlan, lookup: lookup)
+      definitionsAreValid
     else {
       return GuidancePlanningResult(status: .invalidDefinition)
     }
@@ -153,6 +161,17 @@ public enum GuidanceFramePlanner {
     return upcoming.filter {
       lookup.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index == nearestIndex
     }
+  }
+
+  package static func definitionsAreValid(
+    _ definitions: [ReleasedGuidanceDefinition],
+    routePlan: RoutePlan,
+    occurrencePositions: [String: Int]
+  ) -> Bool {
+    definitionsAreValid(
+      definitions, for: routePlan,
+      lookup: OccurrenceLookup(routePlan: routePlan, positions: occurrencePositions)
+    )
   }
 
   private static func definitionsAreValid(

@@ -297,6 +297,18 @@ jobs:
           wait "$test_pid" || status=$?
           grep -E "Test Case|error:" "$log" || true
           echo "Main-thread stack high-water: ${peak:-not read} KB (limit $HIGH_WATER_LIMIT_KB KB)"
+          # A retap is the journey's fallback for a synthesized tap that did
+          # nothing; list every one so a rising rate is visible.
+          retaps=$(grep -c "RELEASE-JOURNEY-RETAP step=" "$log" || true)
+          {
+            echo "### iPhone Release stack"
+            echo "- Main-thread stack high-water: ${peak:-not read} KB (limit $HIGH_WATER_LIMIT_KB KB)"
+            echo "- Retaps: ${retaps:-0}"
+            grep "RELEASE-JOURNEY-RETAP step=" "$log" | sed 's/.*RELEASE-JOURNEY-RETAP /  - /' || true
+          } >> "$GITHUB_STEP_SUMMARY"
+          if (( ${retaps:-0} > 0 )); then
+            echo "::warning::The Release journey retapped ${retaps} time(s); see the job summary"
+          fi
           if [[ "$status" -ne 0 ]]; then
             echo "::error::The Release journey failed on a $STACK_SIZE-byte main-thread stack"
             exit 1

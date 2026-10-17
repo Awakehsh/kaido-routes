@@ -118,4 +118,7 @@ JCT directory, and the PA directory. The pinned OpenStreetMap extract supplies
 candidate geometry and topology. Each route's official direction vocabulary is
 derived from those directional IC facts; exact reviewed movement definitions,
 not incomplete OSM relation roles, bind that vocabulary to directed JCT edges.
+Third-party direction names can differ: NAVITIME calls K6's 大師-bound
+carriageway 上り, while the catalog follows the operator, whose K6 上り runs
+toward the route's 起点, 川崎浮島JCT.
 Operator maps, junction images, and logos are not copied into the repository.

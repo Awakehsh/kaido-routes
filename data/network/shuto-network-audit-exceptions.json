@@ -433,14 +433,7 @@
       "reason": "Split interchange; this binding is the 2026-09-14 facility candidate patch's."
     }
   ],
-  "ramp_continuations": [
-    {
-      "facility_id": "shuto.ic.6-misato.yashio",
-      "side": "exit",
-      "edge_id": "osm.1463660809.6.forward",
-      "reason": "OSM joins the 下り exit ramp (way 1463660809, destination 八潮入口) straight onto the 6号三郷線 carriageway at plaza node 559433465, as bound by the 2026-09-14 patch. No surface road meets that node in OSM, so it is not cut as a surface crossing; the continuation stays listed until it is reviewed against the plaza layout."
-    }
-  ],
+  "ramp_continuations": [],
   "named_unbound_ramps": [
     {
       "side": "exit",

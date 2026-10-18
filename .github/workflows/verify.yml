@@ -260,6 +260,10 @@ jobs:
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" >/dev/null
           xcrun simctl location "$udid" set 35.6586,139.7454
+          # Granted after install and before launch, so the journey never meets
+          # the permission alert; the test fails if one appears.
+          xcrun simctl install "$udid" "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/KaidoRoutes.app"
+          xcrun simctl privacy "$udid" grant location app.kaidoroutes
           log="$RUNNER_TEMP/KaidoRoutesApp-release-stack-test.log"
           xcodebuild test-without-building \
             -project KaidoRoutesApp.xcodeproj \
@@ -291,6 +295,8 @@ jobs:
                 echo "Stack reading $attempt took $(( $(date +%s) - read_start )) s: ${peak:-no value}"
                 [[ -n "$peak" ]] && break
               done
+              # Ends the test's hold on its last screen, read or not.
+              xcrun simctl spawn "$udid" notifyutil -p app.kaidoroutes.release-stack.read
               break
             fi
             sleep 1

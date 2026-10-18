@@ -57,7 +57,7 @@ The [facility candidate patch](../../data/route-atlas/reviews/README.md) of
 of the facility's route within 750 m, so 613 of 1,376 candidates sat more than
 200 m away and interchanges started or ended on a neighbour's ramp, the
 opposite direction's ramp, a PA return ramp, bare carriageway, or a connecting
-expressway's link. Each ramp now binds at most one interchange name: 753
+expressway's link. Each ramp now binds at most one interchange name: 752
 candidates, 30 of them beyond 400 m with a reviewed reason. The patch adds the
 東銀座 exit (外回り), which the operator lists and the KK line closure kept
 open, and drops two stray nodes that a name-substring match had added to
@@ -86,7 +86,15 @@ before) and 52 at the cap (321). Known residuals: C1 内回り has no link to
 Route 1 and Route 11 at 浜崎橋 (芝公園 to 平和島 measures about twice the
 operator's distance); and the directions the operator lists without a ramp
 in the snapshot stay unbound rather than borrowing a neighbour's: 新都心西 下り
-entrance, and 横浜港北 (横浜北線) 下り entrance and 上り exit.
+entrance, 横浜港北 (横浜北線) 下り entrance and 上り exit, and 八潮 下り exit.
+
+八潮's 下り exit was unbound on 2026-10-18. The only link at its operator point
+(OSM way 1463660809, which the 2026-09-14 patch bound) leaves the 6号三郷線
+carriageway and rejoins it about 650 m on; OSM draws no descent to 県道116号,
+which the exit meets, so a route to it ended at a merge back onto the
+carriageway. 八潮 remains an entrance. The exit can be bound again once OSM
+draws that descent, or aerial imagery shows where the ramp leaves the
+carriageway.
 
 加賀 to 東領家 is a recorded restriction, not a gap: 東領家's exit (OSM way
 563799388) leaves S1 上り at the junction node named 東領家, and 加賀's 上り

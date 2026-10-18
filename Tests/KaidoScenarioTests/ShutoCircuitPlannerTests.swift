@@ -1010,14 +1010,16 @@ struct ShutoCircuitPlannerTests {
     // The re-pointed ramps pair with the whole network, not just themselves.
     for facilityID in [
       "shuto.ic.10.toyosu", "shuto.ic.c2.gotanda", "shuto.ic.s1.kaga",
-      "shuto.ic.k1.asada", "shuto.ic.s5.urawaminami", "shuto.ic.6-misato.yashio",
-      "shuto.ic.s2.shintoshin",
+      "shuto.ic.k1.asada", "shuto.ic.s5.urawaminami", "shuto.ic.s2.shintoshin",
     ] {
       #expect(
         planner.entryCandidates(entrances, reaching: facilityID).count >= 100,
         Comment(rawValue: facilityID)
       )
     }
+    // 八潮's only 下り exit link rejoins the carriageway, so it is no exit
+    // until OSM draws the ramp's descent to the surface.
+    #expect(!exits.contains { $0.facilityID == "shuto.ic.6-misato.yashio" })
     for facilityID in ["shuto.ic.s5.yono", "shuto.ic.s2.shintoshin"] {
       #expect(
         planner.exitCandidates(exits, reachableAfterEntering: facilityID).count >= 100,

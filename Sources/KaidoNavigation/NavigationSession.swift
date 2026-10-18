@@ -1642,15 +1642,18 @@ private struct RouteEndGeometry: Sendable {
   /// stops following one. Within this distance a fix matching no corridor
   /// road is on none of them.
   func exitCoverageMeters(fromProgress progressIndex: Int) -> Double {
-    roadEnds.filter { $0.lastReachingIndex >= Self.earliestCarIndex(progressIndex) }
+    roadEnds.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
       .map(\.metersFromExit).min() ?? .infinity
   }
 
-  /// Admitted progress can run ahead of the car along the exit beside the
-  /// road it leaves, so the car may still be as far back as the matcher's
-  /// longitudinal window behind it.
-  private static func earliestCarIndex(_ progressIndex: Int) -> Int {
-    progressIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  /// Admitted progress can run ahead of a car that missed the exit, along
+  /// the ramp beside the road it leaves or onto a coarse fix further on, so
+  /// past the last choice of road it says nothing about which road the car
+  /// took. The car may be anywhere from the matcher's longitudinal window
+  /// behind progress, or behind that last choice once progress is past it.
+  private func earliestCarIndex(_ progressIndex: Int) -> Int {
+    min(progressIndex, exitSideStartIndex)
+      - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
   }
 
   /// Distance from a point to the plan after its last choice of road.
@@ -1664,7 +1667,7 @@ private struct RouteEndGeometry: Sendable {
     _ coordinate: MatcherCoordinate,
     fromProgress progressIndex: Int
   ) -> Double {
-    otherRoads.filter { $0.lastReachingIndex >= Self.earliestCarIndex(progressIndex) }
+    otherRoads.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
       .map { Self.meters(from: coordinate, toPolyline: $0.coordinates) }.min() ?? .infinity
   }
 

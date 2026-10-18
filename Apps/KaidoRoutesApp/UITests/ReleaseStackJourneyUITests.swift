@@ -5,6 +5,7 @@ import XCTest
 /// launch arguments the Debug journeys use. The `iPhone Release stack` CI job
 /// runs it against a build linked with the iPhone's main-thread stack size
 /// and reads the stack's high-water mark at the end.
+@MainActor
 final class ReleaseStackJourneyUITests: XCTestCase {
   func testHomeRouteReviewStartAndEnd() {
     continueAfterFailure = false
@@ -12,7 +13,7 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(element("whole-shuto-product", in: app).waitForExistence(timeout: 30))
-    allowLocationIfAsked()
+    assertNoSystemAlert()
     assertRunning(app, after: "home")
 
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
@@ -45,12 +46,31 @@ final class ReleaseStackJourneyUITests: XCTestCase {
     // The job reads the stack's high-water mark from outside once this
     // activity starts. The mark only grows, so one reading here covers every
     // screen before it; vmmap suspends the app while it reads, which is why
-    // it waits for this idle hold instead of sampling throughout. On a runner
-    // shared by two jobs a reading outlasted a 45 s hold (run 39057314823).
+    // it waits for this idle hold instead of sampling throughout. A reading
+    // took 16-93 s on CI, so the hold ends when the job posts that it is done;
+    // the timeout only fails a job that never does.
+    let read = XCTestExpectation(description: "the job read the main-thread stack")
+    read.assertForOverFulfill = false
+    let center = CFNotificationCenterGetDarwinNotifyCenter()
+    let observer = Unmanaged.passUnretained(read).toOpaque()
+    CFNotificationCenterAddObserver(
+      center, observer,
+      { _, observer, _, _, _ in
+        guard let observer else { return }
+        Unmanaged<XCTestExpectation>.fromOpaque(observer).takeUnretainedValue().fulfill()
+      },
+      Self.stackReadNotification as CFString, nil, .deliverImmediately)
+    defer { CFNotificationCenterRemoveEveryObserver(center, observer) }
     XCTContext.runActivity(named: "Hold the last screen for the stack reading") { _ in
-      sleep(120)
+      XCTAssertEqual(
+        XCTWaiter.wait(for: [read], timeout: 180), .completed,
+        "the job did not signal that it read the main-thread stack")
     }
   }
+
+  /// Posted by the `iPhone Release stack` job, inside the simulator, once it
+  /// has read the main-thread stack.
+  private static let stackReadNotification = "app.kaidoroutes.release-stack.read"
 
   /// Taps `control` and waits for the element the tap opens, tapping again
   /// while `control` is still on screen and hittable. On a starved CI runner a
@@ -78,17 +98,23 @@ final class ReleaseStackJourneyUITests: XCTestCase {
         print("RELEASE-JOURNEY-RETAP step=\(step) attempt=\(attempt)")
       }
       control.tap()
-      allowLocationIfAsked()
+      assertNoSystemAlert()
       if opened.waitForExistence(timeout: 15) { return }
     }
     XCTFail("\(opened) did not appear after tapping \(control)")
   }
 
-  /// A fresh simulator asks for location the first time the app wants it.
-  private func allowLocationIfAsked() {
+  /// The job grants location before the app launches, so no permission
+  /// alert should ever appear. Tapping one was itself a lost-tap risk (run
+  /// 39069554350 left it on screen and the route never enabled); one that
+  /// appears now means the grant did not take effect, and the run says so.
+  private func assertNoSystemAlert() {
     let alert = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
-    // Allow once, allow while using, don't allow.
-    if alert.waitForExistence(timeout: 3) { alert.buttons.element(boundBy: 1).tap() }
+    if alert.waitForExistence(timeout: 3) {
+      XCTFail(
+        "a system alert appeared (\(alert.label)); the job grants location before launch, "
+          + "so the grant did not take effect")
+    }
   }
 
   private func waitUntilEnabled(_ element: XCUIElement) {

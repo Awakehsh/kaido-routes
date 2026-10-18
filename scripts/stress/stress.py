@@ -313,7 +313,8 @@ def main():
         return 0
 
     safe = lambda ref: re.sub(r"[^A-Za-z0-9._-]+", "_", ref)
-    args.out = args.out or CACHE / "reports" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{safe(args.branch)}-vs-{safe(args.base)}"
+    # Workers run inside the tree slots, so every path handed to them is absolute.
+    args.out = (args.out or CACHE / "reports" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{safe(args.branch)}-vs-{safe(args.base)}").resolve()
     args.out.mkdir(parents=True, exist_ok=True)
     try:
         code = compare(args)

@@ -23,7 +23,12 @@ expressway reference, the approach and entry the plan drives before its first
 lap or tour pass. A loop's exit is the lowest tariff band among the exits
 reached within 3 km of the soonest exit after the final lap, ties going to the
 earlier forward exit; a tour keeps its soonest course exit. Release coverage
-plays no part in the ranking. Pairing labels access beyond 16 km as long,
+plays no part in the ranking. A circuit plan stays on a carriageway when a
+link beside it rejoins within 10 m of the carriageway's length: at 箱崎JCT and
+芝浦JCT a link a metre shorter carries no released guidance, and a driver who
+kept to the carriageway looked off the plan. A saved route or restored drive
+re-plans its circuit and must match the stored plan exactly, so a plan stored
+before that tie-break is re-planned without it. Pairing labels access beyond 16 km as long,
 and lets the surface adapter decide whether that exact ramp is drivable instead
 of rejecting it by straight-line distance.
 The selected Kaido-owned `RoutePlan` then drives review, live navigation (and,

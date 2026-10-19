@@ -20289,28 +20289,28 @@
             "japanese_sign_text" : "第三京浜・東名・羽田",
             "localized_content" : {
               "en" : {
-                "display_text" : "Ahead: Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda",
+                "display_text" : "Ahead: Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda" : "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
                 },
-                "spoken_text" : "Ahead at Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
+                "spoken_text" : "Ahead at Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田"
               },
               "ja-JP" : {
-                "display_text" : "この先、右方向を保ち、第三京浜・東名・K1 羽田方面へ",
+                "display_text" : "この先、右方向を保ち、第三京浜・東名・K1 羽田方面へ。その先、羽田方面です",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京浜・東名・K1 羽田方面" : "第三京浜・東名・K1 羽田方面"
                 },
-                "spoken_text" : "この先、生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください"
+                "spoken_text" : "この先、生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください。その先、羽田方面です"
               },
               "zh-Hans" : {
-                "display_text" : "前方，保持右侧，驶往 第三京滨・东名高速・K1 羽田方向",
+                "display_text" : "前方，保持右侧，驶往 第三京滨・东名高速・K1 羽田方向。随后前往 羽田 方向",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京滨・东名高速・K1 羽田方向" : "第三京滨・东名高速・K1 羽田方向"
                 },
-                "spoken_text" : "前方，在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
+                "spoken_text" : "前方，在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向。随后前往 羽田 方向"
               }
             },
             "route_shields" : [
@@ -20346,28 +20346,28 @@
             "japanese_sign_text" : "第三京浜・東名・羽田",
             "localized_content" : {
               "en" : {
-                "display_text" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda",
+                "display_text" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda" : "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
                 },
-                "spoken_text" : "At Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
+                "spoken_text" : "At Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田"
               },
               "ja-JP" : {
-                "display_text" : "右方向を保ち、第三京浜・東名・K1 羽田方面へ",
+                "display_text" : "右方向を保ち、第三京浜・東名・K1 羽田方面へ。その先、羽田方面です",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京浜・東名・K1 羽田方面" : "第三京浜・東名・K1 羽田方面"
                 },
-                "spoken_text" : "生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください"
+                "spoken_text" : "生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください。その先、羽田方面です"
               },
               "zh-Hans" : {
-                "display_text" : "保持右侧，驶往 第三京滨・东名高速・K1 羽田方向",
+                "display_text" : "保持右侧，驶往 第三京滨・东名高速・K1 羽田方向。随后前往 羽田 方向",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "第三京滨・东名高速・K1 羽田方向" : "第三京滨・东名高速・K1 羽田方向"
                 },
-                "spoken_text" : "在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
+                "spoken_text" : "在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向。随后前往 羽田 方向"
               }
             },
             "route_shields" : [

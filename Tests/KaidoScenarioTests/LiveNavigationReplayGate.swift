@@ -1305,12 +1305,25 @@
           $0.frameTemplate.movementOccurrenceID
         }
       )
+      // A cue that goes on to name the next movement ("その先、…方面です")
+      // announces that movement too.
+      let ordered = guided.compactMap { plan.occurrence(id: $0) }.sorted { $0.index < $1.index }
+      var announcedNext: [String: String] = [:]
+      for (movement, next) in zip(ordered, ordered.dropFirst()) {
+        let chains = gate.release.navigation.bundle.releasedGuidance.contains {
+          $0.frameTemplate.movementOccurrenceID == movement.id
+            && $0.frameTemplate.presentationSource.localizedContent[.japanese]?
+              .spokenText.contains("。その先、") == true
+        }
+        if chains { announcedNext[movement.id] = next.id }
+      }
       var firstCueDistance: [String: Double] = [:]
       for record in records {
-        for movementID in record.emittedMovementOccurrenceIDs
-        where firstCueDistance[movementID] == nil {
-          firstCueDistance[movementID] =
-            record.truth.routeDistanceMeters ?? .infinity
+        for movementID in record.emittedMovementOccurrenceIDs {
+          for cued in [movementID, announcedNext[movementID]].compactMap({ $0 })
+          where firstCueDistance[cued] == nil {
+            firstCueDistance[cued] = record.truth.routeDistanceMeters ?? .infinity
+          }
         }
       }
       return guided.compactMap { movementID -> Int? in

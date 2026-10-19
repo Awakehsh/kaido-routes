@@ -6107,10 +6107,8 @@ final class WholeShutoProductModel: ObservableObject {
         }
         restoredCircuit = circuit
         route = try planner.planCircuit(
+          reproducing: checkpoint.parkingStops?.baseRoutePlan ?? checkpoint.routePlan,
           circuit: circuit,
-          entryFacilityID: checkpoint.entryFacilityID,
-          exitFacilityID: checkpoint.exitFacilityID,
-          destinationParkingAreaID: checkpoint.routePlan.destinationParkingAreaID,
           laps: laps,
           preference: checkpoint.preference
         )
@@ -7109,10 +7107,8 @@ final class WholeShutoProductModel: ObservableObject {
           throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
         }
         let planned = try planner.planCircuit(
+          reproducing: parkingStops?.baseRoutePlan ?? routePlan,
           circuit: resolvedCircuit,
-          entryFacilityID: routePlan.entryFacilityID,
-          exitFacilityID: routePlan.exitFacilityID,
-          destinationParkingAreaID: routePlan.destinationParkingAreaID,
           laps: laps,
           preference: routePreference
         )

@@ -34,7 +34,12 @@ tails end a loop's final lap at a branch back onto the approach's radial that
 leaves the lap within 900 m of its merge (`finalLapReturnGapMeters`); every
 other lap closes at the merge, and the last lap boundary marks where the tail
 begins. Release coverage
-plays no part in the ranking. Pairing labels access beyond 16 km as long,
+plays no part in the ranking. A circuit plan stays on a carriageway when a
+link beside it rejoins within 10 m of the carriageway's length: at 箱崎JCT and
+芝浦JCT a link a metre shorter carries no released guidance, and a driver who
+kept to the carriageway looked off the plan. A saved route or restored drive
+re-plans its circuit and must match the stored plan exactly, so a plan stored
+before that tie-break is re-planned without it. Pairing labels access beyond 16 km as long,
 and lets the surface adapter decide whether that exact ramp is drivable instead
 of rejecting it by straight-line distance.
 The selected Kaido-owned `RoutePlan` then drives review, live navigation (and,

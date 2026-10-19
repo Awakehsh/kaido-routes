@@ -793,10 +793,16 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         return nil
       }
       var accumulatedDistance = 0.0
-      var preferredAnchorIndex = incomingOccurrence.index
       let distanceFromRouteStart = route.edges
         .prefix(movementOccurrence.index)
         .reduce(0.0) { $0 + $1.lengthMeters }
+      // A movement nearer the route start than its commit distance is cued
+      // from the start: anchored on the occurrence just before it, the cue
+      // was due only there, and from Nishikanda the car reached Takebashi
+      // JCT 200 m after entry before progress stood on that occurrence.
+      var preferredAnchorIndex =
+        distanceFromRouteStart > definition.commitTriggerDistanceMeters
+        ? incomingOccurrence.index : 0
       if movementOccurrence.index > 0,
         distanceFromRouteStart > definition.commitTriggerDistanceMeters
       {
@@ -863,7 +869,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         )
       )
     }
-    let releasedGuidance = commitGuidance.flatMap { commit -> [ReleasedGuidanceDefinition] in
+    let releasedGuidance = Self.chainingShortGaps(commitGuidance, route: route).flatMap {
+      commit -> [ReleasedGuidanceDefinition] in
       guard let movement = route.routePlan.occurrence(id: commit.frameTemplate.movementOccurrenceID),
         let commitAnchor = route.routePlan.occurrence(id: commit.anchor.occurrenceID)
       else { return [commit] }
@@ -1840,5 +1847,82 @@ extension ShutoNetworkDatabase {
         MatcherCoordinate(latitude: $0.latitude, longitude: $0.longitude)
       }
     }
+  }
+}
+
+extension ShutoPlannedRouteRuntimeCompiler {
+  /// A movement that follows the previous one closer than its own commit
+  /// distance is announced with it. Its own cue becomes due only once the car
+  /// has passed the previous movement, and there two roads still run side by
+  /// side until the second one splits — the matcher cannot place the car in
+  /// time, and at Namamugi JCT (K5 inbound, 250 m between the two forks)
+  /// the second cue never played. The earlier commit cue therefore goes on
+  /// to name the next movement's sign target ("then toward ..."); that
+  /// movement keeps its own cue for when progress does reach it.
+  static func chainingShortGaps(
+    _ commits: [ReleasedGuidanceDefinition],
+    route: ShutoPlannedRoute
+  ) -> [ReleasedGuidanceDefinition] {
+    let movementIndex: (ReleasedGuidanceDefinition) -> Int? = {
+      route.routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index
+    }
+    let ordered = commits.compactMap { commit in movementIndex(commit).map { (commit, $0) } }
+      .sorted { $0.1 < $1.1 }
+    var chained: [String: ReleasedGuidanceDefinition] = [:]
+    for (earlier, next) in zip(ordered, ordered.dropFirst()) {
+      let gap = route.edges[earlier.1..<next.1].reduce(0) { $0 + $1.lengthMeters }
+      guard gap < next.0.triggerDistanceMeters else { continue }
+      chained[earlier.0.anchor.promptID] = Self.announcing(next.0, after: earlier.0)
+    }
+    return commits.map { chained[$0.anchor.promptID] ?? $0 }
+  }
+
+  private static func announcing(
+    _ next: ReleasedGuidanceDefinition,
+    after commit: ReleasedGuidanceDefinition
+  ) -> ReleasedGuidanceDefinition {
+    let sign = next.frameTemplate.presentationSource.japaneseSignText
+    let template = commit.frameTemplate
+    var content: [KaidoReleaseLocale: LocalizedGuidanceContent] = [:]
+    for (locale, original) in template.presentationSource.localizedContent {
+      let then: String
+      switch locale {
+      case .japanese: then = "。その先、\(sign)方面です"
+      case .simplifiedChinese: then = "。随后前往 \(sign) 方向"
+      case .english:
+        // English cues name places in English ("Route K1 toward Haneda")
+        // where the sign is Japanese, so the chain repeats the next cue's
+        // own instruction without its "At <JCT>, " lead.
+        guard
+          let spoken = next.frameTemplate.presentationSource.localizedContent[.english]?
+            .spokenText,
+          spoken.hasPrefix("At "), let lead = spoken.range(of: ", ")
+        else { continue }
+        then = ". Then " + spoken[lead.upperBound...]
+      }
+      content[locale] = LocalizedGuidanceContent(
+        displayText: original.displayText + then,
+        spokenText: original.spokenText + then,
+        spokenForms: original.spokenForms,
+        preservedJapaneseSignText: original.preservedJapaneseSignText
+      )
+    }
+    return ReleasedGuidanceDefinition(
+      anchor: commit.anchor,
+      triggerDistanceMeters: commit.triggerDistanceMeters,
+      frameTemplate: GuidanceFrameTemplate(
+        movementOccurrenceID: template.movementOccurrenceID,
+        decisionZoneID: template.decisionZoneID, stage: template.stage,
+        decisionPointNameJapanese: template.decisionPointNameJapanese,
+        localizedDecisionPointNames: template.localizedDecisionPointNames,
+        maneuver: template.maneuver, lanePreparation: template.lanePreparation,
+        presentationSource: GuidancePresentationSource(
+          routeShields: template.presentationSource.routeShields,
+          japaneseSignText: template.presentationSource.japaneseSignText,
+          localizedContent: content,
+          junctionView: template.presentationSource.junctionView
+        )
+      )
+    )
   }
 }

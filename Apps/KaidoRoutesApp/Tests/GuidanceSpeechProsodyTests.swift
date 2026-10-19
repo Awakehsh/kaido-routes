@@ -94,6 +94,17 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
     XCTAssertTrue(replacement.delegate === output)
   }
 
+  @MainActor
+  func testStoppingWithNothingSpokenDoesNotWaitOnTheSpeechEngine() {
+    let synthesizer = SpeakingStateRecordingSynthesizer()
+    let output = AVSpeechGuidanceOutput(
+      synthesizer: synthesizer, notifications: NotificationCenter())
+    output.stop()
+    output.stop()
+    XCTAssertEqual(synthesizer.speakingStateReads, 0)
+    XCTAssertEqual(synthesizer.stopRequests, 0)
+  }
+
   func testNavigationProsodyPreservesBluetoothLeadIn() {
     let utterance = AVSpeechUtterance(string: "test")
     utterance.applyGuidanceProsody(
@@ -127,5 +138,21 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
     let drained = expectation(description: "main queue drained")
     DispatchQueue.main.async { drained.fulfill() }
     wait(for: [drained], timeout: 5)
+  }
+}
+
+/// Counts the calls that block on, or act on, the speech engine.
+private final class SpeakingStateRecordingSynthesizer: AVSpeechSynthesizer {
+  private(set) var speakingStateReads = 0
+  private(set) var stopRequests = 0
+
+  override var isSpeaking: Bool {
+    speakingStateReads += 1
+    return super.isSpeaking
+  }
+
+  override func stopSpeaking(at boundary: AVSpeechBoundary) -> Bool {
+    stopRequests += 1
+    return super.stopSpeaking(at: boundary)
   }
 }

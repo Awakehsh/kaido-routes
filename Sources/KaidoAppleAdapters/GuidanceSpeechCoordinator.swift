@@ -781,12 +781,12 @@ public final class GuidanceSpeechCoordinator {
     }
 
     private func cancelActiveUtterance() {
-      guard let utteranceID = activeUtteranceID else {
-        guard synthesizer.isSpeaking else { return }
-        synthesizer.stopSpeaking(at: .immediate)
-        deactivateAudioSession()
-        return
-      }
+      // Every utterance this output speaks is the active one until the
+      // delegate reports it finished or cancelled, so with none active there
+      // is nothing to stop. Asking `synthesizer.isSpeaking` instead blocks the
+      // main thread on the speech engine's thread, and guidance is
+      // invalidated on every degraded fix.
+      guard let utteranceID = activeUtteranceID else { return }
 
       let identity = identityByUtterance.removeValue(
         forKey: utteranceID

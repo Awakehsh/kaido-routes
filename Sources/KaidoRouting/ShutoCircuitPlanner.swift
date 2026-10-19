@@ -498,7 +498,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      self.circuitCost(edge, isMember: isMember(edge))
     }
     var viability: [Int64: Bool] = [:]
     guard
@@ -658,7 +658,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      self.circuitCost(edge, isMember: isMember(edge))
     }
     var viability: [Int64: Bool] = [:]
     let traversal = try circuitTraversal(
@@ -875,6 +875,61 @@ extension ShutoRoutePlanner {
     laps: Int,
     preference: ShutoRoutePreference = .recommended
   ) throws -> ShutoPlannedRoute {
+    try planCircuit(
+      circuit: circuit,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      destinationParkingAreaID: destinationParkingAreaID,
+      laps: laps,
+      preference: preference,
+      staysOnCarriagewayOnTies: true
+    )
+  }
+
+  /// Plans the circuit a stored plan was drawn from — a saved route, or a
+  /// drive restored after relaunch — as the planner drew it then. A plan
+  /// stored before the carriageway tie-break may take a link the planner
+  /// now leaves to the carriageway beside it (Hakozaki JCT, Shibaura JCT); planning it
+  /// without the tie-break reproduces it, so it still opens and drives.
+  /// Callers still compare the result with the stored plan. Its callers are
+  /// the saved-route and checkpoint restores in WholeShutoProductModel; saved
+  /// routes are kept without migration, so the earlier plan stays reachable.
+  public func planCircuit(
+    reproducing storedPlan: RoutePlan,
+    circuit: ShutoCircuitDefinition,
+    laps: Int,
+    preference: ShutoRoutePreference = .recommended
+  ) throws -> ShutoPlannedRoute {
+    let current = try planCircuit(
+      circuit: circuit,
+      entryFacilityID: storedPlan.entryFacilityID,
+      exitFacilityID: storedPlan.exitFacilityID,
+      destinationParkingAreaID: storedPlan.destinationParkingAreaID,
+      laps: laps,
+      preference: preference
+    )
+    guard current.routePlan != storedPlan else { return current }
+    let earlier = try planCircuit(
+      circuit: circuit,
+      entryFacilityID: storedPlan.entryFacilityID,
+      exitFacilityID: storedPlan.exitFacilityID,
+      destinationParkingAreaID: storedPlan.destinationParkingAreaID,
+      laps: laps,
+      preference: preference,
+      staysOnCarriagewayOnTies: false
+    )
+    return earlier.routePlan == storedPlan ? earlier : current
+  }
+
+  private func planCircuit(
+    circuit: ShutoCircuitDefinition,
+    entryFacilityID: String,
+    exitFacilityID: String?,
+    destinationParkingAreaID: String?,
+    laps: Int,
+    preference: ShutoRoutePreference,
+    staysOnCarriagewayOnTies: Bool
+  ) throws -> ShutoPlannedRoute {
     switch circuit.kind {
     case .loop:
       guard ShutoCircuitDefinition.loopLapRange.contains(laps) else {
@@ -909,7 +964,9 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      self.circuitCost(
+        edge, isMember: isMember(edge), staysOnCarriageway: staysOnCarriagewayOnTies
+      )
     }
     var viability: [Int64: Bool] = [:]
     var traversal = try circuitTraversal(
@@ -1308,6 +1365,28 @@ extension ShutoRoutePlanner {
   }
 
   // MARK: - Directed search helpers
+
+  /// What an edge costs a circuit search. An edge off the circuit's own
+  /// carriageways weighs 25 times its length, so the search keeps to them;
+  /// a ramp leaving a carriageway adds `carriagewayDepartureMeters`, so of
+  /// two paths that close the one staying on the carriageway wins. At
+  /// Hakozaki JCT the outbound Route 6 plan otherwise left the carriageway for
+  /// the rotary link, 0.8 m shorter than the carriageway it rejoins.
+  private func circuitCost(
+    _ edge: ShutoNetworkDatabase.Edge,
+    isMember: Bool,
+    staysOnCarriageway: Bool = true
+  ) -> Double {
+    guard edge.kind != "PARKING" else { return .infinity }
+    let leavesCarriageway =
+      staysOnCarriageway && edge.kind == "LINK"
+      && outgoingEdges[edge.fromNodeID, default: []].contains { $0.kind == "MAINLINE" }
+    return (edge.lengthMeters + (leavesCarriageway ? Self.carriagewayDepartureMeters : 0))
+      * (isMember ? 1 : 25)
+  }
+
+  /// The largest difference in length the carriageway tie-break settles.
+  static let carriagewayDepartureMeters = 10.0
 
   /// Ramp candidates onto the circuit carriageways: the cheapest viable
   /// nodes with an outgoing member mainline edge, at most one per branch

@@ -793,10 +793,16 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         return nil
       }
       var accumulatedDistance = 0.0
-      var preferredAnchorIndex = incomingOccurrence.index
       let distanceFromRouteStart = route.edges
         .prefix(movementOccurrence.index)
         .reduce(0.0) { $0 + $1.lengthMeters }
+      // A movement nearer the route start than its commit distance is cued
+      // from the start: anchored on the occurrence just before it, the cue
+      // was due only there, and from Nishikanda the car reached Takebashi
+      // JCT 200 m after entry before progress stood on that occurrence.
+      var preferredAnchorIndex =
+        distanceFromRouteStart > definition.commitTriggerDistanceMeters
+        ? incomingOccurrence.index : 0
       if movementOccurrence.index > 0,
         distanceFromRouteStart > definition.commitTriggerDistanceMeters
       {

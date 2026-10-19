@@ -1889,7 +1889,16 @@ extension ShutoPlannedRouteRuntimeCompiler {
       switch locale {
       case .japanese: then = "。その先、\(sign)方面です"
       case .simplifiedChinese: then = "。随后前往 \(sign) 方向"
-      case .english: then = ". Then toward \(sign)"
+      case .english:
+        // English cues name places in English ("Route K1 toward Haneda")
+        // where the sign is Japanese, so the chain repeats the next cue's
+        // own instruction without its "At <JCT>, " lead.
+        guard
+          let spoken = next.frameTemplate.presentationSource.localizedContent[.english]?
+            .spokenText,
+          spoken.hasPrefix("At "), let lead = spoken.range(of: ", ")
+        else { continue }
+        then = ". Then " + spoken[lead.upperBound...]
       }
       content[locale] = LocalizedGuidanceContent(
         displayText: original.displayText + then,

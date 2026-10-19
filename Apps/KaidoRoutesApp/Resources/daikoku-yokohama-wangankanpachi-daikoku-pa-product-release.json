@@ -20289,12 +20289,12 @@
             "japanese_sign_text" : "第三京浜・東名・羽田",
             "localized_content" : {
               "en" : {
-                "display_text" : "Ahead: Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田",
+                "display_text" : "Ahead: Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then branch right for Route K1 toward Haneda",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda" : "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
                 },
-                "spoken_text" : "Ahead at Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田"
+                "spoken_text" : "Ahead at Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then branch right for Route K1 toward Haneda"
               },
               "ja-JP" : {
                 "display_text" : "この先、右方向を保ち、第三京浜・東名・K1 羽田方面へ。その先、羽田方面です",
@@ -20346,12 +20346,12 @@
             "japanese_sign_text" : "第三京浜・東名・羽田",
             "localized_content" : {
               "en" : {
-                "display_text" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田",
+                "display_text" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then branch right for Route K1 toward Haneda",
                 "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
                   "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda" : "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
                 },
-                "spoken_text" : "At Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then toward 羽田"
+                "spoken_text" : "At Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda. Then branch right for Route K1 toward Haneda"
               },
               "ja-JP" : {
                 "display_text" : "右方向を保ち、第三京浜・東名・K1 羽田方面へ。その先、羽田方面です",

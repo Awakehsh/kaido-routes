@@ -24,6 +24,11 @@
             .spokenText.hasSuffix("。その先、羽田方面です") == true
       }
       #expect(chained.count == 1)
+      // English cues name the place in English, not by the Japanese sign.
+      #expect(
+        chained.first?.frameTemplate.presentationSource.localizedContent[.english]?
+          .spokenText.hasSuffix(". Then branch right for Route K1 toward Haneda") == true
+      )
       let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .urban)
       let summary = gateLine(file: file, seed: seed, run: run, label: "CHAINED-URBAN")
       print(summary)

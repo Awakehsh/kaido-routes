@@ -153,7 +153,11 @@ plan leaves at its final exit, the road it leaves there — on a loop, the lap
 it began on — runs beside the exit ramp: it holds back only the final
 occurrence, so the progress of that occurrence and of the ramp is admitted
 while completion still waits for the car to be clear of that road, which
-stays one the car can drive onto until then. Once the
+stays one the car can drive onto until then. The route end weighs only roads
+the plan leads to from twelve occurrences behind admitted progress on: the
+other carriageway of a radial the drive came in on, and its exit at the same
+interchange, are roads the car can no longer be on, so neither shortens the
+exit's coverage nor stands between a fix and the planned exit. Once the
 matcher has placed the car on an off-plan road it could have left the plan
 for, that road keeps competing with any match on the plan it does not lead to
 within the 40 m/s-plus-100 m reach since that placement, for up to 30 s and

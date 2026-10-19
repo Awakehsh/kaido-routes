@@ -256,6 +256,62 @@
       return LiveNavigationReplayGate(release: release, database: database)
     }
 
+    /// A drive in along a radial route, around C1 and back out to an exit on
+    /// the same radial: the other carriageway's exit, which the drive passed
+    /// on the way in, ends tens of metres from this one. It counted as a road
+    /// the car could be on instead of the exit, so nothing past the exit was
+    /// ever clear of it and every drive was handed over as an unplanned exit.
+    @Test(
+      "a drive back out a radial completes beside the other carriageway's exit",
+      arguments: [UInt64(1), 2]
+    )
+    func radialReturnCompletes(seed: UInt64) async throws {
+      let gate = try Self.radialReturnGate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .urban)
+      let summary = gateLine(file: "c1-inner yokohamakohoku-shinyokohama", seed: seed, run: run, label: "ROUTE-END-URBAN")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+    }
+
+    /// Missing that exit and driving on along the radial never completes.
+    @Test("missing the exit back out a radial never completes", arguments: [UInt64(1), 2])
+    func radialReturnMissedExitNeverCompletes(seed: UInt64) async throws {
+      let gate = try Self.radialReturnGate()
+      let movementIndex = gate.finalDivergenceIndex
+      let alternatives = gate.alternativeEdgeIDs(atMovementIndex: movementIndex)
+      #expect(!alternatives.isEmpty)
+      for alternative in alternatives {
+        let run = try await gate.run(
+          legs: gate.wrongBranchLegs(
+            movementIndex: movementIndex, alternativeEdgeID: alternative, branchMeters: 1_500
+          ),
+          seed: seed,
+          noise: .urban
+        )
+        let summary = gateLine(file: "c1-inner yokohamakohoku-shinyokohama", seed: seed, run: run, label: "MISSED-EXIT-URBAN")
+        print(summary)
+        #expect(!run.reachedCompletion, "\(summary)")
+      }
+    }
+
+    /// Yokohama North Route from Yokohama-Kohoku, C1 inner, back to
+    /// Shin-Yokohama.
+    private static func radialReturnGate() throws -> LiveNavigationReplayGate {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: .c1Inner,
+        entryFacilityID: "shuto.ic.k7-yokohama-kita.yokohamakohoku",
+        exitFacilityID: "shuto.ic.k7-yokohama-kita.shinyokohama",
+        laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      return LiveNavigationReplayGate(release: release, database: database)
+    }
+
     private static func noise(_ label: String) -> ReplayGateNoiseModel {
       switch label {
       case "MULTIPATH": return .multipath

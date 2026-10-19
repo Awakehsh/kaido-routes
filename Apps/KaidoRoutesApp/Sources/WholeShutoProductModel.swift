@@ -302,12 +302,29 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
 protocol WholeShutoJourneyCheckpointStoring: AnyObject {
   func load() throws -> WholeShutoJourneyCheckpoint?
   func save(_ checkpoint: WholeShutoJourneyCheckpoint) throws
+  /// Saves without holding the main actor while the checkpoint is encoded
+  /// and written, in the same order as every other save and remove.
+  func saveInBackground(_ checkpoint: WholeShutoJourneyCheckpoint) async throws
   func remove() throws
+}
+
+extension WholeShutoJourneyCheckpointStoring {
+  func saveInBackground(_ checkpoint: WholeShutoJourneyCheckpoint) async throws {
+    try save(checkpoint)
+  }
 }
 
 /// One atomically replaced file in Application Support. A checkpoint carries
 /// the whole RoutePlan, about 1.8 MB for nine C2 laps, which is too large for
 /// a UserDefaults value.
+///
+/// Every load, save and remove runs on one serial queue, so they apply in
+/// the order they were asked for and the last one wins. The synchronous calls
+/// wait for anything queued before them; `saveInBackground` lets the live
+/// drive's periodic checkpoint encode and write without holding the main
+/// actor. A write cut short by suspension resumes with the process, and one
+/// cut short by termination leaves the previous file whole, because the
+/// replacement is atomic.
 @MainActor
 final class WholeShutoFileCheckpointStore:
   WholeShutoJourneyCheckpointStoring
@@ -317,34 +334,62 @@ final class WholeShutoFileCheckpointStore:
     .appendingPathComponent("whole-shuto-journey-checkpoint.json")
 
   private let fileURL: URL
+  private let queue = DispatchQueue(label: "app.kaidoroutes.journey-checkpoint")
 
   init(fileURL: URL = defaultFileURL) {
     self.fileURL = fileURL
   }
 
   func load() throws -> WholeShutoJourneyCheckpoint? {
-    guard FileManager.default.fileExists(atPath: fileURL.path) else {
-      return nil
+    let fileURL = fileURL
+    return try queue.sync {
+      guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        return nil
+      }
+      return try JSONDecoder().decode(
+        WholeShutoJourneyCheckpoint.self,
+        from: Data(contentsOf: fileURL)
+      )
     }
-    return try JSONDecoder().decode(
-      WholeShutoJourneyCheckpoint.self,
-      from: Data(contentsOf: fileURL)
-    )
   }
 
   func save(_ checkpoint: WholeShutoJourneyCheckpoint) throws {
+    let fileURL = fileURL
+    try queue.sync { try Self.write(checkpoint, to: fileURL) }
+  }
+
+  func saveInBackground(_ checkpoint: WholeShutoJourneyCheckpoint) async throws {
+    let fileURL = fileURL
+    let queue = queue
+    try await withCheckedThrowingContinuation {
+      (continuation: CheckedContinuation<Void, any Error>) in
+      queue.async {
+        continuation.resume(
+          with: Result { try Self.write(checkpoint, to: fileURL) }
+        )
+      }
+    }
+  }
+
+  func remove() throws {
+    let fileURL = fileURL
+    try queue.sync {
+      guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        return
+      }
+      try FileManager.default.removeItem(at: fileURL)
+    }
+  }
+
+  private nonisolated static func write(
+    _ checkpoint: WholeShutoJourneyCheckpoint,
+    to fileURL: URL
+  ) throws {
     try FileManager.default.createDirectory(
       at: fileURL.deletingLastPathComponent(),
       withIntermediateDirectories: true
     )
     try JSONEncoder().encode(checkpoint).write(to: fileURL, options: .atomic)
-  }
-
-  func remove() throws {
-    guard FileManager.default.fileExists(atPath: fileURL.path) else {
-      return
-    }
-    try FileManager.default.removeItem(at: fileURL)
   }
 }
 
@@ -654,6 +699,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private var liveVehicleCourseDegrees: Double?
   @Published private var liveVehicleSpeedMetersPerSecond: Double?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
+  /// Counts every checkpoint save and remove asked of the store, so a
+  /// background save can tell whether a later write superseded it.
+  private var checkpointWriteGeneration = 0
   private var liveLocationFreshnessTask: Task<Void, Never>?
   private var tunnelEstimateAnchor: TunnelEstimateAnchor?
   private var liveMatcherWasInTunnel = false
@@ -6274,12 +6322,49 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func persistCheckpoint() {
+    guard let checkpoint = currentCheckpoint(), let checkpointStore else {
+      return
+    }
+    checkpointWriteGeneration &+= 1
+    do {
+      try checkpointStore.save(checkpoint)
+      checkpointIssueCode = nil
+    } catch {
+      rejectCheckpoint(Self.checkpointSaveFailedCode)
+    }
+  }
+
+  /// Saves off the main actor. The outcome is applied only when no later
+  /// save or remove was asked for meanwhile: a later write supersedes this
+  /// one in the file, so its failure must not remove the newer checkpoint.
+  /// - Returns: whether the store holds what this call asked for: the
+  ///   checkpoint was written and nothing superseded it, or there was none to
+  ///   write and no checkpoint issue stands.
+  private func persistCheckpointInBackground() async -> Bool {
+    guard let checkpoint = currentCheckpoint(), let checkpointStore else {
+      return checkpointIssueCode == nil
+    }
+    checkpointWriteGeneration &+= 1
+    let generation = checkpointWriteGeneration
+    do {
+      try await checkpointStore.saveInBackground(checkpoint)
+      guard generation == checkpointWriteGeneration else { return false }
+      checkpointIssueCode = nil
+      return true
+    } catch {
+      guard generation == checkpointWriteGeneration else { return false }
+      rejectCheckpoint(Self.checkpointSaveFailedCode)
+      return false
+    }
+  }
+
+  private func currentCheckpoint() -> WholeShutoJourneyCheckpoint? {
     guard let origin, let destination, let route = selectedRoute,
       phase != .planning, phase != .completed
     else {
-      return
+      return nil
     }
-    let checkpoint = WholeShutoJourneyCheckpoint(
+    return WholeShutoJourneyCheckpoint(
       schemaVersion: WholeShutoJourneyCheckpoint.currentSchemaVersion,
       networkSnapshotID: database.networkSnapshotID,
       originQuery: originQuery,
@@ -6319,16 +6404,10 @@ final class WholeShutoProductModel: ObservableObject {
       joinedOccurrenceID: joinedOccurrenceID,
       declaredEntryFacilityID: declaredEntryFacilityID
     )
-    guard let checkpointStore else { return }
-    do {
-      try checkpointStore.save(checkpoint)
-      checkpointIssueCode = nil
-    } catch {
-      rejectCheckpoint(Self.checkpointSaveFailedCode)
-    }
   }
 
   private func rejectCheckpoint(_ issueCode: String) {
+    checkpointWriteGeneration &+= 1
     guard let checkpointStore else {
       checkpointIssueCode = issueCode
       return
@@ -6342,6 +6421,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func discardCheckpointDuringRestore() {
+    checkpointWriteGeneration &+= 1
     guard let checkpointStore else { return }
     do {
       try checkpointStore.remove()
@@ -6352,6 +6432,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func removeCheckpoint() {
+    checkpointWriteGeneration &+= 1
     guard let checkpointStore else { return }
     do {
       try checkpointStore.remove()
@@ -6380,8 +6461,7 @@ final class WholeShutoProductModel: ObservableObject {
       // An ended or swapped drive must not be written back as resumable.
       guard liveDriveSession === session else { return }
       liveNavigationCheckpoint = checkpoint
-      persistCheckpoint()
-      if checkpointIssueCode == nil {
+      if await persistCheckpointInBackground() {
         lastLiveCheckpointPersistedAtMilliseconds = savedAtMilliseconds
       }
     } catch {

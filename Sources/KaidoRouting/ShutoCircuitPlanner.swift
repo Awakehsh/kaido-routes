@@ -891,7 +891,9 @@ extension ShutoRoutePlanner {
   /// stored before the carriageway tie-break may take a link the planner
   /// now leaves to the carriageway beside it (Hakozaki JCT, Shibaura JCT); planning it
   /// without the tie-break reproduces it, so it still opens and drives.
-  /// Callers still compare the result with the stored plan.
+  /// Callers still compare the result with the stored plan. Its callers are
+  /// the saved-route and checkpoint restores in WholeShutoProductModel; saved
+  /// routes are kept without migration, so the earlier plan stays reachable.
   public func planCircuit(
     reproducing storedPlan: RoutePlan,
     circuit: ShutoCircuitDefinition,

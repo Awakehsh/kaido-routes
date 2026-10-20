@@ -250,6 +250,9 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
   case resting = "RESTING"
   case tunnelEstimated = "TUNNEL_ESTIMATED"
   case routeInterrupted = "ROUTE_INTERRUPTED"
+  /// Off the plan just past its exit, where the street the exit leads to
+  /// runs beside the road it leaves: neither taken nor missed yet.
+  case confirmingExit = "CONFIRMING_EXIT"
   case completed = "COMPLETED"
 }
 
@@ -571,6 +574,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var runtimeOccurrenceID: String?
   @Published private(set) var runtimeJourneyPhase: JourneyPhase?
   @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
+  /// The session cannot yet tell a car that took the exit from one that
+  /// missed it: see `NavigationSessionUpdate.isConfirmingPlannedExit`.
+  @Published private(set) var runtimeIsConfirmingPlannedExit = false
   @Published private(set) var runtimeRecoveryTargetOccurrenceID: String?
   @Published private(set) var runtimeRecoveryDirectedEdgeID: String?
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
@@ -1899,7 +1905,8 @@ final class WholeShutoProductModel: ObservableObject {
       return true
     case .tunnelEstimated:
       return liveLocationState == .available
-    case .unavailable, .surfaceRoutePending, .networkDegraded, .resting, .routeInterrupted:
+    case .unavailable, .surfaceRoutePending, .networkDegraded, .resting, .routeInterrupted,
+      .confirmingExit:
       return false
     }
   }
@@ -1939,7 +1946,7 @@ final class WholeShutoProductModel: ObservableObject {
       return .boundaryTransition
     case .expressway:
       if runtimeJourneyPhase == .routeRecovery {
-        return .routeInterrupted
+        return runtimeIsConfirmingPlannedExit ? .confirmingExit : .routeInterrupted
       }
       // The last admitted position stands until the stale-fix path says
       // otherwise; one unadmitted fix is not a weak position.
@@ -2260,7 +2267,7 @@ final class WholeShutoProductModel: ObservableObject {
       .networkPreview:
       break
     case .unavailable, .networkDegraded, .tunnelEstimated,
-      .routeInterrupted, .completed, .resting:
+      .routeInterrupted, .confirmingExit, .completed, .resting:
       return nil
     }
     if isLiveDrive, phase == .surfaceAccess || phase == .surfaceEgress {
@@ -4829,6 +4836,9 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     runtimeJourneyPhase = snapshot.journeyPhase
     runtimeRecoveryStatus = snapshot.recovery.status
+    if snapshot.journeyPhase != .routeRecovery {
+      runtimeIsConfirmingPlannedExit = false
+    }
     runtimeRecoveryTargetOccurrenceID =
       snapshot.recovery.chosenRejoinOccurrenceID
     if snapshot.recovery.status != .active {
@@ -5725,6 +5735,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
+    runtimeIsConfirmingPlannedExit = update.isConfirmingPlannedExit
     if isLiveDrive, wasRecovering, update.navigationSnapshot.journeyPhase == .strictRoute {
       announceJourneyNotice(.rejoined)
     } else if isLiveDrive, !wasRecovering, runtimeRecoveryStatus == .active {

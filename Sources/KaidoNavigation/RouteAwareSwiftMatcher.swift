@@ -107,19 +107,26 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
   public let routePlanID: String
   public let edges: [RouteMatcherDirectedEdge]
   public let occurrences: [RouteMatcherOccurrence]
+  /// The corridor's ramps of the plan's exit facility. A facility can leave
+  /// the expressway by more than one ramp; a car that left the corridor
+  /// along any of them left at the planned exit. Corridors authored before
+  /// this was recorded carry none.
+  public let exitRampEdgeIDs: Set<String>
 
   public init(
     id: String,
     networkSnapshotID: String,
     routePlanID: String,
     edges: [RouteMatcherDirectedEdge],
-    occurrences: [RouteMatcherOccurrence]
+    occurrences: [RouteMatcherOccurrence],
+    exitRampEdgeIDs: Set<String> = []
   ) {
     self.id = id
     self.networkSnapshotID = networkSnapshotID
     self.routePlanID = routePlanID
     self.edges = edges
     self.occurrences = occurrences
+    self.exitRampEdgeIDs = exitRampEdgeIDs
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -128,6 +135,31 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     case routePlanID = "route_plan_id"
     case edges
     case occurrences
+    case exitRampEdgeIDs = "exit_ramp_edge_ids"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    networkSnapshotID = try container.decode(String.self, forKey: .networkSnapshotID)
+    routePlanID = try container.decode(String.self, forKey: .routePlanID)
+    edges = try container.decode([RouteMatcherDirectedEdge].self, forKey: .edges)
+    occurrences = try container.decode([RouteMatcherOccurrence].self, forKey: .occurrences)
+    exitRampEdgeIDs = Set(
+      try container.decodeIfPresent([String].self, forKey: .exitRampEdgeIDs) ?? []
+    )
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(networkSnapshotID, forKey: .networkSnapshotID)
+    try container.encode(routePlanID, forKey: .routePlanID)
+    try container.encode(edges, forKey: .edges)
+    try container.encode(occurrences, forKey: .occurrences)
+    if !exitRampEdgeIDs.isEmpty {
+      try container.encode(exitRampEdgeIDs.sorted(), forKey: .exitRampEdgeIDs)
+    }
   }
 
   public var validationIssues: [String] {
@@ -148,6 +180,9 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
       if !edge.successorEdgeIDs.isSubset(of: edgeIDSet) {
         issues.append("edge \(edge.id) has an unknown successor")
       }
+    }
+    if !exitRampEdgeIDs.isSubset(of: edgeIDSet) {
+      issues.append("an exit ramp is not a corridor edge")
     }
     let occurrenceIDs = occurrences.map(\.id)
     if occurrences.isEmpty { issues.append("corridor occurrences are empty") }

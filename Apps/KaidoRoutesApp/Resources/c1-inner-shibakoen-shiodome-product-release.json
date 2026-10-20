@@ -13639,6 +13639,9 @@
           ]
         }
       ],
+      "exit_ramp_edge_ids" : [
+        "osm.45068171.1.forward"
+      ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "occurrences" : [
         {

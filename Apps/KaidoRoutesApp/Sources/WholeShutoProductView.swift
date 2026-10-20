@@ -752,7 +752,7 @@ struct WholeShutoProductView: View {
 
   private var isTrackMapPositionEstimated: Bool {
     switch model.positionState {
-    case .tunnelEstimated, .networkDegraded, .routeInterrupted:
+    case .tunnelEstimated, .networkDegraded, .routeInterrupted, .confirmingExit:
       return true
     default:
       return model.isHoldingLivePosition
@@ -5004,6 +5004,13 @@ struct WholeShutoProductView: View {
           simplifiedChinese: "隧道位置推算 · 模拟 \(simulationReplayParametersLabel)",
           english: "TUNNEL ESTIMATE · SIMULATED \(simulationReplayParametersLabel)"
         )
+    case .confirmingExit:
+      return prefix
+        + copy.resolve(
+          japanese: "出口付近 · 位置を確認中",
+          simplifiedChinese: "出口附近 · 正在确认位置",
+          english: "NEAR EXIT · CONFIRMING POSITION"
+        )
     case .routeInterrupted:
       if model.runtimeRecoveryStatus == .active {
         return prefix
@@ -7083,6 +7090,7 @@ private struct WholeShutoGeographicMap: View {
             .foregroundStyle(
               model.positionState == .tunnelEstimated
                 || model.positionState == .routeInterrupted
+                || model.positionState == .confirmingExit
                 || model.isHoldingLivePosition
                 ? KaidoInk.accentWarm : KaidoInk.accentCool
             )

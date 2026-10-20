@@ -2593,6 +2593,20 @@ the actor to `SURFACE_EGRESS` with `UNPLANNED_EXIT`: neither a recovery nor a
 completion. A wrong junction branch onto another expressway leaves the
 corridor too, but stays within the network, so it stays in recovery until
 the car leaves the expressway.
+Past the plan's last choice of road the same fixes may instead be the planned
+exit taken. Off the expressway the car left the corridor somewhere, so the
+session credits the planned exit when the fix is nearer it — the exit side of
+the plan, the roads past its end, and the exit facility's other ramps, which
+the corridor records — than any place where the corridor stops following
+another road the car can be on. The road the exit leaves can carry on beside
+or under the street the car drives away on (Route 6 at Mukojima, Route 4 at
+Eifuku, C2 at Senju-Shinbashi), so how near that road is does not decide it.
+Fixes on that street read as the road beside it and put the session in
+recovery before it can tell a taken exit from a missed one; while that
+recovery has no rejoin, began past the last choice and the car is within 500 m
+of the exit, `NavigationSessionUpdate.isConfirmingPlannedExit` holds and the
+App shows the position as confirming the exit rather than interrupted. Voice
+and recovery are unchanged.
 The check runs before post-tunnel reacquisition holds the rest of the fix
 back, because a car that left right after a tunnel never reacquires the plan.
 The App then speaks once and either starts a provider-only ordinary-road leg

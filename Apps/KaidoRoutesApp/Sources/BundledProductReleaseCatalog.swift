@@ -30,7 +30,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c1-inner-shibakoen-shiodome-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "d67610f08042dcec1e2312af6349573926e088e5bd1f2ca203e04630c5e1248d",
+        "cbbce96cff6a07d2d2acd4705115c2693668a59fa28de3b4126cbfb3a71efed8",
       expectedReleaseID:
         "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07",
       role: .foregroundNavigation
@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-itabashihoncho-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "1555a0cf315780b695485ec4b6fbf4cdc13d689b07c9672c2bd35253552d4ccc",
+        "5bd34f8d42ebb75086047d8c280ce1f71def1515b32d8de1cad74fe69ad1832c",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07",
       role: .foregroundNavigation

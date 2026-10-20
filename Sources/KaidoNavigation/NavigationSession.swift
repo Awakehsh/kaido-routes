@@ -21,6 +21,11 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
   public let guidanceProgressObservation: GuidanceProgressObservation?
   public let guidancePromptEmission: GuidancePromptEmission?
   public let guidanceBridgeError: GuidanceProgressBridgeError?
+  /// Recovery with no rejoin that began past the plan's last choice of road,
+  /// while the car is still near the exit. A street running on beside or
+  /// under the road the exit leaves looks the same as that road here, so
+  /// the car may have taken the exit or missed it; nothing yet tells which.
+  public let isConfirmingPlannedExit: Bool
 
   public init(
     matcherEstimate: MatcherEstimate,
@@ -29,8 +34,10 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
     guidanceProgressState: NavigationSessionGuidanceProgressState,
     guidanceProgressObservation: GuidanceProgressObservation? = nil,
     guidancePromptEmission: GuidancePromptEmission? = nil,
-    guidanceBridgeError: GuidanceProgressBridgeError? = nil
+    guidanceBridgeError: GuidanceProgressBridgeError? = nil,
+    isConfirmingPlannedExit: Bool = false
   ) {
+    self.isConfirmingPlannedExit = isConfirmingPlannedExit
     self.matcherEstimate = matcherEstimate
     self.matcherDiagnostics = matcherDiagnostics
     self.navigationSnapshot = navigationSnapshot
@@ -86,6 +93,9 @@ public actor NavigationSession {
   private let expresswayRoads: [[MatcherCoordinate]]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
+  private var lastObservedCoordinate: MatcherCoordinate?
+  /// Whether the current recovery began past the plan's last choice of road.
+  private var recoveryBeganPastLastChoice: Bool?
   /// When the engine last admitted a position on the plan. Nothing the car
   /// drove since can lie farther ahead than plausible driving allows.
   private var lastProgressObservedAtMilliseconds: Int?
@@ -303,6 +313,7 @@ public actor NavigationSession {
   public func observe(
     _ observation: RouteMatcherObservation
   ) throws -> NavigationSessionUpdate {
+    lastObservedCoordinate = observation.coordinate
     matcherSession.occurrenceWindow = occurrenceWindow(
       atMilliseconds: observation.observedAtMilliseconds
     )
@@ -512,14 +523,18 @@ public actor NavigationSession {
     offPlanRun = nil
     // Past the plan's last choice of road the only way off the expressway is
     // the planned exit. Coarse fixes along its ramp can withhold the exit's
-    // own evidence until the car is already off the expressway; a fix still
-    // nearer that exit than any other road is the exit taken.
+    // own evidence until the car is already off the expressway. Off it, the
+    // car left the corridor somewhere: a fix nearer that exit than any place
+    // the corridor stops following another road is the exit taken. The road
+    // the exit leaves can carry on beside the street the car drives away on
+    // (Route 6 at Mukojima, C2 at Senju-Shinbashi), so how near that road
+    // is says nothing about which way the car left.
     if let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex,
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
         >= routeEnd.exitSideStartIndex,
-      routeEnd.metersFromExit(observation.coordinate)
-        < routeEnd.metersFromOtherRoads(observation.coordinate, fromProgress: currentIndex)
+      routeEnd.metersFromExit(observation.coordinate, fromProgress: currentIndex)
+        < routeEnd.metersFromOtherRoadEnds(observation.coordinate, fromProgress: currentIndex)
     {
       engine.finishAtRouteEnd()
       return
@@ -561,8 +576,9 @@ public actor NavigationSession {
       // route end leaving the corridor is what taking the exit looks like.
       guard continues, let lastEdgeID = offPlanRun?.edgeID,
         routeEnd.map({
-          $0.metersFromExit(observation.coordinate)
-            > $0.exitCoverageMeters(fromProgress: engine.snapshot.currentOccurrenceIndex ?? 0)
+          $0.metersFromExit(
+            observation.coordinate, fromProgress: engine.snapshot.currentOccurrenceIndex ?? 0
+          ) > $0.exitCoverageMeters(fromProgress: engine.snapshot.currentOccurrenceIndex ?? 0)
         }) ?? true
       else {
         offPlanRun = nil
@@ -862,7 +878,7 @@ public actor NavigationSession {
         <= Self.offPlanDeviationMaximumGapMilliseconds
     } ?? false
     let clearance = 4 * max(5, observation.horizontalAccuracyMeters)
-    let metersFromExit = routeEnd.metersFromExit(observation.coordinate)
+    let metersFromExit = routeEnd.metersFromExit(observation.coordinate, fromProgress: currentIndex)
     let metersFromOtherRoads = routeEnd.metersFromOtherRoads(
       observation.coordinate, fromProgress: currentIndex
     )
@@ -1285,8 +1301,36 @@ public actor NavigationSession {
       guidanceProgressState: guidanceProgressState,
       guidanceProgressObservation: guidanceProgressObservation,
       guidancePromptEmission: guidancePromptEmission,
-      guidanceBridgeError: guidanceBridgeError
+      guidanceBridgeError: guidanceBridgeError,
+      isConfirmingPlannedExit: isConfirmingPlannedExit()
     )
+  }
+
+  /// How far from the exit a recovery that began past the last choice still
+  /// leaves open whether the car took it: a street beside the road the exit
+  /// leaves runs with it for up to about 400 m (Route 6 at Mukojima). Past
+  /// this the car is on that road, and the recovery stands.
+  static let confirmingPlannedExitMeters = 500.0
+
+  private func isConfirmingPlannedExit() -> Bool {
+    guard engine.snapshot.journeyPhase == .routeRecovery,
+      let routeEnd,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex
+    else {
+      recoveryBeganPastLastChoice = nil
+      return false
+    }
+    if recoveryBeganPastLastChoice == nil {
+      recoveryBeganPastLastChoice =
+        max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
+        >= routeEnd.exitSideStartIndex
+    }
+    guard recoveryBeganPastLastChoice == true,
+      engine.snapshot.recovery.status == .unavailable,
+      let lastObservedCoordinate
+    else { return false }
+    return routeEnd.metersFromExit(lastObservedCoordinate, fromProgress: currentIndex)
+      <= Self.confirmingPlannedExitMeters
   }
 
   private static func locationObservation(
@@ -1569,6 +1613,10 @@ private struct RouteEndGeometry: Sendable {
   let exitSideStartIndex: Int
   /// The plan from `exitSideStartIndex` to its end.
   private let exit: [MatcherCoordinate]
+  /// The exit facility's other ramps and what the corridor follows past
+  /// them, with the last occurrence of the plan they can be reached from: a
+  /// car on one left at the planned exit all the same.
+  private let exitRamps: [(coordinates: [MatcherCoordinate], lastReachingIndex: Int)]
   /// Every corridor road but the exit and what continues past its end, with
   /// the last occurrence of the plan it can be reached from: the roads the
   /// car could be on instead of the exit, earlier passes of the plan
@@ -1577,9 +1625,9 @@ private struct RouteEndGeometry: Sendable {
   /// carriageway's own exit — is not one of them.
   private let otherRoads: [(coordinates: [MatcherCoordinate], lastReachingIndex: Int)]
   /// Where the corridor stops following each road the car could be on
-  /// instead of the exit: that point's distance from the exit, and the last
-  /// occurrence of the plan the road can be reached from.
-  private let roadEnds: [(metersFromExit: Double, lastReachingIndex: Int)]
+  /// instead of the exit: that point, its distance from the exit, and the
+  /// last occurrence of the plan the road can be reached from.
+  private let roadEnds: [(end: MatcherCoordinate, metersFromExit: Double, lastReachingIndex: Int)]
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1610,6 +1658,14 @@ private struct RouteEndGeometry: Sendable {
       pending += edge.successorEdgeIDs
     }
     let exitEdgeIDs = Set(routeEdges[exitSideStartIndex...].map(\.id))
+    var rampIDs: Set<String> = []
+    pending = Array(corridor.exitRampEdgeIDs)
+    while let edgeID = pending.popLast() {
+      guard !routeEdgeIDs.contains(edgeID), !pastEndIDs.contains(edgeID),
+        rampIDs.insert(edgeID).inserted, let edge = edgesByID[edgeID]
+      else { continue }
+      pending += edge.successorEdgeIDs
+    }
     // From the plan's end backwards, each road takes the latest occurrence
     // that leads to it; one already taken is reached from later on, and so
     // is everything it leads to.
@@ -1622,18 +1678,22 @@ private struct RouteEndGeometry: Sendable {
         pending += edge.successorEdgeIDs
       }
     }
+    exitRamps = corridor.edges.compactMap {
+      guard rampIDs.contains($0.id), let reachingIndex = lastReachingIndex[$0.id] else { return nil }
+      return ($0.coordinates, reachingIndex)
+    }
     otherRoads = corridor.edges.compactMap {
-      guard !exitEdgeIDs.contains($0.id), !pastEndIDs.contains($0.id),
+      guard !exitEdgeIDs.contains($0.id), !pastEndIDs.contains($0.id), !rampIDs.contains($0.id),
         let reachingIndex = lastReachingIndex[$0.id]
       else { return nil }
       return ($0.coordinates, reachingIndex)
     }
     roadEnds = corridor.edges.compactMap {
-      guard !routeEdgeIDs.contains($0.id), !exitRoadIDs.contains($0.id),
+      guard !routeEdgeIDs.contains($0.id), !exitRoadIDs.contains($0.id), !rampIDs.contains($0.id),
         $0.successorEdgeIDs.isEmpty, let end = $0.coordinates.last,
         let reachingIndex = lastReachingIndex[$0.id]
       else { return nil }
-      return (Self.meters(from: end, toPolyline: exit), reachingIndex)
+      return (end, Self.meters(from: end, toPolyline: exit), reachingIndex)
     }
   }
 
@@ -1656,9 +1716,24 @@ private struct RouteEndGeometry: Sendable {
       - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
   }
 
-  /// Distance from a point to the plan after its last choice of road.
-  func metersFromExit(_ coordinate: MatcherCoordinate) -> Double {
-    Self.meters(from: coordinate, toPolyline: exit)
+  /// Distance from a point to the plan after its last choice of road, or to
+  /// another ramp of its exit a car at `progressIndex` can be on.
+  func metersFromExit(_ coordinate: MatcherCoordinate, fromProgress progressIndex: Int) -> Double {
+    exitRamps.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
+      .map { Self.meters(from: coordinate, toPolyline: $0.coordinates) }
+      .reduce(Self.meters(from: coordinate, toPolyline: exit), min)
+  }
+
+  /// Distance from a point to the nearest place where the corridor stops
+  /// following a road a car at `progressIndex` could be on instead of the
+  /// exit: off every expressway road, the car left the corridor by the exit
+  /// or at one of those places, not along a road that carries on beside it.
+  func metersFromOtherRoadEnds(
+    _ coordinate: MatcherCoordinate,
+    fromProgress progressIndex: Int
+  ) -> Double {
+    roadEnds.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
+      .map { Self.meters(from: coordinate, toPolyline: [$0.end, $0.end]) }.min() ?? .infinity
   }
 
   /// Distance from a point to the nearest road a car at `progressIndex`

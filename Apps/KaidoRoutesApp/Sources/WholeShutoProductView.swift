@@ -5581,10 +5581,17 @@ struct WholeShutoProductView: View {
 /// the attribute graph when it updates this view, instead of inline in the
 /// enclosing builder. The stored closure never compares equal, so the body is
 /// re-evaluated whenever the enclosing view's is, exactly as inline content is.
-private struct SeparatelyEvaluatedView<Content: View>: View {
-  let content: () -> Content
+/// The content is type-erased so the enclosing view's type does not nest it:
+/// at launch, the Swift runtime instantiating the metadata of those nested
+/// view types took about 40% of the main thread before the first frame.
+private struct SeparatelyEvaluatedView: View {
+  let content: () -> AnyView
 
-  var body: Content { content() }
+  init<Content: View>(content: @escaping () -> Content) {
+    self.content = { AnyView(content()) }
+  }
+
+  var body: AnyView { content() }
 }
 
 private struct WholeShutoCustomRouteSheet: View {

@@ -6,6 +6,7 @@ import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
+import Synchronization
 
 enum WholeShutoJourneyPhase:
   String, Codable, Equatable, Sendable
@@ -420,6 +421,21 @@ private struct WholeShutoResolvedSavedRoute {
 }
 
 enum WholeShutoNetworkCatalog {
+  /// Starts decoding the bundled network on a background thread. The app
+  /// calls this first, so the decode overlaps UIKit and SwiftUI setting the
+  /// scene up instead of following them on the main thread.
+  static func startLaunchDecode() {
+    _ = launchDecode
+  }
+
+  /// The bundled network decoded by `startLaunchDecode`, waiting for that
+  /// decode if it is still running.
+  static func launchBundled() throws -> ShutoNetworkDatabase {
+    try launchDecode.value()
+  }
+
+  private static let launchDecode = BackgroundNetworkDecode { try bundled() }
+
   /// Decodes the bundled network without validating it: every consumer
   /// builds a `ShutoRoutePlanner` or a runtime `NetworkContext`, and each of
   /// those validates the database it is given.
@@ -440,6 +456,27 @@ enum WholeShutoNetworkCatalog {
     } catch {
       throw WholeShutoProductError.bundledNetworkInvalid
     }
+  }
+}
+
+/// One decode started on a background queue, whose result any thread can
+/// wait for.
+private final class BackgroundNetworkDecode: Sendable {
+  private let finished = DispatchGroup()
+  private let result = Mutex<Result<ShutoNetworkDatabase, any Error>?>(nil)
+
+  init(_ decode: @escaping @Sendable () throws -> ShutoNetworkDatabase) {
+    finished.enter()
+    DispatchQueue.global(qos: .userInteractive).async { [self] in
+      let decoded = Result { try decode() }
+      result.withLock { $0 = decoded }
+      finished.leave()
+    }
+  }
+
+  func value() throws -> ShutoNetworkDatabase {
+    finished.wait()
+    return try result.withLock { $0! }.get()
   }
 }
 

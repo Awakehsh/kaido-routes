@@ -24,9 +24,11 @@ enum AppGuidanceSpeechOutputFactory {
     if isSilent {
       return SilentAppGuidanceSpeechOutput()
     }
-    return AVSpeechGuidanceOutput(
-      preferredVoiceIdentifierProvider: preferredVoiceIdentifierProvider
-    )
+    return LazyAVSpeechGuidanceOutput {
+      AVSpeechGuidanceOutput(
+        preferredVoiceIdentifierProvider: preferredVoiceIdentifierProvider
+      )
+    }
   }
 
   static func makeAudition() -> any GuidanceVoiceAuditionOutput {
@@ -68,4 +70,47 @@ private final class SilentAppGuidanceSpeechOutput: GuidanceSpeechOutput {
   }
 
   func stop() {}
+}
+
+/// Creates the speech output on the first utterance. Building it touches
+/// `AVAudioSession`, whose first use waits on the audio server (about 110 ms
+/// of the main thread on an iPhone 13 Pro launch), and the home screen never
+/// speaks.
+@MainActor
+final class LazyAVSpeechGuidanceOutput: GuidanceSpeechOutput {
+  var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)? {
+    didSet { resolvedOutput?.eventHandler = eventHandler }
+  }
+  var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
+    resolvedOutput?.selectedVoiceProfile
+  }
+  var isInterrupted: Bool { resolvedOutput?.isInterrupted ?? false }
+
+  private let makeOutput: () -> AVSpeechGuidanceOutput
+  private var resolvedOutput: AVSpeechGuidanceOutput?
+
+  init(makeOutput: @escaping () -> AVSpeechGuidanceOutput) {
+    self.makeOutput = makeOutput
+  }
+
+  func speak(_ command: GuidanceSpeechCommand) throws {
+    try resolveOutput().speak(command)
+  }
+
+  func stop() {
+    resolvedOutput?.stop()
+  }
+
+  /// Nothing was interrupted before the first utterance created the output.
+  func recoverAfterInterruption() throws -> Bool {
+    try resolvedOutput?.recoverAfterInterruption() ?? false
+  }
+
+  private func resolveOutput() -> AVSpeechGuidanceOutput {
+    if let resolvedOutput { return resolvedOutput }
+    let output = makeOutput()
+    output.eventHandler = eventHandler
+    resolvedOutput = output
+    return output
+  }
 }

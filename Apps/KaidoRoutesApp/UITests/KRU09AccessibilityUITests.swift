@@ -122,6 +122,39 @@ final class KRU09AccessibilityUITests: XCTestCase {
     )
   }
 
+  /// At the default text size the instruction sits beside the maneuver
+  /// tile as it always has; at accessibility sizes it takes the card's full
+  /// width below the tile, so a large instruction keeps the map in view.
+  func testDrivingInstructionMovesBelowTheManeuverAtAccessibilitySizes() {
+    continueAfterFailure = false
+    for (sizeArguments, isBelow) in [
+      ([String](), false),
+      (["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"], true),
+    ] {
+      let app = XCUIApplication()
+      app.launchArguments =
+        [
+          "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW",
+          "-app.kaidoroutes.language.interface", "en",
+          "-app.kaidoroutes.language.guidance-voice", "ja-JP",
+        ] + sizeArguments
+      app.launchSilently()
+      let instruction = element("whole-shuto-guidance-instruction", in: app)
+      XCTAssertTrue(instruction.waitForExistence(timeout: 15))
+      let maneuver = element("whole-shuto-guidance-maneuver", in: app).frame
+      let card = element("whole-shuto-guidance-card", in: app).frame
+      if isBelow {
+        XCTAssertGreaterThanOrEqual(instruction.frame.minY, maneuver.maxY)
+        XCTAssertLessThanOrEqual(instruction.frame.height, 0.4 * app.frame.height)
+        XCTAssertLessThanOrEqual(card.maxY, app.frame.maxY)
+      } else {
+        XCTAssertGreaterThanOrEqual(instruction.frame.minX, maneuver.maxX)
+        XCTAssertLessThan(instruction.frame.minY, maneuver.maxY)
+      }
+      app.terminate()
+    }
+  }
+
   private func performAccessibilityAudit(
     in app: XCUIApplication,
     for auditTypes: XCUIAccessibilityAuditType

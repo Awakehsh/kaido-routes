@@ -150,6 +150,7 @@
 		DA5A1C5C12D05F48E46BDEA5 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5A14EC675AE55EDC7B937A76 /* Localizable.strings */; };
 		E0A2CC8BE79A4F15B337CE15 /* PhysicalAudioQualificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */; };
 		E0E010C348B56A895ED13E36 /* RouteExperiencePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFBFBDE5334E8B0E5B08498 /* RouteExperiencePresentationTests.swift */; };
+		E525E35DF6423D8ECA50070E /* DrivingInstructionFitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C61D39742C207E341870E5 /* DrivingInstructionFitTests.swift */; };
 		E59C1A3700EA94AF253BBC53 /* ProductJunctionInsetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285D35C9D855FBA6B08F704E /* ProductJunctionInsetView.swift */; };
 		E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */; };
 		E82ABDDB8084F0B061EEAC74 /* WholeShutoPlanningLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 749C52FDED247720BDCA981D /* WholeShutoPlanningLocationTests.swift */; };
@@ -264,6 +265,7 @@
 		7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalization.swift; sourceTree = "<group>"; };
 		749C52FDED247720BDCA981D /* WholeShutoPlanningLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoPlanningLocationTests.swift; sourceTree = "<group>"; };
 		7736D4DA384D6C8C19BC71A7 /* C2RouteMapDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2RouteMapDemoUITests.swift; sourceTree = "<group>"; };
+		78C61D39742C207E341870E5 /* DrivingInstructionFitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingInstructionFitTests.swift; sourceTree = "<group>"; };
 		797D999FF7F8C7A290AC65FA /* InternalLocationCalibrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationTests.swift; sourceTree = "<group>"; };
 		79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationView.swift; sourceTree = "<group>"; };
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
@@ -402,6 +404,7 @@
 				724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */,
 				0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */,
 				40F862B6F1B28A3418500162 /* DriveHistoryStoreTests.swift */,
+				78C61D39742C207E341870E5 /* DrivingInstructionFitTests.swift */,
 				B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */,
 				F58FBDFA0C5C97DA1EC2E92A /* ForegroundNavigationLocationControllerTests.swift */,
 				143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */,
@@ -781,6 +784,7 @@
 				80E0AA92D99B7DF9256F968F /* C2NavigationDemoModelTests.swift in Sources */,
 				0D4F3963A1C0F79EB47E7E24 /* C2NavigationSimulationCheckpointTests.swift in Sources */,
 				45C9585A760443A55A115617 /* DriveHistoryStoreTests.swift in Sources */,
+				E525E35DF6423D8ECA50070E /* DrivingInstructionFitTests.swift in Sources */,
 				86F626BF00728796BE3E1ECC /* EntranceRecommendationModelTests.swift in Sources */,
 				1EEF3DE0296EB3523368FCDD /* ForegroundNavigationLocationControllerTests.swift in Sources */,
 				9AB557C7D61A3F0F978EB360 /* GuidanceLanguagePreviewModelTests.swift in Sources */,

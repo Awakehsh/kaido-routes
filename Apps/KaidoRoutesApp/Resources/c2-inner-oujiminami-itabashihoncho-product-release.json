@@ -42053,6 +42053,88 @@
           "occurrence_id" : "shuto.1220.osm.182527897.1.forward"
         }
       ],
+      "onward_exit_points" : {
+        "osm.1219397843.19.forward" : [
+          {
+            "latitude" : 35.6592942,
+            "longitude" : 139.8044272
+          }
+        ],
+        "osm.250494182.13.forward" : [
+          {
+            "latitude" : 35.601257,
+            "longitude" : 139.755771
+          }
+        ],
+        "osm.28126650.0.forward" : [
+          {
+            "latitude" : 35.6762087,
+            "longitude" : 139.6737893
+          }
+        ],
+        "osm.44129862.1.forward" : [
+          {
+            "latitude" : 35.6430556,
+            "longitude" : 139.8677687
+          },
+          {
+            "latitude" : 35.64432,
+            "longitude" : 139.8647023
+          }
+        ],
+        "osm.44130242.1.forward" : [
+          {
+            "latitude" : 35.7777775,
+            "longitude" : 139.8246054
+          }
+        ],
+        "osm.44179919.14.forward" : [
+          {
+            "latitude" : 35.7768446,
+            "longitude" : 139.7485697
+          },
+          {
+            "latitude" : 35.7765909,
+            "longitude" : 139.748751
+          }
+        ],
+        "osm.44422825.16.forward" : [
+          {
+            "latitude" : 35.7354839,
+            "longitude" : 139.8150641
+          },
+          {
+            "latitude" : 35.7233125,
+            "longitude" : 139.8126058
+          }
+        ],
+        "osm.44882522.18.forward" : [
+          {
+            "latitude" : 35.6469565,
+            "longitude" : 139.7898415
+          },
+          {
+            "latitude" : 35.6542242,
+            "longitude" : 139.7826955
+          }
+        ],
+        "osm.53541951.28.forward" : [
+          {
+            "latitude" : 35.7586544,
+            "longitude" : 139.7378735
+          }
+        ],
+        "osm.80581132.11.forward" : [
+          {
+            "latitude" : 35.6584405,
+            "longitude" : 139.7073388
+          },
+          {
+            "latitude" : 35.6439183,
+            "longitude" : 139.6722834
+          }
+        ]
+      },
       "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.5.itabashihoncho.x1.recommended"
     },
     "network_snapshot" : {

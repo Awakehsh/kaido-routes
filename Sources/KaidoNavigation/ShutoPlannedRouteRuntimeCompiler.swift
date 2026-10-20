@@ -437,6 +437,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let edges: [CanonicalMatcherEdge]
     let occurrences: [RouteMatcherOccurrence]
     let exitRampEdgeIDs: [String]
+    let onwardExitPoints: [String: [MatcherCoordinate]]
 
     init(_ corridor: RouteMatcherCorridor) {
       id = corridor.id
@@ -445,6 +446,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       edges = corridor.edges.map(CanonicalMatcherEdge.init)
       occurrences = corridor.occurrences
       exitRampEdgeIDs = corridor.exitRampEdgeIDs.sorted()
+      onwardExitPoints = corridor.onwardExitPoints
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -454,6 +456,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       case edges
       case occurrences
       case exitRampEdgeIDs = "exit_ramp_edge_ids"
+      case onwardExitPoints = "onward_exit_points"
     }
   }
 
@@ -754,7 +757,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         )
       },
       exitRampEdgeIDs: Set(route.exitFacility?.exitEdgeCandidates.map(\.edgeID) ?? [])
-        .intersection(corridorEdgeIDs)
+        .intersection(corridorEdgeIDs),
+      onwardExitPoints: onwardExitPoints(
+        from: corridorEdges.filter(\.successorEdgeIDs.isEmpty).map(\.id),
+        plannedExitEdgeIDs: [route.edges.last?.edgeID].compactMap { $0 }
+          + (route.exitFacility?.exitEdgeCandidates.map(\.edgeID) ?? []),
+        context: context
+      )
     )
     let guidanceMatches = ShutoJunctionGuidanceCompiler.compile(
       database: database,
@@ -1839,6 +1848,65 @@ private struct RouteProximityIndex {
 
   private static func cell(_ point: SIMD2<Double>, size: Double) -> SIMD2<Int> {
     SIMD2(Int(floor(point.x / size)), Int(floor(point.y / size)))
+  }
+}
+
+extension ShutoPlannedRouteRuntimeCompiler {
+  /// How far past a corridor road end the network is searched for the exits
+  /// a car could have left by.
+  static let onwardExitSearchMeters = 3_000.0
+
+  /// For each corridor road end the network carries on from, the end nodes
+  /// of the network's exit ramps within `onwardExitSearchMeters` of it: the
+  /// network holds expressway roads only, so a ramp that ends there reaches
+  /// the street. An end the network does not carry on from is itself where
+  /// the car leaves, and one with no exit in reach stays the place to beat.
+  /// The planned exit's own ends are not among them: a car that reaches
+  /// them left by the planned exit, whichever road it came along.
+  static func onwardExitPoints(
+    from endEdgeIDs: [String],
+    plannedExitEdgeIDs: [String],
+    context: NetworkContext
+  ) -> [String: [MatcherCoordinate]] {
+    let edgesByID = context.edgesByID
+    let nodesByID = context.nodesByID
+    let plannedExitEnds = plannedExitEdgeIDs.compactMap { edgesByID[$0]?.toNodeID }
+      .reduce(into: Set<Int64>()) { $0.formUnion(networkEnds(from: $1, context: context)) }
+    var points: [String: [MatcherCoordinate]] = [:]
+    for endEdgeID in endEdgeIDs {
+      guard let end = edgesByID[endEdgeID], context.outgoingEdges[end.toNodeID]?.isEmpty == false
+      else { continue }
+      let exits = networkEnds(from: end.toNodeID, context: context).subtracting(plannedExitEnds)
+      let coordinates = exits.sorted().compactMap { nodesByID[$0] }.map {
+        MatcherCoordinate(latitude: $0.latitude, longitude: $0.longitude)
+      }
+      if !coordinates.isEmpty { points[endEdgeID] = coordinates }
+    }
+    return points
+  }
+
+  /// The nodes within `onwardExitSearchMeters` of `start` the network does
+  /// not carry on from.
+  private static func networkEnds(from start: Int64, context: NetworkContext) -> Set<Int64> {
+    let outgoing = context.outgoingEdges
+    var meters: [Int64: Double] = [start: 0]
+    var queue = [start]
+    var head = 0
+    var ends: Set<Int64> = []
+    while head < queue.count {
+      let node = queue[head]
+      head += 1
+      let next = outgoing[node] ?? []
+      if next.isEmpty { ends.insert(node) }
+      for edge in next {
+        let reached = meters[node]! + edge.lengthMeters
+        guard reached <= onwardExitSearchMeters, meters[edge.toNodeID].map({ reached < $0 }) ?? true
+        else { continue }
+        meters[edge.toNodeID] = reached
+        queue.append(edge.toNodeID)
+      }
+    }
+    return ends
   }
 }
 

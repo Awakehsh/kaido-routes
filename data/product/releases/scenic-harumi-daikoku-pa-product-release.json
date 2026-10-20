@@ -26591,6 +26591,40 @@
           "occurrence_id" : "shuto.851.osm.32355896.9.forward"
         }
       ],
+      "onward_exit_points" : {
+        "osm.31709108.22.forward" : [
+          {
+            "latitude" : 35.4677934,
+            "longitude" : 139.6155007
+          },
+          {
+            "latitude" : 35.4738123,
+            "longitude" : 139.6009681
+          },
+          {
+            "latitude" : 35.470695,
+            "longitude" : 139.607384
+          }
+        ],
+        "osm.32403601.11.forward" : [
+          {
+            "latitude" : 35.4185911,
+            "longitude" : 139.6709899
+          }
+        ],
+        "osm.5219394.7.forward" : [
+          {
+            "latitude" : 35.555443,
+            "longitude" : 139.7534216
+          }
+        ],
+        "osm.760517415.29.forward" : [
+          {
+            "latitude" : 35.4910725,
+            "longitude" : 139.661835
+          }
+        ]
+      },
       "route_plan_id" : "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi.shuto.pa.daikoku.x1.recommended"
     },
     "network_snapshot" : {

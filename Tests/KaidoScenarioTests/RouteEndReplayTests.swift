@@ -323,6 +323,7 @@
         (Self.senjuShinbashi, UInt64(1)), (Self.senjuShinbashi, UInt64(2)),
         (Self.eifuku, UInt64(1)), (Self.eifuku, UInt64(2)),
         (Self.mukoujima, UInt64(2)), (Self.mukoujima, UInt64(4)),
+        (Self.senjuShinbashiFromGotanda, UInt64(1)), (Self.senjuShinbashiFromGotanda, UInt64(2)),
       ]
     )
     func parallelEgressCompletes(site: Site, seed: UInt64) async throws {
@@ -337,7 +338,10 @@
     /// Driving on past each of those exits never completes the drive.
     @Test(
       "missing an exit beside the road it leaves never completes",
-      arguments: [Self.shintoshin, Self.senjuShinbashi, Self.eifuku, Self.mukoujima]
+      arguments: [
+        Self.shintoshin, Self.senjuShinbashi, Self.eifuku, Self.mukoujima,
+        Self.senjuShinbashiFromGotanda,
+      ]
     )
     func parallelEgressMissedExitNeverCompletes(site: Site) async throws {
       let gate = try site.gate()
@@ -406,6 +410,23 @@
     /// other exit, so it never hands over.
     static let senjuShinbashiMissedRecoverySecond = 3188
 
+    /// From Kiba to Takaracho a road the corridor stops following leads on,
+    /// within 3 km, to the planned exit's own ramp: reaching it is leaving by
+    /// the planned exit, so it does not compete with it.
+    @Test("an exit a road beyond the corridor also leads to still completes")
+    func exitReachedBeyondTheCorridorCompletes() async throws {
+      let gate = try Self.takaracho.gate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 9, noise: .underReported)
+      let summary = gateLine(file: Self.takaracho.name, seed: 9, run: run, label: "ROUTE-END-UNDER2X")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+    }
+
+    static let takaracho = Site(
+      name: "c1-outer kiba-takaracho", circuit: .c1Outer,
+      entry: "shuto.ic.9.kiba", exit: "shuto.ic.c1.takaracho"
+    )
+
     struct Site: Sendable, CustomTestStringConvertible {
       let name: String
       let circuit: ShutoCircuitDefinition
@@ -435,6 +456,13 @@
     static let senjuShinbashi = Site(
       name: "c2 kahei-senjushinbashi", circuit: .c2InnerWithBayshore,
       entry: "shuto.ic.6-misato.kahei", exit: "shuto.ic.c2.senjushinbashi"
+    )
+    /// The same exit from C2 Gotanda: this corridor stops following C2
+    /// 328 m past the exit, nearer the street than the exit is, but the
+    /// network carries C2 on from there, so it is no way off the expressway.
+    static let senjuShinbashiFromGotanda = Site(
+      name: "c1-outer gotanda-senjushinbashi", circuit: .c1Outer,
+      entry: "shuto.ic.c2.gotanda", exit: "shuto.ic.c2.senjushinbashi"
     )
     /// Route 4 at Eifuku: the street runs under Route 4.
     static let eifuku = Site(

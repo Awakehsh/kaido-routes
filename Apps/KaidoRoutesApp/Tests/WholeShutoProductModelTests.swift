@@ -3610,6 +3610,95 @@ final class WholeShutoProductModelTests: XCTestCase {
   /// A started live Bayshore drive (Rinkai-fukutoshin to Daikoku-futou unless
   /// told otherwise), with the
   /// release it runs, so a test can place fixes on exact corridor edges.
+  /// Past the exit at Senju-Shinbashi the street runs beside C2, where a car
+  /// that missed the exit would be: near the exit the drive shows it is
+  /// confirming the exit, not interrupted, and says nothing; past 500 m it
+  /// shows the interruption as before.
+  func testRecoveryBesideThePlannedExitConfirmsTheExitThenInterrupts()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.6-misato.kahei",
+      exitFacilityID: "shuto.ic.c2.senjushinbashi"
+    )
+    let model = drive.model
+    let corridor = drive.release.navigation.bundle.matcherCorridor
+    let corridorEdges = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    let plan = corridor.occurrences.sorted { $0.index < $1.index }
+      .compactMap { corridorEdges[$0.directedEdgeID] }
+    let planIDs = Set(plan.map(\.id))
+    // The road the plan leaves at its last choice, followed on past the exit.
+    let lastChoice = try XCTUnwrap(
+      plan.indices.dropFirst().last { index in
+        plan[index - 1].successorEdgeIDs.contains { $0 != plan[index].id }
+      }
+    )
+    // Past the corridor the network carries the road on.
+    let nodes = Dictionary(uniqueKeysWithValues: model.database.nodes.map { ($0.nodeID, $0.coordinate) })
+    let networkEdges = Dictionary(uniqueKeysWithValues: model.database.edges.map { ($0.edgeID, $0) })
+    let outgoing = Dictionary(grouping: model.database.edges, by: \.fromNodeID)
+    var road: [ShutoNetworkDatabase.Edge] = []
+    var next = plan[lastChoice - 1].successorEdgeIDs.sorted().first { $0 != plan[lastChoice].id }
+      .flatMap { networkEdges[$0] }
+    while let edge = next, !planIDs.contains(edge.edgeID), road.count < 60 {
+      road.append(edge)
+      next = (outgoing[edge.toNodeID] ?? []).filter { $0.kind == edge.kind }.min { $0.edgeID < $1.edgeID }
+    }
+    let roadPoints = road.compactMap { edge -> RouteMatcherDirectedEdge? in
+      guard let from = nodes[edge.fromNodeID], let to = nodes[edge.toNodeID] else { return nil }
+      return RouteMatcherDirectedEdge(
+        id: edge.edgeID,
+        coordinates: [
+          MatcherCoordinate(latitude: from.latitude, longitude: from.longitude),
+          MatcherCoordinate(latitude: to.latitude, longitude: to.longitude),
+        ]
+      )
+    }
+    let exitEnd = try XCTUnwrap(plan.last?.coordinates.last)
+    let points =
+      plan[..<lastChoice].flatMap(Self.edgeFixPoints)
+      + roadPoints.flatMap(Self.edgeFixPoints)
+    func notices() -> Int {
+      output.commands.filter {
+        $0.identity.promptID.contains("rerouting") || $0.identity.promptID.contains("leftRoute")
+      }.count
+    }
+    var states: [(meters: Double, state: WholeShutoPositionState)] = []
+    for (index, point) in points.enumerated() {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "confirming-exit.\(index)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees,
+          speedMetersPerSecond: 20
+        )
+      )
+      if model.runtimeJourneyPhase == .routeRecovery {
+        let meters = Self.meters(
+          point.coordinate, ShutoCoordinate(latitude: exitEnd.latitude, longitude: exitEnd.longitude)
+        )
+        states.append((meters, model.positionState))
+      }
+    }
+    let confirming = states.filter { $0.state == .confirmingExit }
+    XCTAssertFalse(confirming.isEmpty)
+    XCTAssertTrue(confirming.allSatisfy { $0.meters <= 600 })
+    XCTAssertTrue(
+      states.contains { $0.state == .routeInterrupted && $0.meters > 500 },
+      states.map { "\(Int($0.meters)):\($0.state.rawValue)" }.joined(separator: " ")
+        + " road=\(road.count) last=\(model.runtimeJourneyPhase.map { "\($0)" } ?? "-")"
+    )
+    XCTAssertEqual(states.first?.state, .confirmingExit)
+    XCTAssertEqual(notices(), 0)
+    model.reset()
+  }
+
   private func bayshoreLiveDrive(
     clock: LiveTestClock,
     output: any GuidanceSpeechOutput,

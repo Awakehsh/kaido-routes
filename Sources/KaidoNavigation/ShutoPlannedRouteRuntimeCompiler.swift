@@ -436,6 +436,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let routePlanID: String
     let edges: [CanonicalMatcherEdge]
     let occurrences: [RouteMatcherOccurrence]
+    let exitRampEdgeIDs: [String]
 
     init(_ corridor: RouteMatcherCorridor) {
       id = corridor.id
@@ -443,6 +444,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       routePlanID = corridor.routePlanID
       edges = corridor.edges.map(CanonicalMatcherEdge.init)
       occurrences = corridor.occurrences
+      exitRampEdgeIDs = corridor.exitRampEdgeIDs.sorted()
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -451,6 +453,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       case routePlanID = "route_plan_id"
       case edges
       case occurrences
+      case exitRampEdgeIDs = "exit_ramp_edge_ids"
     }
   }
 
@@ -749,7 +752,9 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           index: occurrence.index,
           directedEdgeID: edge.edgeID
         )
-      }
+      },
+      exitRampEdgeIDs: Set(route.exitFacility?.exitEdgeCandidates.map(\.edgeID) ?? [])
+        .intersection(corridorEdgeIDs)
     )
     let guidanceMatches = ShutoJunctionGuidanceCompiler.compile(
       database: database,

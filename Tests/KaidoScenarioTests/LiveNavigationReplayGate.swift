@@ -658,6 +658,7 @@
         var rawConfidence: MatcherConfidence?
         var emittedMovementIDs: [String] = []
         var estimate: MatcherEstimate?
+        var isConfirmingPlannedExit = false
         switch before.journeyPhase {
         case .planning, .approachToEntry, .entryTransition:
           if let driverJoin, second >= driverJoin.declaredAtSecond, !isJoinDeclared {
@@ -682,6 +683,7 @@
           let update = try await session.observe(envelope.observation)
           rawConfidence = update.matcherEstimate.confidence
           estimate = update.matcherEstimate
+          isConfirmingPlannedExit = update.isConfirmingPlannedExit
           if let emission = update.guidancePromptEmission,
             let movement = promptMovements[emission.promptID]
           {
@@ -723,7 +725,8 @@
             estimate: estimate,
             recoveryStatus: after.recovery.status,
             phaseTrigger: after.lastPhaseTransitionTrigger,
-            emittedMovementOccurrenceIDs: emittedMovementIDs
+            emittedMovementOccurrenceIDs: emittedMovementIDs,
+            isConfirmingPlannedExit: isConfirmingPlannedExit
           )
         )
         if after.journeyPhase == .completed { break }
@@ -1056,6 +1059,7 @@
     let recoveryStatus: RecoveryState.Status
     let phaseTrigger: String?
     let emittedMovementOccurrenceIDs: [String]
+    var isConfirmingPlannedExit = false
   }
 
   /// A lap change the driver asks for once admitted progress reaches an

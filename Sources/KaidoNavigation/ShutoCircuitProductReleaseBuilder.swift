@@ -818,7 +818,8 @@ public enum ShutoCircuitProductReleaseBuilder {
       networkSnapshotID: assets.matcherCorridor.networkSnapshotID,
       routePlanID: assets.matcherCorridor.routePlanID,
       edges: edges,
-      occurrences: assets.matcherCorridor.occurrences
+      occurrences: assets.matcherCorridor.occurrences,
+      exitRampEdgeIDs: assets.matcherCorridor.exitRampEdgeIDs.intersection(edges.map(\.id))
     )
   }
 

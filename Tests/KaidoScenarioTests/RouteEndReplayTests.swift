@@ -312,6 +312,141 @@
       return LiveNavigationReplayGate(release: release, database: database)
     }
 
+    /// Exits whose street runs on beside or under the road they leave, and
+    /// an exit that leaves by two ramps. Off the expressway, the car was
+    /// nearer that road, or the other ramp, than the exit, and every drive
+    /// was handed over as an unplanned exit.
+    @Test(
+      "a drive off at an exit beside the road it leaves completes",
+      arguments: [
+        (Self.shintoshin, UInt64(1)), (Self.shintoshin, UInt64(2)),
+        (Self.senjuShinbashi, UInt64(1)), (Self.senjuShinbashi, UInt64(2)),
+        (Self.eifuku, UInt64(1)), (Self.eifuku, UInt64(2)),
+        (Self.mukoujima, UInt64(2)), (Self.mukoujima, UInt64(4)),
+      ]
+    )
+    func parallelEgressCompletes(site: Site, seed: UInt64) async throws {
+      let gate = try site.gate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .urban)
+      let summary = gateLine(file: site.name, seed: seed, run: run, label: "ROUTE-END-URBAN")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+    }
+
+    /// Driving on past each of those exits never completes the drive.
+    @Test(
+      "missing an exit beside the road it leaves never completes",
+      arguments: [Self.shintoshin, Self.senjuShinbashi, Self.eifuku, Self.mukoujima]
+    )
+    func parallelEgressMissedExitNeverCompletes(site: Site) async throws {
+      let gate = try site.gate()
+      let movementIndex = gate.finalDivergenceIndex
+      let alternatives = gate.alternativeEdgeIDs(atMovementIndex: movementIndex)
+      #expect(!alternatives.isEmpty)
+      for alternative in alternatives {
+        let run = try await gate.run(
+          legs: gate.wrongBranchLegs(
+            movementIndex: movementIndex, alternativeEdgeID: alternative, branchMeters: 1_500
+          ),
+          seed: 1,
+          noise: .urban
+        )
+        let summary = gateLine(file: site.name, seed: 1, run: run, label: "MISSED-EXIT-URBAN")
+        print(summary)
+        #expect(!run.reachedCompletion, "\(summary)")
+      }
+    }
+
+    /// Past the exit at Senju-Shinbashi the street runs beside C2, and fixes
+    /// on it read as C2: the session goes into recovery although the car took
+    /// the exit. Near the exit it reports that it cannot yet tell, then
+    /// completes; the drive never shows as interrupted.
+    @Test("off the plan beside the exit it took, the drive is confirming the exit, then completes")
+    func takenExitBesideTheRoadItLeavesIsConfirmed() async throws {
+      let gate = try Self.senjuShinbashi.gate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 1, noise: .urban)
+      let summary = gateLine(file: Self.senjuShinbashi.name, seed: 1, run: run, label: "ROUTE-END-URBAN")
+      print(summary)
+      let recovery = run.records.filter { $0.phase == .routeRecovery }
+      #expect(!recovery.isEmpty, "\(summary)")
+      #expect(recovery.allSatisfy { $0.isConfirmingPlannedExit }, "\(summary)")
+      #expect(run.reachedCompletion, "\(summary)")
+    }
+
+    /// Missing that exit and driving on along C2: the same recovery starts,
+    /// confirming the exit while the car is near it, and stands once the car
+    /// is past. Recovery comes at the second it did before the confirming
+    /// state existed, so no notice moves.
+    @Test("missing the exit beside the road it leaves is confirming, then interrupted")
+    func missedExitBesideTheRoadItLeavesIsInterrupted() async throws {
+      let gate = try Self.senjuShinbashi.gate()
+      let movementIndex = gate.finalDivergenceIndex
+      let alternative = try #require(gate.alternativeEdgeIDs(atMovementIndex: movementIndex).first)
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: movementIndex, alternativeEdgeID: alternative, branchMeters: 1_500
+        ),
+        seed: 1,
+        noise: .urban
+      )
+      let summary = gateLine(file: Self.senjuShinbashi.name, seed: 1, run: run, label: "MISSED-EXIT-URBAN")
+      print(summary)
+      let recovery = run.records.filter { $0.phase == .routeRecovery }
+      let firstInterrupted = recovery.first { !$0.isConfirmingPlannedExit }
+      #expect(recovery.first?.isConfirmingPlannedExit == true, "\(summary)")
+      #expect(firstInterrupted != nil, "\(summary)")
+      #expect(recovery.first?.second == Self.senjuShinbashiMissedRecoverySecond, "\(summary)")
+      #expect(!run.records.contains { $0.phase == .surfaceEgress }, "\(summary)")
+      #expect(!run.reachedCompletion, "\(summary)")
+    }
+
+    /// The second the missed-exit drive above enters recovery, measured on
+    /// main before the confirming state; within its 1.5 km it reaches no
+    /// other exit, so it never hands over.
+    static let senjuShinbashiMissedRecoverySecond = 3188
+
+    struct Site: Sendable, CustomTestStringConvertible {
+      let name: String
+      let circuit: ShutoCircuitDefinition
+      let entry: String
+      let exit: String
+      var testDescription: String { name }
+
+      func gate() throws -> LiveNavigationReplayGate {
+        let database = try replayGateDatabase()
+        let route = try ShutoRoutePlanner(database: database).planCircuit(
+          circuit: circuit, entryFacilityID: entry, exitFacilityID: exit, laps: 1
+        )
+        let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+          context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+          route: route
+        )
+        return LiveNavigationReplayGate(release: release, database: database)
+      }
+    }
+
+    /// Saitama Shintoshin Route to Shintoshin, whose exit leaves by two ramps.
+    static let shintoshin = Site(
+      name: "c2 saitamaminuma-shintoshin", circuit: .c2InnerWithBayshore,
+      entry: "shuto.ic.s2.saitamaminuma", exit: "shuto.ic.s2.shintoshin"
+    )
+    /// C2 at Senju-Shinbashi: the street runs beside C2.
+    static let senjuShinbashi = Site(
+      name: "c2 kahei-senjushinbashi", circuit: .c2InnerWithBayshore,
+      entry: "shuto.ic.6-misato.kahei", exit: "shuto.ic.c2.senjushinbashi"
+    )
+    /// Route 4 at Eifuku: the street runs under Route 4.
+    static let eifuku = Site(
+      name: "c1-inner takaido-eifuku", circuit: .c1Inner,
+      entry: "shuto.ic.4.takaido", exit: "shuto.ic.4.eifuku"
+    )
+    /// Route 6 at Mukojima: the street runs beside Route 6.
+    static let mukoujima = Site(
+      name: "c1-inner tsutsumidori-mukoujima", circuit: .c1Inner,
+      entry: "shuto.ic.6-mukojima.tsutsumidori", exit: "shuto.ic.6-mukojima.mukoujima"
+    )
+
     private static func noise(_ label: String) -> ReplayGateNoiseModel {
       switch label {
       case "MULTIPATH": return .multipath

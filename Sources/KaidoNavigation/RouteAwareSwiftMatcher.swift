@@ -745,18 +745,30 @@ public struct RouteMatcherSession: Sendable {
     )
     // A drive out along a radial and back passes its own other carriageway,
     // stacked over this one or beside it: that pass of the plan runs against
-    // the car's course and is no rival to where it is driving.
+    // the car's course and is no rival to where it is driving. Neither is a
+    // junction's link for the other direction beside a place on the plan
+    // that runs with the course, as near as the heading score allows. Any
+    // other placement keeps it as a rival: without that clutter a noisy fix
+    // reads the off-plan branch the car did not take (Route 4 at
+    // Nishi-Shinjuku JCT), or a later pass of the plan at an angle to its
+    // course (K6 at Daishi, C2 at Hatsudai-minami), as MEDIUM.
     let course =
       (observation.speedMetersPerSecond ?? 0) >= 2 ? observation.courseDegrees : nil
     let headingTolerance = max(
       MatcherModel.offPlanHeadingToleranceDegrees,
       observation.courseAccuracyDegrees ?? 0
     )
+    let placedWithCourse =
+      selected.state.occurrenceIndex != nil
+      && course.map {
+        angularDifferenceDegrees($0, selected.measurement.bearingDegrees)
+          <= max(matcherConfiguration.headingSigmaDegrees, observation.courseAccuracyDegrees ?? 0)
+      } == true
     var candidateEdgeIDs = measuredEdges.compactMap { edgeID, measurement -> String? in
       guard measurement.distanceMeters <= bestMeasuredDistance + geometryAllowance else {
         return nil
       }
-      if let course, !model.isOffPlan(edgeID),
+      if let course, !model.isOffPlan(edgeID) || placedWithCourse,
         angularDifferenceDegrees(course, measurement.bearingDegrees) > headingTolerance
       {
         return nil

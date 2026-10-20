@@ -26,6 +26,10 @@
         // Route 2 from Togoshi, C2 inner and the Bayshore, back to Ebara:
         // progress held 130 s around Tanimachi and Ichinohashi.
         (Self.c2FromTogoshi, "URBAN", 1),
+        // C2 Tomigaya, C1 inner, out along Route 6 to Seishincho: inbound
+        // past Hakozaki the rotary's outbound links, off the plan since it
+        // keeps to the carriageway, held progress 85 s.
+        (Self.c1InnerFromTomigaya, "UNDER2X", 3),
       ]
     )
     func drivesBack(fixture: Fixture, noise: String, seed: UInt64) async throws {
@@ -51,6 +55,39 @@
       let gate = try fixture.gate()
       let run = try await gate.run(legs: gate.plannedLegs(), seed: 1, noise: .urban)
       let summary = gateLine(file: fixture.name, seed: 1, run: run, label: "RADIAL-URBAN")
+      print(summary)
+      #expect(run.wrongCommitCount() == 0, "\(summary)")
+      #expect(run.reachedCompletion, "\(summary)")
+    }
+
+    /// Route 4 from Hatagaya onto C2 at Nishi-Shinjuku JCT: a fix nearer
+    /// the Route 4 mainline the car did not take is an off-plan placement,
+    /// and the other direction's roads beside it still count against it, so
+    /// it never reads as MEDIUM and holds progress on the way back.
+    @Test("an off-plan branch beside the plan never holds progress")
+    func offPlanBranchNeverHoldsProgress() async throws {
+      let fixture = Self.c2FromHatagaya
+      let gate = try fixture.gate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 3, noise: .urban)
+      let summary = gateLine(file: fixture.name, seed: 3, run: run, label: "RADIAL-URBAN")
+      print(summary)
+      #expect(
+        run.longestUnadmittedSeconds <= LiveNavigationReplayGateTests.maximumUnadmittedSeconds,
+        "\(summary)"
+      )
+      #expect(run.reachedCompletion, "\(summary)")
+    }
+
+    /// K6 from Daishi, C2 and the Bayshore, back to Tonomachi: in recovery
+    /// a fix near the plan's later pass, which runs across the car's course,
+    /// keeps the other direction's roads as rivals, so it never reads as
+    /// MEDIUM and reacquires progress there.
+    @Test("a later pass across the car's course never takes progress")
+    func laterPassAcrossTheCourseNeverCommits() async throws {
+      let fixture = Self.c2FromDaishi
+      let gate = try fixture.gate()
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 8, noise: .underReported)
+      let summary = gateLine(file: fixture.name, seed: 8, run: run, label: "RADIAL-UNDER2X")
       print(summary)
       #expect(run.wrongCommitCount() == 0, "\(summary)")
       #expect(run.reachedCompletion, "\(summary)")
@@ -87,6 +124,18 @@
     static let c2FromTogoshi = Fixture(
       name: "c2 togoshi-ebara", circuit: .c2InnerWithBayshore,
       entry: "shuto.ic.2.togoshi", exit: "shuto.ic.2.ebara"
+    )
+    static let c1InnerFromTomigaya = Fixture(
+      name: "c1-inner tomigaya-seishincho", circuit: .c1Inner,
+      entry: "shuto.ic.c2.tomigaya", exit: "shuto.ic.c2.seishincho"
+    )
+    static let c2FromHatagaya = Fixture(
+      name: "c2 hatagaya-tomigaya", circuit: .c2InnerWithBayshore,
+      entry: "shuto.ic.4.hatagaya", exit: "shuto.ic.c2.tomigaya"
+    )
+    static let c2FromDaishi = Fixture(
+      name: "c2 daishi-tonomachi", circuit: .c2InnerWithBayshore,
+      entry: "shuto.ic.k6.daishi", exit: "shuto.ic.k6.tonomachi"
     )
     static let c2FromShinjuku = Fixture(
       name: "c2 shinjuku-yoyogi", circuit: .c2InnerWithBayshore,

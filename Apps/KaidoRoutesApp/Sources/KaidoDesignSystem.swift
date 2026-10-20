@@ -202,6 +202,9 @@ enum KaidoType {
   /// Drive time on a route card; the primary instruction while driving.
   static let display = Font.system(.title, design: .rounded).weight(.bold)
   static let title = Font.system(.title3, design: .rounded).weight(.bold)
+  /// `title`'s size at the default text size, for text that scales from it
+  /// with `@ScaledMetric(relativeTo: .title3)`.
+  static let titleSize: CGFloat = 20
   static let headline = Font.subheadline.weight(.semibold)
   static let body = Font.footnote
   static let label = Font.caption.weight(.semibold)

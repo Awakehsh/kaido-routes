@@ -28,6 +28,7 @@
     {
       "selectedTests" : [
         "KRU09AccessibilityUITests/testCriticalDrivingSurfaceExposesAccessibleSemantics()",
+        "KRU09AccessibilityUITests/testDrivingInstructionMovesBelowTheManeuverAtAccessibilitySizes()",
         "KRU09AccessibilityUITests/testWholeShutoDeterministicReviewAccessibilityAudit()",
         "KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA()",
         "KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch()",

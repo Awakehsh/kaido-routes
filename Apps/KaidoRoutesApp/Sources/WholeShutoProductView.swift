@@ -4339,68 +4339,27 @@ struct WholeShutoProductView: View {
     .accessibilityValue(model.speechMode.title(in: languageSettings.interfaceLocale) + " · " + speechStatusLabel)
   }
 
+  /// The maneuver tile, the instruction text and the controls in one row.
+  /// At accessibility text sizes the instruction takes the card's full width
+  /// below the tile and controls, so a large instruction keeps to fewer lines
+  /// and leaves the map its share of the screen.
   private var instructionBanner: some View {
-    HStack(spacing: 13) {
-      ZStack {
-        RoundedRectangle(cornerRadius: 11)
-          .fill(KaidoInk.accentWarm)
-          .frame(width: 56, height: 70)
-        Image(systemName: instructionSymbol)
-          .font(.system(size: 25, weight: .black))
-          .foregroundStyle(KaidoInk.textPrimary)
-          .accessibilityIdentifier("whole-shuto-guidance-maneuver")
-          .accessibilityLabel(instructionTitle)
-      }
-
-      VStack(alignment: .leading, spacing: 1) {
-        Text(instructionKicker)
-          .font(.system(size: 11, weight: .black, design: .rounded))
-          .tracking(0.5)
-          .foregroundStyle(KaidoInk.accentCool)
-          .lineLimit(1)
-          .minimumScaleFactor(0.72)
-          .accessibilityIdentifier(
-            nextJunctionDistanceLabel == nil
-              ? "whole-shuto-guidance-kicker"
-              : "whole-shuto-next-junction"
-          )
-
-        Text(primaryGuidanceDistanceLabel)
-          .font(.system(size: 28, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoInk.textPrimary)
-          .lineLimit(1)
-          .minimumScaleFactor(0.7)
-          .accessibilityIdentifier("whole-shuto-guidance-distance")
-
-        Text(instructionTitle)
-          .font(.system(size: 20, weight: .bold, design: .rounded))
-          .foregroundStyle(KaidoInk.textPrimary)
-          .fixedSize(horizontal: false, vertical: true)
-          .accessibilityIdentifier("whole-shuto-guidance-instruction")
-        if model.hasCurrentGuidancePosition,
-          let original = model.activeSurfaceInstruction,
-          original != model.surfaceInstruction(in: languageSettings.interfaceLocale)
-        {
-          Text(original)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(KaidoInk.textQuiet)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityIdentifier("whole-shuto-source-instruction")
+    Group {
+      if KaidoAccessibilityLayoutPolicy.mode(for: dynamicTypeSize) == .accessibility {
+        VStack(alignment: .leading, spacing: 8) {
+          HStack(spacing: 13) {
+            instructionManeuverTile
+            Spacer()
+            instructionControls
+          }
+          instructionText
         }
-      }
-
-      Spacer()
-
-      VStack(spacing: 8) {
-        speechControls
-
-        if let routeID = activeRouteShield {
-          Text(shieldLabel(routeID))
-            .font(.system(size: 12, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoInk.onShield)
-            .frame(minWidth: 42, minHeight: 32)
-            .background(routeColor(routeID))
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+      } else {
+        HStack(spacing: 13) {
+          instructionManeuverTile
+          instructionText
+          Spacer()
+          instructionControls
         }
       }
     }
@@ -4413,6 +4372,70 @@ struct WholeShutoProductView: View {
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-guidance-card")
+  }
+
+  private var instructionManeuverTile: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 11)
+        .fill(KaidoInk.accentWarm)
+        .frame(width: 56, height: 70)
+      Image(systemName: instructionSymbol)
+        .font(.system(size: 25, weight: .black))
+        .foregroundStyle(KaidoInk.textPrimary)
+        .accessibilityIdentifier("whole-shuto-guidance-maneuver")
+        .accessibilityLabel(instructionTitle)
+    }
+  }
+
+  private var instructionText: some View {
+    VStack(alignment: .leading, spacing: 1) {
+      Text(instructionKicker)
+        .font(.system(size: 11, weight: .black, design: .rounded))
+        .tracking(0.5)
+        .foregroundStyle(KaidoInk.accentCool)
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
+        .accessibilityIdentifier(
+          nextJunctionDistanceLabel == nil
+            ? "whole-shuto-guidance-kicker"
+            : "whole-shuto-next-junction"
+        )
+
+      Text(primaryGuidanceDistanceLabel)
+        .font(.system(size: 28, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoInk.textPrimary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .accessibilityIdentifier("whole-shuto-guidance-distance")
+
+      DrivingInstructionText(text: instructionTitle)
+        .accessibilityIdentifier("whole-shuto-guidance-instruction")
+      if model.hasCurrentGuidancePosition,
+        let original = model.activeSurfaceInstruction,
+        original != model.surfaceInstruction(in: languageSettings.interfaceLocale)
+      {
+        Text(original)
+          .font(.system(size: 13, weight: .medium))
+          .foregroundStyle(KaidoInk.textQuiet)
+          .fixedSize(horizontal: false, vertical: true)
+          .accessibilityIdentifier("whole-shuto-source-instruction")
+      }
+    }
+  }
+
+  private var instructionControls: some View {
+    VStack(spacing: 8) {
+      speechControls
+
+      if let routeID = activeRouteShield {
+        Text(shieldLabel(routeID))
+          .font(.system(size: 12, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoInk.onShield)
+          .frame(minWidth: 42, minHeight: 32)
+          .background(routeColor(routeID))
+          .clipShape(RoundedRectangle(cornerRadius: 7))
+      }
+    }
   }
 
   private var isDriving: Bool {
@@ -8302,5 +8325,31 @@ func routeColor(_ routeID: String) -> Color {
     return Color(hex: 0x7C5E99)
   default:
     return Color(hex: 0x2F7258)
+  }
+}
+
+/// The driving instruction in the guidance banner. It follows the driver's
+/// text size up to `largestSize`; above it, the banner would take the map
+/// the driver steers by.
+struct DrivingInstructionText: View {
+  static let largestSize = DynamicTypeSize.accessibility1
+  let text: String
+
+  var body: some View {
+    Scaled(text: text).dynamicTypeSize(...Self.largestSize)
+  }
+
+  /// Scales `title`'s size with the text size; at the default size it is
+  /// the same 20 pt bold rounded the banner has always used.
+  private struct Scaled: View {
+    @ScaledMetric(relativeTo: .title3) private var size = KaidoType.titleSize
+    let text: String
+
+    var body: some View {
+      Text(text)
+        .font(.system(size: size, weight: .bold, design: .rounded))
+        .foregroundStyle(KaidoInk.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
   }
 }

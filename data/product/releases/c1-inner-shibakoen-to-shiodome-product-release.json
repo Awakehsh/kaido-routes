@@ -16805,6 +16805,66 @@
           "occurrence_id" : "shuto.631.osm.45068171.1.forward"
         }
       ],
+      "onward_exit_points" : {
+        "osm.172598656.1.forward" : [
+          {
+            "latitude" : 35.6703355,
+            "longitude" : 139.7747038
+          }
+        ],
+        "osm.23297499.8.forward" : [
+          {
+            "latitude" : 35.6466223,
+            "longitude" : 139.7258799
+          }
+        ],
+        "osm.24402503.13.forward" : [
+          {
+            "latitude" : 35.6785933,
+            "longitude" : 139.7202847
+          },
+          {
+            "latitude" : 35.6789104,
+            "longitude" : 139.7199789
+          }
+        ],
+        "osm.44779171.5.forward" : [
+          {
+            "latitude" : 35.6979158,
+            "longitude" : 139.7522532
+          }
+        ],
+        "osm.44805849.25.forward" : [
+          {
+            "latitude" : 35.7116386,
+            "longitude" : 139.7768408
+          },
+          {
+            "latitude" : 35.6884025,
+            "longitude" : 139.7761169
+          }
+        ],
+        "osm.44805850.11.forward" : [
+          {
+            "latitude" : 35.6799769,
+            "longitude" : 139.783146
+          },
+          {
+            "latitude" : 35.6836582,
+            "longitude" : 139.7899435
+          },
+          {
+            "latitude" : 35.6849669,
+            "longitude" : 139.7869413
+          }
+        ],
+        "osm.45332353.1.forward" : [
+          {
+            "latitude" : 35.6592935,
+            "longitude" : 139.719534
+          }
+        ]
+      },
       "route_plan_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended"
     },
     "network_snapshot" : {

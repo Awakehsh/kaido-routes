@@ -524,17 +524,19 @@ public actor NavigationSession {
     // Past the plan's last choice of road the only way off the expressway is
     // the planned exit. Coarse fixes along its ramp can withhold the exit's
     // own evidence until the car is already off the expressway. Off it, the
-    // car left the corridor somewhere: a fix nearer that exit than any place
-    // the corridor stops following another road is the exit taken. The road
-    // the exit leaves can carry on beside the street the car drives away on
-    // (Route 6 at Mukojima, C2 at Senju-Shinbashi), so how near that road
-    // is says nothing about which way the car left.
+    // car left the expressway somewhere: a fix nearer that exit than any
+    // other place it could have left is the exit taken. The road the exit
+    // leaves can carry on beside the street the car drives away on (Route 6
+    // at Mukojima, C2 at Senju-Shinbashi), so how near that road is says
+    // nothing about which way the car left, and where the corridor stops
+    // following it (328 m past Senju-Shinbashi from Gotanda) the car would
+    // still be on the expressway.
     if let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex,
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
         >= routeEnd.exitSideStartIndex,
       routeEnd.metersFromExit(observation.coordinate, fromProgress: currentIndex)
-        < routeEnd.metersFromOtherRoadEnds(observation.coordinate, fromProgress: currentIndex)
+        < routeEnd.metersFromOtherDepartures(observation.coordinate, fromProgress: currentIndex)
     {
       engine.finishAtRouteEnd()
       return
@@ -1628,6 +1630,10 @@ private struct RouteEndGeometry: Sendable {
   /// instead of the exit: that point, its distance from the exit, and the
   /// last occurrence of the plan the road can be reached from.
   private let roadEnds: [(end: MatcherCoordinate, metersFromExit: Double, lastReachingIndex: Int)]
+  /// Where a car that left the corridor along one of those roads can have
+  /// left the expressway: the road end itself, or, where the network
+  /// carries the road on, the exits the corridor records beyond it.
+  private let departures: [(point: MatcherCoordinate, lastReachingIndex: Int)]
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1695,6 +1701,13 @@ private struct RouteEndGeometry: Sendable {
       else { return nil }
       return (end, Self.meters(from: end, toPolyline: exit), reachingIndex)
     }
+    departures = corridor.edges.flatMap { edge -> [(point: MatcherCoordinate, lastReachingIndex: Int)] in
+      guard !routeEdgeIDs.contains(edge.id), !exitRoadIDs.contains(edge.id), !rampIDs.contains(edge.id),
+        edge.successorEdgeIDs.isEmpty, let end = edge.coordinates.last,
+        let reachingIndex = lastReachingIndex[edge.id]
+      else { return [] }
+      return (corridor.onwardExitPoints[edge.id] ?? [end]).map { ($0, reachingIndex) }
+    }
   }
 
   /// How close to the exit the corridor holds every road a car at
@@ -1724,16 +1737,17 @@ private struct RouteEndGeometry: Sendable {
       .reduce(Self.meters(from: coordinate, toPolyline: exit), min)
   }
 
-  /// Distance from a point to the nearest place where the corridor stops
-  /// following a road a car at `progressIndex` could be on instead of the
-  /// exit: off every expressway road, the car left the corridor by the exit
-  /// or at one of those places, not along a road that carries on beside it.
-  func metersFromOtherRoadEnds(
+  /// Distance from a point to the nearest place a car at `progressIndex`
+  /// could have left the expressway instead of by the exit: off every
+  /// expressway road, it left by the exit or at one of those places, not
+  /// along a road that carries on beside it, and not where the corridor
+  /// merely stops following a road the network carries on.
+  func metersFromOtherDepartures(
     _ coordinate: MatcherCoordinate,
     fromProgress progressIndex: Int
   ) -> Double {
-    roadEnds.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
-      .map { Self.meters(from: coordinate, toPolyline: [$0.end, $0.end]) }.min() ?? .infinity
+    departures.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }
+      .map { Self.meters(from: coordinate, toPolyline: [$0.point, $0.point]) }.min() ?? .infinity
   }
 
   /// Distance from a point to the nearest road a car at `progressIndex`

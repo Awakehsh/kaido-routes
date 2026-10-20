@@ -819,7 +819,10 @@ public enum ShutoCircuitProductReleaseBuilder {
       routePlanID: assets.matcherCorridor.routePlanID,
       edges: edges,
       occurrences: assets.matcherCorridor.occurrences,
-      exitRampEdgeIDs: assets.matcherCorridor.exitRampEdgeIDs.intersection(edges.map(\.id))
+      exitRampEdgeIDs: assets.matcherCorridor.exitRampEdgeIDs.intersection(edges.map(\.id)),
+      onwardExitPoints: assets.matcherCorridor.onwardExitPoints.filter { endEdgeID, _ in
+        edges.contains { $0.id == endEdgeID && $0.successorEdgeIDs.isEmpty }
+      }
     )
   }
 

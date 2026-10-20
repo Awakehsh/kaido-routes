@@ -28,6 +28,15 @@ The product distinguishes what is known from what is still unconfirmed:
   ramp above LOW confidence, at a divergence the car can have reached since
   its last admitted progress. A mid-route PA stop passed on the road it
   replaced is skipped on the same kind of evidence, and the drive goes on.
+- Where roads in the same direction run a few metres apart and lead to
+  different places, GPS cannot say which one the car is on until they split,
+  and the drive holds its position until it can. Out of Route 6 through
+  江戸橋JCT and 箱崎JCT that takes up to about 50 s: the C1 link to Route 6
+  runs beside other ways of the same junction, the outbound carriageway runs
+  beside lanes into the 箱崎 rotary and towards Route 9 and the 箱崎 exit, and
+  each could be where the car is. A way off the plan that only rejoins it
+  after as long a drive as the plan between (the rotary link beside the
+  outbound carriageway) is no such alternative and does not hold it.
 - An unplanned exit is recognised from position alone: two consecutive fixes
   better than 30 m that the matcher places on no corridor road and that lie
   at least 100 m from every road of the bundled Shuto network. An ordinary

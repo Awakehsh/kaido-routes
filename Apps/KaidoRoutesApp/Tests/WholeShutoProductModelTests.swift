@@ -2416,6 +2416,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCurrentOrigin(releasedEntrance.coordinate)
     model.selectCircuit(.c2InnerWithBayshore)
     await waitForCircuitPairing(model)
+    // The bundled release is a fixed product route, not a promise about the
+    // default recommendation: from its own ramp the return trip now
+    // recommends 滝野川, nearer the minimum band. Choosing its entrance
+    // derives exactly its pairing.
+    model.selectCircuitEntrance(
+      facilityID: ShutoCircuitProductReleaseBuilder.c2EntryFacilityID
+    )
+    await waitForCircuitPairing(model)
 
     XCTAssertEqual(
       model.circuitEntryFacilityID,
@@ -4687,10 +4695,11 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.entryFacilityID
     )
-    // The first C1 exit after the lap; no cheaper exit lies within one ramp
-    // spacing of it.
-    XCTAssertEqual(model.circuitExitFacilityID, "shuto.ic.c1.kasumigaseki")
-    XCTAssertEqual(model.circuitPairingBand, .estimated(yen: 390))
+    // The loop returns to Hatsudai: the final lap ends where Route 4 down
+    // branches off at Miyakezaka and leaves at Gaien, the way it came, at
+    // the minimum band instead of Kasumigaseki on the course.
+    XCTAssertEqual(model.circuitExitFacilityID, "shuto.ic.4.gaien")
+    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.phase, .review)

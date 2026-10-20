@@ -54,6 +54,26 @@ internal review workbench.
   quotes the minimum band, but after the laps it can be most of another lap
   away; the recommendation never buys a lower band with a pass the driver
   did not choose. Tours keep their soonest course exit.
+- A loop that returns to its start — the default ending of the C1 and C2
+  loops — is paired for the drive home instead. The fare prices only the
+  shortest path between entrance and exit, so the cheapest return trip
+  enters near the origin and leaves near it again, driving the approach
+  back. The three nearest entrances by straight line are considered,
+  leaving out any whose approach exceeds twice the straight line to the
+  course's nearest own ramp plus 1 km. Each takes the lowest band among the
+  exits whose tail after the final lap is at most its approach plus 3 km
+  and drives at most 3 km on the course, ties going to the exit nearer the
+  origin and then to the shorter tail; without such an exit it keeps the
+  rule above. The lowest band of the three is recommended, ties going to
+  the nearer entrance and then to the exit nearer the origin, and the
+  card's three entrances are these. Any other ending keeps the rule above.
+- A loop's final lap ends where the radial its approach came in on
+  branches back off, when that branch lies at most 900 m before the
+  radial's merge, rather than at the merge itself. The branch sits just
+  before the merge at every C1 and C2 radial (357–845 m, inside the
+  junction), so a lap closed at the merge would send the drive home round
+  the course again; the 1 lap a driver chose stays 1 lap. Every other lap
+  closes at the merge.
 - Highway preference defaults to prefer highways: nearby connecting-expressway
   entrances can feed both loops and one-way tours without removing their
   ordered course. Avoid when possible keeps the selected Shuto course and its

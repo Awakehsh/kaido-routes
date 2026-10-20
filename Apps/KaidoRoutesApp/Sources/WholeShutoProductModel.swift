@@ -3333,9 +3333,10 @@ final class WholeShutoProductModel: ObservableObject {
   /// Derives the entrance/exit pairing off the main actor: the nearest
   /// reachable entrance (or the driver's override), the tariff-best exit
   /// (or the driver's override, priced as that pairing), the per-alternative
-  /// bands, and the priced exit list. Until resolution completes the start
-  /// action stays unavailable and the interface shows nothing rather than
-  /// inventing a pairing or an amount.
+  /// bands, and the priced exit list. A loop that returns to the origin
+  /// takes entrance and exit together by the door-to-door drive instead.
+  /// Until resolution completes the start action stays unavailable and the
+  /// interface shows nothing rather than inventing a pairing or an amount.
   private func resolveCircuitPairing(
     entranceOverride: String?,
     exitOverride: String?
@@ -3348,14 +3349,27 @@ final class WholeShutoProductModel: ObservableObject {
     let tariffEvidence = activeTariffEvidence
     let includeConnectingEntrances = surfaceRoutePreference == .preferHighways
     let choosesExit = circuit.defaultDestinationParkingAreaID == nil
+    let returnsToOrigin = choosesExit && circuit.kind == .loop && journeyEnding == .returnToOrigin
     circuitPairingOriginCoordinate = originCoordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
-      let candidates = planner.circuitEntranceCandidates(
-        for: circuit,
-        origin: originCoordinate,
-        includeConnectingEntrances: includeConnectingEntrances
-      )
+      let returnTrips = returnsToOrigin
+        ? originCoordinate.map {
+          planner.returnTripCircuitPairings(
+            for: circuit,
+            origin: $0,
+            includeConnectingEntrances: includeConnectingEntrances,
+            evidence: tariffEvidence
+          )
+        }
+        : nil
+      let candidates =
+        returnTrips?.map(\.entrance)
+        ?? planner.circuitEntranceCandidates(
+          for: circuit,
+          origin: originCoordinate,
+          includeConnectingEntrances: includeConnectingEntrances
+        )
       let overriddenEntranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })
         ? entranceOverride
@@ -3363,13 +3377,14 @@ final class WholeShutoProductModel: ObservableObject {
       let entranceID =
         overriddenEntranceID
         ?? candidates.first?.facilityID
-      let recommended = entranceID.flatMap {
-        try? planner.recommendedCircuitPairing(
-          for: circuit,
-          entranceFacilityID: $0,
-          origin: originCoordinate,
-          evidence: tariffEvidence
-        )
+      let recommended = entranceID.flatMap { entranceID in
+        returnTrips?.first { $0.entrance.facilityID == entranceID }
+          ?? (try? planner.recommendedCircuitPairing(
+            for: circuit,
+            entranceFacilityID: entranceID,
+            origin: originCoordinate,
+            evidence: tariffEvidence
+          ))
       }
       let exits: [ShutoNetworkDatabase.Facility] =
         choosesExit
@@ -3414,6 +3429,11 @@ final class WholeShutoProductModel: ObservableObject {
             exitFacilityID: overriddenExit.facilityID,
             evidence: tariffEvidence
           )
+          continue
+        }
+        if let returnTrips {
+          bands[candidate.facilityID] =
+            returnTrips.first { $0.entrance.facilityID == candidate.facilityID }?.tariffBand
           continue
         }
         bands[candidate.facilityID] =
@@ -3709,13 +3729,26 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     let planner = planner
     let originCoordinate = origin?.coordinate
+    let tariffEvidence = activeTariffEvidence
+    let returnsToOrigin =
+      circuit.defaultDestinationParkingAreaID == nil && circuit.kind == .loop
+      && journeyEnding == .returnToOrigin
     circuitTariffTask?.cancel()
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
-      let candidates = planner.circuitEntranceCandidates(
-        for: circuit,
-        origin: originCoordinate
-      )
+      let candidates =
+        returnsToOrigin
+        ? originCoordinate.map {
+          planner.returnTripCircuitPairings(
+            for: circuit,
+            origin: $0,
+            evidence: tariffEvidence
+          ).map(\.entrance)
+        } ?? []
+        : planner.circuitEntranceCandidates(
+          for: circuit,
+          origin: originCoordinate
+        )
       await MainActor.run { [weak self] in
         guard let self, !Task.isCancelled,
           self.phase == .review,

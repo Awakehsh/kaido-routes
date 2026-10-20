@@ -332,6 +332,69 @@ struct ShutoAllRouteLiveAdmissionTests {
     )
   }
 
+  @Test(
+    "a recommended return trip is one Start admits",
+    arguments: [
+      ShutoCircuitDefinition.c1Inner,
+      ShutoCircuitDefinition.c1Outer,
+      ShutoCircuitDefinition.c2InnerWithBayshore,
+    ]
+  )
+  func everyRecommendedReturnTripIsAdmitted(
+    circuit: ShutoCircuitDefinition
+  ) async throws {
+    let database = try loadWholeShutoDatabase()
+    let runtimeContext = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+    let planner = try ShutoRoutePlanner(database: database)
+    // A return trip's exit depends on the origin, so the origins span the
+    // network: central, west, north, Saitama side, east, Bayshore and south.
+    let origins = [
+      (35.6812, 139.7671), (35.69, 139.7003), (35.755249, 139.742524),
+      (35.8079, 139.7241), (35.6969, 139.8146), (35.6, 139.743),
+      (35.5308, 139.7029), (35.4658, 139.6223),
+    ]
+    var refusals: [String] = []
+    for (latitude, longitude) in origins {
+      let origin = ShutoCoordinate(latitude: latitude, longitude: longitude)
+      for includeConnectingEntrances in [true, false] {
+        guard
+          let pairing = planner.returnTripCircuitPairings(
+            for: circuit,
+            origin: origin,
+            includeConnectingEntrances: includeConnectingEntrances,
+            evidence: .etcNormalCarFrom2026October
+          ).first
+        else {
+          refusals.append("(\(latitude), \(longitude)): no pairing")
+          continue
+        }
+        let label = "\(pairing.entrance.facilityID) → \(pairing.exit.facilityID)"
+        do {
+          let route = try planner.planCircuit(
+            circuit: circuit,
+            entryFacilityID: pairing.entrance.facilityID,
+            exitFacilityID: pairing.exit.facilityID,
+            laps: 1
+          )
+          let release =
+            try ShutoCircuitProductReleaseBuilder
+            .buildPlannedRouteRelease(context: runtimeContext, route: route)
+          if release.foregroundLiveInputAuthority == nil {
+            refusals.append("\(label): missing foreground authority")
+          }
+        } catch {
+          refusals.append("\(label): \(error)")
+        }
+      }
+    }
+    #expect(
+      refusals.isEmpty,
+      Comment(rawValue: refusals.joined(separator: "\n"))
+    )
+  }
+
   /// The exit Start plans a recommended pairing with: an experience with a
   /// default parking area drives into it, so its pairing's exit is not part
   /// of the recommended drive.

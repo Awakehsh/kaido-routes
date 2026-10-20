@@ -177,10 +177,17 @@
     @Test(
       "a drive whose exit fixes turn coarse still completes at its planned exit",
       arguments: [
-        ("c1-inner", 2, "URBAN", UInt64(11)),
-        ("c1-inner", 2, "MULTIPATH", 26),
-        ("c1-inner", 1, "UNDER2X", 39),
-        ("c1-outer", 2, "URBAN", 11),
+        // The final lap ends where Route 4 down branches off, so these
+        // drives' first lap counts carry the geometry the seeds were found on.
+        ("c1-inner", 3, "URBAN", UInt64(11)),
+        ("c1-inner", 3, "MULTIPATH", 26),
+        ("c1-inner", 2, "UNDER2X", 39),
+        ("c1-outer", 3, "URBAN", 11),
+        // One lap that ends at that branch.
+        ("c1-inner", 1, "URBAN", 38),
+        ("c1-inner", 1, "MULTIPATH", 37),
+        ("c1-outer", 1, "URBAN", 38),
+        ("c1-outer", 1, "MULTIPATH", 37),
       ]
     )
     func coarseFixesAtTheExitStillComplete(

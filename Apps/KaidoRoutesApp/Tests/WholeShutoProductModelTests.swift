@@ -6588,6 +6588,86 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(store.checkpoint)
   }
 
+  func testFileCheckpointStoreAppliesWritesInTheOrderTheyWereAsked()
+    async throws
+  {
+    let memory = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: memory)
+    model.preparePreviewJourney()
+    let older = try XCTUnwrap(memory.checkpoint)
+    let newer = older.replacingSchemaVersion("newer")
+    let fileURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+      .appendingPathComponent("whole-shuto-journey-checkpoint.json")
+    defer {
+      try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent())
+    }
+    let store = WholeShutoFileCheckpointStore(fileURL: fileURL)
+
+    // A background save asked for first is written first, so a later
+    // synchronous save or remove is what the file ends with.
+    let backgroundSave = Task { @MainActor in try await store.saveInBackground(older) }
+    await Task.yield()
+    try store.save(newer)
+    try await backgroundSave.value
+    XCTAssertEqual(try store.load(), newer)
+
+    let supersededSave = Task { @MainActor in try await store.saveInBackground(older) }
+    await Task.yield()
+    try store.remove()
+    try await supersededSave.value
+    XCTAssertNil(try store.load())
+
+    let saves = (0..<8).map { index in
+      Task { @MainActor in
+        try await store.saveInBackground(index == 7 ? newer : older)
+      }
+    }
+    for save in saves { try await save.value }
+    XCTAssertEqual(try store.load(), newer)
+  }
+
+  func testSupersededLiveCheckpointFailureLeavesTheNewerStateAlone()
+    async throws
+  {
+    let store = WholeShutoGatedCheckpointStore()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: store,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: WholeShutoRecordingSpeechOutput()
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    await waitForLiveNavigationPreparation(model)
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let removalsBefore = store.removeCount
+
+    // The live checkpoint's background save is in flight when the driver
+    // ends the journey, and then fails.
+    store.holdsBackgroundSaves = true
+    store.backgroundSaveError = .saveFailed
+    let background = Task { @MainActor in await model.handleScenePhase(.background) }
+    for _ in 0..<1_000 where store.pendingBackgroundSaves == 0 {
+      await Task.yield()
+    }
+    XCTAssertEqual(store.pendingBackgroundSaves, 1)
+    model.reset()
+    XCTAssertEqual(store.removeCount, removalsBefore + 1)
+    store.releaseBackgroundSave()
+    await background.value
+
+    XCTAssertNil(model.checkpointIssueCode)
+    XCTAssertNil(store.checkpoint)
+    XCTAssertEqual(store.removeCount, removalsBefore + 1)
+  }
+
   func testCheckpointRemoveFailureIsVisibleAndRetryable() {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
@@ -7083,6 +7163,46 @@ private final class WholeShutoMemoryCheckpointStore:
   func remove() throws {
     removeCount += 1
     if let removeError { throw removeError }
+    checkpoint = nil
+  }
+}
+
+/// Once `holdsBackgroundSaves` is set, holds each background save until the
+/// test releases it.
+@MainActor
+private final class WholeShutoGatedCheckpointStore:
+  WholeShutoJourneyCheckpointStoring
+{
+  var checkpoint: WholeShutoJourneyCheckpoint?
+  var holdsBackgroundSaves = false
+  var backgroundSaveError: WholeShutoTestCheckpointStoreError?
+  private(set) var removeCount = 0
+  private(set) var pendingBackgroundSaves = 0
+  private var gate: CheckedContinuation<Void, Never>?
+
+  func load() throws -> WholeShutoJourneyCheckpoint? { checkpoint }
+
+  func save(_ checkpoint: WholeShutoJourneyCheckpoint) throws {
+    self.checkpoint = checkpoint
+  }
+
+  func saveInBackground(_ checkpoint: WholeShutoJourneyCheckpoint) async throws {
+    if holdsBackgroundSaves {
+      pendingBackgroundSaves += 1
+      await withCheckedContinuation { gate = $0 }
+      pendingBackgroundSaves -= 1
+      if let backgroundSaveError { throw backgroundSaveError }
+    }
+    self.checkpoint = checkpoint
+  }
+
+  func releaseBackgroundSave() {
+    gate?.resume()
+    gate = nil
+  }
+
+  func remove() throws {
+    removeCount += 1
     checkpoint = nil
   }
 }

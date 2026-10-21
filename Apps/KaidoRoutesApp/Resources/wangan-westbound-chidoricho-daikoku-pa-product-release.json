@@ -25167,6 +25167,54 @@
           "occurrence_id" : "shuto.440.osm.32355896.9.forward"
         }
       ],
+      "onward_exit_points" : {
+        "osm.1520640477.2.forward" : [
+          {
+            "latitude" : 35.5524692,
+            "longitude" : 139.7870514
+          }
+        ],
+        "osm.44882717.25.forward" : [
+          {
+            "latitude" : 35.6469565,
+            "longitude" : 139.7898415
+          },
+          {
+            "latitude" : 35.6542242,
+            "longitude" : 139.7826955
+          }
+        ],
+        "osm.44884558.31.forward" : [
+          {
+            "latitude" : 35.6592942,
+            "longitude" : 139.8044272
+          }
+        ],
+        "osm.5208477.19.forward" : [
+          {
+            "latitude" : 35.5181445,
+            "longitude" : 139.7927618
+          }
+        ],
+        "osm.59613953.4.forward" : [
+          {
+            "latitude" : 35.5203791,
+            "longitude" : 139.7876815
+          }
+        ],
+        "osm.678697943.3.forward" : [
+          {
+            "latitude" : 35.5529673,
+            "longitude" : 139.7864277
+          }
+        ],
+        "osm.914917088.10.forward" : [
+          {
+            "latitude" : 35.555443,
+            "longitude" : 139.7534216
+          }
+        ]
+      },
       "route_plan_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.pa.daikoku.x1.recommended"
     },
     "network_snapshot" : {

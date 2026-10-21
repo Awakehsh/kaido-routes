@@ -20038,6 +20038,70 @@
           "occurrence_id" : "shuto.657.osm.32355896.9.forward"
         }
       ],
+      "onward_exit_points" : {
+        "osm.301016678.9.forward" : [
+          {
+            "latitude" : 35.5557785,
+            "longitude" : 139.7841724
+          }
+        ],
+        "osm.301016679.1.forward" : [
+          {
+            "latitude" : 35.5451283,
+            "longitude" : 139.7893294
+          }
+        ],
+        "osm.352724043.7.forward" : [
+          {
+            "latitude" : 35.4910725,
+            "longitude" : 139.661835
+          }
+        ],
+        "osm.38092945.22.forward" : [
+          {
+            "latitude" : 35.5375575,
+            "longitude" : 139.7378179
+          },
+          {
+            "latitude" : 35.5375537,
+            "longitude" : 139.7379519
+          }
+        ],
+        "osm.42750918.2.forward" : [
+          {
+            "latitude" : 35.5418115,
+            "longitude" : 139.7914254
+          }
+        ],
+        "osm.438360534.90.forward" : [
+          {
+            "latitude" : 35.5517625,
+            "longitude" : 139.7455087
+          }
+        ],
+        "osm.481231607.24.forward" : [
+          {
+            "latitude" : 35.484923,
+            "longitude" : 139.6524015
+          },
+          {
+            "latitude" : 35.4855591,
+            "longitude" : 139.6553741
+          }
+        ],
+        "osm.59613953.4.forward" : [
+          {
+            "latitude" : 35.5203791,
+            "longitude" : 139.7876815
+          }
+        ],
+        "osm.82592226.1.forward" : [
+          {
+            "latitude" : 35.5416772,
+            "longitude" : 139.7916132
+          }
+        ]
+      },
       "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.pa.daikoku.x1.recommended"
     },
     "network_snapshot" : {

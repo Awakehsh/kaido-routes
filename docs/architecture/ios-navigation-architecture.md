@@ -2597,8 +2597,10 @@ Past the plan's last choice of road the same fixes may instead be the planned
 exit taken. Off the expressway the car left the corridor somewhere, so the
 session credits the planned exit when the fix is nearer it — the exit side of
 the plan, the roads past its end, and the exit facility's other ramps, which
-the corridor records — than any place where the corridor stops following
-another road the car can be on. The road the exit leaves can carry on beside
+the corridor records — than any other place the car can have left the
+expressway: the end of another road the car can be on, or, where the
+network carries that road on past the corridor, the exits the corridor
+records within 3 km beyond it. The road the exit leaves can carry on beside
 or under the street the car drives away on (Route 6 at Mukojima, Route 4 at
 Eifuku, C2 at Senju-Shinbashi), so how near that road is does not decide it.
 Fixes on that street read as the road beside it and put the session in

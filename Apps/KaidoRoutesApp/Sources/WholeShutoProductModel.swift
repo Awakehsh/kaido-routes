@@ -611,6 +611,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var runtimeOccurrenceID: String?
   @Published private(set) var runtimeJourneyPhase: JourneyPhase?
   @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
+  /// The cue entry evidence made due before entry was confirmed: shown on
+  /// the banner, never spoken.
+  @Published private(set) var entryStretchGuidanceFrame: GuidanceFrame?
   /// The session cannot yet tell a car that took the exit from one that
   /// missed it: see `NavigationSessionUpdate.isConfirmingPlannedExit`.
   @Published private(set) var runtimeIsConfirmingPlannedExit = false
@@ -2156,6 +2159,11 @@ final class WholeShutoProductModel: ObservableObject {
       && accessRoute != nil
       && (!requiresSurfaceEgress || egressRoute != nil)
       && !isUpdatingSurfaceRoute
+  }
+
+  var entryStretchJunctionPrompt: WholeShutoJunctionPrompt? {
+    guard phase == .entryTransition, let frame = entryStretchGuidanceFrame else { return nil }
+    return junctionPrompts.first { $0.outgoingOccurrenceID == frame.movementOccurrenceID }
   }
 
   var nextReviewedJunctionPrompt: WholeShutoJunctionPrompt? {
@@ -4523,6 +4531,7 @@ final class WholeShutoProductModel: ObservableObject {
         )
         guard isCurrent() else { return }
         matcherConfidence = evidence.confidence
+        entryStretchGuidanceFrame = update.entryStretchGuidanceFrame
         applyLiveActorSnapshot(update.navigationSnapshot)
         // A fix that does not yet prove the ramp is not a weak position:
         // only the stale-fix path may say that.
@@ -4879,6 +4888,9 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     runtimeJourneyPhase = snapshot.journeyPhase
     runtimeRecoveryStatus = snapshot.recovery.status
+    if snapshot.journeyPhase != .entryTransition {
+      entryStretchGuidanceFrame = nil
+    }
     if snapshot.journeyPhase != .routeRecovery {
       runtimeIsConfirmingPlannedExit = false
     }

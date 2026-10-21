@@ -207,6 +207,26 @@ public struct NavigationEngine: Sendable {
     return emission
   }
 
+  /// The frame of the cue that ordered evidence along the route head has
+  /// made due while entry is still being confirmed, for the driver to see.
+  /// Nothing is recorded as spoken: the strict-route cue still plays when
+  /// progress reaches it.
+  public func entryStretchGuidanceFrame(
+    _ observation: GuidanceProgressObservation
+  ) -> GuidanceFrame? {
+    guard snapshot.journeyPhase == .entryTransition else { return nil }
+    let result = GuidanceFramePlanner.plan(
+      snapshot: snapshot,
+      routePlan: configuration.routePlan,
+      occurrencePositions: occurrencePositions,
+      definitions: configuration.releasedGuidance,
+      definitionsAreValid: releasedGuidanceIsValid,
+      observation: observation,
+      followsEntryEvidence: true
+    )
+    return result.status == .promptEmitted ? result.frame : nil
+  }
+
   public mutating func connectCarPlay() {
     snapshot.carPlayConnectionState = .connected
     snapshot.presentationSurface = .carPlay

@@ -4705,7 +4705,13 @@ struct WholeShutoProductView: View {
     return switch model.phase {
     case .surfaceAccess, .surfaceEgress:
       SurfaceManeuver.from(instruction: model.activeSurfaceInstruction ?? "").symbol
-    case .entryTransition: "mappin.and.ellipse"
+    case .entryTransition:
+      switch model.entryStretchJunctionPrompt?.branchSide {
+      case .left: "arrow.up.left"
+      case .right: "arrow.up.right"
+      case .straight: "arrow.up"
+      case nil: "mappin.and.ellipse"
+      }
     case .expressway:
       switch displayedJunctionPrompt?.branchSide {
       case .left: "arrow.up.left"
@@ -4803,6 +4809,13 @@ struct WholeShutoProductView: View {
           english: "Continue to \(entryName(route.entryFacility.nameJA))"
         )
     case .entryTransition:
+      // A decision the car reaches before entry is confirmed is shown, not
+      // spoken: a car on a street along a straight ramp looks the same.
+      if let prompt = model.entryStretchJunctionPrompt,
+        let text = prompt.localizedContent[languageSettings.interfaceLocale]?.displayText
+      {
+        return text
+      }
       let routeLabel =
         route.routeIDsInOrder.first.map(shieldLabel)
         ?? copy.resolve(
@@ -6847,7 +6860,10 @@ private struct WholeShutoGeographicMap: View {
         // route. A dash cannot carry "provider leg, not Kaido authority"
         // here: the casing shows through its gaps and the leg reads as a
         // striped ribbon rather than a road. Colour carries that meaning
-        // instead — teal in, coral out, against the route's blue.
+        // instead — teal for both surface legs, against the route's blue.
+        // The legs never need telling apart: one runs to the entry marker,
+        // the other from the exit marker. A warm leg would, on the driving
+        // map, read as Apple's congestion red.
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
@@ -7030,7 +7046,7 @@ private struct WholeShutoGeographicMap: View {
           coordinates: egressRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoInk.accentClay,
+          KaidoInk.accentCool,
           style: StrokeStyle(
             lineWidth: 5.5,
             lineCap: .round,

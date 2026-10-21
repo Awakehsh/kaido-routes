@@ -254,6 +254,13 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
   /// to, once there is as much of it as entry needs: the car has been seen
   /// in order along the route head, though entry may still wait for the
   /// route to leave the straight road beyond the ramp.
+  /// The first route-head occurrence that ends clear of the straight road
+  /// beyond the ramp: before it, entry cannot yet be confirmed. Nil when the
+  /// whole route head stays on that line.
+  package var firstSeparatedRouteHeadIndex: Int? {
+    geometry.firstIndexEnding(clearOfApproachLineBy: Self.minimumHypothesisSeparationMeters)
+  }
+
   package var orderedRouteHeadOccurrenceID: String? {
     guard progressObservationCount >= Self.minimumProgressObservationCount else { return nil }
     return progressIndex.flatMap(geometry.occurrenceID(at:))
@@ -441,6 +448,8 @@ private struct EntryRouteHeadGeometry: Sendable {
   private let edgeIDs: [String]
   private let headIndexByOccurrenceID: [String: Int]
   private let polyline: [SIMD2<Double>]
+  /// Where each route-head occurrence ends.
+  private let occurrenceEnds: [SIMD2<Double>]
   private let origin: MatcherCoordinate
   private let approachStart: SIMD2<Double>
   private let approachDirection: SIMD2<Double>
@@ -456,11 +465,13 @@ private struct EntryRouteHeadGeometry: Sendable {
     var occurrenceIDs: [String] = []
     var edgeIDs: [String] = []
     var coordinates: [MatcherCoordinate] = []
+    var ends: [MatcherCoordinate] = []
     var travelled = 0.0
     for occurrence in occurrences {
       guard let edge = edgesByID[occurrence.directedEdgeID] else { break }
       occurrenceIDs.append(occurrence.id)
       edgeIDs.append(edge.id)
+      if let end = edge.coordinates.last { ends.append(end) }
       coordinates.append(contentsOf: coordinates.isEmpty ? edge.coordinates : Array(edge.coordinates.dropFirst()))
       travelled += edge.lengthMeters
       if travelled >= routeHeadMeters { break }
@@ -477,12 +488,17 @@ private struct EntryRouteHeadGeometry: Sendable {
       uniqueKeysWithValues: occurrenceIDs.enumerated().map { ($1, $0) }
     )
     polyline = coordinates.map { Self.project($0, origin: origin) }
+    occurrenceEnds = ends.map { Self.project($0, origin: origin) }
     let start = Self.project(approach.first ?? origin, origin: origin)
     let end = Self.project(approach.last ?? origin, origin: origin)
     let direction = end - start
     let length = (direction * direction).sum().squareRoot()
     approachStart = start
     approachDirection = length > 0 ? direction / length : SIMD2(0, 1)
+  }
+
+  func firstIndexEnding(clearOfApproachLineBy meters: Double) -> Int? {
+    occurrenceEnds.firstIndex { approachLineDistanceMeters(projected: $0) >= meters }
   }
 
   func headIndex(of occurrenceID: String) -> Int? {

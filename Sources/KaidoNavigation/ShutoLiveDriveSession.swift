@@ -16,6 +16,8 @@ public actor ShutoLiveDriveSession {
     EntryTransitionAdmissionContext
   public nonisolated let surfaceEgressAdmissionContext:
     SurfaceEgressAdmissionContext?
+  /// See `NavigationSession.entranceAnnouncementGuidance`.
+  public nonisolated let entranceAnnouncementGuidance: ReleasedGuidanceDefinition?
 
   private let runtime: KaidoProductNavigationRuntime
   private let session: NavigationSession
@@ -44,6 +46,7 @@ public actor ShutoLiveDriveSession {
     surfaceEgressAdmissionContext = runtime.surfaceEgressAdmissionContext
     self.runtime = runtime
     session = runtime.session
+    entranceAnnouncementGuidance = runtime.session.entranceAnnouncementGuidance
   }
 
   @discardableResult

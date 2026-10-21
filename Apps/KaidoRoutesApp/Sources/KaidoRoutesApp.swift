@@ -9,6 +9,7 @@ import SwiftUI
 @main
 struct KaidoRoutesApp: App {
   init() {
+    WholeShutoNetworkCatalog.startLaunchDecode()
     KaidoDriveShortcuts.updateAppShortcutParameters()
     // The journey checkpoint moved to a file; a pre-launch value left here
     // would otherwise be loaded with the app's preferences on every launch.

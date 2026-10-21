@@ -31,7 +31,7 @@ enum WholeShutoForegroundReleaseFactory {
     driveHistoryStore: (any DriveHistoryStoring)? = nil
   ) -> WholeShutoProductModel {
     do {
-      let database = try WholeShutoNetworkCatalog.bundled()
+      let database = try WholeShutoNetworkCatalog.launchBundled()
       let authority = LazyRouteReleaseAuthority(database: database)
       return WholeShutoProductModel(
         database: database,

@@ -1,5 +1,6 @@
 #if canImport(CoreLocation)
   import Foundation
+  import KaidoDomain
   import KaidoNavigation
   import KaidoRouting
   import Testing
@@ -51,6 +52,31 @@
       }
     }
 
+    /// Only an entrance whose first decision comes before entry can be
+    /// confirmed carries an entrance announcement, and from Toyosu it is the
+    /// Shinonome JCT fork.
+    @Test("the entrance announcement names the decision reached before entry")
+    func entranceAnnouncementScope() async throws {
+      let toyosu = try Self.toyosu.gate()
+      let announced = try Self.announcement(toyosu)
+      #expect(announced?.frameTemplate.decisionPointNameJapanese == "東雲JCT")
+      #expect(announced?.anchor.anchorID == "COMMIT")
+      for site in [Self.nishikanda, Self.daiba] {
+        #expect(try Self.announcement(try site.gate()) == nil, "\(site.name)")
+      }
+    }
+
+    private static func announcement(
+      _ gate: LiveNavigationReplayGate
+    ) throws -> ReleasedGuidanceDefinition? {
+      let runtime = try KaidoProductNavigationRuntime(
+        release: gate.release,
+        journeyPlan: JourneyPlanCompiler.expresswayOnly(release: gate.release),
+        expresswayRoads: []
+      )
+      return try ShutoLiveDriveSession(runtime: runtime).entranceAnnouncementGuidance
+    }
+
     struct Site: Sendable, CustomTestStringConvertible {
       let name: String
       let circuit: ShutoCircuitDefinition
@@ -74,6 +100,14 @@
     static let toyosu = Site(
       name: "c1-inner toyosu-shiodome", circuit: .c1Inner,
       entry: "shuto.ic.10.toyosu", exit: "shuto.ic.c1.shiodome"
+    )
+    static let nishikanda = Site(
+      name: "c1-inner nishikanda-kasumigaseki", circuit: .c1Inner,
+      entry: "shuto.ic.5.nishikanda", exit: "shuto.ic.c1.kasumigaseki"
+    )
+    static let daiba = Site(
+      name: "c1-inner daiba-shiodome", circuit: .c1Inner,
+      entry: "shuto.ic.11.daiba", exit: "shuto.ic.c1.shiodome"
     )
     static let hatagaya = Site(
       name: "c2 hatagaya-tomigaya", circuit: .c2InnerWithBayshore,

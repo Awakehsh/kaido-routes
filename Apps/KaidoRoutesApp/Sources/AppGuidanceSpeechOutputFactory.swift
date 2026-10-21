@@ -72,10 +72,11 @@ private final class SilentAppGuidanceSpeechOutput: GuidanceSpeechOutput {
   func stop() {}
 }
 
-/// Creates the speech output on the first utterance. Building it touches
-/// `AVAudioSession`, whose first use waits on the audio server (about 110 ms
-/// of the main thread on an iPhone 13 Pro launch), and the home screen never
-/// speaks.
+/// Creates the speech output after launch instead of during it. Building it
+/// touches `AVAudioSession`, whose first use waits on the audio server (about
+/// 110 ms of the main thread on an iPhone 13 Pro launch). The home screen
+/// prewarms it once its first frame is up, so starting a drive does not wait
+/// either; a cue spoken before that creates it on the spot.
 @MainActor
 final class LazyAVSpeechGuidanceOutput: GuidanceSpeechOutput {
   var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)? {
@@ -93,6 +94,10 @@ final class LazyAVSpeechGuidanceOutput: GuidanceSpeechOutput {
     self.makeOutput = makeOutput
   }
 
+  func prewarm() {
+    _ = resolveOutput()
+  }
+
   func speak(_ command: GuidanceSpeechCommand) throws {
     try resolveOutput().speak(command)
   }
@@ -101,7 +106,7 @@ final class LazyAVSpeechGuidanceOutput: GuidanceSpeechOutput {
     resolvedOutput?.stop()
   }
 
-  /// Nothing was interrupted before the first utterance created the output.
+  /// Nothing was interrupted before the output existed.
   func recoverAfterInterruption() throws -> Bool {
     try resolvedOutput?.recoverAfterInterruption() ?? false
   }

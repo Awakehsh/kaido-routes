@@ -279,7 +279,18 @@ struct WholeShutoProductView: View {
       if ActiveDriveControl.model === model { ActiveDriveControl.model = nil }
       UIApplication.shared.isIdleTimerDisabled = false
     }
-    .onAppear { ActiveDriveControl.model = model }
+    .onAppear {
+      ActiveDriveControl.model = model
+      // Core Animation commits this update's frame when the main run loop is
+      // about to wait; ordered last, this one-shot observer runs after that
+      // commit, so the first frame never waits on the audio server.
+      let prewarm = CFRunLoopObserverCreateWithHandler(
+        nil, CFRunLoopActivity.beforeWaiting.rawValue, false, CFIndex.max
+      ) { _, _ in
+        MainActor.assumeIsolated { model.prewarmSpeechOutput() }
+      }
+      CFRunLoopAddObserver(CFRunLoopGetMain(), prewarm, .commonModes)
+    }
     .onOpenURL { url in
       guard url.isFileURL else { return }
       savedRouteImportErrorCode = importSavedRouteFile(.success([url]), into: savedRoutes)

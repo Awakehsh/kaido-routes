@@ -1069,8 +1069,49 @@ public actor NavigationSession {
       status: decision.status,
       rejectionReason: decision.rejectionReason,
       reachedOccurrenceID: decision.reachedOccurrenceID,
-      navigationSnapshot: engine.snapshot
+      navigationSnapshot: engine.snapshot,
+      entryStretchGuidanceFrame: entryStretchGuidanceFrame(
+        admission: admission,
+        observedAtMilliseconds: evidence.observedAtMilliseconds
+      )
     )
+  }
+
+  /// Where the route head runs straight on from the ramp, entry waits for
+  /// the route to leave that straight line: from Toyosu it stays within
+  /// 14 m of it for 1.1 km, past the Shinonome JCT fork, whose cue then
+  /// never played. A car on a street along that line looks the same, so
+  /// the cue is not spoken there; once ordered evidence has followed the car
+  /// along the route head to a cue's anchor, its frame is shown. Entry,
+  /// progress and every strict-route rule are unchanged.
+  private func entryStretchGuidanceFrame(
+    admission: EntryTransitionEvidenceAdmission,
+    observedAtMilliseconds: Int
+  ) -> GuidanceFrame? {
+    guard engine.snapshot.journeyPhase == .entryTransition,
+      let occurrenceID = admission.orderedRouteHeadOccurrenceID,
+      let decisionZone = guidanceTargetByAnchorOccurrence[occurrenceID],
+      let directedEdgeID = guidanceProgressRoute.corridorOccurrencesByID[occurrenceID]?.directedEdgeID
+    else { return nil }
+    let estimate = MatcherEstimate(
+      observationID: nil,
+      estimatedAtMilliseconds: observedAtMilliseconds,
+      directedEdgeID: directedEdgeID,
+      occurrenceID: occurrenceID,
+      candidateEdgeIDs: [directedEdgeID],
+      confidence: .medium,
+      distanceMeters: nil,
+      fractionAlongEdge: 0
+    )
+    guard
+      let progress = try? GuidanceProgressBridge.resolve(
+        estimate: estimate,
+        route: guidanceProgressRoute,
+        decisionZone: decisionZone,
+        skippedOccurrenceIDs: Set(engine.snapshot.skippedOccurrenceIDs)
+      )
+    else { return nil }
+    return engine.entryStretchGuidanceFrame(progress)
   }
 
   /// Drops one whole lap of a loop the driver decided not to complete.

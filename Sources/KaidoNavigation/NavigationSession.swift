@@ -61,6 +61,11 @@ public actor NavigationSession {
   private var engine: NavigationEngine
   private var matcherSession: RouteMatcherSession
   private var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
+  /// The commit cue of the first decision the car reaches before entry can
+  /// be confirmed, where the route runs straight on from the ramp (Toyosu:
+  /// the Shinonome JCT fork). Its cue is shown, not spoken, there; the App
+  /// says it once as the car comes to the entrance, as part of the plan.
+  public nonisolated let entranceAnnouncementGuidance: ReleasedGuidanceDefinition?
   private var routeJoinAdmission: RouteJoinAdmission?
   private var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   private let routePlan: RoutePlan
@@ -235,8 +240,16 @@ public actor NavigationSession {
       configuration: navigationConfiguration,
       initialSnapshot: initialNavigationSnapshot
     )
-    entryTransitionAdmission = entryTransitionAdmissionContext.map {
+    let entryTransitionAdmission = entryTransitionAdmissionContext.map {
       EntryTransitionEvidenceAdmission(context: $0)
+    }
+    self.entryTransitionAdmission = entryTransitionAdmission
+    entranceAnnouncementGuidance = entryTransitionAdmission.flatMap { admission in
+      Self.firstDecisionBeforeEntry(
+        routePlan: routePlan,
+        releasedGuidance: navigationConfiguration.releasedGuidance,
+        separatedIndex: admission.firstSeparatedRouteHeadIndex
+      )
     }
     routeJoinAdmission = entryTransitionAdmissionContext.map {
       RouteJoinAdmission(context: $0, routePlan: routePlan)
@@ -1082,6 +1095,26 @@ public actor NavigationSession {
         observedAtMilliseconds: evidence.observedAtMilliseconds
       )
     )
+  }
+
+  /// The commit cue of the earliest decision the car reaches before the
+  /// route head leaves the straight road beyond the ramp, when there is one.
+  private static func firstDecisionBeforeEntry(
+    routePlan: RoutePlan,
+    releasedGuidance: [ReleasedGuidanceDefinition],
+    separatedIndex: Int?
+  ) -> ReleasedGuidanceDefinition? {
+    let indexes = Dictionary(
+      routePlan.occurrences.map { ($0.id, $0.index) }, uniquingKeysWith: { first, _ in first }
+    )
+    guard
+      let movement = releasedGuidance.compactMap({ indexes[$0.frameTemplate.movementOccurrenceID] })
+        .filter({ movement in separatedIndex.map { movement < $0 } ?? true }).min()
+    else { return nil }
+    return releasedGuidance.first {
+      $0.anchor.anchorID == "COMMIT"
+        && indexes[$0.frameTemplate.movementOccurrenceID] == movement
+    }
   }
 
   /// Where the route head runs straight on from the ramp, entry waits for

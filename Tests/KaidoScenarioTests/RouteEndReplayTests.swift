@@ -103,6 +103,50 @@
       }
     }
 
+    /// Fixes scattered beyond their reported error, off both an exit ramp and
+    /// the road it runs a few metres beside, read the same whichever the car
+    /// is on: past Kasumigaseki, Angyo and Yotsugi the drive ended on the road
+    /// it had driven on past the exit, and on the ramp it ended early.
+    @Test(
+      "scatter beside the exit ends neither a missed exit nor the ramp early",
+      arguments: [
+        (ShutoCircuitDefinition.c1Inner, "shuto.ic.5.nishikanda", "shuto.ic.c1.kasumigaseki", UInt64(37)),
+        (.c1Inner, "shuto.ic.s1.araijuku", "shuto.ic.s1.angyou", 13),
+        (.c2InnerWithBayshore, "shuto.ic.7.ichinoe", "shuto.ic.c2.yotsugi", 13),
+      ]
+    )
+    func scatterBesideTheExit(
+      circuit: ShutoCircuitDefinition, entry: String, exit: String, seed: UInt64
+    ) async throws {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: circuit, entryFacilityID: entry, exitFacilityID: exit, laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      let gate = LiveNavigationReplayGate(release: release, database: database)
+      let planned = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .underReported)
+      let plannedSummary = gateLine(file: exit, seed: seed, run: planned, label: "ROUTE-END-UNDER2X")
+      print(plannedSummary)
+      #expect(planned.reachedCompletion, "\(plannedSummary)")
+      #expect(!planned.completedEarly(), "\(plannedSummary)")
+      let movementIndex = gate.finalDivergenceIndex
+      for alternative in gate.alternativeEdgeIDs(atMovementIndex: movementIndex) {
+        let missed = try await gate.run(
+          legs: gate.wrongBranchLegs(
+            movementIndex: movementIndex, alternativeEdgeID: alternative, branchMeters: 1_500
+          ),
+          seed: seed,
+          noise: .underReported
+        )
+        let summary = gateLine(file: exit, seed: seed, run: missed, label: "MISSED-EXIT-UNDER2X")
+        print(summary)
+        #expect(!missed.reachedCompletion, "\(summary)")
+      }
+    }
+
     /// Three laps of C1 inner from Shibakoen to Shiodome.
     private static func threeLapGate() throws -> LiveNavigationReplayGate {
       let database = try replayGateDatabase()

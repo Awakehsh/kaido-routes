@@ -6,6 +6,7 @@ import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
+import Synchronization
 
 enum WholeShutoJourneyPhase:
   String, Codable, Equatable, Sendable
@@ -420,6 +421,21 @@ private struct WholeShutoResolvedSavedRoute {
 }
 
 enum WholeShutoNetworkCatalog {
+  /// Starts decoding the bundled network on a background thread. The app
+  /// calls this first, so the decode overlaps UIKit and SwiftUI setting the
+  /// scene up instead of following them on the main thread.
+  static func startLaunchDecode() {
+    _ = launchDecode
+  }
+
+  /// The bundled network decoded by `startLaunchDecode`, waiting for that
+  /// decode if it is still running.
+  static func launchBundled() throws -> ShutoNetworkDatabase {
+    try launchDecode.value()
+  }
+
+  private static let launchDecode = BackgroundNetworkDecode { try bundled() }
+
   /// Decodes the bundled network without validating it: every consumer
   /// builds a `ShutoRoutePlanner` or a runtime `NetworkContext`, and each of
   /// those validates the database it is given.
@@ -440,6 +456,27 @@ enum WholeShutoNetworkCatalog {
     } catch {
       throw WholeShutoProductError.bundledNetworkInvalid
     }
+  }
+}
+
+/// One decode started on a background queue, whose result any thread can
+/// wait for.
+private final class BackgroundNetworkDecode: Sendable {
+  private let finished = DispatchGroup()
+  private let result = Mutex<Result<ShutoNetworkDatabase, any Error>?>(nil)
+
+  init(_ decode: @escaping @Sendable () throws -> ShutoNetworkDatabase) {
+    finished.enter()
+    DispatchQueue.global(qos: .userInteractive).async { [self] in
+      let decoded = Result { try decode() }
+      result.withLock { $0 = decoded }
+      finished.leave()
+    }
+  }
+
+  func value() throws -> ShutoNetworkDatabase {
+    finished.wait()
+    return try result.withLock { $0! }.get()
   }
 }
 
@@ -666,6 +703,11 @@ final class WholeShutoProductModel: ObservableObject {
   private var runtimeFractionAlongOccurrence: Double?
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
+  /// When the entrance announcement was spoken, and for which movement.
+  private var entranceAnnouncement: (movementOccurrenceID: String, atMilliseconds: Int)?
+  /// How soon after the entrance announcement the same decision's own cue
+  /// would only repeat it.
+  static let entranceAnnouncementRepeatMilliseconds = 10_000
   private var surfaceSpeechGeneration = 0
   private var noticeSequence = 0
   private var pendingNotice: GuidanceSpeechCommand?
@@ -2961,6 +3003,7 @@ final class WholeShutoProductModel: ObservableObject {
       presentationProjection = nil
       speechStatus = .stopped
       consumedGuidancePromptIDs = []
+      entranceAnnouncement = nil
       isStaticJunctionPreview = false
       junctionPreviewMovementID = nil
       restoredFromCheckpoint = false
@@ -4133,6 +4176,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeFractionAlongOccurrence = nil
       presentationProjection = nil
       consumedGuidancePromptIDs = []
+      entranceAnnouncement = nil
       isStaticJunctionPreview = false
       restoredFromCheckpoint = false
       mapMode = .geographic
@@ -4142,6 +4186,12 @@ final class WholeShutoProductModel: ObservableObject {
       }
     }
   #endif
+
+  /// Creates the speech output ahead of the first cue, so starting a drive
+  /// does not wait on the audio server.
+  func prewarmSpeechOutput() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarm()
+  }
 
   /// Starts only after one exact release-bound journey has constructed every
   /// actor and adapter. Core Location is attached last.
@@ -4276,6 +4326,7 @@ final class WholeShutoProductModel: ObservableObject {
       clearTunnelEstimate()
       presentationProjection = nil
       consumedGuidancePromptIDs = []
+      entranceAnnouncement = nil
       surfaceSpeechGeneration = 0
       isStaticJunctionPreview = false
       liveLocationState = .acquiring
@@ -4865,6 +4916,7 @@ final class WholeShutoProductModel: ObservableObject {
         speechCoordinator?.stopProviderSurface()
         phase = .entryTransition
         progressFraction = 0
+        announceEntrance()
       }
     case .strictRoute:
       if phase == .surfaceAccess || phase == .entryTransition {
@@ -5963,6 +6015,51 @@ final class WholeShutoProductModel: ObservableObject {
     flushJourneyNotice()
   }
 
+  /// Where the route runs straight on from the ramp, the first decision can
+  /// come before entry is confirmed, and its own cue is not spoken there.
+  /// Coming to the entrance, the plan says it once: a statement of what lies
+  /// ahead on the plan, not of where the car is.
+  private func announceEntrance() {
+    guard isLiveDrive, speechMode != .muted,
+      let guidance = liveDriveSession?.entranceAnnouncementGuidance,
+      let route = selectedRoute
+    else { return }
+    let locale = languageSelectionProvider().guidanceVoiceLocale
+    guard let text = Self.entranceAnnouncementText(guidance, entranceNameJA: route.entryFacility.nameJA, locale: locale)
+    else { return }
+    noticeSequence += 1
+    let id = "journey.entrance.\(noticeSequence)"
+    pendingNotice = GuidanceSpeechCommand(
+      identity: GuidanceSpeechIdentity(promptID: id, anchorID: "JOURNEY_STATUS", anchorOccurrenceID: id),
+      routePlanID: route.routePlan.id, languageCode: locale.speechLanguageCode,
+      spokenText: text
+    )
+    entranceAnnouncement = (guidance.frameTemplate.movementOccurrenceID, nowMillisecondsProvider())
+    flushJourneyNotice()
+  }
+
+  /// 「豊洲入口です。その先、東雲JCTで横浜方面です」, chained the way a cue names
+  /// the sign after it; Chinese and English go on with the decision's own
+  /// released instruction.
+  static func entranceAnnouncementText(
+    _ guidance: ReleasedGuidanceDefinition,
+    entranceNameJA: String,
+    locale: KaidoReleaseLocale
+  ) -> String? {
+    let template = guidance.frameTemplate
+    guard let spoken = template.presentationSource.localizedContent[locale]?.spokenText else { return nil }
+    switch locale {
+    case .japanese:
+      return "\(entranceNameJA)入口です。その先、\(template.decisionPointNameJapanese)で"
+        + "\(template.presentationSource.japaneseSignText)方面です"
+    case .simplifiedChinese:
+      return "\(entranceNameJA) 入口。随后\(spoken)"
+    case .english:
+      guard spoken.hasPrefix("At ") else { return nil }
+      return "Expressway entrance. Then at " + spoken.dropFirst("At ".count)
+    }
+  }
+
   private func flushJourneyNotice() {
     guard let command = pendingNotice, let speechCoordinator else { return }
     if speechCoordinator.startedIdentities.contains(command.identity) {
@@ -6053,6 +6150,14 @@ final class WholeShutoProductModel: ObservableObject {
       )
       presentationProjection = projection
       guard let emission else {
+        return
+      }
+      if let entranceAnnouncement,
+        frame.movementOccurrenceID == entranceAnnouncement.movementOccurrenceID,
+        nowMillisecondsProvider() - entranceAnnouncement.atMilliseconds
+          <= Self.entranceAnnouncementRepeatMilliseconds
+      {
+        consumedGuidancePromptIDs.insert(emission.promptID)
         return
       }
       guard

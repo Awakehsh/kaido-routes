@@ -3703,6 +3703,128 @@ final class WholeShutoProductModelTests: XCTestCase {
   /// entry waits past the Shinonome JCT fork. The fork shows on the banner
   /// once the car has been followed along the route head, and is not
   /// spoken before entry is confirmed.
+  /// Coming to the Toyosu entrance, the plan names the Shinonome JCT fork
+  /// the car reaches before entry can be confirmed, once; driving on along
+  /// the ramp to the fork adds nothing more.
+  func testStraightEntranceAnnouncesTheFirstFork() async throws {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.10.toyosu",
+      exitFacilityID: "shuto.ic.b.ooi"
+    )
+    let model = drive.model
+    XCTAssertEqual(model.phase, .entryTransition)
+    let announcements = output.commands.filter { $0.identity.promptID.hasPrefix("journey.entrance.") }
+    XCTAssertEqual(announcements.count, 1)
+    XCTAssertEqual(announcements.first?.spokenText, "豊洲入口です。その先、東雲JCTで横浜方面です")
+    let corridor = drive.release.navigation.bundle.matcherCorridor
+    let edges = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    let points = corridor.occurrences.sorted { $0.index < $1.index }.prefix(8)
+      .compactMap { edges[$0.directedEdgeID] }.flatMap(Self.edgeFixPoints)
+    let spokenBefore = output.commands.count
+    for (index, point) in points.enumerated() {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "straight-entrance.\(index)", coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds, courseDegrees: point.courseDegrees,
+          speedMetersPerSecond: 20
+        )
+      )
+    }
+    XCTAssertEqual(output.commands.count, spokenBefore)
+    model.reset()
+  }
+
+  /// A car that drives on past the ramp hears the plan's statement at the
+  /// entrance and nothing positional after it.
+  func testDrivingOnPastAStraightEntranceHearsOnlyTheAnnouncement() async throws {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.10.toyosu",
+      exitFacilityID: "shuto.ic.b.ooi"
+    )
+    let model = drive.model
+    let transition = drive.release.navigation.bundle.runtimePolicy.entryTransition
+    let corridor = drive.release.navigation.bundle.matcherCorridor
+    let ramp = try XCTUnwrap(
+      corridor.edges.first { $0.id == transition.directedEdgeIDs.first }?.coordinates
+    )
+    let start = ShutoCoordinate(latitude: ramp[0].latitude, longitude: ramp[0].longitude)
+    let toward = ShutoCoordinate(latitude: ramp[1].latitude, longitude: ramp[1].longitude)
+    let bearing = Self.bearing(from: start, to: toward)
+    let length = Self.meters(start, toward)
+    let spokenBefore = output.commands.count
+    for step in 1...60 {
+      clock.milliseconds += 1_000
+      let along = Double(step) * 25
+      let point = Self.interpolate(
+        from: start, to: toward, fraction: along / max(length, 1)
+      )
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "drove-past.\(step)", coordinate: point,
+          atMilliseconds: clock.milliseconds, courseDegrees: bearing,
+          speedMetersPerSecond: 10
+        )
+      )
+    }
+    XCTAssertEqual(output.commands.filter { $0.identity.promptID.hasPrefix("journey.entrance.") }.count, 1)
+    XCTAssertTrue(
+      output.commands.dropFirst(spokenBefore).allSatisfy { $0.identity.anchorID == "JOURNEY_STATUS" },
+      output.commands.dropFirst(spokenBefore).map(\.identity.promptID).joined(separator: " ")
+    )
+    model.reset()
+  }
+
+  func testEntranceAnnouncementCopyChainsTheDecisionInEachLanguage() throws {
+    let guidance = ReleasedGuidanceDefinition(
+      anchor: GuidanceAnchorDefinition(occurrenceID: "o4", anchorID: "COMMIT", promptID: "p"),
+      triggerDistanceMeters: 300,
+      frameTemplate: GuidanceFrameTemplate(
+        movementOccurrenceID: "o5", decisionZoneID: "z", stage: .commit,
+        decisionPointNameJapanese: "東雲JCT",
+        localizedDecisionPointNames: [.japanese: "東雲JCT", .simplifiedChinese: "东云 JCT", .english: "Shinonome JCT"],
+        maneuver: .branchRight, lanePreparation: .none,
+        presentationSource: GuidancePresentationSource(
+          routeShields: ["B"], japaneseSignText: "横浜",
+          localizedContent: [
+            .japanese: LocalizedGuidanceContent(
+              displayText: "右方向へ分岐し、湾岸線 横浜方面へ",
+              spokenText: "東雲JCTでは右方向へ分岐し、湾岸線 横浜方面へ進んでください",
+              spokenForms: ["湾岸線": "わんがんせん"], preservedJapaneseSignText: "横浜"),
+            .simplifiedChinese: LocalizedGuidanceContent(
+              displayText: "向右分岔，驶往 湾岸线横滨方向",
+              spokenText: "在东云 JCT向右分岔，驶往 湾岸线横滨方向",
+              spokenForms: ["湾岸线": "湾岸线"], preservedJapaneseSignText: "横浜"),
+            .english: LocalizedGuidanceContent(
+              displayText: "Branch Right for the Bayshore Route toward Yokohama",
+              spokenText: "At Shinonome JCT, branch right for the Bayshore Route toward Yokohama",
+              spokenForms: ["Bayshore Route": "Bayshore Route"], preservedJapaneseSignText: "横浜"),
+          ]
+        )
+      )
+    )
+    XCTAssertEqual(
+      WholeShutoProductModel.entranceAnnouncementText(guidance, entranceNameJA: "豊洲", locale: .japanese),
+      "豊洲入口です。その先、東雲JCTで横浜方面です"
+    )
+    XCTAssertEqual(
+      WholeShutoProductModel.entranceAnnouncementText(guidance, entranceNameJA: "豊洲", locale: .simplifiedChinese),
+      "豊洲 入口。随后在东云 JCT向右分岔，驶往 湾岸线横滨方向"
+    )
+    XCTAssertEqual(
+      WholeShutoProductModel.entranceAnnouncementText(guidance, entranceNameJA: "豊洲", locale: .english),
+      "Expressway entrance. Then at Shinonome JCT, branch right for the Bayshore Route toward Yokohama"
+    )
+  }
+
   func testFirstForkPastAStraightEntryIsShownNotSpoken() async throws {
     let clock = LiveTestClock()
     let output = WholeShutoRecordingSpeechOutput()

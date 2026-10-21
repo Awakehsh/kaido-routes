@@ -279,7 +279,18 @@ struct WholeShutoProductView: View {
       if ActiveDriveControl.model === model { ActiveDriveControl.model = nil }
       UIApplication.shared.isIdleTimerDisabled = false
     }
-    .onAppear { ActiveDriveControl.model = model }
+    .onAppear {
+      ActiveDriveControl.model = model
+      // Core Animation commits this update's frame when the main run loop is
+      // about to wait; ordered last, this one-shot observer runs after that
+      // commit, so the first frame never waits on the audio server.
+      let prewarm = CFRunLoopObserverCreateWithHandler(
+        nil, CFRunLoopActivity.beforeWaiting.rawValue, false, CFIndex.max
+      ) { _, _ in
+        MainActor.assumeIsolated { model.prewarmSpeechOutput() }
+      }
+      CFRunLoopAddObserver(CFRunLoopGetMain(), prewarm, .commonModes)
+    }
     .onOpenURL { url in
       guard url.isFileURL else { return }
       savedRouteImportErrorCode = importSavedRouteFile(.success([url]), into: savedRoutes)
@@ -5594,10 +5605,17 @@ struct WholeShutoProductView: View {
 /// the attribute graph when it updates this view, instead of inline in the
 /// enclosing builder. The stored closure never compares equal, so the body is
 /// re-evaluated whenever the enclosing view's is, exactly as inline content is.
-private struct SeparatelyEvaluatedView<Content: View>: View {
-  let content: () -> Content
+/// The content is type-erased so the enclosing view's type does not nest it:
+/// at launch, the Swift runtime instantiating the metadata of those nested
+/// view types took about 40% of the main thread before the first frame.
+private struct SeparatelyEvaluatedView: View {
+  let content: () -> AnyView
 
-  var body: Content { content() }
+  init<Content: View>(content: @escaping () -> Content) {
+    self.content = { AnyView(content()) }
+  }
+
+  var body: AnyView { content() }
 }
 
 private struct WholeShutoCustomRouteSheet: View {

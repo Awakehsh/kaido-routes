@@ -884,6 +884,13 @@ public actor NavigationSession {
     let metersFromOtherRoads = routeEnd.metersFromOtherRoads(
       observation.coordinate, fromProgress: currentIndex
     )
+    // Beside the exit, a road the car could be on instead can run as close as
+    // the exit itself (Kasumigaseki's ramp, a few metres from C1 for 400 m):
+    // a fix scattered off both by more than its error allows reads the same
+    // whichever the car is on, so it has to lie nearer the exit by more than
+    // that error. Past the exit's end the car has left it.
+    let isAlongExit = routeEnd.isAlongExit(observation.coordinate)
+    let nearerExitMarginMeters = isAlongExit ? max(5, observation.horizontalAccuracyMeters) : 0
     // In recovery the car has already been seen off the plan, on the road
     // past the exit as often as on the exit itself; a fix scattered off that
     // road can clear it by the fix's own error, so it has to lie nearer the
@@ -891,7 +898,8 @@ public actor NavigationSession {
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
-      && metersFromOtherRoads - metersFromExit >= max(5, observation.horizontalAccuracyMeters)
+      && (engine.snapshot.journeyPhase != .routeRecovery && !isAlongExit
+        || metersFromOtherRoads - metersFromExit > nearerExitMarginMeters)
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       metersFromOtherRoads >= clearance
     else {
@@ -1767,6 +1775,14 @@ private struct RouteEndGeometry: Sendable {
   private func earliestCarIndex(_ progressIndex: Int) -> Int {
     min(progressIndex, exitSideStartIndex)
       - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  }
+
+  /// Whether a point lies beside the plan after its last choice of road
+  /// rather than past its end.
+  func isAlongExit(_ coordinate: MatcherCoordinate) -> Bool {
+    guard let end = exit.last else { return false }
+    return Self.meters(from: coordinate, toPolyline: exit) + 1
+      < Self.meters(from: coordinate, toPolyline: [end, end])
   }
 
   /// Distance from a point to the plan after its last choice of road, or to

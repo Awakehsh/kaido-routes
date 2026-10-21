@@ -28,6 +28,12 @@ The product distinguishes what is known from what is still unconfirmed:
   ramp above LOW confidence, at a divergence the car can have reached since
   its last admitted progress. A mid-route PA stop passed on the road it
   replaced is skipped on the same kind of evidence, and the drive goes on.
+- Entry onto the expressway is confirmed only once the route has left the
+  straight line the approach was on, because a street carrying on past the
+  ramp along that line looks the same as the ramp. Where the route runs
+  straight on (豊洲 for 1.1 km, and the first stretch out of 幡ヶ谷, 箱崎,
+  岸谷生麦 and 横浜駅西口), a decision the car reaches before then is shown on
+  the banner but not spoken: at 豊洲 the 東雲JCT fork is read, not heard.
 - Where roads in the same direction run a few metres apart and lead to
   different places, GPS cannot say which one the car is on until they split,
   and the drive holds its position until it can. Out of Route 6 through

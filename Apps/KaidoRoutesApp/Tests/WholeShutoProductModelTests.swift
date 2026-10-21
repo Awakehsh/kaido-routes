@@ -3699,6 +3699,51 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  /// From Toyosu the route runs straight on from the ramp for 1.1 km, so
+  /// entry waits past the Shinonome JCT fork. The fork shows on the banner
+  /// once the car has been followed along the route head, and is not
+  /// spoken before entry is confirmed.
+  func testFirstForkPastAStraightEntryIsShownNotSpoken() async throws {
+    let clock = LiveTestClock()
+    let output = WholeShutoRecordingSpeechOutput()
+    let drive = try await bayshoreLiveDrive(
+      clock: clock,
+      output: output,
+      entryFacilityID: "shuto.ic.10.toyosu",
+      exitFacilityID: "shuto.ic.b.ooi"
+    )
+    let model = drive.model
+    let corridor = drive.release.navigation.bundle.matcherCorridor
+    let edges = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    let fork = try XCTUnwrap(
+      drive.release.navigation.bundle.releasedGuidance.first { $0.frameTemplate.decisionPointNameJapanese == "東雲JCT" }
+    )
+    let forkIndex = try XCTUnwrap(drive.route.routePlan.occurrence(id: fork.frameTemplate.movementOccurrenceID)?.index)
+    let points = corridor.occurrences.sorted { $0.index < $1.index }
+      .prefix(forkIndex)
+      .compactMap { edges[$0.directedEdgeID] }
+      .flatMap(Self.edgeFixPoints)
+    let spokenBefore = output.commands.count
+    var shown: WholeShutoJunctionPrompt?
+    for (index, point) in points.enumerated() {
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "straight-entry.\(index)",
+          coordinate: point.coordinate,
+          atMilliseconds: clock.milliseconds,
+          courseDegrees: point.courseDegrees,
+          speedMetersPerSecond: 20
+        )
+      )
+      XCTAssertEqual(model.phase, .entryTransition)
+      shown = shown ?? model.entryStretchJunctionPrompt
+    }
+    XCTAssertEqual(shown?.nameJA, "東雲JCT")
+    XCTAssertEqual(output.commands.count, spokenBefore)
+    model.reset()
+  }
+
   private func bayshoreLiveDrive(
     clock: LiveTestClock,
     output: any GuidanceSpeechOutput,

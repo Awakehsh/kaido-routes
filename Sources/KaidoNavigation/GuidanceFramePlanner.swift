@@ -51,7 +51,8 @@ public enum GuidanceFramePlanner {
     occurrencePositions: [String: Int]?,
     definitions: [ReleasedGuidanceDefinition],
     definitionsAreValid: Bool,
-    observation: GuidanceProgressObservation
+    observation: GuidanceProgressObservation,
+    followsEntryEvidence: Bool = false
   ) -> GuidancePlanningResult {
     guard let routePlan else {
       return GuidancePlanningResult(status: .invalidDefinition)
@@ -67,11 +68,17 @@ public enum GuidanceFramePlanner {
       return GuidancePlanningResult(status: .invalidDefinition)
     }
 
-    guard snapshot.currentOccurrenceID == observation.occurrenceID else {
-      return GuidancePlanningResult(status: .notCurrentOccurrence)
-    }
-    guard hasSufficientRouteEvidence(snapshot) else {
-      return GuidancePlanningResult(status: .insufficientRouteEvidence)
+    if followsEntryEvidence {
+      guard snapshot.journeyPhase == .entryTransition else {
+        return GuidancePlanningResult(status: .insufficientRouteEvidence)
+      }
+    } else {
+      guard snapshot.currentOccurrenceID == observation.occurrenceID else {
+        return GuidancePlanningResult(status: .notCurrentOccurrence)
+      }
+      guard hasSufficientRouteEvidence(snapshot) else {
+        return GuidancePlanningResult(status: .insufficientRouteEvidence)
+      }
     }
 
     let currentDefinitions = applicableDefinitions(

@@ -4694,7 +4694,13 @@ struct WholeShutoProductView: View {
     return switch model.phase {
     case .surfaceAccess, .surfaceEgress:
       SurfaceManeuver.from(instruction: model.activeSurfaceInstruction ?? "").symbol
-    case .entryTransition: "mappin.and.ellipse"
+    case .entryTransition:
+      switch model.entryStretchJunctionPrompt?.branchSide {
+      case .left: "arrow.up.left"
+      case .right: "arrow.up.right"
+      case .straight: "arrow.up"
+      case nil: "mappin.and.ellipse"
+      }
     case .expressway:
       switch displayedJunctionPrompt?.branchSide {
       case .left: "arrow.up.left"
@@ -4792,6 +4798,13 @@ struct WholeShutoProductView: View {
           english: "Continue to \(entryName(route.entryFacility.nameJA))"
         )
     case .entryTransition:
+      // A decision the car reaches before entry is confirmed is shown, not
+      // spoken: a car on a street along a straight ramp looks the same.
+      if let prompt = model.entryStretchJunctionPrompt,
+        let text = prompt.localizedContent[languageSettings.interfaceLocale]?.displayText
+      {
+        return text
+      }
       let routeLabel =
         route.routeIDsInOrder.first.map(shieldLabel)
         ?? copy.resolve(

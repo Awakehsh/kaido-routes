@@ -183,17 +183,23 @@ public struct EntryTransitionSessionUpdate: Equatable, Sendable {
   /// The furthest RoutePlan occurrence ordered entry evidence has reached.
   public let reachedOccurrenceID: String?
   public let navigationSnapshot: NavigationSnapshot
+  /// The frame of a released cue that came due on the route head before
+  /// entry was confirmed, shown and not spoken; see
+  /// `NavigationSession.observeEntryTransitionEvidence`.
+  public let entryStretchGuidanceFrame: GuidanceFrame?
 
   public init(
     status: EntryTransitionAdmissionStatus,
     rejectionReason: EntryTransitionEvidenceRejectionReason? = nil,
     reachedOccurrenceID: String? = nil,
-    navigationSnapshot: NavigationSnapshot
+    navigationSnapshot: NavigationSnapshot,
+    entryStretchGuidanceFrame: GuidanceFrame? = nil
   ) {
     self.status = status
     self.rejectionReason = rejectionReason
     self.reachedOccurrenceID = reachedOccurrenceID
     self.navigationSnapshot = navigationSnapshot
+    self.entryStretchGuidanceFrame = entryStretchGuidanceFrame
   }
 }
 
@@ -243,6 +249,15 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
   private var progressIndex: Int?
   private var progressObservationCount = 0
   private var logLikelihoodRatio = 0.0
+
+  /// The route-head occurrence that ordered evidence has followed the car
+  /// to, once there is as much of it as entry needs: the car has been seen
+  /// in order along the route head, though entry may still wait for the
+  /// route to leave the straight road beyond the ramp.
+  package var orderedRouteHeadOccurrenceID: String? {
+    guard progressObservationCount >= Self.minimumProgressObservationCount else { return nil }
+    return progressIndex.flatMap(geometry.occurrenceID(at:))
+  }
 
   package init(context: EntryTransitionAdmissionContext) {
     self.context = context

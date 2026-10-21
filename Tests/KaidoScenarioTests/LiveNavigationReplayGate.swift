@@ -231,6 +231,29 @@
         .sorted()
     }
 
+    /// The approach to the ramp, then on past it: straight ahead along the
+    /// approach's line for `meters`, as a car on a surface road that carries
+    /// on past the entrance would.
+    func passedRampLegs(meters: Double) -> [ReplayGateLeg] {
+      let transition = release.navigation.bundle.runtimePolicy.entryTransition
+      let firstCoordinates =
+        transition.directedEdgeIDs.first.flatMap { corridorEdgesByID[$0]?.coordinates }
+        ?? corridorEdgesByID[routeEdgeIDs[0]]!.coordinates
+      let start = firstCoordinates[0]
+      let bearing = replayBearing(firstCoordinates[0], firstCoordinates[1])
+      return [
+        ReplayGateLeg(
+          kind: .approach,
+          coordinates: [
+            replayOffset(start, bearingDegrees: bearing + 180, meters: 200),
+            start,
+            replayOffset(start, bearingDegrees: bearing, meters: meters),
+          ],
+          speedMetersPerSecond: Self.surfaceSpeed
+        )
+      ]
+    }
+
     private func approachLegs() -> [ReplayGateLeg] {
       let transition = release.navigation.bundle.runtimePolicy.entryTransition
       let firstRouteEdgeID = routeEdgeIDs[0]
@@ -659,6 +682,7 @@
         var emittedMovementIDs: [String] = []
         var estimate: MatcherEstimate?
         var isConfirmingPlannedExit = false
+        var entryStretchMovementOccurrenceID: String?
         switch before.journeyPhase {
         case .planning, .approachToEntry, .entryTransition:
           if let driverJoin, second >= driverJoin.declaredAtSecond, !isJoinDeclared {
@@ -676,8 +700,9 @@
             rawConfidence = try entryAdapter.adapt(envelope).confidence
           } else {
             let evidence = try entryAdapter.adapt(envelope)
-            _ = try await session.observeEntryTransitionEvidence(evidence)
+            let update = try await session.observeEntryTransitionEvidence(evidence)
             rawConfidence = evidence.confidence
+            entryStretchMovementOccurrenceID = update.entryStretchGuidanceFrame?.movementOccurrenceID
           }
         case .strictRoute, .routeRecovery:
           let update = try await session.observe(envelope.observation)
@@ -726,7 +751,8 @@
             recoveryStatus: after.recovery.status,
             phaseTrigger: after.lastPhaseTransitionTrigger,
             emittedMovementOccurrenceIDs: emittedMovementIDs,
-            isConfirmingPlannedExit: isConfirmingPlannedExit
+            isConfirmingPlannedExit: isConfirmingPlannedExit,
+            entryStretchMovementOccurrenceID: entryStretchMovementOccurrenceID
           )
         )
         if after.journeyPhase == .completed { break }
@@ -1060,6 +1086,9 @@
     let phaseTrigger: String?
     let emittedMovementOccurrenceIDs: [String]
     var isConfirmingPlannedExit = false
+    /// The movement whose cue entry evidence showed, unspoken, before entry
+    /// was confirmed.
+    var entryStretchMovementOccurrenceID: String? = nil
   }
 
   /// A lap change the driver asks for once admitted progress reaches an

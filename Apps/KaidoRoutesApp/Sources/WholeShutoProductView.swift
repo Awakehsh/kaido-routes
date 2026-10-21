@@ -6829,7 +6829,10 @@ private struct WholeShutoGeographicMap: View {
         // route. A dash cannot carry "provider leg, not Kaido authority"
         // here: the casing shows through its gaps and the leg reads as a
         // striped ribbon rather than a road. Colour carries that meaning
-        // instead — teal in, coral out, against the route's blue.
+        // instead — teal for both surface legs, against the route's blue.
+        // The legs never need telling apart: one runs to the entry marker,
+        // the other from the exit marker. A warm leg would, on the driving
+        // map, read as Apple's congestion red.
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
@@ -7012,7 +7015,7 @@ private struct WholeShutoGeographicMap: View {
           coordinates: egressRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoInk.accentClay,
+          KaidoInk.accentCool,
           style: StrokeStyle(
             lineWidth: 5.5,
             lineCap: .round,

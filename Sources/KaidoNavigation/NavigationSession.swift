@@ -891,8 +891,7 @@ public actor NavigationSession {
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
-      && (engine.snapshot.journeyPhase != .routeRecovery
-        || metersFromExit < metersFromOtherRoads)
+      && metersFromOtherRoads - metersFromExit >= max(5, observation.horizontalAccuracyMeters)
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       metersFromOtherRoads >= clearance
     else {

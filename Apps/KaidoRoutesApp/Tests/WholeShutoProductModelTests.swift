@@ -1,3 +1,4 @@
+import AVFAudio
 import CoreLocation
 import KaidoAppleAdapters
 import KaidoDomain
@@ -170,6 +171,34 @@ final class WholeShutoProductModelTests: XCTestCase {
       try? await Task.sleep(for: .milliseconds(20))
     }
     XCTAssertFalse(model.isUpdatingSurfaceRoute)
+  }
+
+  func testSpeechPrewarmPreparesTheGuidanceVoiceWithoutActivatingAudio() {
+    let session = AVAudioSession.sharedInstance()
+    let recorder = AudioSessionRequestRecorder()
+    defer { recorder.uninstall() }
+    var voiceLookups: [String] = []
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      checkpointStore: nil,
+      speechOutput: LazyAVSpeechGuidanceOutput {
+        AVSpeechGuidanceOutput(
+          audioSession: session, notifications: NotificationCenter(),
+          preferredVoiceIdentifierProvider: {
+            voiceLookups.append($0)
+            return nil
+          })
+      },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .japanese)
+      })
+    model.prewarmSpeechOutput()
+    XCTAssertEqual(recorder.categories, [])
+    model.prewarmSpeechAudioSession()
+    XCTAssertEqual(recorder.categories, [.playback])
+    XCTAssertEqual(voiceLookups, [])
+    model.prewarmGuidanceVoice()
+    XCTAssertEqual(voiceLookups, ["ja-JP"])
+    XCTAssertEqual(recorder.activations, [])
   }
 
   func testSpeechRecoveryStalePositionCancelsObsoleteManeuver() async throws {

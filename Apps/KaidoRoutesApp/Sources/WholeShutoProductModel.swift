@@ -4193,6 +4193,18 @@ final class WholeShutoProductModel: ObservableObject {
     (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarm()
   }
 
+  /// Sets the speech output's audio category ahead of the first cue.
+  func prewarmSpeechAudioSession() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmAudioSession()
+  }
+
+  /// Looks the guidance voice up ahead of the first cue.
+  func prewarmGuidanceVoice() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmVoice(
+      languageCode: languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
+    )
+  }
+
   /// Starts only after one exact release-bound journey has constructed every
   /// actor and adapter. Core Location is attached last.
   @discardableResult

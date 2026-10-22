@@ -1,4 +1,6 @@
 import AVFAudio
+import KaidoPresentation
+import ObjectiveC
 import XCTest
 
 @testable import KaidoAppleAdapters
@@ -95,6 +97,39 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   }
 
   @MainActor
+  func testPreparingSetsTheCategoryAndVoiceWithoutActivatingTheSession() throws {
+    let session = AVAudioSession.sharedInstance()
+    let recorder = AudioSessionRequestRecorder()
+    defer { recorder.uninstall() }
+    var voiceLookups: [String] = []
+    let synthesizer = SilentSynthesizer()
+    let output = AVSpeechGuidanceOutput(
+      synthesizer: synthesizer, audioSession: session, notifications: NotificationCenter(),
+      preferredVoiceIdentifierProvider: {
+        voiceLookups.append($0)
+        return nil
+      })
+    output.prepareAudioSession()
+    XCTAssertEqual(recorder.categories, [.playback])
+    XCTAssertEqual(recorder.modes, [.voicePrompt])
+    XCTAssertEqual(voiceLookups, [])
+    output.prepareVoice(languageCode: "ja-JP")
+    XCTAssertEqual(voiceLookups, ["ja-JP"])
+    XCTAssertEqual(recorder.categories, [.playback])
+    XCTAssertEqual(recorder.activations, [])
+
+    // The prompt itself still activates the session.
+    try output.speak(
+      GuidanceSpeechCommand(
+        identity: GuidanceSpeechIdentity(
+          promptID: "surface.access.0", anchorID: "PROVIDER_SURFACE_STEP",
+          anchorOccurrenceID: "surface.access.0"),
+        routePlanID: "route", languageCode: "ja-JP", spokenText: "テスト"))
+    XCTAssertEqual(recorder.activations, [true])
+    XCTAssertEqual(synthesizer.spokenTexts, ["テスト"])
+  }
+
+  @MainActor
   func testStoppingWithNothingSpokenDoesNotWaitOnTheSpeechEngine() {
     let synthesizer = SpeakingStateRecordingSynthesizer()
     let output = AVSpeechGuidanceOutput(
@@ -138,6 +173,59 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
     let drained = expectation(description: "main queue drained")
     DispatchQueue.main.async { drained.fulfill() }
     wait(for: [drained], timeout: 5)
+  }
+}
+
+/// Records category and activation requests on every AVAudioSession, without
+/// reaching the audio server, until `uninstall`. The session is a singleton
+/// the app cannot subclass or replace, so the recorder swaps the methods. It
+/// also keeps the test off the simulator's audio hardware: a first real
+/// category set while speech threads run crashed in TextToSpeech once.
+@MainActor
+final class AudioSessionRequestRecorder {
+  private(set) var categories: [AVAudioSession.Category] = []
+  private(set) var modes: [AVAudioSession.Mode] = []
+  private(set) var activations: [Bool] = []
+  private var restorations: [(Method, IMP)] = []
+
+  init() {
+    let category: @convention(block) (
+      AVAudioSession, NSString, NSString, UInt, UnsafeMutablePointer<NSError?>?
+    ) -> Bool = { [unowned self] _, category, mode, _, _ in
+      MainActor.assumeIsolated {
+        categories.append(AVAudioSession.Category(rawValue: category as String))
+        modes.append(AVAudioSession.Mode(rawValue: mode as String))
+      }
+      return true
+    }
+    let activation: @convention(block) (
+      AVAudioSession, Bool, UInt, UnsafeMutablePointer<NSError?>?
+    ) -> Bool = { [unowned self] _, active, _, _ in
+      MainActor.assumeIsolated { activations.append(active) }
+      return true
+    }
+    replace(#selector(AVAudioSession.setCategory(_:mode:options:)), with: category)
+    replace(#selector(AVAudioSession.setActive(_:options:)), with: activation)
+  }
+
+  func uninstall() {
+    for (method, original) in restorations { method_setImplementation(method, original) }
+    restorations = []
+  }
+
+  private func replace(_ selector: Selector, with block: Any) {
+    let method = class_getInstanceMethod(AVAudioSession.self, selector)!
+    restorations.append((method, method_getImplementation(method)))
+    method_setImplementation(method, imp_implementationWithBlock(block))
+  }
+}
+
+/// Takes utterances without speaking them.
+private final class SilentSynthesizer: AVSpeechSynthesizer {
+  private(set) var spokenTexts: [String] = []
+
+  override func speak(_ utterance: AVSpeechUtterance) {
+    spokenTexts.append(utterance.speechString)
   }
 }
 

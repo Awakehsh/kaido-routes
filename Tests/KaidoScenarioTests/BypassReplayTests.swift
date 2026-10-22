@@ -43,6 +43,44 @@
       #expect(run.offPlanCommitCount(movementIndex: movementIndex) == 0, "\(summary)")
     }
 
+    /// Route S5 south through Bijogi JCT: the link lanes leave the
+    /// carriageway and rejoin Route 5 1.34 km on, within a metre of the
+    /// plan's length, and no longer hold the car's progress beside them.
+    @Test("a bypass longer than a kilometre no longer holds progress")
+    func longBypassDoesNotHoldProgress() async throws {
+      let gate = try Self.gate(.c1Inner, "shuto.ic.s5.urawaminami", "shuto.ic.c1.kasumigaseki")
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 1, noise: .urban)
+      let summary = gateLine(file: "c1-inner urawaminami-kasumigaseki", seed: 1, run: run, label: "BIJOGI-URBAN")
+      print(summary)
+      #expect(run.longestUnadmittedSeconds <= 40, "\(summary)")
+      #expect(run.reachedCompletion, "\(summary)")
+    }
+
+    /// A car that takes the Toda exit ramp (to Route 17) off those lanes at
+    /// Bijogi JCT is on the bypass only as far as the ramp. Progress beside
+    /// the lanes stands; once the ramp leaves them, progress holds where the
+    /// car left.
+    @Test("a road leaving a bypass keeps progress where the car left")
+    func roadLeavingABypassHoldsProgress() async throws {
+      let gate = try Self.gate(.c1Inner, "shuto.ic.s5.urawaminami", "shuto.ic.c1.kasumigaseki")
+      let movementIndex = 8
+      #expect(gate.alternativeEdgeIDs(atMovementIndex: movementIndex).contains("osm.44420765.0.forward"))
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(movementIndex: movementIndex, alternativeEdgeID: "osm.44420765.0.forward"),
+        seed: 1,
+        noise: .urban
+      )
+      let summary = gateLine(file: "c1-inner urawaminami-kasumigaseki", seed: 1, run: run, label: "BIJOGI-TODA-URBAN")
+      print(summary)
+      let onRamp = run.records.filter { record in
+        guard case .offPlan(let edgeID) = record.truth.kind else { return false }
+        return edgeID.hasPrefix("osm.1055116178.") || edgeID.hasPrefix("osm.762093201.")
+      }
+      #expect(!onRamp.isEmpty, "\(summary)")
+      let held = onRamp.first?.currentOccurrenceIndex
+      #expect(onRamp.allSatisfy { $0.currentOccurrenceIndex == held }, "\(summary)")
+    }
+
     private static func gate(
       _ circuit: ShutoCircuitDefinition, _ entry: String, _ exit: String
     ) throws -> LiveNavigationReplayGate {

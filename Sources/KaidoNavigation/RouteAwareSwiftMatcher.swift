@@ -525,6 +525,7 @@ public struct RouteMatcherSession: Sendable {
         return model.passIsReachable(edgeID, from: from, through: upper)
       }
       return model.branchIsReachable(edgeID, from: lower, through: upper)
+        || selectedIndex.map { model.leavesBypass(edgeID, beside: $0) } == true
     }
     // From the occurrence the plan leaves at its final exit, the road it
     // leaves there is one it has already driven, and runs beside the exit as
@@ -841,27 +842,30 @@ public struct RouteMatcherSession: Sendable {
           $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
         })
     if let reachedIndex {
-      candidateEdgeIDs.removeAll {
-        model.isOffPlan($0)
+      candidateEdgeIDs.removeAll { edgeID in
+        model.isOffPlan(edgeID)
           && !model.branchIsReachable(
-            $0,
+            edgeID,
             from: lastSeparatedOccurrenceIndex,
             through: reachedIndex
           )
+          && !(selected.state.occurrenceIndex.map { model.leavesBypass(edgeID, beside: $0) } ?? false)
       }
+    }
+    // A bypass beside the place on the plan brings the car back to it
+    // where the plan would have: on it or on the plan, the car is there.
+    if let index = selected.state.occurrenceIndex {
+      candidateEdgeIDs.removeAll { model.isBypass($0, beside: index) }
     }
     candidateEdgeIDs.append(selected.state.edgeID)
     candidateEdgeIDs = candidateEdgeIDs.uniqued().sorted()
 
-    // A bypass beside the place on the plan brings the car back to it
-    // where the plan would have: on it or on the plan, the car is there.
     let independentCandidateEdgeIDs = candidateEdgeIDs.filter { edgeID in
       edgeID == selected.state.edgeID
         || !model.isNearbyRouteEdge(
           edgeID,
           selectedState: selected.state
         )
-          && !(selected.state.occurrenceIndex.map { model.isBypass(edgeID, beside: $0) } ?? false)
     }
 
     let candidateDistances = independentCandidateEdgeIDs.compactMap {
@@ -946,9 +950,16 @@ private struct MatcherModel: Sendable {
   /// occurrences the bypass runs beside. On one, the car comes back to the
   /// plan where it would have been on the plan.
   let bypassSpans: [String: [ClosedRange<Int>]]
+  /// For each off-plan road a bypass leads onto, the occurrences that bypass
+  /// runs beside. Beside one, the car may be on the bypass, so a place on the
+  /// plan past where such a road leaves does not show the car passed it: at
+  /// Bijogi JCT the Toda exit ramp (to Route 17) leaves the link lanes beside
+  /// Route 5.
+  let bypassBranchSpans: [String: [ClosedRange<Int>]]
 
-  /// The longest way off the plan counted as a bypass.
-  static let bypassMeters = 1_000.0
+  /// The longest way off the plan counted as a bypass. Bijogi JCT's link
+  /// lanes leave Route 5 and rejoin it 1.34 km on.
+  static let bypassMeters = 1_500.0
   /// How much longer or shorter than the plan between a bypass can be. A
   /// detour that rejoins further on — a loop ramp, a PA's lanes — differs by
   /// far more.
@@ -1019,12 +1030,29 @@ private struct MatcherModel: Sendable {
       planEdgeIDs: Set(occurrencesByEdgeID.keys)
     )
     self.departureRootOccurrenceIndexes = departureRoots
-    self.bypassSpans = Self.bypassSpans(
+    let bypassSpans = Self.bypassSpans(
       occurrences: corridor.occurrences.sorted { $0.index < $1.index },
       edges: edges,
       occurrencesByEdgeID: occurrencesByEdgeID,
       routeDistanceBeforeIndex: distances
     )
+    self.bypassSpans = bypassSpans
+    var bypassBranchSpans: [String: [ClosedRange<Int>]] = [:]
+    for (bypassEdgeID, spans) in bypassSpans {
+      let leavesBypass = { (edgeID: String) in
+        occurrencesByEdgeID[edgeID] == nil && bypassSpans[edgeID] == nil
+      }
+      var queue = (edges[bypassEdgeID]?.successorEdgeIDs ?? []).filter(leavesBypass).sorted()
+      var seen = Set(queue)
+      while let edgeID = queue.popLast() {
+        bypassBranchSpans[edgeID, default: []].append(contentsOf: spans)
+        for next in edges[edgeID]?.successorEdgeIDs ?? []
+        where leavesBypass(next) && seen.insert(next).inserted {
+          queue.append(next)
+        }
+      }
+    }
+    self.bypassBranchSpans = bypassBranchSpans
     self.finalExitIndex = departureRoots.compactMap { edgeID, roots -> Int? in
       guard let lastPass = occurrencesByEdgeID[edgeID]?.map(\.index).max() else { return nil }
       return roots.last { $0 > lastPass }
@@ -1083,6 +1111,12 @@ private struct MatcherModel: Sendable {
   /// Whether the off-plan edge is on a bypass beside occurrence `index`.
   func isBypass(_ edgeID: String, beside index: Int) -> Bool {
     bypassSpans[edgeID]?.contains { $0.contains(index) } == true
+  }
+
+  /// Whether the off-plan edge is reached from a bypass beside occurrence
+  /// `index`.
+  func leavesBypass(_ edgeID: String, beside index: Int) -> Bool {
+    bypassBranchSpans[edgeID]?.contains { $0.contains(index) } == true
   }
 
   /// Walks the network from every place the plan can be left: each

@@ -6,6 +6,7 @@ import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
+import OSLog
 import Synchronization
 
 enum WholeShutoJourneyPhase:
@@ -4193,10 +4194,29 @@ final class WholeShutoProductModel: ObservableObject {
     (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarm()
   }
 
+  /// Sets the speech output's audio category ahead of the first cue.
+  func prewarmSpeechAudioSession() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmAudioSession()
+  }
+
+  /// Looks the guidance voice up ahead of the first cue.
+  func prewarmGuidanceVoice() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmVoice(
+      languageCode: languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
+    )
+  }
+
   /// Starts only after one exact release-bound journey has constructed every
   /// actor and adapter. Core Location is attached last.
   @discardableResult
   func startLiveJourney() async -> Bool {
+    let signposter = LiveStartSignposts.signposter
+    var admissionInterval: OSSignpostIntervalState? = signposter.beginInterval("Admission")
+    defer {
+      if let admissionInterval {
+        signposter.endInterval("Admission", admissionInterval, "not started")
+      }
+    }
     guard !isStartingLiveNavigation,
       phase == .review,
       let route = selectedRoute
@@ -4341,6 +4361,11 @@ final class WholeShutoProductModel: ObservableObject {
       positionLossAnnounced = false
       positionLossAnnouncedAtMilliseconds = nil
       failureCode = nil
+      if let started = admissionInterval {
+        signposter.endInterval("Admission", started)
+        admissionInterval = nil
+      }
+      LiveStartSignposts.measurePhaseChange()
 
       let initialSnapshot = await session.start()
       if phase == .surfaceAccess {
@@ -4351,10 +4376,14 @@ final class WholeShutoProductModel: ObservableObject {
       } else {
         applyLiveActorSnapshot(initialSnapshot)
       }
-      scheduleLiveSurfaceSpeech(forceCurrentStep: true)
+      signposter.withIntervalSignpost("Start cue") {
+        scheduleLiveSurfaceSpeech(forceCurrentStep: true)
+      }
       if phase == .entryTransition { announceJourneyNotice(.started) }
       scheduleLiveLocationFreshnessCheck()
+      let checkpoint = signposter.beginInterval("Checkpoint")
       await captureAndPersistLiveCheckpoint(from: session, force: true)
+      signposter.endInterval("Checkpoint", checkpoint)
       controller.start()
       return true
     } catch {

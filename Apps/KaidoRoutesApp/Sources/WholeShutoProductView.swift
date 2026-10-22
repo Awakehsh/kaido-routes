@@ -282,14 +282,16 @@ struct WholeShutoProductView: View {
     .onAppear {
       ActiveDriveControl.model = model
       // Core Animation commits this update's frame when the main run loop is
-      // about to wait; ordered last, this one-shot observer runs after that
-      // commit, so the first frame never waits on the audio server.
-      let prewarm = CFRunLoopObserverCreateWithHandler(
-        nil, CFRunLoopActivity.beforeWaiting.rawValue, false, CFIndex.max
-      ) { _, _ in
-        MainActor.assumeIsolated { model.prewarmSpeechOutput() }
+      // about to wait; ordered last, these one-shot observers run after that
+      // commit, so the first frame never waits on the audio server. Each step
+      // takes its own pass, so the home's first taps wait on one at most.
+      Self.afterNextCommit {
+        model.prewarmSpeechOutput()
+        Self.afterNextCommit {
+          model.prewarmSpeechAudioSession()
+          Self.afterNextCommit { model.prewarmGuidanceVoice() }
+        }
       }
-      CFRunLoopAddObserver(CFRunLoopGetMain(), prewarm, .commonModes)
     }
     .onOpenURL { url in
       guard url.isFileURL else { return }
@@ -368,6 +370,17 @@ struct WholeShutoProductView: View {
         WholeShutoPlace(title: parking.nameJA, coordinate: parking.coordinate, parkingAreaID: parking.parkingAreaID)
       )
     }
+  }
+
+  /// Runs `body` once, the next time the main run loop is about to wait,
+  /// after Core Animation has committed that pass's frame.
+  private static func afterNextCommit(_ body: @escaping @MainActor () -> Void) {
+    let observer = CFRunLoopObserverCreateWithHandler(
+      nil, CFRunLoopActivity.beforeWaiting.rawValue, false, CFIndex.max
+    ) { _, _ in
+      MainActor.assumeIsolated { body() }
+    }
+    CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
   }
 
   /// Starts the live drive and location session together from the foreground.

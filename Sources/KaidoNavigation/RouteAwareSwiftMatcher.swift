@@ -953,11 +953,12 @@ private struct MatcherModel: Sendable {
   /// For each off-plan road a bypass leads onto, the occurrences that bypass
   /// runs beside. Beside one, the car may be on the bypass, so a place on the
   /// plan past where such a road leaves does not show the car passed it: at
-  /// Bijogi JCT the Gaikan ramps leave the lanes beside Route 5.
+  /// Bijogi JCT the Toda exit ramp (to Route 17) leaves the link lanes beside
+  /// Route 5.
   let bypassBranchSpans: [String: [ClosedRange<Int>]]
 
-  /// The longest way off the plan counted as a bypass. Bijogi JCT's lanes
-  /// for the Gaikan leave Route 5 and rejoin it 1.34 km on.
+  /// The longest way off the plan counted as a bypass. Bijogi JCT's link
+  /// lanes leave Route 5 and rejoin it 1.34 km on.
   static let bypassMeters = 1_500.0
   /// How much longer or shorter than the plan between a bypass can be. A
   /// detour that rejoins further on — a loop ramp, a PA's lanes — differs by

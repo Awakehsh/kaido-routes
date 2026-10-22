@@ -42,9 +42,10 @@ The product distinguishes what is known from what is still unconfirmed:
   beside lanes into the 箱崎 rotary and towards Route 9 and the 箱崎 exit, and
   each could be where the car is. A way off the plan that only rejoins it
   after as long a drive as the plan between (the rotary link beside the
-  outbound carriageway, or 美女木JCT's lanes for the 外環 beside Route 5) is no
-  such alternative and does not hold it. A road leaving such a way still is:
-  beside the 外環 ramps off those lanes, the drive holds until they split.
+  outbound carriageway, or 美女木JCT's link lanes beside Route 5) is no such
+  alternative and does not hold it. A road leaving such a way still is:
+  beside the 戸田 exit ramp (to Route 17) off those lanes, the drive holds
+  until they split.
 - An unplanned exit is recognised from position alone: two consecutive fixes
   better than 30 m that the matcher places on no corridor road and that lie
   at least 100 m from every road of the bundled Shuto network. An ordinary

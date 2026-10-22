@@ -912,6 +912,18 @@ public struct NavigationEngine: Sendable {
     lastReacquisitionObservationAtMilliseconds = observedAt
   }
 
+  /// A deviation after a tunnel answers what reacquisition waits for: the
+  /// car is off the plan, so the plan is not reacquired where it left it,
+  /// and recovery takes over.
+  private mutating func endSignalReacquisitionOffThePlan() {
+    guard snapshot.signalReacquisitionStatus == .pending else { return }
+    resetSignalReacquisition(status: .inactive)
+    tunnelSignalWasDegraded = false
+    if snapshot.ambiguityReason == "POST_TUNNEL_REACQUISITION_PENDING" {
+      snapshot.ambiguityReason = nil
+    }
+  }
+
   private mutating func resetSignalReacquisition(
     status: SignalReacquisitionStatus
   ) {
@@ -961,6 +973,7 @@ public struct NavigationEngine: Sendable {
     _ recovery: RecoveryCandidate,
     routePlan: RoutePlan
   ) {
+    endSignalReacquisitionOffThePlan()
     snapshot.journeyPhase = .routeRecovery
     snapshot.recovery = RecoveryState()
     snapshot.recovery.status = .active
@@ -976,6 +989,7 @@ public struct NavigationEngine: Sendable {
   private mutating func activateUnavailableRecovery(
     routePlan: RoutePlan
   ) {
+    endSignalReacquisitionOffThePlan()
     snapshot.journeyPhase = .routeRecovery
     snapshot.recovery = RecoveryState()
     snapshot.recovery.status = .unavailable

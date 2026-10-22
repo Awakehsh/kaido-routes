@@ -757,6 +757,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
   ) {
     continueAfterFailure = false
     let app = XCUIApplication()
+    app.resetAuthorizationStatus(for: .location)
     app.launchArguments = [
       previewArgument,
       "-app.kaidoroutes.language.interface",
@@ -798,6 +799,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-live-drive-blocker", in: app).exists
     )
     startLiveDrive.tap()
+    allowLocationWhenInUse()
     let liveEntry = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "SURFACE_ACCESS"),
       object: product
@@ -834,7 +836,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
     circuitCard.tap()
-    allowLocationWhenInUseIfRequested()
+    allowLocationWhenInUse()
     XCTAssertTrue(
       element("whole-shuto-circuit-back", in: app)
         .waitForExistence(timeout: 5)
@@ -1996,7 +1998,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let currentLocation = element("whole-shuto-current-location", in: app)
     XCTAssertTrue(currentLocation.waitForExistence(timeout: 5))
     currentLocation.tap()
-    allowLocationWhenInUseIfRequested()
+    allowLocationWhenInUse()
     let measured = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "MEASURED"),
       object: locationState
@@ -2648,12 +2650,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
-  private func allowLocationWhenInUseIfRequested() {
+  /// Answers the location prompt that the step just taken raises. Each test
+  /// here that reaches Core Location resets the app's authorization before
+  /// launch, so the prompt is always its own and always appears. Left
+  /// unanswered, it stays on screen into the next test, whose first tap
+  /// XCTest's default interruption handler spends on "Don't Allow", and every
+  /// later test inherits the denial. In CI runs 39529065567 and 39536115417
+  /// the prompt came up after "start live drive" and the live-entry check
+  /// could not find the product behind it.
+  private func allowLocationWhenInUse() {
     let springboard = XCUIApplication(
       bundleIdentifier: "com.apple.springboard"
     )
     let alert = springboard.alerts.firstMatch
-    guard alert.waitForExistence(timeout: 3) else { return }
+    XCTAssertTrue(
+      alert.waitForExistence(timeout: 10),
+      "The system location prompt did not appear"
+    )
     let whenInUse = alert.buttons.matching(
       NSPredicate(
         format:
@@ -2669,6 +2682,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The system location prompt did not expose a When In Use action"
     )
     whenInUse.tap()
+    XCTAssertTrue(
+      alert.waitForNonExistence(timeout: 5),
+      "The system location prompt stayed up after Allow While Using App"
+    )
   }
 
   private func setTestLocation(latitude: Double, longitude: Double) {

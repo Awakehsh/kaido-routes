@@ -103,6 +103,151 @@
       }
     }
 
+    /// Fixes scattered beyond their reported error, off both an exit ramp and
+    /// the road it runs a few metres beside, read the same whichever the car
+    /// is on: past Kasumigaseki, Angyo and Yotsugi the drive ended on the road
+    /// it had driven on past the exit, and on the ramp it ended early. Past
+    /// Kasumigaseki, Angyo, Tomigaya and Fukuzumi it also ended hundreds of
+    /// metres on, on fixes scattered 20–45 m off that road.
+    @Test(
+      "scatter beside the exit ends neither a missed exit nor the ramp early",
+      arguments: [
+        (ShutoCircuitDefinition.c1Inner, "shuto.ic.5.nishikanda", "shuto.ic.c1.kasumigaseki", UInt64(37)),
+        (.c1Inner, "shuto.ic.s1.araijuku", "shuto.ic.s1.angyou", 13),
+        (.c2InnerWithBayshore, "shuto.ic.7.ichinoe", "shuto.ic.c2.yotsugi", 13),
+        (.c1Inner, "shuto.ic.4.gaien", "shuto.ic.c1.kasumigaseki", 37),
+        (.c2InnerWithBayshore, "shuto.ic.s1.shingou", "shuto.ic.s1.angyou", 63),
+        (.c2InnerWithBayshore, "shuto.ic.4.hatagaya", "shuto.ic.c2.tomigaya", 109),
+        (.c2InnerWithBayshore, "shuto.ic.9.kiba", "shuto.ic.9.fukudumi", 51),
+        (.daikokuYokohamaLoop, "shuto.ic.s1.araijuku", "shuto.ic.s1.angyou", 81),
+      ]
+    )
+    func scatterBesideTheExit(
+      circuit: ShutoCircuitDefinition, entry: String, exit: String, seed: UInt64
+    ) async throws {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: circuit, entryFacilityID: entry, exitFacilityID: exit, laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      let gate = LiveNavigationReplayGate(release: release, database: database)
+      let planned = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .underReported)
+      let plannedSummary = gateLine(file: exit, seed: seed, run: planned, label: "ROUTE-END-UNDER2X")
+      print(plannedSummary)
+      #expect(planned.reachedCompletion, "\(plannedSummary)")
+      #expect(!planned.completedEarly(), "\(plannedSummary)")
+      let movementIndex = gate.finalDivergenceIndex
+      for alternative in gate.alternativeEdgeIDs(atMovementIndex: movementIndex) {
+        let missed = try await gate.run(
+          legs: gate.wrongBranchLegs(
+            movementIndex: movementIndex, alternativeEdgeID: alternative, branchMeters: 1_500
+          ),
+          seed: seed,
+          noise: .underReported
+        )
+        let summary = gateLine(file: exit, seed: seed, run: missed, label: "MISSED-EXIT-UNDER2X")
+        print(summary)
+        #expect(!missed.reachedCompletion, "\(summary)")
+      }
+    }
+
+    /// Angyo's exit ramp runs beside Route S1, and progress ran down it to
+    /// the end of the plan while the car drove on along S1. The road the plan
+    /// left was then not one the car could be on, so the drive never said it
+    /// had missed the exit.
+    @Test(
+      "driving on past Angyo is seen",
+      arguments: [ShutoCircuitDefinition.c1Inner, .c1Outer]
+    )
+    func missedAngyoIsSeen(circuit: ShutoCircuitDefinition) async throws {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: circuit, entryFacilityID: "shuto.ic.s1.araijuku",
+        exitFacilityID: "shuto.ic.s1.angyou", laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      let gate = LiveNavigationReplayGate(release: release, database: database)
+      #expect(
+        gate.alternativeEdgeIDs(atMovementIndex: gate.finalDivergenceIndex)
+          .contains("osm.438367202.58.forward")
+      )
+      let missed = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: gate.finalDivergenceIndex,
+          alternativeEdgeID: "osm.438367202.58.forward",
+          branchMeters: 1_500
+        ),
+        seed: 13,
+        noise: .underReported
+      )
+      let summary = gateLine(file: "angyou", seed: 13, run: missed, label: "MISSED-EXIT-UNDER2X")
+      print(summary)
+      #expect(!missed.reachedCompletion, "\(summary)")
+      #expect(missed.deviationDetectedAfterOffPlanMeters != nil, "\(summary)")
+    }
+
+    /// Mukojima's exit ends beside Route 6, the road the plan leaves at its
+    /// last choice, and its street leaves at right angles; Takaracho's street
+    /// runs on 25-40 degrees off C1. Fixes off those streets stay nearer the
+    /// expressway than the exit, so the drive ended only 100 m out or not at
+    /// all; scattered onto Route 6 at Mukojima's ramp end, they once read as
+    /// the car driving on along it.
+    @Test(
+      "a drive off an exit whose street leaves beside the expressway completes",
+      arguments: [
+        (ShutoCircuitDefinition.c1Outer, "shuto.ic.6-mukojima.hakozaki", "shuto.ic.6-mukojima.mukoujima", "URBAN", UInt64(2)),
+        (.c1Outer, "shuto.ic.6-mukojima.hakozaki", "shuto.ic.6-mukojima.mukoujima", "UNDER2X", 11),
+        (.c1Outer, "shuto.ic.b.shinkiba", "shuto.ic.c1.takaracho", "UNDER2X", 9),
+      ]
+    )
+    func streetBesideTheExpresswayCompletes(
+      circuit: ShutoCircuitDefinition, entry: String, exit: String, noise: String, seed: UInt64
+    ) async throws {
+      let gate = try Self.gate(circuit, entry, exit)
+      let run = try await gate.run(
+        legs: gate.plannedLegs(), seed: seed, noise: noise == "URBAN" ? .urban : .underReported
+      )
+      let summary = gateLine(file: exit, seed: seed, run: run, label: "ROUTE-END-\(noise)")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect((run.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds, "\(summary)")
+      #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
+    }
+
+    /// Tonomachi's ramp curves away from K6, and fixes 100 m down its street
+    /// lay a metre nearer a bend than the ramp's end. Read as beside the exit,
+    /// each one restarted the exit evidence, and the drive went 79 s
+    /// unadmitted.
+    @Test("fixes past a curved exit's end do not read as beside it")
+    func pastACurvedExit() async throws {
+      let gate = try Self.gate(.c2InnerWithBayshore, "shuto.ic.k6.daishi", "shuto.ic.k6.tonomachi")
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 29, noise: .underReported)
+      let summary = gateLine(file: "tonomachi", seed: 29, run: run, label: "ROUTE-END-UNDER2X")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(run.longestUnadmittedSeconds <= 75, "\(summary)")
+    }
+
+    private static func gate(
+      _ circuit: ShutoCircuitDefinition, _ entry: String, _ exit: String
+    ) throws -> LiveNavigationReplayGate {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: circuit, entryFacilityID: entry, exitFacilityID: exit, laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      return LiveNavigationReplayGate(release: release, database: database)
+    }
+
     /// Three laps of C1 inner from Shibakoen to Shiodome.
     private static func threeLapGate() throws -> LiveNavigationReplayGate {
       let database = try replayGateDatabase()

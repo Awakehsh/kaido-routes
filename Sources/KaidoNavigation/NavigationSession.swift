@@ -612,7 +612,8 @@ public actor NavigationSession {
         let distance = estimate.distanceMeters,
         distance <= clearance,
         (isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
-          || isBehindProgress(estimate),
+          || isBehindProgress(estimate)
+          || isOnRoadLeftAtLastChoice(estimate, observation: observation),
         isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
         // Leaving past the destination PA's entry ramp ends the drive; the
         // ramp runs beside the road past it at first, so a fix the matcher
@@ -651,6 +652,36 @@ public actor NavigationSession {
           ?? edgeID,
         confidence: .high
       )
+    )
+  }
+
+  /// Progress can run down the exit ahead of a car that drove on past it,
+  /// along a ramp beside the road it leaves (Angyo's beside Route S1), and
+  /// the matcher then no longer counts that road as one the car can be on.
+  /// Past the exit's end, a fix on the road the plan leaves at its last
+  /// choice is still evidence the car left the plan when it drives along
+  /// that road: where the exit ends beside it (Route 6 at Mukojima), a car
+  /// that took the exit scatters onto it too, driving away from it. Beside
+  /// the exit nothing tells the two apart.
+  private func isOnRoadLeftAtLastChoice(
+    _ estimate: MatcherEstimate,
+    observation: RouteMatcherObservation
+  ) -> Bool {
+    guard let routeEnd, estimate.occurrenceID == nil,
+      let directedEdgeID = estimate.directedEdgeID,
+      let course = observation.courseDegrees,
+      let courseAccuracy = observation.courseAccuracyDegrees,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
+        >= routeEnd.exitSideStartIndex,
+      !routeEnd.isAlongExit(observation.coordinate),
+      !isOnActiveRecoveryPath(directedEdgeID)
+    else { return false }
+    return routeEnd.isDrivingAlongRoadLeftAtLastChoice(
+      directedEdgeID,
+      at: observation.coordinate,
+      courseDegrees: course,
+      toleranceDegrees: max(30, 3 * courseAccuracy)
     )
   }
 
@@ -854,11 +885,12 @@ public actor NavigationSession {
   /// the corridor holds every road the car could be on instead of it, or on
   /// the road reached only through the route's terminal edge. Each must also
   /// lie clear of every such road, earlier passes of the plan included, by
-  /// four times the fix's accuracy: beside the exit the road the car missed
-  /// it for can be a pass of the plan the matcher does not consider, and an
-  /// exit ramp runs within metres of the road it leaves, so only fixes past
-  /// its end can tell them apart. A finished drive cannot be resumed, so the
-  /// bar is higher than for a deviation.
+  /// four times the fix's accuracy, and lie nearer the exit than any of them:
+  /// beside the exit the road the car missed it for can be a pass of the plan
+  /// the matcher does not consider, and an exit ramp runs within metres of
+  /// the road it leaves, so only fixes past its end can tell them apart. A
+  /// finished drive cannot be resumed, so the bar is higher than for a
+  /// deviation.
   static let exitEvidenceObservationCount = 3
   static let coarseFixAccuracyMeters = 30.0
 
@@ -897,15 +929,43 @@ public actor NavigationSession {
     let metersFromOtherRoads = routeEnd.metersFromOtherRoads(
       observation.coordinate, fromProgress: currentIndex
     )
-    // In recovery the car has already been seen off the plan, on the road
-    // past the exit as often as on the exit itself; a fix scattered off that
-    // road can clear it by the fix's own error, so it has to lie nearer the
-    // exit than any other road.
+    // Clearing every other road by four times its reported error is not
+    // enough on its own: a receiver can report half its true error, and a car
+    // that drove on past the exit then scatters as far off the road it is on
+    // (past Kasumigaseki, Angyo and Tomigaya). The fix has to lie nearer the
+    // exit than any road the car could be on instead. Beside the exit that
+    // road can run as close as the exit itself (Kasumigaseki's ramp, a few
+    // metres from C1 for 400 m), so there it has to be nearer by more than
+    // the fix's error.
+    let isAlongExit = routeEnd.isAlongExit(
+      observation.coordinate, toleranceMeters: max(5, observation.horizontalAccuracyMeters)
+    )
+    let nearerExitMarginMeters =
+      isAlongExit ? max(5, observation.horizontalAccuracyMeters) : 0
+    // Past the end, a road passing beside it stays nearer than the exit to a
+    // car driving straight away from both (Route 6 at Mukojima). A fix's
+    // course does not scatter with its position: one running along none of
+    // those roads within half as far again as the clearance is not on any of
+    // them. Fixes scattered off the road a car drove on along lay up to 1.3
+    // clearances from it; a map bearing can be 20 degrees off the lanes.
+    let drivesAlongNoOtherRoad =
+      !isAlongExit
+      && observation.courseDegrees.map { course in
+        observation.courseAccuracyDegrees.map { courseAccuracy in
+          !routeEnd.runsAlongOtherRoad(
+            observation.coordinate,
+            courseDegrees: course,
+            toleranceDegrees: max(20, 3 * courseAccuracy),
+            withinMeters: 1.5 * clearance,
+            fromProgress: currentIndex
+          )
+        } ?? false
+      } ?? false
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
-      && (engine.snapshot.journeyPhase != .routeRecovery
-        || metersFromExit < metersFromOtherRoads)
+      && (metersFromOtherRoads - metersFromExit > nearerExitMarginMeters
+        || drivesAlongNoOtherRoad)
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       metersFromOtherRoads >= clearance
     else {
@@ -1708,6 +1768,9 @@ private struct RouteEndGeometry: Sendable {
   /// left the expressway: the road end itself, or, where the network
   /// carries the road on, the exits the corridor records beyond it.
   private let departures: [(point: MatcherCoordinate, lastReachingIndex: Int)]
+  /// The road the plan leaves at its last choice, as far as the corridor
+  /// follows it, other than the exit facility's own ramps.
+  private let roadLeftAtLastChoice: [String: [MatcherCoordinate]]
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1746,6 +1809,19 @@ private struct RouteEndGeometry: Sendable {
       else { continue }
       pending += edge.successorEdgeIDs
     }
+    var leftRoad: [String: [MatcherCoordinate]] = [:]
+    pending =
+      exitSideStartIndex > 0
+      ? Array(routeEdges[exitSideStartIndex - 1].successorEdgeIDs) : []
+    while let edgeID = pending.popLast() {
+      guard !routeEdgeIDs.contains(edgeID), !pastEndIDs.contains(edgeID),
+        !rampIDs.contains(edgeID), leftRoad[edgeID] == nil,
+        let edge = edgesByID[edgeID]
+      else { continue }
+      leftRoad[edgeID] = edge.coordinates
+      pending += edge.successorEdgeIDs
+    }
+    roadLeftAtLastChoice = leftRoad
     // From the plan's end backwards, each road takes the latest occurrence
     // that leads to it; one already taken is reached from later on, and so
     // is everything it leads to.
@@ -1801,6 +1877,67 @@ private struct RouteEndGeometry: Sendable {
   private func earliestCarIndex(_ progressIndex: Int) -> Int {
     min(progressIndex, exitSideStartIndex)
       - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  }
+
+  /// Whether one of the roads a car at `progressIndex` could be on instead
+  /// of the exit runs within `toleranceDegrees` of the course, within
+  /// `meters` of the point.
+  func runsAlongOtherRoad(
+    _ coordinate: MatcherCoordinate,
+    courseDegrees: Double,
+    toleranceDegrees: Double,
+    withinMeters meters: Double,
+    fromProgress progressIndex: Int
+  ) -> Bool {
+    otherRoads.filter { $0.lastReachingIndex >= earliestCarIndex(progressIndex) }.contains { road in
+      zip(road.coordinates, road.coordinates.dropFirst()).contains { start, end in
+        Self.meters(from: coordinate, toPolyline: [start, end]) <= meters
+          && Self.runs(from: start, to: end, within: toleranceDegrees, of: courseDegrees)
+      }
+    }
+  }
+
+  /// Whether a car at `coordinate` driving at `courseDegrees` is driving
+  /// along the road the plan leaves at its last choice, on its edge
+  /// `edgeID`.
+  func isDrivingAlongRoadLeftAtLastChoice(
+    _ edgeID: String,
+    at coordinate: MatcherCoordinate,
+    courseDegrees: Double,
+    toleranceDegrees: Double
+  ) -> Bool {
+    guard let coordinates = roadLeftAtLastChoice[edgeID] else { return false }
+    let segments = Array(zip(coordinates, coordinates.dropFirst()))
+    guard
+      let nearest = segments.min(by: {
+        Self.meters(from: coordinate, toPolyline: [$0.0, $0.1])
+          < Self.meters(from: coordinate, toPolyline: [$1.0, $1.1])
+      })
+    else { return false }
+    return Self.runs(from: nearest.0, to: nearest.1, within: toleranceDegrees, of: courseDegrees)
+  }
+
+  private static func runs(
+    from start: MatcherCoordinate,
+    to end: MatcherCoordinate,
+    within toleranceDegrees: Double,
+    of courseDegrees: Double
+  ) -> Bool {
+    let offset = planarOffset(from: start, to: end)
+    guard offset.east != 0 || offset.north != 0 else { return false }
+    let bearing = atan2(offset.east, offset.north) * 180 / .pi
+    let difference = abs(courseDegrees - bearing).truncatingRemainder(dividingBy: 360)
+    return min(difference, 360 - difference) <= toleranceDegrees
+  }
+
+  /// Whether a point lies beside the plan after its last choice of road
+  /// rather than past its end: nearer some point of it than its end by more
+  /// than `toleranceMeters`. Where the exit curves, a point well past its end
+  /// can lie a metre nearer a bend than the end itself.
+  func isAlongExit(_ coordinate: MatcherCoordinate, toleranceMeters: Double = 1) -> Bool {
+    guard let end = exit.last else { return false }
+    return Self.meters(from: coordinate, toPolyline: exit) + toleranceMeters
+      < Self.meters(from: coordinate, toPolyline: [end, end])
   }
 
   /// Distance from a point to the plan after its last choice of road, or to

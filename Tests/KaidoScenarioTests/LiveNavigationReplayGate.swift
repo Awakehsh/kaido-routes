@@ -200,15 +200,57 @@
     ) -> [ReplayGateLeg] {
       var legs = approachLegs()
       legs += routeLegs(through: movementIndex - 1)
-      legs += branchPath(from: alternativeEdgeID, meters: branchMeters).map {
-        edge in
+      let path = branchPath(from: alternativeEdgeID, meters: branchMeters)
+      legs += path.map { edge in
         ReplayGateLeg(
           kind: .offPlan(edge.edgeID),
           coordinates: coordinates(of: edge),
           speedMetersPerSecond: speed(forDatabaseEdge: edge)
         )
       }
+      // A branch that ends where the network does left the expressway there:
+      // the car drives on along the street it leads onto, as past a planned
+      // exit, so what the session does once the car has left is part of the
+      // run rather than cut off at the network's edge.
+      if let last = path.last,
+        (outgoingEdges[last.toNodeID] ?? []).allSatisfy({ $0.toNodeID == last.fromNodeID })
+      {
+        let kind = ReplayGateLegKind.offPlan("street past \(last.edgeID)")
+        legs.append(
+          Self.stackedStreetWayIDs.contains(last.wayID)
+            ? streetUnderThePlan(from: coordinates(of: last).last!, kind: kind)
+            : streetLeg(from: coordinates(of: last), excluding: Set(path.map(\.edgeID)), kind: kind)
+        )
+      }
       return legs
+    }
+
+    /// Exit ramps that end on a street running beneath the expressway: Toda's
+    /// ends on Route 17, which runs under Route 5 south of Bijogi JCT. A car
+    /// that leaves there drives on under the plan's own road, the stacked-road
+    /// limit no fix can tell from the road above.
+    static let stackedStreetWayIDs: Set<Int64> = [762093201]
+
+    /// 1 km beneath the plan from where it passes nearest `start`, at
+    /// surface speed.
+    private func streetUnderThePlan(
+      from start: MatcherCoordinate,
+      kind: ReplayGateLegKind
+    ) -> ReplayGateLeg {
+      let edges = routeEdgeIDs.compactMap { corridorEdgesByID[$0]?.coordinates }
+      let nearest = edges.indices.min {
+        replayDistance(from: start, toPolyline: edges[$0])
+          < replayDistance(from: start, toPolyline: edges[$1])
+      } ?? 0
+      var coordinates = [start]
+      var meters = 0.0
+      for edge in edges[nearest...] {
+        for point in edge.dropFirst() where meters < 1_000 {
+          meters += replayDistance(from: coordinates.last!, toPolyline: [point, point])
+          coordinates.append(point)
+        }
+      }
+      return ReplayGateLeg(kind: kind, coordinates: coordinates, speedMetersPerSecond: Self.surfaceSpeed)
     }
 
     /// Alternative expressway edges leaving the node at which RoutePlan
@@ -330,10 +372,25 @@
           speedMetersPerSecond: Self.surfaceSpeed
         )
       }
-      let tail = legs.last?.coordinates ?? last
+      legs.append(
+        streetLeg(
+          from: legs.last?.coordinates ?? last,
+          excluding: Set(continuation.map(\.edgeID) + [routeEdgeIDs.last!]),
+          kind: .egress
+        )
+      )
+      return legs
+    }
+
+    /// 300 m of the surface street a ramp ending at `tail` leads onto: of
+    /// straight on, left and right, the one that leaves the expressway.
+    private func streetLeg(
+      from tail: [MatcherCoordinate],
+      excluding excluded: Set<String>,
+      kind: ReplayGateLegKind
+    ) -> ReplayGateLeg {
       let end = tail[tail.count - 1]
       let bearing = replayBearing(tail[tail.count - 2], end)
-      let excluded = Set(continuation.map(\.edgeID) + [routeEdgeIDs.last!])
       let expressway = corridorEdgesByID.values.filter { !excluded.contains($0.id) }
       let clearance = { (direction: Double) -> Double in
         stride(from: 60.0, through: 300, by: 20).map { meters in
@@ -346,16 +403,11 @@
       let street = [bearing, bearing - 90, bearing + 90].max {
         clearance($0) < clearance($1)
       }!
-      legs.append(
-        ReplayGateLeg(
-          kind: .egress,
-          coordinates: [
-            end, replayOffset(end, bearingDegrees: street, meters: 300),
-          ],
-          speedMetersPerSecond: Self.surfaceSpeed
-        )
+      return ReplayGateLeg(
+        kind: kind,
+        coordinates: [end, replayOffset(end, bearingDegrees: street, meters: 300)],
+        speedMetersPerSecond: Self.surfaceSpeed
       )
-      return legs
     }
 
     private func branchPath(

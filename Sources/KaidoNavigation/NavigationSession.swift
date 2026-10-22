@@ -937,13 +937,17 @@ public actor NavigationSession {
     // road can run as close as the exit itself (Kasumigaseki's ramp, a few
     // metres from C1 for 400 m), so there it has to be nearer by more than
     // the fix's error.
-    let isAlongExit = routeEnd.isAlongExit(observation.coordinate)
+    let isAlongExit = routeEnd.isAlongExit(
+      observation.coordinate, toleranceMeters: max(5, observation.horizontalAccuracyMeters)
+    )
     let nearerExitMarginMeters =
       isAlongExit ? max(5, observation.horizontalAccuracyMeters) : 0
     // Past the end, a road passing beside it stays nearer than the exit to a
     // car driving straight away from both (Route 6 at Mukojima). A fix's
     // course does not scatter with its position: one running along none of
-    // those roads within twice the clearance is not on any of them.
+    // those roads within half as far again as the clearance is not on any of
+    // them. Fixes scattered off the road a car drove on along lay up to 1.3
+    // clearances from it; a map bearing can be 20 degrees off the lanes.
     let drivesAlongNoOtherRoad =
       !isAlongExit
       && observation.courseDegrees.map { course in
@@ -951,8 +955,8 @@ public actor NavigationSession {
           !routeEnd.runsAlongOtherRoad(
             observation.coordinate,
             courseDegrees: course,
-            toleranceDegrees: max(30, 3 * courseAccuracy),
-            withinMeters: 2 * clearance,
+            toleranceDegrees: max(20, 3 * courseAccuracy),
+            withinMeters: 1.5 * clearance,
             fromProgress: currentIndex
           )
         } ?? false
@@ -1927,10 +1931,12 @@ private struct RouteEndGeometry: Sendable {
   }
 
   /// Whether a point lies beside the plan after its last choice of road
-  /// rather than past its end.
-  func isAlongExit(_ coordinate: MatcherCoordinate) -> Bool {
+  /// rather than past its end: nearer some point of it than its end by more
+  /// than `toleranceMeters`. Where the exit curves, a point well past its end
+  /// can lie a metre nearer a bend than the end itself.
+  func isAlongExit(_ coordinate: MatcherCoordinate, toleranceMeters: Double = 1) -> Bool {
     guard let end = exit.last else { return false }
-    return Self.meters(from: coordinate, toPolyline: exit) + 1
+    return Self.meters(from: coordinate, toPolyline: exit) + toleranceMeters
       < Self.meters(from: coordinate, toPolyline: [end, end])
   }
 

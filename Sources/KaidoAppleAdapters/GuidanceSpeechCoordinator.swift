@@ -533,13 +533,17 @@ public final class GuidanceSpeechCoordinator {
       notifications.removeObserver(self)
     }
 
-    /// Does the silent part of the first prompt ahead of it: the category,
-    /// whose first set waits on the audio server, and the voice lookup, whose
-    /// first call loads the voice catalog. A category never activates the
-    /// session, so nothing playing is ducked or interrupted; `speak` activates
-    /// it for each prompt. A failure here comes back, and is reported, there.
-    public func prepare(languageCode: String) {
+    /// Sets the category ahead of the first prompt; its first set waits on
+    /// the audio server. A category never activates the session, so nothing
+    /// playing is ducked or interrupted; `speak` activates it for each prompt.
+    /// A failure here comes back, and is reported, there.
+    public func prepareAudioSession() {
       try? setAudioSessionCategory()
+    }
+
+    /// Looks the voice up ahead of the first prompt; the first lookup loads
+    /// the voice catalog.
+    public func prepareVoice(languageCode: String) {
       _ = Self.navigationVoiceSelection(
         for: languageCode,
         preferredIdentifier: preferredVoiceIdentifierProvider(languageCode)

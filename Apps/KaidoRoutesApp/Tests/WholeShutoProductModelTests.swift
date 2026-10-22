@@ -192,9 +192,13 @@ final class WholeShutoProductModelTests: XCTestCase {
         NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .japanese)
       })
     model.prewarmSpeechOutput()
+    XCTAssertEqual(recorder.categories, [])
+    model.prewarmSpeechAudioSession()
     XCTAssertEqual(recorder.categories, [.playback])
-    XCTAssertEqual(recorder.activations, [])
+    XCTAssertEqual(voiceLookups, [])
+    model.prewarmGuidanceVoice()
     XCTAssertEqual(voiceLookups, ["ja-JP"])
+    XCTAssertEqual(recorder.activations, [])
   }
 
   func testSpeechRecoveryStalePositionCancelsObsoleteManeuver() async throws {

@@ -94,8 +94,16 @@ final class LazyAVSpeechGuidanceOutput: GuidanceSpeechOutput {
     self.makeOutput = makeOutput
   }
 
-  func prewarm(languageCode: String) {
-    resolveOutput().prepare(languageCode: languageCode)
+  func prewarm() {
+    _ = resolveOutput()
+  }
+
+  func prewarmAudioSession() {
+    resolveOutput().prepareAudioSession()
+  }
+
+  func prewarmVoice(languageCode: String) {
+    resolveOutput().prepareVoice(languageCode: languageCode)
   }
 
   func speak(_ command: GuidanceSpeechCommand) throws {

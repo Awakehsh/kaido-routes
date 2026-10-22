@@ -97,7 +97,7 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   }
 
   @MainActor
-  func testPrepareSetsTheCategoryWithoutActivatingTheSession() throws {
+  func testPreparingSetsTheCategoryAndVoiceWithoutActivatingTheSession() throws {
     let session = AVAudioSession.sharedInstance()
     let recorder = AudioSessionRequestRecorder()
     defer { recorder.uninstall() }
@@ -109,11 +109,14 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
         voiceLookups.append($0)
         return nil
       })
-    output.prepare(languageCode: "ja-JP")
+    output.prepareAudioSession()
     XCTAssertEqual(recorder.categories, [.playback])
     XCTAssertEqual(recorder.modes, [.voicePrompt])
-    XCTAssertEqual(recorder.activations, [])
+    XCTAssertEqual(voiceLookups, [])
+    output.prepareVoice(languageCode: "ja-JP")
     XCTAssertEqual(voiceLookups, ["ja-JP"])
+    XCTAssertEqual(recorder.categories, [.playback])
+    XCTAssertEqual(recorder.activations, [])
 
     // The prompt itself still activates the session.
     try output.speak(

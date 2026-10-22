@@ -4187,10 +4187,20 @@ final class WholeShutoProductModel: ObservableObject {
     }
   #endif
 
-  /// Creates the speech output and prepares it for the guidance voice ahead
-  /// of the first cue, so starting a drive does not wait on the audio server.
+  /// Creates the speech output ahead of the first cue, so starting a drive
+  /// does not wait on the audio server.
   func prewarmSpeechOutput() {
-    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarm(
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarm()
+  }
+
+  /// Sets the speech output's audio category ahead of the first cue.
+  func prewarmSpeechAudioSession() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmAudioSession()
+  }
+
+  /// Looks the guidance voice up ahead of the first cue.
+  func prewarmGuidanceVoice() {
+    (speechOutput as? LazyAVSpeechGuidanceOutput)?.prewarmVoice(
       languageCode: languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
     )
   }

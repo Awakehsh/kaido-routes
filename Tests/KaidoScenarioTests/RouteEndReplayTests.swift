@@ -192,6 +192,36 @@
       #expect(missed.deviationDetectedAfterOffPlanMeters != nil, "\(summary)")
     }
 
+    /// Mukojima's exit ends beside Route 6, the road the plan leaves at its
+    /// last choice, and its street leaves at right angles. Fixes off that
+    /// street stay nearer Route 6 than the exit, so the drive ended only 100 m
+    /// out; scattered onto Route 6 at the ramp's end, they once read as the
+    /// car driving on along it.
+    @Test(
+      "a drive off at Mukojima completes, and never reads as driving on",
+      arguments: [("URBAN", UInt64(2)), ("UNDER2X", 11)]
+    )
+    func mukojimaCompletes(noise: String, seed: UInt64) async throws {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: .c1Outer, entryFacilityID: "shuto.ic.6-mukojima.hakozaki",
+        exitFacilityID: "shuto.ic.6-mukojima.mukoujima", laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      let gate = LiveNavigationReplayGate(release: release, database: database)
+      let run = try await gate.run(
+        legs: gate.plannedLegs(), seed: seed, noise: noise == "URBAN" ? .urban : .underReported
+      )
+      let summary = gateLine(file: "mukoujima", seed: seed, run: run, label: "ROUTE-END-\(noise)")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect((run.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds, "\(summary)")
+      #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
+    }
+
     /// Three laps of C1 inner from Shibakoen to Shiodome.
     private static func threeLapGate() throws -> LiveNavigationReplayGate {
       let database = try replayGateDatabase()

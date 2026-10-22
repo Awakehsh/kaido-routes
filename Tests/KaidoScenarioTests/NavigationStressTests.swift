@@ -598,6 +598,7 @@
           record["movement"] = movementIndex
           record["alternative"] = alternative
           record["isPAEnding"] = gate.finalStopStartIndex != nil
+          record["leavesByPlannedExitRamp"] = run.leftByAnotherRampOfThePlannedExit
           record["offPlanCommits"] = run.offPlanCommitCount(movementIndex: movementIndex)
           record["offPlanPrompts"] = run.offPlanPromptCount(movementIndex: movementIndex)
           rows.append(record)
@@ -763,6 +764,20 @@
   extension Duration {
     fileprivate var seconds: Double {
       Double(components.seconds) + Double(components.attoseconds) / 1e18
+    }
+  }
+
+  extension ReplayGateRun {
+    /// Whether a wrong branch drove onto another ramp of the planned exit
+    /// facility: Shintoshin's exit links all end Route S2, so missing one
+    /// leaves by another at the same exit. Kept here, in the file both sides
+    /// of a comparison share, from what every replay records.
+    var leftByAnotherRampOfThePlannedExit: Bool {
+      let ramps = gate.release.navigation.bundle.matcherCorridor.exitRampEdgeIDs
+      return records.contains { record in
+        guard case .offPlan(let edgeID) = record.truth.kind else { return false }
+        return ramps.contains(edgeID)
+      }
     }
   }
 #endif

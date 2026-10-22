@@ -503,7 +503,14 @@
         )
         let summary = gateLine(file: site.name, seed: 1, run: run, label: "MISSED-EXIT-URBAN")
         print(summary)
-        #expect(!run.reachedCompletion, "\(summary)")
+        // Shintoshin's exit links all end Route S2: a car that misses one
+        // leaves by another ramp of the same exit, and has arrived.
+        if run.leftByAnotherRampOfThePlannedExit {
+          #expect(run.reachedCompletion, "\(summary)")
+          #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
+        } else {
+          #expect(!run.reachedCompletion, "\(summary)")
+        }
       }
     }
 

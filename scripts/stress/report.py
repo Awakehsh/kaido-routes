@@ -23,7 +23,27 @@ def run_key(row):
 def detected(row):
     if row["group"] == "missedFinal" and row.get("isPAEnding"):
         return row["finalTrigger"] == "DESTINATION_PARKING_AREA_NOT_ENTERED"
-    return row.get("detectPhase") == "ROUTE_RECOVERY" and row.get("detectSeconds", -1) >= 1
+    if row.get("detectPhase") == "ROUTE_RECOVERY" and row.get("detectSeconds", -1) >= 1:
+        return True
+    # Off a missed exit or a wrong branch, handing over at the unplanned exit
+    # is the drive saying the car left.
+    return row["group"] in ("missedFinal", "wrongBranch") and bool(row.get("handover"))
+
+
+def detection_seconds(row):
+    """Seconds from leaving the plan to the first detection: recovery, or the
+    handover when that is all there is."""
+    if row.get("detectPhase") == "ROUTE_RECOVERY" and row.get("detectSeconds", -1) >= 0:
+        return row["detectSeconds"]
+    if row.get("handover") and "offStartSecond" in row:
+        return row["handoverSecond"] - row["offStartSecond"]
+    return -1
+
+
+def undetected(row):
+    """Not detected, and not a car that left by another ramp of its planned
+    exit facility, which is leaving at the planned exit."""
+    return not detected(row) and not row.get("leavesByPlannedExitRamp")
 
 
 def percentile(values, q):
@@ -35,8 +55,8 @@ def row_metrics(runs, group):
     """Timing metrics (seconds, +5 s tolerance) and counts (zero tolerance)."""
     unadmitted = [r["unadmitted"] for r in runs]
     false_recovery = [r["falseRecovery"] for r in runs]
-    latency = [r["detectSeconds"] for r in runs
-               if group in DEVIATION_GROUPS and detected(r) and r.get("detectSeconds", -1) >= 0]
+    latency = [detection_seconds(r) for r in runs
+               if group in DEVIATION_GROUPS and detected(r) and detection_seconds(r) >= 0]
     timing = {
         "unadmitted median": percentile(unadmitted, .5),
         "unadmitted p95": percentile(unadmitted, .95),
@@ -53,15 +73,19 @@ def row_metrics(runs, group):
         f"runs >{FALSE_RECOVERY_LINE_S} s false recovery": sum(1 for x in false_recovery if x > FALSE_RECOVERY_LINE_S),
         "wrong (#73) runs": sum(1 for r in runs if r["wrong73"] > 0),
         "entry failures": sum(1 for r in runs if not r["entered"]),
-        "handed over": sum(1 for r in runs if r.get("handover")),
     }
+    if group not in ("missedFinal", "wrongBranch"):
+        counts["handed over"] = sum(1 for r in runs if r.get("handover"))
     if group in DEVIATION_GROUPS:
-        counts["undetected"] = sum(1 for r in runs if not detected(r))
+        counts["undetected"] = sum(1 for r in runs if undetected(r))
         counts["off-plan advance runs"] = sum(1 for r in runs if r.get("offPlanCommits", 0) > 0)
         if group == "missedFinal" and runs[0].get("isPAEnding"):
             counts["false arrival"] = sum(1 for r in runs if r["finalTrigger"] == "PARKING_AREA_DESTINATION_REACHED")
         elif group != "paReentry":
-            counts["completed on missed exit/branch"] = sum(1 for r in runs if r["completed"])
+            # Leaving by another ramp of the planned exit facility is
+            # leaving at the planned exit; the headline counts it apart.
+            counts["completed on missed exit/branch"] = sum(
+                1 for r in runs if r["completed"] and not r.get("leavesByPlannedExitRamp"))
         else:
             counts["incomplete"] = sum(1 for r in runs if not r["completed"])
     else:
@@ -80,10 +104,10 @@ RUN_FLAGS = {
     "wrong (#73) runs": lambda r: r["wrong73"] > 0,
     "entry failures": lambda r: not r["entered"],
     "handed over": lambda r: r.get("handover"),
-    "undetected": lambda r: not detected(r),
+    "undetected": undetected,
     "off-plan advance runs": lambda r: r.get("offPlanCommits", 0) > 0,
     "false arrival": lambda r: r["finalTrigger"] == "PARKING_AREA_DESTINATION_REACHED",
-    "completed on missed exit/branch": lambda r: r["completed"],
+    "completed on missed exit/branch": lambda r: r["completed"] and not r.get("leavesByPlannedExitRamp"),
     "incomplete": lambda r: not r["completed"],
     "early": lambda r: r["early"],
     "stop not skipped": lambda r: not r.get("stopSkipped"),
@@ -98,8 +122,8 @@ def run_contributes(metric, a, b):
     if metric.startswith("false-recovery"):
         return b["falseRecovery"] - a["falseRecovery"] >= TIMING_TOLERANCE_S, f"{a['falseRecovery']}->{b['falseRecovery']}"
     if metric.startswith("detection latency"):
-        moved = detected(a) and detected(b) and b["detectSeconds"] - a["detectSeconds"] >= TIMING_TOLERANCE_S
-        return moved, f"{a['detectSeconds']}->{b['detectSeconds']}"
+        moved = detected(a) and detected(b) and detection_seconds(b) - detection_seconds(a) >= TIMING_TOLERANCE_S
+        return moved, f"{detection_seconds(a)}->{detection_seconds(b)}"
     flag = RUN_FLAGS[metric]
     return bool(flag(b)) and not flag(a), ""
 
@@ -181,9 +205,15 @@ def headline(runs, group):
     h["incomplete (excl. handed over)"] = sum(1 for r in runs if not r["completed"] and not r.get("handover"))
     h["handed over"] = sum(1 for r in runs if r.get("handover"))
     h["completed on missed exit/branch"] = (
-        sum(1 for r in runs if r["completed"] and not r.get("isPAEnding"))
+        sum(1 for r in runs if r["completed"] and not r.get("isPAEnding") and not r.get("leavesByPlannedExitRamp"))
         if group in ("missedFinal", "wrongBranch") else "")
-    h["undetected"] = sum(1 for r in runs if not detected(r)) if group in DEVIATION_GROUPS else ""
+    h["completed via another ramp of the planned facility"] = (
+        sum(1 for r in runs if r["completed"] and r.get("leavesByPlannedExitRamp"))
+        if group == "missedFinal" else "")
+    h["detected only by handover"] = (
+        sum(1 for r in runs if r.get("handover") and r.get("detectPhase") != "ROUTE_RECOVERY")
+        if group in ("missedFinal", "wrongBranch") else "")
+    h["undetected"] = sum(1 for r in runs if undetected(r)) if group in DEVIATION_GROUPS else ""
     h["wrong73 runs"] = sum(1 for r in runs if r["wrong73"] > 0)
     h[f">{UNADMITTED_LINE_S} s unadmitted"] = sum(1 for r in runs if r["unadmitted"] > UNADMITTED_LINE_S)
     h[f">{FALSE_RECOVERY_LINE_S} s false recovery"] = sum(1 for r in runs if r["falseRecovery"] > FALSE_RECOVERY_LINE_S)

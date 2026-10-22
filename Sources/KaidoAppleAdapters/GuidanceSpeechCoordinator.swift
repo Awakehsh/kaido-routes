@@ -533,6 +533,19 @@ public final class GuidanceSpeechCoordinator {
       notifications.removeObserver(self)
     }
 
+    /// Does the silent part of the first prompt ahead of it: the category,
+    /// whose first set waits on the audio server, and the voice lookup, whose
+    /// first call loads the voice catalog. A category never activates the
+    /// session, so nothing playing is ducked or interrupted; `speak` activates
+    /// it for each prompt. A failure here comes back, and is reported, there.
+    public func prepare(languageCode: String) {
+      try? setAudioSessionCategory()
+      _ = Self.navigationVoiceSelection(
+        for: languageCode,
+        preferredIdentifier: preferredVoiceIdentifierProvider(languageCode)
+      )
+    }
+
     public func speak(_ command: GuidanceSpeechCommand) throws {
       // The coordinator stops an admitted replacement before calling speak.
       // Only cancel here when a direct caller still owns an active utterance;
@@ -572,16 +585,20 @@ public final class GuidanceSpeechCoordinator {
       synthesizer.speak(utterance)
     }
 
+    private func setAudioSessionCategory() throws {
+      try audioSession.setCategory(
+        .playback,
+        mode: .voicePrompt,
+        options: [
+          .duckOthers,
+          .interruptSpokenAudioAndMixWithOthers,
+        ]
+      )
+    }
+
     private func activateAudioSession() throws {
       do {
-        try audioSession.setCategory(
-          .playback,
-          mode: .voicePrompt,
-          options: [
-            .duckOthers,
-            .interruptSpokenAudioAndMixWithOthers,
-          ]
-        )
+        try setAudioSessionCategory()
       } catch {
         os_log("Audio configuration failed: %ld", log: Self.log, type: .error, (error as NSError).code)
         throw GuidanceSpeechOutputError.audioSessionConfigurationFailed

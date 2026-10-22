@@ -612,7 +612,8 @@ public actor NavigationSession {
         let distance = estimate.distanceMeters,
         distance <= clearance,
         (isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
-          || isBehindProgress(estimate),
+          || isBehindProgress(estimate)
+          || isOnRoadLeftAtLastChoice(estimate),
         isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
         // Leaving past the destination PA's entry ramp ends the drive; the
         // ramp runs beside the road past it at first, so a fix the matcher
@@ -652,6 +653,22 @@ public actor NavigationSession {
         confidence: .high
       )
     )
+  }
+
+  /// Progress can run down the exit ahead of a car that drove on past it,
+  /// along a ramp beside the road it leaves (Angyo's beside Route S1), and
+  /// the matcher then no longer counts that road as one the car can be on.
+  /// Past the plan's last choice of road, a fix on the road it leaves there
+  /// is still evidence the car left the plan.
+  private func isOnRoadLeftAtLastChoice(_ estimate: MatcherEstimate) -> Bool {
+    guard let routeEnd, estimate.occurrenceID == nil,
+      let directedEdgeID = estimate.directedEdgeID,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
+        >= routeEnd.exitSideStartIndex
+    else { return false }
+    return routeEnd.leftAtLastChoiceEdgeIDs.contains(directedEdgeID)
+      && !isOnActiveRecoveryPath(directedEdgeID)
   }
 
   /// Fixes on the road a mid-route PA stop replaced, before the car reached
@@ -854,11 +871,12 @@ public actor NavigationSession {
   /// the corridor holds every road the car could be on instead of it, or on
   /// the road reached only through the route's terminal edge. Each must also
   /// lie clear of every such road, earlier passes of the plan included, by
-  /// four times the fix's accuracy: beside the exit the road the car missed
-  /// it for can be a pass of the plan the matcher does not consider, and an
-  /// exit ramp runs within metres of the road it leaves, so only fixes past
-  /// its end can tell them apart. A finished drive cannot be resumed, so the
-  /// bar is higher than for a deviation.
+  /// four times the fix's accuracy, and lie nearer the exit than any of them:
+  /// beside the exit the road the car missed it for can be a pass of the plan
+  /// the matcher does not consider, and an exit ramp runs within metres of
+  /// the road it leaves, so only fixes past its end can tell them apart. A
+  /// finished drive cannot be resumed, so the bar is higher than for a
+  /// deviation.
   static let exitEvidenceObservationCount = 3
   static let coarseFixAccuracyMeters = 30.0
 
@@ -897,22 +915,21 @@ public actor NavigationSession {
     let metersFromOtherRoads = routeEnd.metersFromOtherRoads(
       observation.coordinate, fromProgress: currentIndex
     )
-    // Beside the exit, a road the car could be on instead can run as close as
-    // the exit itself (Kasumigaseki's ramp, a few metres from C1 for 400 m):
-    // a fix scattered off both by more than its error allows reads the same
-    // whichever the car is on, so it has to lie nearer the exit by more than
-    // that error. Past the exit's end the car has left it.
-    let isAlongExit = routeEnd.isAlongExit(observation.coordinate)
-    let nearerExitMarginMeters = isAlongExit ? max(5, observation.horizontalAccuracyMeters) : 0
-    // In recovery the car has already been seen off the plan, on the road
-    // past the exit as often as on the exit itself; a fix scattered off that
-    // road can clear it by the fix's own error, so it has to lie nearer the
-    // exit than any other road.
+    // Clearing every other road by four times its reported error is not
+    // enough on its own: a receiver can report half its true error, and a car
+    // that drove on past the exit then scatters as far off the road it is on
+    // (past Kasumigaseki, Angyo and Tomigaya). The fix has to lie nearer the
+    // exit than any road the car could be on instead. Beside the exit that
+    // road can run as close as the exit itself (Kasumigaseki's ramp, a few
+    // metres from C1 for 400 m), so there it has to be nearer by more than
+    // the fix's error.
+    let nearerExitMarginMeters =
+      routeEnd.isAlongExit(observation.coordinate)
+      ? max(5, observation.horizontalAccuracyMeters) : 0
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
-      && (engine.snapshot.journeyPhase != .routeRecovery && !isAlongExit
-        || metersFromOtherRoads - metersFromExit > nearerExitMarginMeters)
+      && metersFromOtherRoads - metersFromExit > nearerExitMarginMeters
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       metersFromOtherRoads >= clearance
     else {
@@ -1715,6 +1732,9 @@ private struct RouteEndGeometry: Sendable {
   /// left the expressway: the road end itself, or, where the network
   /// carries the road on, the exits the corridor records beyond it.
   private let departures: [(point: MatcherCoordinate, lastReachingIndex: Int)]
+  /// The road the plan leaves at its last choice, as far as the corridor
+  /// follows it, other than the exit facility's own ramps.
+  let leftAtLastChoiceEdgeIDs: Set<String>
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
@@ -1753,6 +1773,18 @@ private struct RouteEndGeometry: Sendable {
       else { continue }
       pending += edge.successorEdgeIDs
     }
+    var leftIDs: Set<String> = []
+    pending =
+      exitSideStartIndex > 0
+      ? Array(routeEdges[exitSideStartIndex - 1].successorEdgeIDs) : []
+    while let edgeID = pending.popLast() {
+      guard !routeEdgeIDs.contains(edgeID), !pastEndIDs.contains(edgeID),
+        !rampIDs.contains(edgeID), leftIDs.insert(edgeID).inserted,
+        let edge = edgesByID[edgeID]
+      else { continue }
+      pending += edge.successorEdgeIDs
+    }
+    leftAtLastChoiceEdgeIDs = leftIDs
     // From the plan's end backwards, each road takes the latest occurrence
     // that leads to it; one already taken is reached from later on, and so
     // is everything it leads to.

@@ -106,13 +106,20 @@
     /// Fixes scattered beyond their reported error, off both an exit ramp and
     /// the road it runs a few metres beside, read the same whichever the car
     /// is on: past Kasumigaseki, Angyo and Yotsugi the drive ended on the road
-    /// it had driven on past the exit, and on the ramp it ended early.
+    /// it had driven on past the exit, and on the ramp it ended early. Past
+    /// Kasumigaseki, Angyo, Tomigaya and Fukuzumi it also ended hundreds of
+    /// metres on, on fixes scattered 20–45 m off that road.
     @Test(
       "scatter beside the exit ends neither a missed exit nor the ramp early",
       arguments: [
         (ShutoCircuitDefinition.c1Inner, "shuto.ic.5.nishikanda", "shuto.ic.c1.kasumigaseki", UInt64(37)),
         (.c1Inner, "shuto.ic.s1.araijuku", "shuto.ic.s1.angyou", 13),
         (.c2InnerWithBayshore, "shuto.ic.7.ichinoe", "shuto.ic.c2.yotsugi", 13),
+        (.c1Inner, "shuto.ic.4.gaien", "shuto.ic.c1.kasumigaseki", 37),
+        (.c2InnerWithBayshore, "shuto.ic.s1.shingou", "shuto.ic.s1.angyou", 63),
+        (.c2InnerWithBayshore, "shuto.ic.4.hatagaya", "shuto.ic.c2.tomigaya", 109),
+        (.c2InnerWithBayshore, "shuto.ic.9.kiba", "shuto.ic.9.fukudumi", 51),
+        (.daikokuYokohamaLoop, "shuto.ic.s1.araijuku", "shuto.ic.s1.angyou", 81),
       ]
     )
     func scatterBesideTheExit(
@@ -145,6 +152,44 @@
         print(summary)
         #expect(!missed.reachedCompletion, "\(summary)")
       }
+    }
+
+    /// Angyo's exit ramp runs beside Route S1, and progress ran down it to
+    /// the end of the plan while the car drove on along S1. The road the plan
+    /// left was then not one the car could be on, so the drive never said it
+    /// had missed the exit.
+    @Test(
+      "driving on past Angyo is seen",
+      arguments: [ShutoCircuitDefinition.c1Inner, .c1Outer]
+    )
+    func missedAngyoIsSeen(circuit: ShutoCircuitDefinition) async throws {
+      let database = try replayGateDatabase()
+      let route = try ShutoRoutePlanner(database: database).planCircuit(
+        circuit: circuit, entryFacilityID: "shuto.ic.s1.araijuku",
+        exitFacilityID: "shuto.ic.s1.angyou", laps: 1
+      )
+      let release = try ShutoCircuitProductReleaseBuilder.buildPlannedRouteRelease(
+        context: try ShutoPlannedRouteRuntimeCompiler.NetworkContext(database: database),
+        route: route
+      )
+      let gate = LiveNavigationReplayGate(release: release, database: database)
+      #expect(
+        gate.alternativeEdgeIDs(atMovementIndex: gate.finalDivergenceIndex)
+          .contains("osm.438367202.58.forward")
+      )
+      let missed = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: gate.finalDivergenceIndex,
+          alternativeEdgeID: "osm.438367202.58.forward",
+          branchMeters: 1_500
+        ),
+        seed: 13,
+        noise: .underReported
+      )
+      let summary = gateLine(file: "angyou", seed: 13, run: missed, label: "MISSED-EXIT-UNDER2X")
+      print(summary)
+      #expect(!missed.reachedCompletion, "\(summary)")
+      #expect(missed.deviationDetectedAfterOffPlanMeters != nil, "\(summary)")
     }
 
     /// Three laps of C1 inner from Shibakoen to Shiodome.

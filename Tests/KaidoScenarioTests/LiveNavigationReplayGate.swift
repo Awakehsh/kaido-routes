@@ -34,25 +34,13 @@
       corridorEdgesByID = Dictionary(
         uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) }
       )
-      databaseEdgesByID = Dictionary(
-        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
-      )
-      nodesByID = Dictionary(
-        uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
-      )
-      outgoingEdges = Dictionary(grouping: database.edges, by: \.fromNodeID)
-      parkingInteriorEdgeIDs = Set(
-        database.parkingAreas.flatMap { $0.interiorEdgeIDs ?? [] }
-      )
-      let coveredWayIDs = Set(
-        database.ways.filter {
-          $0.tags["tunnel"] == "yes" || $0.tags["covered"] == "yes"
-        }.map(\.wayID)
-      )
-      coveredEdgeIDs = Set(
-        database.edges.filter { coveredWayIDs.contains($0.wayID) }.map(\.edgeID)
-      )
-      roadPolylines = database.roadPolylines()
+      let network = ReplayGateNetworkLookups.shared(for: database)
+      databaseEdgesByID = network.databaseEdgesByID
+      nodesByID = network.nodesByID
+      outgoingEdges = network.outgoingEdges
+      parkingInteriorEdgeIDs = network.parkingInteriorEdgeIDs
+      coveredEdgeIDs = network.coveredEdgeIDs
+      roadPolylines = network.roadPolylines
       routeEdgeIDs = corridor.occurrences.sorted { $0.index < $1.index }
         .map(\.directedEdgeID)
       var starts: [Double] = []
@@ -1624,5 +1612,62 @@
         ? min(1, max(0, (pointX * segmentX + pointY * segmentY) / squared)) : 0
       return hypot(pointX - segmentX * fraction, pointY - segmentY * fraction)
     }.min() ?? .infinity
+  }
+
+  /// The whole-network lookups every gate reads, built once per database.
+  /// The stress harness keeps one gate per route for a worker's lifetime, and
+  /// each gate used to build its own copy, about 10 MB. Over the ~230 routes
+  /// of a full comparison that came to ~2.3 GB in each of 15 workers.
+  /// Every caller passes the one decoded network snapshot, so its ID
+  /// identifies the lookups.
+  private struct ReplayGateNetworkLookups {
+    let databaseEdgesByID: [String: ShutoNetworkDatabase.Edge]
+    let nodesByID: [Int64: ShutoNetworkDatabase.Node]
+    let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
+    let parkingInteriorEdgeIDs: Set<String>
+    let coveredEdgeIDs: Set<String>
+    let roadPolylines: [[MatcherCoordinate]]
+
+    private static let cache = Cache()
+
+    static func shared(for database: ShutoNetworkDatabase) -> ReplayGateNetworkLookups {
+      cache.lookups(for: database)
+    }
+
+    private final class Cache: @unchecked Sendable {
+      private let lock = NSLock()
+      private var built: [String: ReplayGateNetworkLookups] = [:]
+
+      func lookups(for database: ShutoNetworkDatabase) -> ReplayGateNetworkLookups {
+        lock.lock()
+        defer { lock.unlock() }
+        if let lookups = built[database.databaseID] { return lookups }
+        let lookups = ReplayGateNetworkLookups(database: database)
+        built[database.databaseID] = lookups
+        return lookups
+      }
+    }
+
+    private init(database: ShutoNetworkDatabase) {
+      databaseEdgesByID = Dictionary(
+        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+      )
+      nodesByID = Dictionary(
+        uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
+      )
+      outgoingEdges = Dictionary(grouping: database.edges, by: \.fromNodeID)
+      parkingInteriorEdgeIDs = Set(
+        database.parkingAreas.flatMap { $0.interiorEdgeIDs ?? [] }
+      )
+      let coveredWayIDs = Set(
+        database.ways.filter {
+          $0.tags["tunnel"] == "yes" || $0.tags["covered"] == "yes"
+        }.map(\.wayID)
+      )
+      coveredEdgeIDs = Set(
+        database.edges.filter { coveredWayIDs.contains($0.wayID) }.map(\.edgeID)
+      )
+      roadPolylines = database.roadPolylines()
+    }
   }
 #endif

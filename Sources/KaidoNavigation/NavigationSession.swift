@@ -96,6 +96,7 @@ public actor NavigationSession {
   /// Every road the car can drive without having left the expressway: the
   /// plan's own and those of the rest of the network.
   private let expresswayRoads: [[MatcherCoordinate]]
+  private let corridorEdgeCoordinates: [String: [MatcherCoordinate]]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
   private var lastObservedCoordinate: MatcherCoordinate?
@@ -299,6 +300,10 @@ public actor NavigationSession {
       routePlan.destinationParkingAreaID == nil
       ? RouteEndGeometry(routePlan: routePlan, corridor: matcherCorridor)
       : nil
+    corridorEdgeCoordinates = Dictionary(
+      matcherCorridor.edges.map { ($0.id, $0.coordinates) },
+      uniquingKeysWith: { first, _ in first }
+    )
     let planEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
     self.expresswayRoads =
       matcherCorridor.edges.filter { planEdgeIDs.contains($0.id) }.map(\.coordinates)
@@ -426,23 +431,31 @@ public actor NavigationSession {
     {
       return handedOver
     }
-    if engine.snapshot.signalReacquisitionStatus == .pending {
-      return update(
-        estimate: Self.restorationEstimate(from: estimate),
-        guidanceProgressState: .insufficientMatcherEvidence
-      )
-    }
+    // Reacquisition after a tunnel waits for the plan, which a car that left
+    // it there never gives back. Meanwhile a deviation is weighed only on a
+    // road off the plan that the car can have reached since it was last
+    // placed on it: after the portal the first fixes are the worst, so not on
+    // a pass of the plan behind progress, nor the road the plan leaves at its
+    // last choice.
+    let isReacquiring = engine.snapshot.signalReacquisitionStatus == .pending
     if detectsOffPlanDeviation,
       engine.snapshot.journeyPhase == .strictRoute
         || engine.snapshot.journeyPhase == .routeRecovery,
       !continuesPastRouteEnd,
-      !observeParkingStopBypass(estimate: estimate, observation: observation)
+      isReacquiring || !observeParkingStopBypass(estimate: estimate, observation: observation)
     {
       observeOffPlanEvidence(
         estimate: estimate,
         isOnReachableOffPlanEdge: matched.isOnReachableOffPlanEdge,
         edgeDistancesMeters: matched.edgeDistancesMeters,
-        observation: observation
+        observation: observation,
+        onlyOnReachableBranches: isReacquiring
+      )
+    }
+    if engine.snapshot.signalReacquisitionStatus == .pending {
+      return update(
+        estimate: Self.restorationEstimate(from: estimate),
+        guidanceProgressState: .insufficientMatcherEvidence
       )
     }
 
@@ -576,7 +589,8 @@ public actor NavigationSession {
     estimate: MatcherEstimate,
     isOnReachableOffPlanEdge: Bool,
     edgeDistancesMeters: [String: Double],
-    observation: RouteMatcherObservation
+    observation: RouteMatcherObservation,
+    onlyOnReachableBranches: Bool = false
   ) {
     guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters
     else { return }
@@ -612,9 +626,17 @@ public actor NavigationSession {
         let distance = estimate.distanceMeters,
         distance <= clearance,
         (isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
-          || isBehindProgress(estimate)
-          || isOnRoadLeftAtLastChoice(estimate, observation: observation),
+          || !onlyOnReachableBranches
+            && (isBehindProgress(estimate)
+              || isOnRoadLeftAtLastChoice(estimate, observation: observation)),
         isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
+        // Just out of a tunnel, a receiver that reports half its error places
+        // fixes on a road beside the plan as readily as the car on it; only a
+        // placement the matcher holds above LOW, driving along that road, shows
+        // the car is there.
+        !onlyOnReachableBranches
+          || estimate.confidence != .low
+            && isDrivingAlong(directedEdgeID, observation: observation),
         // Leaving past the destination PA's entry ramp ends the drive; the
         // ramp runs beside the road past it at first, so a fix the matcher
         // is torn about cannot show which one the car took.
@@ -682,6 +704,19 @@ public actor NavigationSession {
       at: observation.coordinate,
       courseDegrees: course,
       toleranceDegrees: max(30, 3 * courseAccuracy)
+    )
+  }
+
+  private func isDrivingAlong(_ edgeID: String, observation: RouteMatcherObservation) -> Bool {
+    guard let coordinates = corridorEdgeCoordinates[edgeID],
+      let course = observation.courseDegrees,
+      let courseAccuracy = observation.courseAccuracyDegrees
+    else { return false }
+    return RouteEndGeometry.isDrivingAlong(
+      coordinates,
+      at: observation.coordinate,
+      courseDegrees: course,
+      toleranceDegrees: max(20, 3 * courseAccuracy)
     )
   }
 
@@ -1907,14 +1942,27 @@ private struct RouteEndGeometry: Sendable {
     toleranceDegrees: Double
   ) -> Bool {
     guard let coordinates = roadLeftAtLastChoice[edgeID] else { return false }
+    return Self.isDrivingAlong(
+      coordinates, at: coordinate, courseDegrees: courseDegrees, toleranceDegrees: toleranceDegrees
+    )
+  }
+
+  /// Whether a car at `coordinate` driving at `courseDegrees` drives along
+  /// the road `coordinates` draws, at its segment nearest the point.
+  static func isDrivingAlong(
+    _ coordinates: [MatcherCoordinate],
+    at coordinate: MatcherCoordinate,
+    courseDegrees: Double,
+    toleranceDegrees: Double
+  ) -> Bool {
     let segments = Array(zip(coordinates, coordinates.dropFirst()))
     guard
       let nearest = segments.min(by: {
-        Self.meters(from: coordinate, toPolyline: [$0.0, $0.1])
-          < Self.meters(from: coordinate, toPolyline: [$1.0, $1.1])
+        meters(from: coordinate, toPolyline: [$0.0, $0.1])
+          < meters(from: coordinate, toPolyline: [$1.0, $1.1])
       })
     else { return false }
-    return Self.runs(from: nearest.0, to: nearest.1, within: toleranceDegrees, of: courseDegrees)
+    return runs(from: nearest.0, to: nearest.1, within: toleranceDegrees, of: courseDegrees)
   }
 
   private static func runs(

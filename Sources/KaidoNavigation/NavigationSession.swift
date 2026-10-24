@@ -629,7 +629,16 @@ public actor NavigationSession {
           || !onlyOnReachableBranches
             && (isBehindProgress(estimate)
               || isOnRoadLeftAtLastChoice(estimate, observation: observation)),
-        isClearOfRemainingPlan(edgeDistancesMeters, clearanceMeters: clearance),
+        // Off the plan by its clearance is no evidence for a road a few
+        // metres beside it: a receiver reporting half its error clears 3×
+        // that error routinely. The fix must also lie nearer the road it is
+        // matched to than any road of the plan, by more than its error.
+        isClearOfRemainingPlan(
+          edgeDistancesMeters,
+          clearanceMeters: max(
+            clearance, distance + max(5, observation.horizontalAccuracyMeters)
+          )
+        ),
         // Just out of a tunnel, a receiver that reports half its error places
         // fixes on a road beside the plan as readily as the car on it; only a
         // placement the matcher holds above LOW, driving along that road, shows

@@ -433,6 +433,15 @@ public struct RouteMatcherSession: Sendable {
   private var lastQueriedEdgeCount = 0
   private var lastMeasuredEdges: [String: EdgeMeasurement] = [:]
   private var lastSeparatedOccurrenceIndex: Int?
+  /// Where off-plan evidence stops counting the roads left behind. It moves
+  /// on two confident plan matches in a row with no road in its own reach
+  /// beside the fix, not on one: a single match can fall on the far side of
+  /// a branch a few metres beside the plan while the car is on the branch
+  /// (Nishi-Shinjuku's Route 4 link runs 4-11 m from C2 for 880 m), and the
+  /// branch stays in reach until it has left the fix. Rivals, candidates
+  /// and admission still leave a road behind on one match.
+  private var evidenceSeparatedOccurrenceIndex: Int?
+  private var pendingSeparationIndex: Int?
   private var lastOnPlanOccurrenceIndex: Int?
   /// The passes of the plan the car can be on, as set by the session from
   /// admitted progress and reach. A road whose every pass lies outside it is
@@ -484,6 +493,8 @@ public struct RouteMatcherSession: Sendable {
     lastQueriedEdgeCount = 0
     lastMeasuredEdges = [:]
     lastSeparatedOccurrenceIndex = nil
+    evidenceSeparatedOccurrenceIndex = nil
+    pendingSeparationIndex = nil
     lastOnPlanOccurrenceIndex = nil
     offPlanPlacement = nil
   }
@@ -513,9 +524,8 @@ public struct RouteMatcherSession: Sendable {
       ?? lastOnPlanOccurrenceIndex.map {
         $0 + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
       }
-    let lower = lastSeparatedOccurrenceIndex
     let window = occurrenceWindow
-    let isReachable = { (edgeID: String) in
+    let isReachableAfter = { (lower: Int?, edgeID: String) in
       if let window, model.isPassOutsideWindow(edgeID, window: window) {
         // Progress along the final exit can run ahead of a car that missed
         // it; the road it leaves there stays one the car can be on.
@@ -527,6 +537,9 @@ public struct RouteMatcherSession: Sendable {
       return model.branchIsReachable(edgeID, from: lower, through: upper)
         || selectedIndex.map { model.leavesBypass(edgeID, beside: $0) } == true
     }
+    let lastSeparated = lastSeparatedOccurrenceIndex
+    let evidenceLower = evidenceSeparatedOccurrenceIndex
+    let isReachable = { (edgeID: String) in isReachableAfter(lastSeparated, edgeID) }
     // From the occurrence the plan leaves at its final exit, the road it
     // leaves there is one it has already driven, and runs beside the exit as
     // far as the corridor goes. A car that missed the exit is on it, and
@@ -538,7 +551,7 @@ public struct RouteMatcherSession: Sendable {
       && selectedIndex.map { index in
         model.finalExitIndex.map { index >= $0 } == true && index < model.finalOccurrenceIndex
       } == true
-    var competing = model.offPlanEdgeIDs(
+    let nearbyOffPlan = model.offPlanEdgeIDs(
       within: lastMeasuredEdges,
       observation: observation,
       matchedDistanceMeters: estimate.distanceMeters,
@@ -546,10 +559,12 @@ public struct RouteMatcherSession: Sendable {
       sessionConfiguration: sessionConfiguration,
       window: window
     ).filter { edgeID in
-      edgeID != estimate.directedEdgeID && isReachable(edgeID)
+      edgeID != estimate.directedEdgeID
         && !(isOnFinalExit && model.isDrivenBeforeFinalExit(edgeID))
         && !(selectedIndex.map { model.isBypass(edgeID, beside: $0) } ?? false)
     }
+    var competing = nearbyOffPlan.filter(isReachable)
+    var evidenceRivals = nearbyOffPlan.filter { isReachableAfter(evidenceLower, $0) }
     // A match on the plan right after the car was placed on an off-plan road
     // it could have left the plan for is a jump between roads unless that
     // road leads there in the distance the car can have driven since: while
@@ -576,14 +591,22 @@ public struct RouteMatcherSession: Sendable {
         offPlanPlacement = nil
       } else if let road = nearby.min() {
         competing.append(road)
+        evidenceRivals.append(road)
       }
     }
     if let selectedIndex, estimate.confidence != .lost {
       lastOnPlanOccurrenceIndex = selectedIndex
-      if estimate.confidence == .high || estimate.confidence == .medium,
-        competing.isEmpty
-      {
-        lastSeparatedOccurrenceIndex = selectedIndex
+      let confident = estimate.confidence == .high || estimate.confidence == .medium
+      if confident, competing.isEmpty { lastSeparatedOccurrenceIndex = selectedIndex }
+      if confident, evidenceRivals.isEmpty {
+        if pendingSeparationIndex == nil {
+          pendingSeparationIndex = selectedIndex
+        } else {
+          pendingSeparationIndex = nil
+          evidenceSeparatedOccurrenceIndex = selectedIndex
+        }
+      } else {
+        pendingSeparationIndex = nil
       }
     }
     return RouteMatcherObservationResult(
@@ -591,7 +614,7 @@ public struct RouteMatcherSession: Sendable {
       competingOffPlanEdgeIDs: competing,
       isOnReachableOffPlanEdge: estimate.occurrenceID == nil
         && estimate.confidence != .lost
-        && estimate.directedEdgeID.map(isReachable) == true,
+        && estimate.directedEdgeID.map { isReachableAfter(evidenceLower, $0) } == true,
       edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters)
     )
   }

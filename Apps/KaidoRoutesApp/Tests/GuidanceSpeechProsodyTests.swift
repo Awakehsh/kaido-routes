@@ -10,7 +10,8 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   func testInterruptionDoesNotInventAnEndEvent() {
     let notifications = NotificationCenter()
     let session = AVAudioSession.sharedInstance()
-    let output = AVSpeechGuidanceOutput(audioSession: session, notifications: notifications)
+    let output = AVSpeechGuidanceOutput(
+      synthesizer: SpeechEngines.original, audioSession: session, notifications: notifications)
     var events: [GuidanceSpeechOutputEvent] = []
     output.eventHandler = { events.append($0) }
     notifications.post(
@@ -29,8 +30,8 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   func testMediaResetReplacesTheOrphanedSynthesizer() {
     let notifications = NotificationCenter()
     let session = AVAudioSession.sharedInstance()
-    let original = AVSpeechSynthesizer()
-    let replacement = AVSpeechSynthesizer()
+    let original = SpeechEngines.original
+    let replacement = SpeechEngines.replacement
     let output = AVSpeechGuidanceOutput(
       synthesizer: original, audioSession: session,
       synthesizerFactory: { replacement }, notifications: notifications)
@@ -47,7 +48,8 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   func testBluetoothRouteChangeWaitsForRecovery() {
     let notifications = NotificationCenter()
     let session = AVAudioSession.sharedInstance()
-    let output = AVSpeechGuidanceOutput(audioSession: session, notifications: notifications)
+    let output = AVSpeechGuidanceOutput(
+      synthesizer: SpeechEngines.original, audioSession: session, notifications: notifications)
     var events: [GuidanceSpeechOutputEvent] = []
     output.eventHandler = { events.append($0) }
     notifications.post(
@@ -64,8 +66,8 @@ final class GuidanceSpeechProsodyTests: XCTestCase {
   func testAudioSessionNotificationsPostedOffTheMainThreadAreHandledInOrder() {
     let notifications = NotificationCenter()
     let session = AVAudioSession.sharedInstance()
-    let original = AVSpeechSynthesizer()
-    let replacement = AVSpeechSynthesizer()
+    let original = SpeechEngines.original
+    let replacement = SpeechEngines.replacement
     let output = AVSpeechGuidanceOutput(
       synthesizer: original, audioSession: session,
       synthesizerFactory: { replacement }, notifications: notifications)
@@ -218,6 +220,21 @@ final class AudioSessionRequestRecorder {
     restorations.append((method, method_getImplementation(method)))
     method_setImplementation(method, imp_implementationWithBlock(block))
   }
+}
+
+/// The two engines the tests share: an output's own, and the one a media
+/// reset replaces it with. Each engine starts its own speech thread, and
+/// several starting at once in a fresh process crashed TextToSpeech (a double
+/// free on an AXSpeech thread, 3 in 100 launches of this class), so the tests
+/// make only the engines their assertions tell apart. Sharing relies on no
+/// test speaking through them: each test's output, the engine's delegate, goes
+/// away before the engine, and a delegate freed with a callback still pending
+/// crashes TextToSpeech. An output touches its engine only to speak and to
+/// stop an utterance it spoke.
+@MainActor
+private enum SpeechEngines {
+  static let original = AVSpeechSynthesizer()
+  static let replacement = AVSpeechSynthesizer()
 }
 
 /// Takes utterances without speaking them.

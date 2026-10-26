@@ -309,7 +309,7 @@ def main():
             sys.exit(f"error: {error}")
         for c in cells:
             print(f"{c['group']:12} {c['route']:70} {c['profile']:9} {c['extra']:18} {' '.join(sorted(c['tags']))}")
-        print(f"{len(cells)} cells; {sum(catalog.cost((c['group'], c['route'])) for c in cells) * 40:,} fixes over 40 seeds")
+        print(f"{len(cells)} cells; {sum(catalog.cost((c['group'], c['route'], c['profile'], c['extra'])) for c in cells) * 40:,} fixes over 40 seeds")
         return 0
 
     safe = lambda ref: re.sub(r"[^A-Za-z0-9._-]+", "_", ref)

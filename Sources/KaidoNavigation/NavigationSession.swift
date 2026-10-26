@@ -97,6 +97,7 @@ public actor NavigationSession {
   /// plan's own and those of the rest of the network.
   private let expresswayRoads: [[MatcherCoordinate]]
   private let corridorEdgeCoordinates: [String: [MatcherCoordinate]]
+  private let corridorSuccessorEdgeIDs: [String: Set<String>]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
   private var lastObservedCoordinate: MatcherCoordinate?
@@ -302,6 +303,10 @@ public actor NavigationSession {
       : nil
     corridorEdgeCoordinates = Dictionary(
       matcherCorridor.edges.map { ($0.id, $0.coordinates) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    corridorSuccessorEdgeIDs = Dictionary(
+      matcherCorridor.edges.map { ($0.id, $0.successorEdgeIDs) },
       uniquingKeysWith: { first, _ in first }
     )
     let planEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
@@ -737,6 +742,8 @@ public actor NavigationSession {
     )
   }
 
+  /// Whether the course runs along the road within the fix's error of
+  /// where it projects onto `edgeID`, into the roads before and after it.
   private func isDrivingAlong(_ edgeID: String, observation: RouteMatcherObservation) -> Bool {
     guard let coordinates = corridorEdgeCoordinates[edgeID],
       let course = observation.courseDegrees,
@@ -744,7 +751,10 @@ public actor NavigationSession {
     else { return false }
     return RouteEndGeometry.isDrivingAlong(
       coordinates,
+      before: (corridorPredecessorEdgeIDs[edgeID] ?? []).compactMap { corridorEdgeCoordinates[$0] },
+      after: (corridorSuccessorEdgeIDs[edgeID] ?? []).sorted().compactMap { corridorEdgeCoordinates[$0] },
       at: observation.coordinate,
+      windowMeters: max(5, observation.horizontalAccuracyMeters),
       courseDegrees: course,
       toleranceDegrees: max(20, 3 * courseAccuracy)
     )
@@ -2005,6 +2015,68 @@ private struct RouteEndGeometry: Sendable {
       })
     else { return false }
     return runs(from: nearest.0, to: nearest.1, within: toleranceDegrees, of: courseDegrees)
+  }
+
+  /// Whether the course runs along the road anywhere within `windowMeters`
+  /// along it of where the point projects onto `coordinates`: on a curving
+  /// ramp, scatter along the road puts the fix nearest a segment whose chord
+  /// points 20-30 deg away from the heading at the car. The window reaches
+  /// into the edge's predecessors (`before`) and successors (`after`).
+  static func isDrivingAlong(
+    _ coordinates: [MatcherCoordinate],
+    before: [[MatcherCoordinate]],
+    after: [[MatcherCoordinate]],
+    at coordinate: MatcherCoordinate,
+    windowMeters: Double,
+    courseDegrees: Double,
+    toleranceDegrees: Double
+  ) -> Bool {
+    let segments = Array(zip(coordinates, coordinates.dropFirst()))
+    guard
+      let nearest = segments.indices.min(by: {
+        meters(from: coordinate, toPolyline: [segments[$0].0, segments[$0].1])
+          < meters(from: coordinate, toPolyline: [segments[$1].0, segments[$1].1])
+      })
+    else { return false }
+    let lengths = segments.map { segment in
+      let offset = planarOffset(from: segment.0, to: segment.1)
+      return hypot(offset.east, offset.north)
+    }
+    let starts = lengths.indices.map { lengths[..<$0].reduce(0, +) }
+    let total = lengths.reduce(0, +)
+    let point = planarOffset(from: segments[nearest].0, to: coordinate)
+    let direction = planarOffset(from: segments[nearest].0, to: segments[nearest].1)
+    let squared = direction.east * direction.east + direction.north * direction.north
+    let fraction =
+      squared > 0
+      ? min(1, max(0, (point.east * direction.east + point.north * direction.north) / squared))
+      : 0
+    let along = starts[nearest] + lengths[nearest] * fraction
+    let runsAlong = { (segment: (MatcherCoordinate, MatcherCoordinate)) in
+      runs(from: segment.0, to: segment.1, within: toleranceDegrees, of: courseDegrees)
+    }
+    if segments.indices.contains(where: { index in
+      starts[index] + lengths[index] >= along - windowMeters
+        && starts[index] <= along + windowMeters && runsAlong(segments[index])
+    }) {
+      return true
+    }
+    func reaches(_ road: [(MatcherCoordinate, MatcherCoordinate)], within reach: Double) -> Bool {
+      var remaining = reach
+      for segment in road where remaining > 0 {
+        if runsAlong(segment) { return true }
+        let offset = planarOffset(from: segment.0, to: segment.1)
+        remaining -= hypot(offset.east, offset.north)
+      }
+      return false
+    }
+    if along - windowMeters < 0,
+      before.contains(where: { reaches(Array(zip($0, $0.dropFirst())).reversed(), within: windowMeters - along) })
+    {
+      return true
+    }
+    return along + windowMeters > total
+      && after.contains(where: { reaches(Array(zip($0, $0.dropFirst())), within: along + windowMeters - total) })
   }
 
   private static func runs(

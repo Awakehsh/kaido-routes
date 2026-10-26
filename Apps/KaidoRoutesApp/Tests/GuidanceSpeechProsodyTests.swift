@@ -226,7 +226,11 @@ final class AudioSessionRequestRecorder {
 /// reset replaces it with. Each engine starts its own speech thread, and
 /// several starting at once in a fresh process crashed TextToSpeech (a double
 /// free on an AXSpeech thread, 3 in 100 launches of this class), so the tests
-/// make only the engines their assertions tell apart.
+/// make only the engines their assertions tell apart. Sharing relies on no
+/// test speaking through them: each test's output, the engine's delegate, goes
+/// away before the engine, and a delegate freed with a callback still pending
+/// crashes TextToSpeech. An output touches its engine only to speak and to
+/// stop an utterance it spoke.
 @MainActor
 private enum SpeechEngines {
   static let original = AVSpeechSynthesizer()

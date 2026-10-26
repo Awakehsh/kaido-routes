@@ -5261,6 +5261,17 @@ final class WholeShutoProductModel: ObservableObject {
     tick()
   }
 
+  /// Awaits the circuit pairing and tariff resolution already in flight,
+  /// including one started while it ran, so a test asserts its outcome
+  /// rather than a wall-clock budget.
+  func awaitCircuitPairingForTesting() async {
+    var awaited: [Task<Void, Never>] = []
+    while let task = circuitTariffTask, !awaited.contains(task) {
+      await task.value
+      awaited.append(task)
+    }
+  }
+
   /// Awaits the surface routing and live-runtime preparation already in
   /// flight, including preparation one of them starts on completion, so a
   /// test asserts their outcome rather than a wall-clock budget.

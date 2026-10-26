@@ -434,7 +434,11 @@ public actor NavigationSession {
     // the expressway right after a tunnel never reacquires the plan, so this
     // runs before reacquisition holds everything else back.
     if detectsOffPlanDeviation,
-      let handedOver = handOverAtUnplannedExit(estimate: estimate, observation: observation)
+      let handedOver = handOverAtUnplannedExit(
+        estimate: estimate,
+        observation: observation,
+        recentOffPlanPlacementEdgeID: matched.recentOffPlanPlacementEdgeID
+      )
     {
       return handedOver
     }
@@ -526,19 +530,25 @@ public actor NavigationSession {
   /// exit, or nil when it did not.
   private func handOverAtUnplannedExit(
     estimate: MatcherEstimate,
-    observation: RouteMatcherObservation
+    observation: RouteMatcherObservation,
+    recentOffPlanPlacementEdgeID: String?
   ) -> NavigationSessionUpdate? {
     guard engine.snapshot.journeyPhase == .strictRoute
       || engine.snapshot.journeyPhase == .routeRecovery
     else { return nil }
-    observeUnplannedExit(estimate: estimate, observation: observation)
+    observeUnplannedExit(
+      estimate: estimate,
+      observation: observation,
+      recentOffPlanPlacementEdgeID: recentOffPlanPlacementEdgeID
+    )
     guard engine.snapshot.journeyPhase == .surfaceEgress else { return nil }
     return update(estimate: estimate, guidanceProgressState: .notApplicable)
   }
 
   private func observeUnplannedExit(
     estimate: MatcherEstimate,
-    observation: RouteMatcherObservation
+    observation: RouteMatcherObservation,
+    recentOffPlanPlacementEdgeID: String?
   ) {
     guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters,
       estimate.confidence == .lost,
@@ -559,19 +569,27 @@ public actor NavigationSession {
     unplannedExitRun = nil
     offPlanRun = nil
     // Past the plan's last choice of road the only way off the expressway is
-    // the planned exit. Coarse fixes along its ramp can withhold the exit's
-    // own evidence until the car is already off the expressway. Off it, the
-    // car left the expressway somewhere: a fix nearer that exit than any
-    // other place it could have left is the exit taken. The road the exit
-    // leaves can carry on beside the street the car drives away on (Route 6
-    // at Mukojima, C2 at Senju-Shinbashi), so how near that road is says
-    // nothing about which way the car left, and where the corridor stops
-    // following it (328 m past Senju-Shinbashi from Gotanda) the car would
-    // still be on the expressway.
+    // the planned exit. So it is for a car last placed on the exit, or on
+    // another ramp of its facility, even with progress short of the last
+    // choice: a shortcut onto the exit itself (its link off C1 at Shiodome
+    // JCT, taken from Shibakoen before the lap the plan drives first) leaves
+    // progress at the fork. Nearness alone is not enough where the exit lies
+    // beside the route head: a street that followed the Shibakoen ramp
+    // closely enough to enter turns away near the Shiodome link. Coarse
+    // fixes along the exit's ramp can withhold its own evidence until the
+    // car is already off the expressway. Off it, the car left the expressway
+    // somewhere: a fix nearer that exit than any other place it could have
+    // left is the exit taken. The road the exit leaves can carry on beside
+    // the street the car drives away on (Route 6 at Mukojima, C2 at
+    // Senju-Shinbashi), so how near that road is says nothing about which
+    // way the car left, and where the corridor stops following it (328 m
+    // past Senju-Shinbashi from Gotanda) the car would still be on the
+    // expressway.
     if let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex,
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
-        >= routeEnd.exitSideStartIndex,
+        >= routeEnd.exitSideStartIndex
+        || recentOffPlanPlacementEdgeID.map(routeEnd.isOnExit) == true,
       routeEnd.metersFromExit(observation.coordinate, fromProgress: currentIndex)
         < routeEnd.metersFromOtherDepartures(observation.coordinate, fromProgress: currentIndex)
     {
@@ -1925,6 +1943,9 @@ private struct RouteEndGeometry: Sendable {
   let exitSideStartIndex: Int
   /// The plan from `exitSideStartIndex` to its end.
   private let exit: [MatcherCoordinate]
+  /// The roads of the exit: the plan from `exitSideStartIndex`, what
+  /// continues past its end, and the exit facility's other ramps.
+  private let exitRoadEdgeIDs: Set<String>
   /// The exit facility's other ramps and what the corridor follows past
   /// them, with the last occurrence of the plan they can be reached from: a
   /// car on one left at the planned exit all the same.
@@ -2016,6 +2037,7 @@ private struct RouteEndGeometry: Sendable {
         pending += edge.successorEdgeIDs
       }
     }
+    exitRoadEdgeIDs = exitEdgeIDs.union(pastEndIDs).union(rampIDs)
     exitRamps = corridor.edges.compactMap {
       guard rampIDs.contains($0.id), let reachingIndex = lastReachingIndex[$0.id] else { return nil }
       return ($0.coordinates, reachingIndex)
@@ -2195,6 +2217,12 @@ private struct RouteEndGeometry: Sendable {
     guard let end = exit.last else { return false }
     return Self.meters(from: coordinate, toPolyline: exit) + toleranceMeters
       < Self.meters(from: coordinate, toPolyline: [end, end])
+  }
+
+  /// Whether a road is one of the exit's: from here the only way off the
+  /// expressway is the planned exit.
+  func isOnExit(_ edgeID: String) -> Bool {
+    exitRoadEdgeIDs.contains(edgeID)
   }
 
   /// Distance from a point to the plan after its last choice of road, or to

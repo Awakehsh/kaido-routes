@@ -32,6 +32,29 @@
       #expect(!run.handedOver, "\(summary)")
     }
 
+    /// Shiodome JCT: the exit link off C1 is this drive's last road, after a
+    /// lap of C1 inner from Shibakoen. A car that takes it at once leaves the
+    /// expressway with progress still at the fork, by the planned exit all
+    /// the same; it was handed over as having left at an unplanned one.
+    @Test("a shortcut onto the planned exit itself ends the drive there")
+    func shortcutOntoThePlannedExit() async throws {
+      let gate = try replayGate("c1-inner-shibakoen-to-shiodome-product-release.json")
+      let fork = try #require(
+        NavigationStress.forkMovement(
+          gate,
+          spec: "fork=osm.45021970.28.forward/osm.316213226.0.forward/osm.24402125.0.forward"
+        )
+      )
+      let shortcut = try #require(
+        gate.shortcutLegs(movementIndex: fork.movementIndex, alternativeEdgeID: fork.alternative)
+      )
+      let run = try await gate.run(legs: shortcut.legs, seed: 7, noise: .urban)
+      let summary = gateLine(file: "shibakoen shiodome", seed: 7, run: run, label: "EXIT-SHORTCUT-URBAN")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.handedOver, "\(summary)")
+    }
+
     /// Tatsumi JCT: Route 9, a pass this drive makes 56 km later, runs 13 m
     /// beside the Bayshore. Fixes from a receiver that reports half its error
     /// land on it while the car stays on the Bayshore; with the deviation

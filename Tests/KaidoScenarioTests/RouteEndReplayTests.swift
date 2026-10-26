@@ -45,6 +45,40 @@
       )
     }
 
+    /// A car that leaves by another exit near the planned one hands over: of
+    /// every other exit within 2 km before a last choice of road, the
+    /// nearest departure to its planned exit in the stress catalog (C1 outer,
+    /// 420 m before Ginza), and of every road taken within 2 km after the plan
+    /// passes its own exit, the nearest (Route 6 from Tsutsumidori, 304 m from
+    /// the Mukojima exit the plan passes before its lap of C1). A placement on
+    /// the exit's roads lets the route end credit the planned exit short of
+    /// the last choice; it must not credit these.
+    @Test(
+      "leaving by another exit near the planned one hands the drive over",
+      arguments: [
+        ("via:c1o:shuto.ic.c1.kyoubashi:shuto.ic.c1.ginza:1", 569, "osm.4848942.0.forward", "URBAN", UInt64(1)),
+        (
+          "via:c1i:shuto.ic.6-mukojima.tsutsumidori:shuto.ic.6-mukojima.mukoujima:1", 23,
+          "osm.128005859.0.forward", "UNDER2X", 2
+        ),
+      ]
+    )
+    func anotherExitNearThePlannedOneHandsOver(
+      route: String, movementIndex: Int, alternative: String, noise: String, seed: UInt64
+    ) async throws {
+      let gate = try NavigationStress.fixture(route).gate
+      #expect(gate.alternativeEdgeIDs(atMovementIndex: movementIndex).contains(alternative))
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(movementIndex: movementIndex, alternativeEdgeID: alternative),
+        seed: seed,
+        noise: Self.noise(noise)
+      )
+      let summary = gateLine(file: route, seed: seed, run: run, label: "OTHER-EXIT-\(noise)")
+      print(summary)
+      #expect(run.handedOver, "\(summary)")
+      #expect(!run.reachedCompletion, "\(summary)")
+    }
+
     /// Driving on past Shiodome follows the plan's own first pass beside
     /// the ramp; the drive ended there as if the car had taken the exit.
     @Test(

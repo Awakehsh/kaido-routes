@@ -154,6 +154,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview.tests
         GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_NSPrincipalClass: KaidoRoutesAppTests.UnitTestAppStateReset
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/KaidoRoutes.app/KaidoRoutes"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false

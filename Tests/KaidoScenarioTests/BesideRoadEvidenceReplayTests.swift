@@ -103,6 +103,50 @@
       #expect(seen.second - left.second <= 19, "\(summary)")
     }
 
+    /// Ariake JCT: Route 11 leaves the Bayshore stacked above it, 1-9 m off,
+    /// for 370 m, and coarse fixes follow. No fix on it was evidence before
+    /// the car was past the corridor's end, and beyond it only a run already
+    /// under way counted: the drive never saw the car leave. The car the
+    /// matcher last placed on Route 11, now 100 m from every road of the plan
+    /// it can be on, has left along it.
+    @Test("a branch stacked on the plan is seen once its fixes leave the corridor")
+    func stackedBranchPastTheCorridor() async throws {
+      let gate = try replayGate("scenic-harumi-daikoku-pa-product-release.json")
+      let alternative = "osm.23169048.0.forward"
+      #expect(gate.alternativeEdgeIDs(atMovementIndex: 39).contains(alternative))
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(movementIndex: 39, alternativeEdgeID: alternative),
+        seed: 39,
+        noise: .underReported
+      )
+      let summary = gateLine(file: "scenic ariake", seed: 39, run: run, label: "ROUTE11-UNDER2X")
+      print(summary)
+      let left = try #require(run.records.first { $0.truth.offPlanDistanceMeters != nil })
+      let seen = try #require(
+        run.records.first {
+          $0.truth.offPlanDistanceMeters != nil
+            && ($0.phase == .routeRecovery || $0.phase == .surfaceEgress)
+        },
+        "\(summary)"
+      )
+      #expect(seen.second - left.second <= 45, "\(summary)")
+    }
+
+    /// A receiver that reports half its error leaves the corridor on the plan
+    /// as well: a fix outside three times its reported accuracy matches no
+    /// road, just after another was scattered onto a road beside the plan.
+    /// Clear of the plan by that much, such a fix raised 6 s of recovery
+    /// here; 100 m from every road of the plan, none does.
+    @Test("a LOST fix scattered off the plan does not start a deviation")
+    func lostFixBesideThePlan() async throws {
+      let gate = try Self.gate(.c1Outer, "shuto.ic.c1.kyoubashi", "shuto.ic.c1.ginza")
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: 1, noise: .underReported)
+      let summary = gateLine(file: "kyoubashi ginza", seed: 1, run: run, label: "LOST-SCATTER-UNDER2X")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
+    }
+
     private static func gate(
       _ circuit: ShutoCircuitDefinition, _ entry: String, _ exit: String
     ) throws -> LiveNavigationReplayGate {

@@ -6,6 +6,7 @@ a comparison runs unless `--select` says otherwise.
 """
 
 import itertools
+from pathlib import Path
 
 GROUPS = ("planned", "missedFinal", "wrongBranch", "stopBypass", "lapChange", "paReentry")
 PROFILES = ("URBAN", "MULTIPATH", "UNDER2X")
@@ -30,6 +31,11 @@ BUNDLED_WRONG_BRANCHES = {
 # The same junction pairs in a runtime loop.
 LOOP_WRONG_BRANCH_PAIRS = {"c1-inner": ("pair=283", "pair=487"), "c2": ("pair=234",)}
 LAP_CHANGES = ("stop:drop", "stop:finish", "endPA:finish")
+# Forks whose untaken road runs beside the plan, where a wrong branch looks like
+# the plan until the roads part; see the file's header. Each drive stops 2.5 km
+# past its fork: 1,500 fixes on average.
+BESIDE_FORKS = Path(__file__).with_name("beside-forks.tsv")
+BESIDE_FORK_FIXES = 1500
 
 # Approximate fixes per drive, the scheduling cost: the longest drives start
 # first so no core idles behind one long drive at the end. A missing route
@@ -87,6 +93,11 @@ def _route_cells():
         yield "missedFinal", route, "", family, True
         for spec in BUNDLED_WRONG_BRANCHES.get(file, ()):
             yield "wrongBranch", route, spec, family, True
+    for line in BESIDE_FORKS.read_text().splitlines():
+        if line.startswith("#"):
+            continue
+        route, incoming, planned, untaken, _, where = line.split("\t")[:6]
+        yield "wrongBranch", route, f"fork={incoming}/{planned}/{untaken}", ["beside-fork", f"beside-fork:{where}"], False
     for spec in LAP_CHANGES:
         # The lap-change fixtures are three-lap drives by construction.
         yield "lapChange", f"lapchange:{spec}", spec, ["lapchange"] + (["pa-end"] if "PA" in spec else []), True
@@ -140,4 +151,6 @@ def select(expression, routes_file=None):
 
 
 def cost(unit):
+    if unit[0] == "wrongBranch" and unit[3].startswith("fork="):
+        return BESIDE_FORK_FIXES
     return FIXES.get(unit[1], max(FIXES.values()) + 1)

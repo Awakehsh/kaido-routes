@@ -39,7 +39,7 @@ seed. The groups are the Phase A drives:
 |---|---|
 | `planned` | the whole plan, entrance to completion |
 | `missedFinal` | the last choice of road before the exit or PA taken wrong, 1.5 km |
-| `wrongBranch` | a reviewed divergent junction (C1 283 and 487, C2 234, Bayshore 130) taken wrong, in the bundled release or in a lap of a runtime loop |
+| `wrongBranch` | a reviewed divergent junction (C1 283 and 487, C2 234, Bayshore 130) taken wrong, in the bundled release or in a lap of a runtime loop; and every plan fork whose untaken road runs beside the plan (`beside-fork`, listed in `scripts/stress/beside-forks.tsv`), 2.5 km past the fork |
 | `stopBypass` | the Daikoku PA stop of a loop driven past |
 | `paReentry` | the lap-1 PA stop driven again in lap 2 |
 | `lapChange` | drop one lap or finish the current lap mid-drive |
@@ -77,7 +77,10 @@ releases, the lap changes (three-lap drives by construction), and the
 `later-lap` wrong branches: lap 2 of a three-lap loop, the only lap that is
 neither the first nor the last. Final-lap logic needs one and two laps; a third
 lap repeats them. On two laps `lap=2` and `lap=last` are the same drives, so
-the default keeps `lap=last` only. That is 207 of 291 cells.
+the default keeps `lap=last` only. That is 207 of 990 cells. The beside-road
+forks are a selection of their own, `beside-fork` (699 cells, about 42 M fixes
+over 40 seeds against the default's 25 M), so a comparison where they do not
+matter does not pay for them.
 
 ## Stages
 

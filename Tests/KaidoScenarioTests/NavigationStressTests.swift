@@ -285,6 +285,22 @@
       return matches.filter { lapRange.contains($0) }
     }
 
+    /// The first movement of the plan from `incoming` onto `planned` that can
+    /// be taken wrong onto `alternative`, named by edges so the cell follows
+    /// the fork when routing renumbers the plan:
+    /// `fork=<incoming>/<planned>/<alternative>`.
+    static func forkMovement(
+      _ gate: LiveNavigationReplayGate, spec: String
+    ) -> (movementIndex: Int, alternative: String)? {
+      let edges = spec.dropFirst("fork=".count).split(separator: "/").map(String.init)
+      let ids = gate.routeEdgeIDs
+      guard edges.count == 3,
+        let index = (1..<ids.count).first(where: { ids[$0 - 1] == edges[0] && ids[$0] == edges[1] }),
+        gate.alternativeEdgeIDs(atMovementIndex: index).contains(edges[2])
+      else { return nil }
+      return (index, edges[2])
+    }
+
     static func sameRoadOccurrenceIndex(
       as index: Int, in lap: Range<Int>, plan: RoutePlan, laps: [Range<Int>]
     ) -> Int? {
@@ -606,8 +622,13 @@
         }
       case "wrongBranch":
         let movementIndexes: [Int]
+        var forkAlternative: String? = nil
         if unit.extra.hasPrefix("m=") {
           movementIndexes = [Int(unit.extra.dropFirst(2))!]
+        } else if unit.extra.hasPrefix("fork=") {
+          let fork = forkMovement(gate, spec: unit.extra)
+          movementIndexes = fork.map { [$0.movementIndex] } ?? []
+          forkAlternative = fork?.alternative
         } else {
           movementIndexes = try pairMovementIndexes(fixture, spec: unit.extra)
         }
@@ -616,7 +637,8 @@
         }
         let released = gate.release.navigation.bundle.runtimePolicy.recoveryCandidates
         for movementIndex in movementIndexes {
-          for alternative in gate.alternativeEdgeIDs(atMovementIndex: movementIndex) {
+          for alternative in gate.alternativeEdgeIDs(atMovementIndex: movementIndex)
+          where forkAlternative.map({ $0 == alternative }) ?? true {
             let clock = ContinuousClock.now
             let run = try await gate.run(
               legs: gate.wrongBranchLegs(movementIndex: movementIndex, alternativeEdgeID: alternative),
@@ -626,6 +648,7 @@
             var record = baseRecord(unit, run: run, gate: gate, seconds: elapsed.seconds)
             record["movement"] = movementIndex
             record["alternative"] = alternative
+            record["leavesByPlannedExitRamp"] = run.leftByAnotherRampOfThePlannedExit
             record["offPlanCommits"] = run.offPlanCommitCount(movementIndex: movementIndex)
             record["offPlanPrompts"] = run.offPlanPromptCount(movementIndex: movementIndex)
             record["hasReleasedDetour"] = released.contains { $0.triggerDirectedEdgeID == alternative }

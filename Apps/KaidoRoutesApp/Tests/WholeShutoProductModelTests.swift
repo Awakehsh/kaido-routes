@@ -7443,10 +7443,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     coordinate: ShutoCoordinate,
     atMilliseconds: Int = 1_000,
     courseDegrees: Double = 90,
-    courseAccuracyDegrees: Double? = nil,
+    courseAccuracyDegrees: Double? = 2,
     speedMetersPerSecond: Double = 10,
     horizontalAccuracyMeters: Double = 5
   ) -> CoreLocationObservationEnvelope {
+    // As CoreLocationObservationAdapter does, the observation and its
+    // provenance carry the same course accuracy.
     CoreLocationObservationEnvelope(
       observation: RouteMatcherObservation(
         id: id,
@@ -7469,7 +7471,7 @@ final class WholeShutoProductModelTests: XCTestCase {
         isSimulatedBySoftware: false,
         carPlayConnectionContext: .disconnected,
         matcherCalibrationCohort: .phone,
-        courseAccuracyDegrees: 2,
+        courseAccuracyDegrees: courseAccuracyDegrees,
         speedAccuracyMetersPerSecond: 1,
         observationAgeMilliseconds: 0
       )

@@ -248,6 +248,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 90,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -264,6 +265,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 0,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -281,6 +283,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 0,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -310,6 +313,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 141,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -331,6 +335,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 90,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -362,6 +367,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 90,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -377,6 +383,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 141,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )
@@ -392,6 +399,7 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
       horizontalAccuracyMeters: 2,
       courseDegrees: 141,
+      courseAccuracyDegrees: 5,
       speedMetersPerSecond: 15,
       source: .phone
     )

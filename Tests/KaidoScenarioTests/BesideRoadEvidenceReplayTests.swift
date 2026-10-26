@@ -78,6 +78,31 @@
       #expect(run.longestUnadmittedSeconds <= 45, "\(summary)")
     }
 
+    /// Past the exit, Shikahamabashi's missed branch curves: fixes on it ran
+    /// 27 deg off the chord of the segment nearest them, so the course check
+    /// threw them away and saw the miss 33 s after it, against 14 s before
+    /// the check. Judged along the road around the fix, it sees it at 14 s.
+    @Test("a missed exit onto a curving branch is seen as early as before the course check")
+    func missedExitOntoACurvingBranch() async throws {
+      let gate = try Self.gate(.c1Outer, "shuto.ic.s1.shikahamabashi", "shuto.ic.c1.kandabashi")
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: gate.finalDivergenceIndex,
+          alternativeEdgeID: "osm.24039781.0.forward",
+          branchMeters: 1_500
+        ),
+        seed: 16,
+        noise: .underReported
+      )
+      let summary = gateLine(file: "shikahamabashi kandabashi", seed: 16, run: run, label: "CURVING-BRANCH-UNDER2X")
+      print(summary)
+      let left = try #require(run.records.first { $0.truth.offPlanDistanceMeters != nil })
+      let seen = try #require(
+        run.records.first { $0.truth.offPlanDistanceMeters != nil && $0.phase == .routeRecovery }
+      )
+      #expect(seen.second - left.second <= 19, "\(summary)")
+    }
+
     private static func gate(
       _ circuit: ShutoCircuitDefinition, _ entry: String, _ exit: String
     ) throws -> LiveNavigationReplayGate {

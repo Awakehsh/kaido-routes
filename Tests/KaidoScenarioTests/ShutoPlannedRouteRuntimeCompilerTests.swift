@@ -1874,6 +1874,7 @@ private func matcherObservation(
     ),
     horizontalAccuracyMeters: 1,
     courseDegrees: course >= 0 ? course : course + 360,
+    courseAccuracyDegrees: 5,
     speedMetersPerSecond: 15,
     source: .phone
   )

@@ -97,6 +97,7 @@ public actor NavigationSession {
   /// plan's own and those of the rest of the network.
   private let expresswayRoads: [[MatcherCoordinate]]
   private let corridorEdgeCoordinates: [String: [MatcherCoordinate]]
+  private let corridorSuccessorEdgeIDs: [String: Set<String>]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
   private var lastObservedCoordinate: MatcherCoordinate?
@@ -302,6 +303,10 @@ public actor NavigationSession {
       : nil
     corridorEdgeCoordinates = Dictionary(
       matcherCorridor.edges.map { ($0.id, $0.coordinates) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    corridorSuccessorEdgeIDs = Dictionary(
+      matcherCorridor.edges.map { ($0.id, $0.successorEdgeIDs) },
       uniquingKeysWith: { first, _ in first }
     )
     let planEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
@@ -567,6 +572,19 @@ public actor NavigationSession {
       engine.finishAtRouteEnd()
       return
     }
+    // Past the plan's last choice of road before its destination PA, the
+    // only way off the expressway is the road past the PA's entry ramp: the
+    // car drove past the PA. Fixes along that road beside the ramp can match
+    // the ramp itself and hold progress short of the fork, so admitted
+    // progress past the last choice is the evidence. A car that left before
+    // it can still come back to the PA and gets surface guidance instead.
+    if let entry = destinationParkingAreaEntry,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      currentIndex >= entry.approachStartIndex
+    {
+      engine.endPastDestinationParkingArea(divergenceOccurrenceID: entry.divergenceOccurrenceID)
+      return
+    }
     engine.leaveAtUnplannedExit()
   }
 
@@ -639,6 +657,14 @@ public actor NavigationSession {
             clearance, distance + max(5, observation.horizontalAccuracyMeters)
           )
         ),
+        // A fix scattered onto a road beside the plan or across it, even the
+        // opposite carriageway, is matched there while the car drives on: a
+        // reachable road is evidence only while the course runs along it. A
+        // fix without a course can carry a run on but not begin one.
+        !(isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
+          || (observation.courseDegrees != nil && observation.courseAccuracyDegrees != nil
+            ? isDrivingAlong(directedEdgeID, observation: observation)
+            : continues),
         // Just out of a tunnel, a receiver that reports half its error places
         // fixes on a road beside the plan as readily as the car on it; only a
         // placement the matcher holds above LOW, driving along that road, shows
@@ -716,6 +742,8 @@ public actor NavigationSession {
     )
   }
 
+  /// Whether the course runs along the road within the fix's error of
+  /// where it projects onto `edgeID`, into the roads before and after it.
   private func isDrivingAlong(_ edgeID: String, observation: RouteMatcherObservation) -> Bool {
     guard let coordinates = corridorEdgeCoordinates[edgeID],
       let course = observation.courseDegrees,
@@ -723,7 +751,10 @@ public actor NavigationSession {
     else { return false }
     return RouteEndGeometry.isDrivingAlong(
       coordinates,
+      before: (corridorPredecessorEdgeIDs[edgeID] ?? []).compactMap { corridorEdgeCoordinates[$0] },
+      after: (corridorSuccessorEdgeIDs[edgeID] ?? []).sorted().compactMap { corridorEdgeCoordinates[$0] },
       at: observation.coordinate,
+      windowMeters: max(5, observation.horizontalAccuracyMeters),
       courseDegrees: course,
       toleranceDegrees: max(20, 3 * courseAccuracy)
     )
@@ -1754,6 +1785,8 @@ private struct DestinationParkingAreaEntry: Sendable {
   let divergenceIndex: Int
   let divergenceOccurrenceID: String
   let passingEdgeIDs: Set<String>
+  /// From here to the PA's entry ramp the plan has no other choice of road.
+  let approachStartIndex: Int
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     guard let parkingAreaID = routePlan.destinationParkingAreaID else { return nil }
@@ -1779,6 +1812,10 @@ private struct DestinationParkingAreaEntry: Sendable {
       divergenceIndex = occurrence.index
       divergenceOccurrenceID = occurrence.id
       passingEdgeIDs = Set(passing)
+      approachStartIndex = RouteEndGeometry.lastChoiceIndex(
+        occurrences.compactMap { edgesByID[$0.directedEdgeID] },
+        through: occurrence.index
+      )
       return
     }
     return nil
@@ -1816,6 +1853,15 @@ private struct RouteEndGeometry: Sendable {
   /// follows it, other than the exit facility's own ramps.
   private let roadLeftAtLastChoice: [String: [MatcherCoordinate]]
 
+  /// The first occurrence after the plan's last choice of road at or before
+  /// `end`: one whose predecessor leads somewhere besides it. Relies on
+  /// corridor successors carrying every drivable departure from the plan.
+  static func lastChoiceIndex(_ routeEdges: [RouteMatcherDirectedEdge], through end: Int) -> Int {
+    routeEdges.indices.dropFirst().prefix(while: { $0 <= end }).last { index in
+      routeEdges[index - 1].successorEdgeIDs.contains { $0 != routeEdges[index].id }
+    } ?? 0
+  }
+
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
       corridor.edges.map { ($0.id, $0) },
@@ -1830,10 +1876,7 @@ private struct RouteEndGeometry: Sendable {
     let routeEdgeIDs = Set(routeEdges.map(\.id))
     // A road the plan drives on another pass is still a choice here: on a
     // route that ends beside its start, the road past the exit is the plan.
-    let exitSideStartIndex =
-      routeEdges.indices.dropFirst().last { index in
-        routeEdges[index - 1].successorEdgeIDs.contains { $0 != routeEdges[index].id }
-      } ?? 0
+    let exitSideStartIndex = Self.lastChoiceIndex(routeEdges, through: routeEdges.count - 1)
     self.exitSideStartIndex = exitSideStartIndex
     let exit = routeEdges[exitSideStartIndex...].flatMap(\.coordinates)
     self.exit = exit
@@ -1972,6 +2015,68 @@ private struct RouteEndGeometry: Sendable {
       })
     else { return false }
     return runs(from: nearest.0, to: nearest.1, within: toleranceDegrees, of: courseDegrees)
+  }
+
+  /// Whether the course runs along the road anywhere within `windowMeters`
+  /// along it of where the point projects onto `coordinates`: on a curving
+  /// ramp, scatter along the road puts the fix nearest a segment whose chord
+  /// points 20-30 deg away from the heading at the car. The window reaches
+  /// into the edge's predecessors (`before`) and successors (`after`).
+  static func isDrivingAlong(
+    _ coordinates: [MatcherCoordinate],
+    before: [[MatcherCoordinate]],
+    after: [[MatcherCoordinate]],
+    at coordinate: MatcherCoordinate,
+    windowMeters: Double,
+    courseDegrees: Double,
+    toleranceDegrees: Double
+  ) -> Bool {
+    let segments = Array(zip(coordinates, coordinates.dropFirst()))
+    guard
+      let nearest = segments.indices.min(by: {
+        meters(from: coordinate, toPolyline: [segments[$0].0, segments[$0].1])
+          < meters(from: coordinate, toPolyline: [segments[$1].0, segments[$1].1])
+      })
+    else { return false }
+    let lengths = segments.map { segment in
+      let offset = planarOffset(from: segment.0, to: segment.1)
+      return hypot(offset.east, offset.north)
+    }
+    let starts = lengths.indices.map { lengths[..<$0].reduce(0, +) }
+    let total = lengths.reduce(0, +)
+    let point = planarOffset(from: segments[nearest].0, to: coordinate)
+    let direction = planarOffset(from: segments[nearest].0, to: segments[nearest].1)
+    let squared = direction.east * direction.east + direction.north * direction.north
+    let fraction =
+      squared > 0
+      ? min(1, max(0, (point.east * direction.east + point.north * direction.north) / squared))
+      : 0
+    let along = starts[nearest] + lengths[nearest] * fraction
+    let runsAlong = { (segment: (MatcherCoordinate, MatcherCoordinate)) in
+      runs(from: segment.0, to: segment.1, within: toleranceDegrees, of: courseDegrees)
+    }
+    if segments.indices.contains(where: { index in
+      starts[index] + lengths[index] >= along - windowMeters
+        && starts[index] <= along + windowMeters && runsAlong(segments[index])
+    }) {
+      return true
+    }
+    func reaches(_ road: [(MatcherCoordinate, MatcherCoordinate)], within reach: Double) -> Bool {
+      var remaining = reach
+      for segment in road where remaining > 0 {
+        if runsAlong(segment) { return true }
+        let offset = planarOffset(from: segment.0, to: segment.1)
+        remaining -= hypot(offset.east, offset.north)
+      }
+      return false
+    }
+    if along - windowMeters < 0,
+      before.contains(where: { reaches(Array(zip($0, $0.dropFirst())).reversed(), within: windowMeters - along) })
+    {
+      return true
+    }
+    return along + windowMeters > total
+      && after.contains(where: { reaches(Array(zip($0, $0.dropFirst())), within: along + windowMeters - total) })
   }
 
   private static func runs(

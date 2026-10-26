@@ -60,6 +60,45 @@
       #expect(fixture.stopOccurrenceIDs.allSatisfy { !completed.contains($0) }, "\(summary)")
     }
 
+    /// Daikoku PA as a first-lap stop, passed by, then the car leaves the
+    /// expressway further on: the stop is skipped and the drive hands over.
+    @Test("passing a mid-route PA and leaving the expressway is a skip and a handover")
+    func passingAWaypointPAThenLeaving() async throws {
+      let fixture = try StopFixture.daikokuLoopWithLapOneStop()
+      let gate = fixture.gate
+      // The first branch after the stop that leaves the expressway: its path
+      // ends where the network does and the car drives on along the street.
+      func leavesTheExpressway(_ index: Int, _ alternative: String) -> Bool {
+        let legs = gate.wrongBranchLegs(
+          movementIndex: index, alternativeEdgeID: alternative, branchMeters: 1_500
+        )
+        guard let last = legs.last, case .offPlan(let road) = last.kind else { return false }
+        return road.hasPrefix("street past")
+      }
+      var exit: (movement: Int, alternative: String)?
+      for index in fixture.stopIndices.upperBound..<gate.routeEdgeIDs.count where exit == nil {
+        if let alternative = gate.alternativeEdgeIDs(atMovementIndex: index)
+          .first(where: { leavesTheExpressway(index, $0) })
+        {
+          exit = (index, alternative)
+        }
+      }
+      let (movement, alternative) = try #require(exit)
+      let branch = gate.wrongBranchLegs(movementIndex: movement, alternativeEdgeID: alternative, branchMeters: 1_500)
+      let lastPlanned = try #require(branch.lastIndex { if case .occurrence = $0.kind { true } else { false } })
+      let legs = fixture.bypassLegs().prefix { leg in
+        if case .occurrence(let index) = leg.kind { return index < movement }
+        return true
+      } + branch[(lastPlanned + 1)...]
+      let run = try await gate.run(legs: Array(legs), seed: 1, noise: .urban)
+      let summary = gateLine(file: "daikoku-loop-lap-one-stop", seed: 1, run: run, label: "WAYPOINT-PA-EXIT")
+      print(summary)
+      let snapshot = try #require(run.finalSnapshot)
+      #expect(fixture.stopOccurrenceIDs.allSatisfy(Set(snapshot.skippedOccurrenceIDs).contains), "\(summary)")
+      #expect(run.records.last?.phaseTrigger == "UNPLANNED_EXIT", "\(summary)")
+      #expect(!run.reachedCompletion, "\(summary)")
+    }
+
     @Test("making a mid-route PA stop still visits it", arguments: [UInt64(1), 2])
     func makingAStopVisitsIt(seed: UInt64) async throws {
       let fixture = try StopFixture.daikokuLoopWithLapOneStop()

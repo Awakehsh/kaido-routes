@@ -567,6 +567,19 @@ public actor NavigationSession {
       engine.finishAtRouteEnd()
       return
     }
+    // Past the plan's last choice of road before its destination PA, the
+    // only way off the expressway is the road past the PA's entry ramp: the
+    // car drove past the PA. Fixes along that road beside the ramp can match
+    // the ramp itself and hold progress short of the fork, so admitted
+    // progress past the last choice is the evidence. A car that left before
+    // it can still come back to the PA and gets surface guidance instead.
+    if let entry = destinationParkingAreaEntry,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      currentIndex >= entry.approachStartIndex
+    {
+      engine.endPastDestinationParkingArea(divergenceOccurrenceID: entry.divergenceOccurrenceID)
+      return
+    }
     engine.leaveAtUnplannedExit()
   }
 
@@ -639,6 +652,14 @@ public actor NavigationSession {
             clearance, distance + max(5, observation.horizontalAccuracyMeters)
           )
         ),
+        // A fix scattered onto a road beside the plan or across it, even the
+        // opposite carriageway, is matched there while the car drives on: a
+        // reachable road is evidence only while the course runs along it. A
+        // fix without a course can carry a run on but not begin one.
+        !(isOnReachableOffPlanEdge && !isOnActiveRecoveryPath(directedEdgeID))
+          || (observation.courseDegrees != nil && observation.courseAccuracyDegrees != nil
+            ? isDrivingAlong(directedEdgeID, observation: observation)
+            : continues),
         // Just out of a tunnel, a receiver that reports half its error places
         // fixes on a road beside the plan as readily as the car on it; only a
         // placement the matcher holds above LOW, driving along that road, shows
@@ -1754,6 +1775,8 @@ private struct DestinationParkingAreaEntry: Sendable {
   let divergenceIndex: Int
   let divergenceOccurrenceID: String
   let passingEdgeIDs: Set<String>
+  /// From here to the PA's entry ramp the plan has no other choice of road.
+  let approachStartIndex: Int
 
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     guard let parkingAreaID = routePlan.destinationParkingAreaID else { return nil }
@@ -1779,6 +1802,10 @@ private struct DestinationParkingAreaEntry: Sendable {
       divergenceIndex = occurrence.index
       divergenceOccurrenceID = occurrence.id
       passingEdgeIDs = Set(passing)
+      approachStartIndex = RouteEndGeometry.lastChoiceIndex(
+        occurrences.compactMap { edgesByID[$0.directedEdgeID] },
+        through: occurrence.index
+      )
       return
     }
     return nil
@@ -1816,6 +1843,15 @@ private struct RouteEndGeometry: Sendable {
   /// follows it, other than the exit facility's own ramps.
   private let roadLeftAtLastChoice: [String: [MatcherCoordinate]]
 
+  /// The first occurrence after the plan's last choice of road at or before
+  /// `end`: one whose predecessor leads somewhere besides it. Relies on
+  /// corridor successors carrying every drivable departure from the plan.
+  static func lastChoiceIndex(_ routeEdges: [RouteMatcherDirectedEdge], through end: Int) -> Int {
+    routeEdges.indices.dropFirst().prefix(while: { $0 <= end }).last { index in
+      routeEdges[index - 1].successorEdgeIDs.contains { $0 != routeEdges[index].id }
+    } ?? 0
+  }
+
   init?(routePlan: RoutePlan, corridor: RouteMatcherCorridor) {
     let edgesByID = Dictionary(
       corridor.edges.map { ($0.id, $0) },
@@ -1830,10 +1866,7 @@ private struct RouteEndGeometry: Sendable {
     let routeEdgeIDs = Set(routeEdges.map(\.id))
     // A road the plan drives on another pass is still a choice here: on a
     // route that ends beside its start, the road past the exit is the plan.
-    let exitSideStartIndex =
-      routeEdges.indices.dropFirst().last { index in
-        routeEdges[index - 1].successorEdgeIDs.contains { $0 != routeEdges[index].id }
-      } ?? 0
+    let exitSideStartIndex = Self.lastChoiceIndex(routeEdges, through: routeEdges.count - 1)
     self.exitSideStartIndex = exitSideStartIndex
     let exit = routeEdges[exitSideStartIndex...].flatMap(\.coordinates)
     self.exit = exit

@@ -87,11 +87,13 @@ public actor NavigationSession {
   private let routeEnd: RouteEndGeometry?
   private let destinationParkingAreaEntry: DestinationParkingAreaEntry?
   private let parkingStopBypasses: [ParkingStopBypass]
-  /// Mid-route PA stops the car passed by. Their road is not driven, so
-  /// reach from admitted progress does not count it.
+  /// Mid-route PA stops the car passed by, and the passes a shortcut onto a
+  /// later pass left out. Their road is not driven, so reach from admitted
+  /// progress does not count it.
   private var skippedParkingStops: [Range<Int>] = []
   private var parkingStopBypassRun: (count: Int, lastObservedAtMilliseconds: Int, stop: Range<Int>)?
   private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String)?
+  private var laterPassRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var unplannedExitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   /// Every road the car can drive without having left the expressway: the
   /// plan's own and those of the rest of the network.
@@ -443,6 +445,9 @@ public actor NavigationSession {
     // a pass of the plan behind progress, nor the road the plan leaves at its
     // last choice.
     let isReacquiring = engine.snapshot.signalReacquisitionStatus == .pending
+    if detectsOffPlanDeviation {
+      try observeShortcutToLaterPass(estimate: estimate, observation: observation)
+    }
     if detectsOffPlanDeviation,
       engine.snapshot.journeyPhase == .strictRoute
         || engine.snapshot.journeyPhase == .routeRecovery,
@@ -858,6 +863,72 @@ public actor NavigationSession {
       let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
     else { return false }
     return index < progressIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  }
+
+  /// A car can leave the plan for a road the plan drives only later, and
+  /// drive on along the plan from there (Tokyo Bay Route onto Route 10 at
+  /// Shinonome JCT, straight to Toyosu, where the plan comes back by C2).
+  /// Neither the window nor recovery's later-occurrence rejoin reaches that
+  /// pass until reach catches up, minutes later, so the drive held progress
+  /// at the fork and ended at its own exit as an unplanned one. Three HIGH
+  /// fixes in a row on such a road, driving along it, each at least the
+  /// unplanned-exit margin from every road of the plan the car can be on,
+  /// re-anchor there: the passes between are skipped as a passed-by
+  /// waypoint's are. A forward jump cannot be taken back, so the evidence is
+  /// what leaving the corridor takes, not the deviation margin: with that
+  /// margin a receiver reporting half its error jumped 56 km from the
+  /// Bayshore onto Route 9 beside it at Tatsumi JCT.
+  private func observeShortcutToLaterPass(
+    estimate: MatcherEstimate,
+    observation: RouteMatcherObservation
+  ) throws {
+    guard engine.snapshot.journeyPhase == .strictRoute
+      || engine.snapshot.journeyPhase == .routeRecovery,
+      estimate.confidence == .high,
+      observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters,
+      let edgeID = estimate.directedEdgeID,
+      let laterPass = laterPassIndex(of: edgeID),
+      observation.courseDegrees != nil, observation.courseAccuracyDegrees != nil,
+      isDrivingAlong(edgeID, observation: observation),
+      metersFromPlanInWindow(observation.coordinate) >= Self.unplannedExitMarginMeters,
+      let progress = engine.snapshot.currentOccurrenceIndex
+    else {
+      laterPassRun = nil
+      return
+    }
+    let continues = laterPassRun.map {
+      observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
+        <= Self.offPlanDeviationMaximumGapMilliseconds
+    } ?? false
+    let count = continues ? (laterPassRun?.count ?? 0) + 1 : 1
+    laterPassRun = (count, observation.observedAtMilliseconds)
+    guard count >= Self.laterPassObservationCount else { return }
+    laterPassRun = nil
+    offPlanRun = nil
+    let skipped = (progress + 1)..<laterPass
+    skippedParkingStops.append(skipped)
+    engine.skipParkingStop(
+      occurrenceIDs: routePlan.occurrences.filter { skipped.contains($0.index) }.map(\.id)
+    )
+    if let laterPassID = routePlan.occurrences.first(where: { $0.index == laterPass })?.id {
+      try matcherSession.restart(at: laterPassID)
+    }
+  }
+
+  static let laterPassObservationCount = 3
+
+  /// The pass of a road of the plan that the car can be on only by a
+  /// shortcut: none between progress and the end of the reach window, and
+  /// exactly one after it. A road with more passes ahead, another lap's,
+  /// does not say which one the car took.
+  private func laterPassIndex(of edgeID: String) -> Int? {
+    guard let window = matcherSession.occurrenceWindow,
+      let progress = engine.snapshot.currentOccurrenceIndex,
+      let passes = occurrenceIndexesByEdgeID[edgeID],
+      !passes.contains(where: { $0 >= progress && $0 <= window.upperBound })
+    else { return nil }
+    let ahead = passes.filter { $0 > window.upperBound }
+    return ahead.count == 1 ? ahead[0] : nil
   }
 
   /// No road of the plan from just before admitted progress onwards, nor

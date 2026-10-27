@@ -628,8 +628,8 @@ final class WholeShutoProductModel: ObservableObject {
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
   @Published private(set) var tunnelEstimatedProgressFraction: Double?
   @Published private(set) var tunnelEstimateUncertaintyMeters: Double?
-  /// Fresh expressway fixes keep arriving but none has been admitted for a
-  /// few seconds, so the marker stands where the car was last placed. Only
+  /// Fresh expressway fixes keep arriving but none has been drawn for a few
+  /// seconds, so the marker stands where the car was last placed. Only
   /// the marker's appearance reads this: the fixes are not stale, so no text
   /// or voice calls the position weak.
   @Published private(set) var isHoldingLivePosition = false
@@ -746,7 +746,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// positioning — label and voice — is measured from this, never from a
   /// single weak or ambiguous fix.
   private var lastUsableLiveObservationAtMilliseconds: Int?
-  private var lastAdmittedLiveFixAtMilliseconds: Int?
+  private var lastDrawnLiveFixAtMilliseconds: Int?
   static let livePositionHoldingMilliseconds = 5_000
   @Published private var liveVehicleCourseDegrees: Double?
   @Published private var liveVehicleSpeedMetersPerSecond: Double?
@@ -4249,7 +4249,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -4354,7 +4354,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       liveVehicleSpeedMetersPerSecond = nil
@@ -4631,7 +4631,7 @@ final class WholeShutoProductModel: ObservableObject {
         )
         guard isCurrent() else { return }
         if update.navigationSnapshot.journeyPhase == .strictRoute,
-          update.admittedConfidence == .high
+          update.drawsPosition
         {
           refreshTunnelEstimateAnchor(from: envelope)
         } else if update.navigationSnapshot.journeyPhase == .strictRoute {
@@ -4812,7 +4812,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -4897,7 +4897,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       liveVehicleSpeedMetersPerSecond = nil
@@ -5415,7 +5415,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -5821,8 +5821,8 @@ final class WholeShutoProductModel: ObservableObject {
     if activeGuidanceCueIsObsolete(after: update) {
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
     }
-    // Only the session's admitted confidence moves the position, distance
-    // and heading; a raw matcher result below HIGH is routine at 1 Hz.
+    // Only a fix the session draws moves the position, distance and
+    // heading; a raw matcher result below HIGH is routine at 1 Hz.
     matcherConfidence = MatcherConfidence(
       rawValue: update.admittedConfidence.rawValue
     )
@@ -5878,9 +5878,10 @@ final class WholeShutoProductModel: ObservableObject {
       progressFraction = 0
     }
     guard phase == .expressway else { return }
-    guard update.admittedConfidence == .high,
+    guard update.drawsPosition,
       let progress = runtimeAssets?.project(
-        update.matcherEstimate
+        update.matcherEstimate,
+        besideOffPlanRoad: update.admittedConfidence != .high
       ),
       progress.routeProgressFraction >= progressFraction
     else {
@@ -6667,17 +6668,16 @@ final class WholeShutoProductModel: ObservableObject {
     atMilliseconds milliseconds: Int
   ) {
     guard update.navigationSnapshot.journeyPhase == .strictRoute else {
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       return
     }
-    let admitted = update.admittedConfidence == .high
-    if admitted || lastAdmittedLiveFixAtMilliseconds == nil {
-      lastAdmittedLiveFixAtMilliseconds = milliseconds
+    if update.drawsPosition || lastDrawnLiveFixAtMilliseconds == nil {
+      lastDrawnLiveFixAtMilliseconds = milliseconds
     }
     isHoldingLivePosition =
-      !admitted
-      && milliseconds - (lastAdmittedLiveFixAtMilliseconds ?? milliseconds)
+      !update.drawsPosition
+      && milliseconds - (lastDrawnLiveFixAtMilliseconds ?? milliseconds)
         >= Self.livePositionHoldingMilliseconds
   }
 

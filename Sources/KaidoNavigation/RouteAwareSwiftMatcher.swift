@@ -325,6 +325,10 @@ public struct RouteMatcherObservationResult: Equatable, Sendable {
   /// Distance from the fix to every corridor edge inside the query radius.
   /// An edge absent here is farther than the radius.
   public let edgeDistancesMeters: [String: Double]
+  /// The estimate is LOW only because off-plan roads lie as near the fix as
+  /// the place on the plan it selected: a fork just behind the car leaves the
+  /// plan by a road that runs on beside it.
+  public let isHeldLowOnlyByOffPlanRoads: Bool
 }
 
 public struct RouteMatcherSessionDiagnostics: Equatable, Sendable {
@@ -432,6 +436,7 @@ public struct RouteMatcherSession: Sendable {
   private var acceptedObservationCount = 0
   private var lastQueriedEdgeCount = 0
   private var lastMeasuredEdges: [String: EdgeMeasurement] = [:]
+  private var isHeldLowOnlyByOffPlanRoads = false
   private var lastSeparatedOccurrenceIndex: Int?
   /// Where off-plan evidence stops counting the roads left behind. It moves
   /// on two confident plan matches in a row with no road in its own reach
@@ -615,7 +620,8 @@ public struct RouteMatcherSession: Sendable {
       isOnReachableOffPlanEdge: estimate.occurrenceID == nil
         && estimate.confidence != .lost
         && estimate.directedEdgeID.map { isReachableAfter(evidenceLower, $0) } == true,
-      edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters)
+      edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters),
+      isHeldLowOnlyByOffPlanRoads: isHeldLowOnlyByOffPlanRoads
     )
   }
 
@@ -635,6 +641,7 @@ public struct RouteMatcherSession: Sendable {
       throw RouteAwareSwiftMatcherError.invalidObservation
     }
     lastReceivedAtMilliseconds = observation.receivedAtMilliseconds
+    isHeldLowOnlyByOffPlanRoads = false
     let measuredEdges = model.measurements(
       near: observation,
       matcherConfiguration: matcherConfiguration,
@@ -810,7 +817,7 @@ public struct RouteMatcherSession: Sendable {
     )
   }
 
-  private func makeEstimate(
+  private mutating func makeEstimate(
     observation: RouteMatcherObservation,
     selected: PathState,
     paths: [StateKey: PathState],
@@ -921,6 +928,14 @@ public struct RouteMatcherSession: Sendable {
     } else {
       confidence = .medium
     }
+    isHeldLowOnlyByOffPlanRoads =
+      confidence == .low && !forceLow
+      && observation.horizontalAccuracyMeters < 30
+      && selected.state.occurrenceIndex != nil
+      && independentCandidateEdgeIDs.count > 1
+      && independentCandidateEdgeIDs.allSatisfy {
+        $0 == selected.state.edgeID || model.isOffPlan($0)
+      }
 
     return MatcherEstimate(
       observationID: observation.id,

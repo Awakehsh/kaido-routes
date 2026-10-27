@@ -215,18 +215,22 @@
 
     /// The alternative at `movementIndex` followed until it meets a road the
     /// plan drives later, then the plan from that pass to its end: a car that
-    /// took a shortcut onto a later pass and drove on. Nil when the
-    /// alternative never meets one within 5 km.
+    /// took a shortcut onto a later pass and drove on. With
+    /// `lastChoiceAlternative`, the car joins before the plan's last choice
+    /// of road and takes that road there instead. Nil when the alternative
+    /// never meets such a pass within 5 km.
     func shortcutLegs(
       movementIndex: Int,
-      alternativeEdgeID: String
+      alternativeEdgeID: String,
+      lastChoiceAlternative: String? = nil
     ) -> (legs: [ReplayGateLeg], joinIndex: Int)? {
       let path = branchPath(from: alternativeEdgeID, meters: 5_000)
       for (position, edge) in path.enumerated() {
         guard
           let join = (movementIndex + 1..<routeEdgeIDs.count).first(where: {
             routeEdgeIDs[$0] == edge.edgeID
-          })
+          }),
+          lastChoiceAlternative == nil || join < finalDivergenceIndex
         else { continue }
         var legs = approachLegs()
         legs += routeLegs(through: movementIndex - 1)
@@ -236,6 +240,19 @@
             coordinates: coordinates(of: edge),
             speedMetersPerSecond: speed(forDatabaseEdge: edge)
           )
+        }
+        if let lastChoiceAlternative {
+          legs += routeLegs(through: finalDivergenceIndex - 1).filter {
+            if case .occurrence(let index) = $0.kind { return index >= join }
+            return false
+          }
+          legs += wrongBranchLegs(
+            movementIndex: finalDivergenceIndex, alternativeEdgeID: lastChoiceAlternative
+          ).drop {
+            if case .offPlan = $0.kind { return false }
+            return true
+          }
+          return (legs, join)
         }
         legs += routeLegs(through: routeEdgeIDs.count - 1).filter {
           if case .occurrence(let index) = $0.kind { return index >= join }

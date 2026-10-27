@@ -334,22 +334,29 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   /// matcher session's forward-only occurrence path. LOW, stacked-road,
   /// off-route, or incomplete evidence returns nil so callers preserve their
   /// last admitted progress and expose degradation.
+  ///
+  /// `besideOffPlanRoad` projects a fix the session draws though an off-plan
+  /// road beside the plan holds it below HIGH: at any confidence, with that
+  /// road among its candidates, and on the selected occurrence's own road
+  /// where the two are equally near the fix.
   public func project(
-    _ estimate: MatcherEstimate
+    _ estimate: MatcherEstimate,
+    besideOffPlanRoad: Bool = false
   ) -> ShutoRouteRuntimeProgress? {
-    guard estimate.confidence == .high || estimate.confidence == .medium,
+    guard besideOffPlanRoad || estimate.confidence == .high || estimate.confidence == .medium,
       let occurrenceID = estimate.occurrenceID,
-      let directedEdgeID = estimate.directedEdgeID,
+      let occurrence = routePlan.occurrence(id: occurrenceID),
+      routeEdges.indices.contains(occurrence.index),
+      let directedEdgeID = estimate.directedEdgeID
+        ?? (besideOffPlanRoad ? routeEdges[occurrence.index].id : nil),
       let fraction = estimate.fractionAlongEdge,
       fraction.isFinite,
       (0...1).contains(fraction),
-      let occurrence = routePlan.occurrence(id: occurrenceID),
       matcherCorridor.occurrences.first(where: {
         $0.id == occurrenceID
           && $0.index == occurrence.index
           && $0.directedEdgeID == directedEdgeID
       }) != nil,
-      routeEdges.indices.contains(occurrence.index),
       routeEdgeLengthsMeters.indices.contains(occurrence.index),
       cumulativeDistanceAtOccurrence.indices.contains(occurrence.index),
       totalDistanceMeters > 0
@@ -370,7 +377,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
       )
       return (lower...upper).contains {
         routeEdges[$0].id == candidateID
-      }
+      } || besideOffPlanRoad && !routeEdges.contains { $0.id == candidateID }
     }) else {
       return nil
     }

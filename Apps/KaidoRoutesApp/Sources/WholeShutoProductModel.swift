@@ -628,8 +628,8 @@ final class WholeShutoProductModel: ObservableObject {
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
   @Published private(set) var tunnelEstimatedProgressFraction: Double?
   @Published private(set) var tunnelEstimateUncertaintyMeters: Double?
-  /// Fresh expressway fixes keep arriving but none has been admitted for a
-  /// few seconds, so the marker stands where the car was last placed. Only
+  /// Fresh expressway fixes keep arriving but none has been drawn for a few
+  /// seconds, so the marker stands where the car was last placed. Only
   /// the marker's appearance reads this: the fixes are not stale, so no text
   /// or voice calls the position weak.
   @Published private(set) var isHoldingLivePosition = false
@@ -702,6 +702,10 @@ final class WholeShutoProductModel: ObservableObject {
   private var liveLocationSubscriptions: Set<AnyCancellable> = []
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
+  /// Where admission last placed the car on the plan. The position above is
+  /// the drawn one, which can run ahead of it beside an off-plan road;
+  /// actions and recorded data read this instead.
+  private(set) var admittedProgress: ShutoRouteRuntimeProgress?
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
   /// When the entrance announcement was spoken, and for which movement.
@@ -746,7 +750,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// positioning — label and voice — is measured from this, never from a
   /// single weak or ambiguous fix.
   private var lastUsableLiveObservationAtMilliseconds: Int?
-  private var lastAdmittedLiveFixAtMilliseconds: Int?
+  private var lastDrawnLiveFixAtMilliseconds: Int?
   static let livePositionHoldingMilliseconds = 5_000
   @Published private var liveVehicleCourseDegrees: Double?
   @Published private var liveVehicleSpeedMetersPerSecond: Double?
@@ -2377,12 +2381,12 @@ final class WholeShutoProductModel: ObservableObject {
       phase == .expressway,
       runtimeJourneyPhase == .strictRoute,
       liveLocationState == .available,
-      runtimeOccurrenceID != nil,
+      let admittedProgress,
       let route = selectedRoute
     else {
       return false
     }
-    return route.distanceMeters * (1 - progressFraction) <= 150
+    return route.distanceMeters * (1 - admittedProgress.routeProgressFraction) <= 150
   }
 
   private func recordLapProgress(
@@ -2450,6 +2454,7 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     clearTunnelEstimate()
     runtimeOccurrenceID = occurrenceID
+    admittedProgress = nil
     if let route = selectedRoute,
       let index = route.routePlan.occurrence(id: occurrenceID)?.index,
       route.edges.indices.contains(index), route.distanceMeters > 0
@@ -2995,6 +3000,7 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying = false
       matcherConfidence = nil
       runtimeOccurrenceID = nil
+      admittedProgress = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
       runtimeRecoveryTargetOccurrenceID = nil
@@ -4169,6 +4175,7 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying = autoplay
       matcherConfidence = nil
       runtimeOccurrenceID = nil
+      admittedProgress = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
       runtimeRecoveryTargetOccurrenceID = nil
@@ -4249,7 +4256,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -4330,6 +4337,7 @@ final class WholeShutoProductModel: ObservableObject {
       progressFraction = 0
       matcherConfidence = .low
       runtimeOccurrenceID = nil
+      admittedProgress = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
       runtimeRecoveryTargetOccurrenceID = nil
@@ -4354,7 +4362,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       liveVehicleSpeedMetersPerSecond = nil
@@ -4631,7 +4639,7 @@ final class WholeShutoProductModel: ObservableObject {
         )
         guard isCurrent() else { return }
         if update.navigationSnapshot.journeyPhase == .strictRoute,
-          update.admittedConfidence == .high
+          update.drawsPosition
         {
           refreshTunnelEstimateAnchor(from: envelope)
         } else if update.navigationSnapshot.journeyPhase == .strictRoute {
@@ -4812,7 +4820,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -4897,7 +4905,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
       lastUsableLiveObservationAtMilliseconds = nil
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       liveVehicleCourseDegrees = nil
       liveVehicleSpeedMetersPerSecond = nil
@@ -5152,6 +5160,7 @@ final class WholeShutoProductModel: ObservableObject {
     clearTunnelEstimate()
     presentationProjection = nil
     runtimeOccurrenceID = nil
+    admittedProgress = nil
     isHoldingLivePosition = false
     guard requiresSurfaceEgress, destination != nil else {
       let isNearDestination = selectedRoute.map {
@@ -5396,6 +5405,7 @@ final class WholeShutoProductModel: ObservableObject {
     mapMode = .network
     matcherConfidence = nil
     runtimeOccurrenceID = nil
+    admittedProgress = nil
     runtimeJourneyPhase = nil
     runtimeRecoveryStatus = nil
     runtimeRecoveryTargetOccurrenceID = nil
@@ -5426,7 +5436,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
     lastUsableLiveObservationAtMilliseconds = nil
-    lastAdmittedLiveFixAtMilliseconds = nil
+    lastDrawnLiveFixAtMilliseconds = nil
     isHoldingLivePosition = false
     liveVehicleCourseDegrees = nil
     liveVehicleSpeedMetersPerSecond = nil
@@ -5829,11 +5839,12 @@ final class WholeShutoProductModel: ObservableObject {
   /// leaves the foreground, and a live drive on its own five-second cadence.
   private func applyNavigationUpdate(_ update: NavigationSessionUpdate) {
     let wasRecovering = runtimeRecoveryStatus == .active
+    let entersRecovery = runtimeJourneyPhase != .routeRecovery
     if activeGuidanceCueIsObsolete(after: update) {
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
     }
-    // Only the session's admitted confidence moves the position, distance
-    // and heading; a raw matcher result below HIGH is routine at 1 Hz.
+    // Only a fix the session draws moves the position, distance and
+    // heading; a raw matcher result below HIGH is routine at 1 Hz.
     matcherConfidence = MatcherConfidence(
       rawValue: update.admittedConfidence.rawValue
     )
@@ -5858,6 +5869,7 @@ final class WholeShutoProductModel: ObservableObject {
         runtimeCoordinate = selectedRoute?.destinationCoordinate
       }
       runtimeOccurrenceID = nil
+      admittedProgress = nil
       presentationProjection = nil
       clearTunnelEstimate()
       invalidatePlaybackTask()
@@ -5869,13 +5881,32 @@ final class WholeShutoProductModel: ObservableObject {
     publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
       clearTunnelEstimate()
+      // Off the plan nothing on screen stands at a drawn point past the
+      // fork: the marker, the travelled line and the remaining distance go
+      // back to the last admitted point, and the marker moves on to where
+      // the matcher places the car off the plan, as the screen says it is
+      // off the route. Near the planned exit the screen still reads as
+      // confirming where the car is, so the admitted point stands. Until a
+      // fix is admitted on this expressway, after a resume or a lap skip,
+      // there is no admitted point, and the drawn one stands.
+      if entersRecovery || update.isConfirmingPlannedExit, let admittedProgress {
+        progressFraction = admittedProgress.routeProgressFraction
+        runtimeOccurrenceID = admittedProgress.occurrenceID
+        runtimeFractionAlongOccurrence = admittedProgress.fractionAlongOccurrence
+        runtimeCoordinate = admittedProgress.coordinate
+      }
+      if update.isConfirmingPlannedExit {
+        runtimeRecoveryDirectedEdgeID = nil
+        return
+      }
       if isLiveDrive,
         update.navigationSnapshot.recovery.status == .active
       {
         updateReleasedRecoveryPosition(from: update.matcherEstimate)
-        return
+      } else {
+        runtimeRecoveryDirectedEdgeID = nil
       }
-      runtimeRecoveryDirectedEdgeID = nil
+      updateOffPlanPosition(from: update.matcherEstimate)
       return
     }
     runtimeRecoveryDirectedEdgeID = nil
@@ -5889,9 +5920,23 @@ final class WholeShutoProductModel: ObservableObject {
       progressFraction = 0
     }
     guard phase == .expressway else { return }
-    guard update.admittedConfidence == .high,
+    if update.admittedConfidence == .high,
+      let admitted = runtimeAssets?.project(update.matcherEstimate),
+      admitted.routeProgressFraction >= admittedProgress?.routeProgressFraction ?? 0
+    {
+      admittedProgress = admitted
+      recordLapProgress(
+        occurrenceID: admitted.occurrenceID,
+        atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds
+      )
+      if let liveDriveSession {
+        Task { await refreshRemainingLaps(from: liveDriveSession) }
+      }
+    }
+    guard update.drawsPosition,
       let progress = runtimeAssets?.project(
-        update.matcherEstimate
+        update.matcherEstimate,
+        besideOffPlanRoad: update.admittedConfidence != .high
       ),
       progress.routeProgressFraction >= progressFraction
     else {
@@ -5899,13 +5944,6 @@ final class WholeShutoProductModel: ObservableObject {
     }
     progressFraction = progress.routeProgressFraction
     runtimeOccurrenceID = progress.occurrenceID
-    recordLapProgress(
-      occurrenceID: progress.occurrenceID,
-      atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds
-    )
-    if let liveDriveSession {
-      Task { await refreshRemainingLaps(from: liveDriveSession) }
-    }
     runtimeFractionAlongOccurrence =
       progress.fractionAlongOccurrence
     runtimeCoordinate = progress.coordinate
@@ -6232,7 +6270,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard
       matcherConfidence == .high,
       runtimeJourneyPhase == .strictRoute,
-      runtimeOccurrenceID
+      admittedProgress?.occurrenceID
         == selectedRoute?.routePlan.occurrences.last?.id
     else {
       isPlaying = false
@@ -6247,6 +6285,7 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryTargetOccurrenceID = nil
     runtimeRecoveryDirectedEdgeID = nil
     runtimeOccurrenceID = nil
+    admittedProgress = nil
     runtimeFractionAlongOccurrence = nil
     runtimeCoordinate = selectedRoute?.coordinates.last
     presentationProjection = nil
@@ -6511,6 +6550,7 @@ final class WholeShutoProductModel: ObservableObject {
       mapMode = .network
       matcherConfidence = nil
       runtimeOccurrenceID = nil
+      admittedProgress = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
       runtimeRecoveryTargetOccurrenceID = nil
@@ -6678,17 +6718,16 @@ final class WholeShutoProductModel: ObservableObject {
     atMilliseconds milliseconds: Int
   ) {
     guard update.navigationSnapshot.journeyPhase == .strictRoute else {
-      lastAdmittedLiveFixAtMilliseconds = nil
+      lastDrawnLiveFixAtMilliseconds = nil
       isHoldingLivePosition = false
       return
     }
-    let admitted = update.admittedConfidence == .high
-    if admitted || lastAdmittedLiveFixAtMilliseconds == nil {
-      lastAdmittedLiveFixAtMilliseconds = milliseconds
+    if update.drawsPosition || lastDrawnLiveFixAtMilliseconds == nil {
+      lastDrawnLiveFixAtMilliseconds = milliseconds
     }
     isHoldingLivePosition =
-      !admitted
-      && milliseconds - (lastAdmittedLiveFixAtMilliseconds ?? milliseconds)
+      !update.drawsPosition
+      && milliseconds - (lastDrawnLiveFixAtMilliseconds ?? milliseconds)
         >= Self.livePositionHoldingMilliseconds
   }
 
@@ -6934,6 +6973,23 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     runtimeRecoveryDirectedEdgeID = directedEdgeID
+    runtimeCoordinate = coordinate
+  }
+
+  /// Presentation only: off the plan the marker stands where the matcher
+  /// places the car on an off-plan road, the branch it took or the one a
+  /// fix scattered onto, as the screen says it is off the route.
+  private func updateOffPlanPosition(from estimate: MatcherEstimate) {
+    guard
+      estimate.confidence != .lost,
+      estimate.occurrenceID == nil,
+      let directedEdgeID = estimate.directedEdgeID,
+      let edge = runtimeAssets?.matcherCorridor.edges.first(where: { $0.id == directedEdgeID }),
+      let fraction = estimate.fractionAlongEdge,
+      let coordinate = Self.interpolateMatcherEdge(edge, fraction: fraction)
+    else {
+      return
+    }
     runtimeCoordinate = coordinate
   }
 

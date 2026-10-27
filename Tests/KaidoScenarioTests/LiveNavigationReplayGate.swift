@@ -755,6 +755,7 @@
         var rawConfidence: MatcherConfidence?
         var emittedMovementIDs: [String] = []
         var estimate: MatcherEstimate?
+        var drawsPosition = false
         var isConfirmingPlannedExit = false
         var entryStretchMovementOccurrenceID: String?
         switch before.journeyPhase {
@@ -782,6 +783,7 @@
           let update = try await session.observe(envelope.observation)
           rawConfidence = update.matcherEstimate.confidence
           estimate = update.matcherEstimate
+          drawsPosition = update.drawsPosition
           isConfirmingPlannedExit = update.isConfirmingPlannedExit
           if let emission = update.guidancePromptEmission,
             let movement = promptMovements[emission.promptID]
@@ -820,6 +822,7 @@
             phase: after.journeyPhase,
             currentOccurrenceIndex: after.currentOccurrenceIndex,
             engineConfidence: after.locationConfidence,
+            drawsPosition: drawsPosition,
             rawConfidence: rawConfidence,
             estimate: estimate,
             recoveryStatus: after.recovery.status,
@@ -1154,6 +1157,8 @@
     let phase: JourneyPhase
     let currentOccurrenceIndex: Int?
     let engineConfidence: LocationConfidence
+    /// Whether the App draws the car at this fix's place on the plan.
+    var drawsPosition = false
     let rawConfidence: MatcherConfidence?
     let estimate: MatcherEstimate?
     let recoveryStatus: RecoveryState.Status
@@ -1480,6 +1485,12 @@
       longestRun(in: openSkyRecords.filter { $0.phase == .strictRoute }) {
         $0.engineConfidence != .high
       }
+    }
+
+    /// Longest open-sky stretch on the expressway in which no fix moved the
+    /// App's marker.
+    var longestUndrawnSeconds: Int {
+      longestRun(in: openSkyRecords.filter { $0.phase == .strictRoute }) { !$0.drawsPosition }
     }
 
     /// The same stretch, counting only fixes taken before the car is past

@@ -3843,6 +3843,135 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  /// Past a fork whose untaken road runs on a few metres beside the plan, a
+  /// fix between the two roads holds admission, but the car has come as far
+  /// on either: the marker moves along the plan. Once the roads part and the
+  /// drive leaves the plan, the screen says so and the marker stands on the
+  /// branch the car took, not on the plan past the fork.
+  func testMarkerFollowsThePlanBesideABranchThenStandsOnTheBranchTaken()
+    async throws
+  {
+    let clock = LiveTestClock()
+    let drive = try await bayshoreLiveDrive(clock: clock, output: WholeShutoRecordingSpeechOutput())
+    let model = drive.model
+    let corridor = drive.release.navigation.bundle.matcherCorridor
+    let edges = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    let plan = corridor.occurrences.sorted { $0.index < $1.index }.compactMap { edges[$0.directedEdgeID] }
+    let planIDs = Set(plan.map(\.id))
+    func coordinates(_ edge: RouteMatcherDirectedEdge) -> [ShutoCoordinate] {
+      edge.coordinates.map { ShutoCoordinate(latitude: $0.latitude, longitude: $0.longitude) }
+    }
+    // The first fork whose untaken road stays within 6 m of the plan for
+    // 100 m and then parts from it by 40 m.
+    var found: (fork: Int, branch: [ShutoCoordinate], plan: [ShutoCoordinate])?
+    search: for fork in plan.indices.dropLast() {
+      let ahead = plan[(fork + 1)..<min(plan.count, fork + 60)].flatMap(coordinates)
+      for start in plan[fork].successorEdgeIDs.sorted() where !planIDs.contains(start) {
+        var branch: [ShutoCoordinate] = []
+        var next = edges[start]
+        while let edge = next, branch.count < 400 {
+          branch += coordinates(edge).dropFirst(branch.isEmpty ? 0 : 1)
+          next = edge.successorEdgeIDs.sorted().lazy.filter { !planIDs.contains($0) }.compactMap { edges[$0] }.first
+        }
+        let samples = Self.samples(along: branch, every: 20)
+        let beside = samples.prefix { Self.nearest(on: ahead, to: $0.coordinate).meters <= 6 }
+        if beside.count >= 5,
+          samples.dropFirst(beside.count).contains(where: { Self.nearest(on: ahead, to: $0.coordinate).meters >= 40 })
+        {
+          found = (fork, branch, ahead)
+          break search
+        }
+      }
+    }
+    let beside = try XCTUnwrap(found, "no fork with a road beside the plan on this route")
+    var second = 0
+    func feed(_ coordinate: ShutoCoordinate, course: Double, accuracy: Double = 5) async {
+      second += 1
+      clock.milliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "beside-branch.\(second)", coordinate: coordinate, atMilliseconds: clock.milliseconds,
+          courseDegrees: course, speedMetersPerSecond: 20, horizontalAccuracyMeters: accuracy
+        )
+      )
+    }
+    for point in plan[...beside.fork].flatMap(Self.edgeFixPoints) {
+      await feed(point.coordinate, course: point.courseDegrees)
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    let atFork = model.progressFraction
+    var drawnWhileHeld = false
+    var interrupted: ShutoCoordinate?
+    var drawnBeforeInterruption = 0.0
+    for sample in Self.samples(along: beside.branch, every: 20) {
+      let nearest = Self.nearest(on: beside.plan, to: sample.coordinate)
+      let before = model.progressFraction
+      drawnBeforeInterruption = before
+      if nearest.meters <= 6 {
+        // A receiver cannot tell the two roads apart: the fix lies between them.
+        await feed(Self.interpolate(from: sample.coordinate, to: nearest.point, fraction: 0.5), course: sample.course)
+      } else {
+        await feed(sample.coordinate, course: sample.course)
+      }
+      if model.positionState == .routeInterrupted {
+        interrupted = model.currentCoordinate
+        break
+      }
+      if model.matcherConfidence != .high, model.progressFraction > before { drawnWhileHeld = true }
+    }
+    XCTAssertTrue(drawnWhileHeld, "fork \(beside.fork)")
+    XCTAssertGreaterThan(drawnBeforeInterruption, atFork)
+    let marker = try XCTUnwrap(interrupted, "the drive never left the plan")
+    XCTAssertLessThan(Self.nearest(on: beside.branch, to: marker).meters, 1)
+    XCTAssertGreaterThan(Self.nearest(on: beside.plan, to: marker).meters, 6)
+    // The travelled line and the remaining distance go back to the admitted
+    // point with the marker, not stay at the drawn one past the fork.
+    let admitted = try XCTUnwrap(model.admittedProgress)
+    XCTAssertGreaterThan(drawnBeforeInterruption, admitted.routeProgressFraction)
+    XCTAssertEqual(model.progressFraction, admitted.routeProgressFraction)
+    let route = try XCTUnwrap(model.selectedRoute)
+    XCTAssertEqual(
+      try XCTUnwrap(model.remainingJourneyDistanceMeters),
+      route.distanceMeters * (1 - admitted.routeProgressFraction) + (model.egressRoute?.distanceMeters ?? 0),
+      accuracy: 0.5
+    )
+    let travelledEnd = try XCTUnwrap(model.routeProgressGeometry?.traveledCoordinates.last)
+    XCTAssertLessThan(Self.meters(travelledEnd, admitted.coordinate), 2)
+    model.reset()
+  }
+
+  /// Points every `meters` along a polyline, each with its segment's course.
+  private static func samples(
+    along line: [ShutoCoordinate], every meters: Double
+  ) -> [(coordinate: ShutoCoordinate, course: Double)] {
+    zip(line, line.dropFirst()).flatMap { start, end in
+      let count = max(1, Int((Self.meters(start, end) / meters).rounded(.up)))
+      return (0..<count).map {
+        (interpolate(from: start, to: end, fraction: Double($0) / Double(count)), bearing(from: start, to: end))
+      }
+    }
+  }
+
+  /// The point of a polyline nearest a coordinate, and how far it is.
+  private static func nearest(
+    on line: [ShutoCoordinate], to point: ShutoCoordinate
+  ) -> (point: ShutoCoordinate, meters: Double) {
+    let scale = 6_371_000.0 * .pi / 180
+    let cosine = cos(point.latitude * .pi / 180)
+    var best = (point: line.first ?? point, meters: Double.infinity)
+    for (start, end) in zip(line, line.dropFirst()) {
+      let ax = (start.longitude - point.longitude) * scale * cosine
+      let ay = (start.latitude - point.latitude) * scale
+      let dx = (end.longitude - start.longitude) * scale * cosine
+      let dy = (end.latitude - start.latitude) * scale
+      let squared = dx * dx + dy * dy
+      let t = squared > 0 ? max(0, min(1, -(ax * dx + ay * dy) / squared)) : 0
+      let meters = hypot(ax + t * dx, ay + t * dy)
+      if meters < best.meters { best = (interpolate(from: start, to: end, fraction: t), meters) }
+    }
+    return best
+  }
+
   /// From Toyosu the route runs straight on from the ramp for 1.1 km, so
   /// entry waits past the Shinonome JCT fork. The fork shows on the banner
   /// once the car has been followed along the route head, and is not

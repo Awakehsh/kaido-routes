@@ -26,6 +26,13 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
   /// under the road the exit leaves looks the same as that road here, so
   /// the car may have taken the exit or missed it; nothing yet tells which.
   public let isConfirmingPlannedExit: Bool
+  /// Whether presentation draws the car at this fix's place on the plan. An
+  /// admitted HIGH fix is drawn, and so is a fix on the plan held below it
+  /// only because an off-plan road runs beside the plan: the road a fork just
+  /// behind the car leaves by. On either road the car has come as far, so the
+  /// marker keeps moving while admission, guidance and deviation wait for
+  /// the roads to part.
+  public let drawsPosition: Bool
 
   public init(
     matcherEstimate: MatcherEstimate,
@@ -35,9 +42,11 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
     guidanceProgressObservation: GuidanceProgressObservation? = nil,
     guidancePromptEmission: GuidancePromptEmission? = nil,
     guidanceBridgeError: GuidanceProgressBridgeError? = nil,
-    isConfirmingPlannedExit: Bool = false
+    isConfirmingPlannedExit: Bool = false,
+    drawsPosition: Bool
   ) {
     self.isConfirmingPlannedExit = isConfirmingPlannedExit
+    self.drawsPosition = drawsPosition
     self.matcherEstimate = matcherEstimate
     self.matcherDiagnostics = matcherDiagnostics
     self.navigationSnapshot = navigationSnapshot
@@ -396,6 +405,12 @@ public actor NavigationSession {
         separatedFromOffPlanRoads: separatedFromOffPlanRoads && isWithinReach
       )
     )
+    let isBesideOffPlanRoad =
+      observed.occurrenceID != nil && isWithinReach
+      && observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters
+      && (matched.isHeldLowOnlyByOffPlanRoads
+        || estimate.confidence == .high
+        || estimate.confidence == .medium && resolvesLongitudinalCandidates)
     // Only an admitted fix at the occurrence progress stands on confirms
     // where the car is; one on a detour says nothing about the plan.
     if detectsOffPlanDeviation, engine.snapshot.locationConfidence == .high,
@@ -487,7 +502,8 @@ public actor NavigationSession {
     else {
       return update(
         estimate: estimate,
-        guidanceProgressState: .notApplicable
+        guidanceProgressState: .notApplicable,
+        isBesideOffPlanRoad: isBesideOffPlanRoad
       )
     }
 
@@ -503,7 +519,8 @@ public actor NavigationSession {
         estimate: estimate,
         guidanceProgressState: .resolved,
         guidanceProgressObservation: progress,
-        guidancePromptEmission: emission
+        guidancePromptEmission: emission,
+        isBesideOffPlanRoad: isBesideOffPlanRoad
       )
     } catch let error as GuidanceProgressBridgeError {
       let state: NavigationSessionGuidanceProgressState =
@@ -513,7 +530,8 @@ public actor NavigationSession {
       return update(
         estimate: estimate,
         guidanceProgressState: state,
-        guidanceBridgeError: error
+        guidanceBridgeError: error,
+        isBesideOffPlanRoad: isBesideOffPlanRoad
       )
     }
   }
@@ -1616,7 +1634,8 @@ public actor NavigationSession {
     guidanceProgressState: NavigationSessionGuidanceProgressState,
     guidanceProgressObservation: GuidanceProgressObservation? = nil,
     guidancePromptEmission: GuidancePromptEmission? = nil,
-    guidanceBridgeError: GuidanceProgressBridgeError? = nil
+    guidanceBridgeError: GuidanceProgressBridgeError? = nil,
+    isBesideOffPlanRoad: Bool = false
   ) -> NavigationSessionUpdate {
     NavigationSessionUpdate(
       matcherEstimate: estimate,
@@ -1626,7 +1645,12 @@ public actor NavigationSession {
       guidanceProgressObservation: guidanceProgressObservation,
       guidancePromptEmission: guidancePromptEmission,
       guidanceBridgeError: guidanceBridgeError,
-      isConfirmingPlannedExit: isConfirmingPlannedExit()
+      isConfirmingPlannedExit: isConfirmingPlannedExit(),
+      // A fix that took the car off the plan or into reacquisition is no
+      // longer drawn on it.
+      drawsPosition: engine.snapshot.locationConfidence == .high
+        || isBesideOffPlanRoad && engine.snapshot.journeyPhase == .strictRoute
+          && engine.snapshot.signalReacquisitionStatus != .pending
     )
   }
 

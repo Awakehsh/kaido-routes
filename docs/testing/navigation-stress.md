@@ -135,6 +135,14 @@ Drives in one process do not scale across threads: they share the fixture's
 route-plan storage, and retain/release on it becomes contended atomics. Separate
 processes share nothing.
 
+A process keeps about 0.4 MB per unit it drives, because XCTest holds state for
+every throw until the test ends. So a worker stops after 400 units
+(`KAIDO_STRESS_UNITS_PER_PROCESS`), and its slot starts a fresh process while
+units remain. Without that, a worker grows with its share of the list: about
+2.5 GB each for a full comparison on 16 cores. A measuring probe that also kept
+per-fix data took eight workers to 9 GB each, and this 48 GB Mac to a kernel
+panic.
+
 ## The harness
 
 `Tests/KaidoScenarioTests/NavigationStressTests.swift` drives the units. It is

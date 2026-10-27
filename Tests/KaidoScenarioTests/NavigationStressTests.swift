@@ -776,9 +776,16 @@
       }
       let units = try NavigationStress.units(at: unitsPath)
       let claims = env["KAIDO_STRESS_CLAIMS"]!
+      // A process keeps about 0.4 MB per unit it drives (XCTest holds state
+      // for every throw until the test ends), so it stops after its share and
+      // compare.sh starts a fresh one on the rest of the list.
+      let limit = env["KAIDO_STRESS_UNITS_PER_PROCESS"].flatMap { Int($0) } ?? units.count
+      var driven = 0
       var index = NavigationStress.claim(claims)
       while index < units.count {
         NavigationStress.emit(units[index], rows: try await NavigationStress.rows(units[index]))
+        driven += 1
+        if driven == limit { return }
         index = NavigationStress.claim(claims)
       }
     }

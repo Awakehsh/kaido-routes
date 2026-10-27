@@ -657,9 +657,6 @@ public actor NavigationSession {
     let limit =
       Double(max(0, observedAt - progressAt)) / 1_000 * Self.maximumPlausibleSpeedMetersPerSecond
       + Self.reachMarginMeters
-    let withinReach = { (index: Int) in
-      self.isWithinReachOfProgress(index: index, atMilliseconds: observedAt)
-    }
     // Progress can run past the fork the car left at: a road beside the plan
     // holds fixes on the plan's own continuation, by up to 24 occurrences on
     // the shortcuts the stress catalog drives. It can also stop short of the
@@ -677,14 +674,19 @@ public actor NavigationSession {
     // only beyond that.
     let isFinalStretch = { (edgeID: String) in
       self.occurrenceIndexesByEdgeID[edgeID]?.contains {
-        $0 >= exitSideStartIndex && !withinReach($0)
+        $0 >= exitSideStartIndex
+          && !self.isWithinReachOfProgress(index: $0, atMilliseconds: observedAt)
       } == true
     }
     let isPlanAhead = { (edgeID: String) in
-      self.occurrenceIndexesByEdgeID[edgeID]?.contains { $0 > progress && withinReach($0) } == true
+      self.occurrenceIndexesByEdgeID[edgeID]?.contains {
+        $0 > progress && self.isWithinReachOfProgress(index: $0, atMilliseconds: observedAt)
+      } == true
     }
     let laterPasses = { (edgeID: String) in
-      (self.occurrenceIndexesByEdgeID[edgeID] ?? []).filter { $0 > progress && !withinReach($0) }
+      (self.occurrenceIndexesByEdgeID[edgeID] ?? []).filter {
+        $0 > progress && !self.isWithinReachOfProgress(index: $0, atMilliseconds: observedAt)
+      }
     }
     // Onto the final stretch from the plan's own road before it, the car came
     // to the last choice on the plan and could have taken the other road

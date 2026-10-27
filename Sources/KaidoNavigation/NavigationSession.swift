@@ -109,6 +109,7 @@ public actor NavigationSession {
   private let expresswayRoads: [[MatcherCoordinate]]
   private let corridorEdgeCoordinates: [String: [MatcherCoordinate]]
   private let corridorSuccessorEdgeIDs: [String: Set<String>]
+  private let corridorEdgesByID: [String: RouteMatcherDirectedEdge]
   private var exitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var lastMatchedOccurrenceIndex: Int?
   private var lastObservedCoordinate: MatcherCoordinate?
@@ -318,6 +319,10 @@ public actor NavigationSession {
     )
     corridorSuccessorEdgeIDs = Dictionary(
       matcherCorridor.edges.map { ($0.id, $0.successorEdgeIDs) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    corridorEdgesByID = Dictionary(
+      matcherCorridor.edges.map { ($0.id, $0) },
       uniquingKeysWith: { first, _ in first }
     )
     let planEdgeIDs = Set(matcherCorridor.occurrences.map(\.directedEdgeID))
@@ -602,12 +607,21 @@ public actor NavigationSession {
     // Senju-Shinbashi), so how near that road is says nothing about which
     // way the car left, and where the corridor stops following it (328 m
     // past Senju-Shinbashi from Gotanda) the car would still be on the
-    // expressway.
+    // expressway. A shortcut onto the plan past its last choice can leave
+    // no placement on it either: beside the plan the matcher holds the car
+    // on the plan's own continuation, and the stretch lies beyond the
+    // window. That the car can have reached it by road, off the plan, is
+    // then what says it was on the exit.
     if let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex,
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
         >= routeEnd.exitSideStartIndex
-        || recentOffPlanPlacementEdgeID.map(routeEnd.isOnExit) == true,
+        || recentOffPlanPlacementEdgeID.map(routeEnd.isOnExit) == true
+        || reachesFinalStretchOffPlan(
+          from: currentIndex,
+          exitSideStartIndex: routeEnd.exitSideStartIndex,
+          atMilliseconds: observation.observedAtMilliseconds
+        ),
       routeEnd.metersFromExit(observation.coordinate, fromProgress: currentIndex)
         < routeEnd.metersFromOtherDepartures(observation.coordinate, fromProgress: currentIndex)
     {
@@ -628,6 +642,73 @@ public actor NavigationSession {
       return
     }
     engine.leaveAtUnplannedExit()
+  }
+
+  /// Whether the car can have reached the plan past its last choice of road
+  /// by road from where it left the plan, off the plan it would have driven
+  /// meanwhile, within the distance reach allows since progress was
+  /// confirmed.
+  private func reachesFinalStretchOffPlan(
+    from progress: Int,
+    exitSideStartIndex: Int,
+    atMilliseconds observedAt: Int
+  ) -> Bool {
+    guard let progressAt = lastProgressObservedAtMilliseconds else { return false }
+    let limit =
+      Double(max(0, observedAt - progressAt)) / 1_000 * Self.maximumPlausibleSpeedMetersPerSecond
+      + Self.reachMarginMeters
+    let withinReach = { (index: Int) in
+      self.isWithinReachOfProgress(index: index, atMilliseconds: observedAt)
+    }
+    // Progress can run past the fork the car left at: a road beside the plan
+    // holds fixes on the plan's own continuation, by up to 24 occurrences on
+    // the shortcuts the stress catalog drives. It can also stop short of the
+    // fork, by as much as the matcher looks ahead of it. From further back a
+    // street following the Shibakoen ramp, 25 occurrences short of the
+    // Shiodome link, would reach the link.
+    let window = RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    let startPasses = Dictionary(
+      grouping: (max(0, progress - 2 * window)...(progress + window)).filter { routeEdgeIDByIndex[$0] != nil },
+      by: { routeEdgeIDByIndex[$0]! }
+    )
+    // A road the car could have driven to along the plan in the time is
+    // where it would be had it stayed on the plan: reached only that way,
+    // the final stretch is no shortcut, and counts where the plan comes to it
+    // only beyond that.
+    let isFinalStretch = { (edgeID: String) in
+      self.occurrenceIndexesByEdgeID[edgeID]?.contains {
+        $0 >= exitSideStartIndex && !withinReach($0)
+      } == true
+    }
+    let isPlanAhead = { (edgeID: String) in
+      self.occurrenceIndexesByEdgeID[edgeID]?.contains { $0 > progress && withinReach($0) } == true
+    }
+    let laterPasses = { (edgeID: String) in
+      (self.occurrenceIndexesByEdgeID[edgeID] ?? []).filter { $0 > progress && !withinReach($0) }
+    }
+    // Onto the final stretch from the plan's own road before it, the car came
+    // to the last choice on the plan and could have taken the other road
+    // there: nothing then says which. On a loop that road can be the fork the
+    // car left at on an earlier pass, so the test is by pass.
+    let comesByLastChoice = { (from: String, to: String) -> Bool in
+      let stretch = (self.occurrenceIndexesByEdgeID[to] ?? []).filter { $0 >= exitSideStartIndex }
+      if let starts = startPasses[from] {
+        return starts.allSatisfy { stretch.contains($0 + 1) }
+      }
+      let passes = laterPasses(from)
+      return stretch.contains { passes.contains($0 - 1) }
+    }
+    return shortestCorridorPath(
+      from: Dictionary(
+        uniqueKeysWithValues: startPasses.keys.map { ($0, -(corridorEdgesByID[$0]?.lengthMeters ?? 0)) }
+      ),
+      edgesByID: corridorEdgesByID,
+      maximumMeters: limit,
+      allows: { from, to in
+        isFinalStretch(to) ? !comesByLastChoice(from, to) : !isPlanAhead(to)
+      },
+      isTarget: { startPasses[$0] == nil && isFinalStretch($0) }
+    ) != nil
   }
 
   /// Distance from the fix to the nearest road of the plan the car can be
@@ -1864,12 +1945,13 @@ private struct ParkingStopBypass: Sendable {
       let stopEdgeIDs = Set(occurrences[(position + 1)...visit.upperBound].map(\.directedEdgeID))
       for start in here.successorEdgeIDs.sorted()
       where !stopEdgeIDs.contains(start) {
-        if let (path, rejoin) = shortestPath(
-          from: start,
-          to: rejoinIndexByEdgeID,
-          avoiding: stopEdgeIDs,
-          edgesByID: edgesByID
-        ), !path.isEmpty {
+        if let (path, rejoinEdgeID) = shortestCorridorPath(
+          from: [start: 0],
+          edgesByID: edgesByID,
+          maximumMeters: maximumMeters,
+          allows: { _, next in !stopEdgeIDs.contains(next) },
+          isTarget: { rejoinIndexByEdgeID[$0] != nil }
+        ), !path.isEmpty, let rejoin = rejoinIndexByEdgeID[rejoinEdgeID] {
           return Self(
             occurrences: (position + 1)..<rejoin,
             visitStartIndex: visit.lowerBound,
@@ -1881,39 +1963,44 @@ private struct ParkingStopBypass: Sendable {
     }
     return nil
   }
+}
 
-  private static func shortestPath(
-    from start: String,
-    to targets: [String: Int],
-    avoiding avoided: Set<String>,
-    edgesByID: [String: RouteMatcherDirectedEdge]
-  ) -> (path: [String], rejoin: Int)? {
-    var meters = [start: 0.0]
-    var previous: [String: String] = [:]
-    var open: Set<String> = [start]
-    while let current = open.min(by: { meters[$0]! < meters[$1]! }) {
-      open.remove(current)
-      if let rejoin = targets[current] {
-        var path: [String] = []
-        var edgeID = previous[current]
-        while let step = edgeID {
-          path.append(step)
-          edgeID = previous[step]
-        }
-        return (path.reversed(), rejoin)
+/// The shortest road distance through the corridor from `starts`, each at
+/// the metres already driven at its start, to the first road `isTarget`
+/// takes, entering a road only where `allows` lets it from the road before,
+/// within `maximumMeters`: the roads from a start up to it, and the road.
+private func shortestCorridorPath(
+  from starts: [String: Double],
+  edgesByID: [String: RouteMatcherDirectedEdge],
+  maximumMeters: Double,
+  allows: (_ from: String, _ to: String) -> Bool,
+  isTarget: (String) -> Bool
+) -> (path: [String], target: String)? {
+  var meters = starts
+  var previous: [String: String] = [:]
+  var open = Set(starts.keys)
+  while let current = open.min(by: { meters[$0]! < meters[$1]! }) {
+    open.remove(current)
+    if isTarget(current) {
+      var path: [String] = []
+      var edgeID = previous[current]
+      while let step = edgeID {
+        path.append(step)
+        edgeID = previous[step]
       }
-      guard let edge = edgesByID[current] else { continue }
-      let reached = meters[current]! + edge.lengthMeters
-      guard reached <= maximumMeters else { continue }
-      for next in edge.successorEdgeIDs
-      where !avoided.contains(next) && reached < meters[next] ?? .infinity {
-        meters[next] = reached
-        previous[next] = current
-        open.insert(next)
-      }
+      return (path.reversed(), current)
     }
-    return nil
+    guard let edge = edgesByID[current] else { continue }
+    let reached = meters[current]! + edge.lengthMeters
+    guard reached <= maximumMeters else { continue }
+    for next in edge.successorEdgeIDs
+    where allows(current, next) && reached < meters[next] ?? .infinity {
+      meters[next] = reached
+      previous[next] = current
+      open.insert(next)
+    }
   }
+  return nil
 }
 
 /// For a plan ending in a PA: its last choice of road before the PA visit,

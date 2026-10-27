@@ -55,6 +55,57 @@
       #expect(!run.handedOver, "\(summary)")
     }
 
+    /// The same shortcut where the link runs beside C1: fixes on it hold the
+    /// car on C1 past the fork and leave no placement on the link, so only
+    /// that the link was in reach by road says the car left by the exit.
+    @Test("a shortcut onto the planned exit beside the plan ends the drive there")
+    func shortcutOntoThePlannedExitBesideThePlan() async throws {
+      let gate = try replayGate("c1-inner-shibakoen-to-shiodome-product-release.json")
+      let fork = try #require(
+        NavigationStress.forkMovement(
+          gate,
+          spec: "fork=osm.45021970.28.forward/osm.316213226.0.forward/osm.24402125.0.forward"
+        )
+      )
+      let shortcut = try #require(
+        gate.shortcutLegs(movementIndex: fork.movementIndex, alternativeEdgeID: fork.alternative)
+      )
+      let run = try await gate.run(legs: shortcut.legs, seed: 13, noise: .multipath)
+      let summary = gateLine(file: "shibakoen shiodome", seed: 13, run: run, label: "EXIT-SHORTCUT-MULTIPATH")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+      #expect(!run.handedOver, "\(summary)")
+    }
+
+    /// Kitaikebukuro: a shortcut joins C2 ahead, short of the plan's last
+    /// choice of road, and the car takes the other road there. That road
+    /// runs beside the planned exit, so only progress past the last choice
+    /// or a placement on the exit can credit it; reach by road cannot.
+    @Test("a shortcut that takes the other road at the last choice hands over")
+    func shortcutThenTheOtherRoadAtTheLastChoiceHandsOver() async throws {
+      let gate = try NavigationStress.fixture(
+        "via:c2:shuto.ic.5.kitaikebukuro:shuto.ic.5.higashiikebukuro:1"
+      ).gate
+      let fork = try #require(
+        NavigationStress.forkMovement(
+          gate,
+          spec: "fork=osm.23681223.56.forward/osm.23681223.57.forward/osm.390426216.0.forward"
+        )
+      )
+      let shortcut = try #require(
+        gate.shortcutLegs(
+          movementIndex: fork.movementIndex, alternativeEdgeID: fork.alternative,
+          lastChoiceAlternative: "osm.552415793.0.forward"
+        )
+      )
+      let run = try await gate.run(legs: shortcut.legs, seed: 1, noise: .multipath)
+      let summary = gateLine(file: "kitaikebukuro higashiikebukuro", seed: 1, run: run, label: "SHORTCUT-OTHER-ROAD-MULTIPATH")
+      print(summary)
+      #expect(run.handedOver, "\(summary)")
+      #expect(!run.reachedCompletion, "\(summary)")
+    }
+
     /// Tatsumi JCT: Route 9, a pass this drive makes 56 km later, runs 13 m
     /// beside the Bayshore. Fixes from a receiver that reports half its error
     /// land on it while the car stays on the Bayshore; with the deviation

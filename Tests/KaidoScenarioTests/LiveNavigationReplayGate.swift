@@ -213,6 +213,40 @@
       return legs
     }
 
+    /// The alternative at `movementIndex` followed until it meets a road the
+    /// plan drives later, then the plan from that pass to its end: a car that
+    /// took a shortcut onto a later pass and drove on. Nil when the
+    /// alternative never meets one within 5 km.
+    func shortcutLegs(
+      movementIndex: Int,
+      alternativeEdgeID: String
+    ) -> (legs: [ReplayGateLeg], joinIndex: Int)? {
+      let path = branchPath(from: alternativeEdgeID, meters: 5_000)
+      for (position, edge) in path.enumerated() {
+        guard
+          let join = (movementIndex + 1..<routeEdgeIDs.count).first(where: {
+            routeEdgeIDs[$0] == edge.edgeID
+          })
+        else { continue }
+        var legs = approachLegs()
+        legs += routeLegs(through: movementIndex - 1)
+        legs += path[..<position].map { edge in
+          ReplayGateLeg(
+            kind: .offPlan(edge.edgeID),
+            coordinates: coordinates(of: edge),
+            speedMetersPerSecond: speed(forDatabaseEdge: edge)
+          )
+        }
+        legs += routeLegs(through: routeEdgeIDs.count - 1).filter {
+          if case .occurrence(let index) = $0.kind { return index >= join }
+          return false
+        }
+        legs += terminalLegs()
+        return (legs, join)
+      }
+      return nil
+    }
+
     /// Exit ramps that end on a street running beneath the expressway: Toda's
     /// ends on Route 17, which runs under Route 5 south of Bijogi JCT. A car
     /// that leaves there drives on under the plan's own road, the stacked-road

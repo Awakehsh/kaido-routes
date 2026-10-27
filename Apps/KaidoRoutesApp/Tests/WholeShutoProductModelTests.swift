@@ -5110,14 +5110,7 @@ final class WholeShutoProductModelTests: XCTestCase {
   private func waitForCircuitPairing(
     _ model: WholeShutoProductModel
   ) async {
-    // A circuit that ends inside a PA never resolves an exit.
-    for _ in 0..<200
-    where model.isResolvingCircuitPairing
-      || (model.circuitExitFacilityID == nil
-        && model.selectedCircuit?.defaultDestinationParkingAreaID == nil)
-    {
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
+    await model.awaitCircuitPairingForTesting()
   }
 
   private func waitForLiveNavigationPreparation(

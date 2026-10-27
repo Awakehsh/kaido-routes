@@ -34,6 +34,9 @@ HARNESS = "Tests/KaidoScenarioTests/NavigationStressTests.swift"
 INPUTS = ("Package.swift", "Package.resolved", "Sources", "Tests/KaidoScenarioTests", "data")
 CACHE = Path(os.environ.get("KAIDO_STRESS_CACHE", "~/Library/Caches/kaido-stress")).expanduser()
 STAGE_ONE_SEEDS = 10
+# Units one worker process drives before a fresh one takes over: about 0.4 MB
+# a unit stays resident, so a process ends near 0.4 GB however long the list.
+UNITS_PER_PROCESS = 400
 
 
 class Failure(Exception):
@@ -148,17 +151,40 @@ def run_units(tree, units, results, run_dir, jobs):
     results.directory.mkdir(parents=True, exist_ok=True)
     stamp = run_dir.name
     workers = min(jobs, len(units))
+    claims = run_dir / "claims"
+
+    def unclaimed():
+        if not claims.exists():
+            return True
+        with open(claims) as stream:
+            fcntl.flock(stream, fcntl.LOCK_SH)
+            return int(stream.read() or 0) < len(units)
+
+    def start(i):
+        env = dict(os.environ, KAIDO_STRESS_UNITS=str(run_dir / "units.tsv"),
+                   KAIDO_STRESS_CLAIMS=str(claims),
+                   KAIDO_STRESS_UNITS_PER_PROCESS=str(UNITS_PER_PROCESS),
+                   KAIDO_STRESS_OUT=str(results.directory / f"{stamp}-{i}.jsonl"))
+        return subprocess.Popen(
+            ["xcrun", "xctest", "-XCTest", "NavigationStressTests/testDriveUnits", str(tree.bundle)],
+            cwd=tree.path, env=env, stdout=open(run_dir / f"worker-{i}.log", "a"), stderr=subprocess.STDOUT)
+
     before = resource.getrusage(resource.RUSAGE_CHILDREN)
     started = time.monotonic()
-    processes = []
-    for i in range(workers):
-        env = dict(os.environ, KAIDO_STRESS_UNITS=str(run_dir / "units.tsv"),
-                   KAIDO_STRESS_CLAIMS=str(run_dir / "claims"),
-                   KAIDO_STRESS_OUT=str(results.directory / f"{stamp}-{i}.jsonl"))
-        processes.append(subprocess.Popen(
-            ["xcrun", "xctest", "-XCTest", "NavigationStressTests/testDriveUnits", str(tree.bundle)],
-            cwd=tree.path, env=env, stdout=open(run_dir / f"worker-{i}.log", "w"), stderr=subprocess.STDOUT))
-    codes = [p.wait() for p in processes]
+    # A worker process stops after UNITS_PER_PROCESS units, so each slot
+    # starts another while the list has units left.
+    running = {i: start(i) for i in range(workers)}
+    codes = []
+    while running:
+        for i, process in list(running.items()):
+            code = process.poll()
+            if code is None:
+                continue
+            del running[i]
+            codes.append(code)
+            if code == 0 and unclaimed():
+                running[i] = start(i)
+        time.sleep(0.2)
     wall = time.monotonic() - started
     after = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu = (after.ru_utime - before.ru_utime) + (after.ru_stime - before.ru_stime)
@@ -309,7 +335,7 @@ def main():
             sys.exit(f"error: {error}")
         for c in cells:
             print(f"{c['group']:12} {c['route']:70} {c['profile']:9} {c['extra']:18} {' '.join(sorted(c['tags']))}")
-        print(f"{len(cells)} cells; {sum(catalog.cost((c['group'], c['route'])) for c in cells) * 40:,} fixes over 40 seeds")
+        print(f"{len(cells)} cells; {sum(catalog.cost((c['group'], c['route'], c['profile'], c['extra'])) for c in cells) * 40:,} fixes over 40 seeds")
         return 0
 
     safe = lambda ref: re.sub(r"[^A-Za-z0-9._-]+", "_", ref)

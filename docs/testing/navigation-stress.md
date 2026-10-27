@@ -39,7 +39,7 @@ seed. The groups are the Phase A drives:
 |---|---|
 | `planned` | the whole plan, entrance to completion |
 | `missedFinal` | the last choice of road before the exit or PA taken wrong, 1.5 km |
-| `wrongBranch` | a reviewed divergent junction (C1 283 and 487, C2 234, Bayshore 130) taken wrong, in the bundled release or in a lap of a runtime loop |
+| `wrongBranch` | a reviewed divergent junction (C1 283 and 487, C2 234, Bayshore 130) taken wrong, in the bundled release or in a lap of a runtime loop; and every plan fork whose untaken road runs beside the plan (`beside-fork`, listed in `scripts/stress/beside-forks.tsv`), 2.5 km past the fork |
 | `stopBypass` | the Daikoku PA stop of a loop driven past |
 | `paReentry` | the lap-1 PA stop driven again in lap 2 |
 | `lapChange` | drop one lap or finish the current lap mid-drive |
@@ -77,7 +77,10 @@ releases, the lap changes (three-lap drives by construction), and the
 `later-lap` wrong branches: lap 2 of a three-lap loop, the only lap that is
 neither the first nor the last. Final-lap logic needs one and two laps; a third
 lap repeats them. On two laps `lap=2` and `lap=last` are the same drives, so
-the default keeps `lap=last` only. That is 207 of 291 cells.
+the default keeps `lap=last` only. That is 207 of 990 cells. The beside-road
+forks are a selection of their own, `beside-fork` (699 cells, about 42 M fixes
+over 40 seeds against the default's 25 M), so a comparison where they do not
+matter does not pay for them.
 
 ## Stages
 
@@ -131,6 +134,14 @@ longest-first unit list, each claiming the next unit from a counter file.
 Drives in one process do not scale across threads: they share the fixture's
 route-plan storage, and retain/release on it becomes contended atomics. Separate
 processes share nothing.
+
+A process keeps about 0.4 MB per unit it drives, because XCTest holds state for
+every throw until the test ends. So a worker stops after 400 units
+(`KAIDO_STRESS_UNITS_PER_PROCESS`), and its slot starts a fresh process while
+units remain. Without that, a worker grows with its share of the list: about
+2.5 GB each for a full comparison on 16 cores. A measuring probe that also kept
+per-fix data took eight workers to 9 GB each, and this 48 GB Mac to a kernel
+panic.
 
 ## The harness
 

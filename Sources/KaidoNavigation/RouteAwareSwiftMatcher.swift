@@ -325,6 +325,10 @@ public struct RouteMatcherObservationResult: Equatable, Sendable {
   /// Distance from the fix to every corridor edge inside the query radius.
   /// An edge absent here is farther than the radius.
   public let edgeDistancesMeters: [String: Double]
+  /// The off-plan road the matcher last placed the car on with confidence,
+  /// one it can have left the plan for, within the last
+  /// `offPlanPlacementMilliseconds`.
+  public let recentOffPlanPlacementEdgeID: String?
   /// The estimate is LOW only because off-plan roads lie as near the fix as
   /// the place on the plan it selected: a fork just behind the car leaves the
   /// plan by a road that runs on beside it.
@@ -621,6 +625,10 @@ public struct RouteMatcherSession: Sendable {
         && estimate.confidence != .lost
         && estimate.directedEdgeID.map { isReachableAfter(evidenceLower, $0) } == true,
       edgeDistancesMeters: lastMeasuredEdges.mapValues(\.distanceMeters),
+      recentOffPlanPlacementEdgeID: offPlanPlacement.flatMap {
+        observation.observedAtMilliseconds - $0.observedAtMilliseconds
+          <= Self.offPlanPlacementMilliseconds ? $0.edgeID : nil
+      },
       isHeldLowOnlyByOffPlanRoads: isHeldLowOnlyByOffPlanRoads
     )
   }

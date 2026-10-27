@@ -705,7 +705,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// Where admission last placed the car on the plan. The position above is
   /// the drawn one, which can run ahead of it beside an off-plan road;
   /// actions and recorded data read this instead.
-  private var admittedProgress: ShutoRouteRuntimeProgress?
+  private(set) var admittedProgress: ShutoRouteRuntimeProgress?
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
   /// When the entrance announcement was spoken, and for which movement.
@@ -5881,12 +5881,18 @@ final class WholeShutoProductModel: ObservableObject {
     publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
       clearTunnelEstimate()
-      // Off the plan the marker never stands at a drawn point past the fork:
-      // it starts from the last admitted point, and moves to where the
-      // matcher places the car off the plan once the screen says it is off
-      // the route. Near the planned exit the screen still reads as
-      // confirming where the car is, so the admitted point stands.
+      // Off the plan nothing on screen stands at a drawn point past the
+      // fork: the marker, the travelled line and the remaining distance go
+      // back to the last admitted point, and the marker moves on to where
+      // the matcher places the car off the plan, as the screen says it is
+      // off the route. Near the planned exit the screen still reads as
+      // confirming where the car is, so the admitted point stands. Until a
+      // fix is admitted on this expressway, after a resume or a lap skip,
+      // there is no admitted point, and the drawn one stands.
       if entersRecovery || update.isConfirmingPlannedExit, let admittedProgress {
+        progressFraction = admittedProgress.routeProgressFraction
+        runtimeOccurrenceID = admittedProgress.occurrenceID
+        runtimeFractionAlongOccurrence = admittedProgress.fractionAlongOccurrence
         runtimeCoordinate = admittedProgress.coordinate
       }
       if update.isConfirmingPlannedExit {

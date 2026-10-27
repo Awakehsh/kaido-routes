@@ -3902,9 +3902,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     let atFork = model.progressFraction
     var drawnWhileHeld = false
     var interrupted: ShutoCoordinate?
+    var drawnBeforeInterruption = 0.0
     for sample in Self.samples(along: beside.branch, every: 20) {
       let nearest = Self.nearest(on: beside.plan, to: sample.coordinate)
       let before = model.progressFraction
+      drawnBeforeInterruption = before
       if nearest.meters <= 6 {
         // A receiver cannot tell the two roads apart: the fix lies between them.
         await feed(Self.interpolate(from: sample.coordinate, to: nearest.point, fraction: 0.5), course: sample.course)
@@ -3918,10 +3920,23 @@ final class WholeShutoProductModelTests: XCTestCase {
       if model.matcherConfidence != .high, model.progressFraction > before { drawnWhileHeld = true }
     }
     XCTAssertTrue(drawnWhileHeld, "fork \(beside.fork)")
-    XCTAssertGreaterThan(model.progressFraction, atFork)
+    XCTAssertGreaterThan(drawnBeforeInterruption, atFork)
     let marker = try XCTUnwrap(interrupted, "the drive never left the plan")
     XCTAssertLessThan(Self.nearest(on: beside.branch, to: marker).meters, 1)
     XCTAssertGreaterThan(Self.nearest(on: beside.plan, to: marker).meters, 6)
+    // The travelled line and the remaining distance go back to the admitted
+    // point with the marker, not stay at the drawn one past the fork.
+    let admitted = try XCTUnwrap(model.admittedProgress)
+    XCTAssertGreaterThan(drawnBeforeInterruption, admitted.routeProgressFraction)
+    XCTAssertEqual(model.progressFraction, admitted.routeProgressFraction)
+    let route = try XCTUnwrap(model.selectedRoute)
+    XCTAssertEqual(
+      try XCTUnwrap(model.remainingJourneyDistanceMeters),
+      route.distanceMeters * (1 - admitted.routeProgressFraction) + (model.egressRoute?.distanceMeters ?? 0),
+      accuracy: 0.5
+    )
+    let travelledEnd = try XCTUnwrap(model.routeProgressGeometry?.traveledCoordinates.last)
+    XCTAssertLessThan(Self.meters(travelledEnd, admitted.coordinate), 2)
     model.reset()
   }
 

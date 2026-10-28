@@ -88,6 +88,127 @@ func routeHeadOnTheApproachLineCannotConfirmEntry() async throws {
   )
 }
 
+@Test("A LOW route-head fix decides entry where three ordered fixes above it reached")
+func lowFixDecidesEntryWhereOrderedEvidenceReached() async throws {
+  let runtime = try entryFixtureRuntime()
+  let context = runtime.entryTransitionAdmissionContext
+  _ = await runtime.session.start()
+  let head = try #require(context.entryTransition.firstRouteOccurrenceID)
+
+  // Ordered fixes above LOW while the head still lies on the approach line:
+  // the car is followed, but the odds have not moved.
+  for (index, longitude) in [139.76002, 139.76006, 139.7601].enumerated() {
+    let update = try await runtime.session.observeEntryTransitionEvidence(
+      entryEvidence(
+        context: context,
+        id: "entry.ordered.\(index)",
+        at: 1_000 + index * 1_000,
+        edgeID: context.firstRouteDirectedEdgeID,
+        occurrenceID: head,
+        coordinate: MatcherCoordinate(latitude: 35.68, longitude: longitude),
+        confidence: .medium
+      )
+    )
+    #expect(update.status == .progressed)
+  }
+
+  // A LOW fix on the next occurrence, clear of the line: it decides entry at
+  // the occurrence the fixes above it reached, not at its own.
+  let decided = try await runtime.session.observeEntryTransitionEvidence(
+    entryEvidence(
+      context: context,
+      id: "entry.low",
+      at: 4_000,
+      edgeID: "test.edge.loop-movement",
+      occurrenceID: "test.occurrence.loop-movement-1",
+      coordinate: MatcherCoordinate(latitude: 35.68, longitude: 139.7611),
+      confidence: .low
+    )
+  )
+  #expect(decided.status == .strictRouteEntered)
+  #expect(decided.reachedOccurrenceID == head)
+  #expect(decided.navigationSnapshot.journeyPhase == .strictRoute)
+  #expect(decided.navigationSnapshot.currentOccurrenceID == head)
+}
+
+@Test("LOW route-head fixes never decide entry without three ordered fixes above LOW")
+func lowFixesWithoutOrderedEvidenceNeverDecideEntry() async throws {
+  let clearOfTheLine = [139.7605, 139.7606, 139.7607, 139.7608]
+  for orderedCount in [0, 2] {
+    let runtime = try entryFixtureRuntime()
+    let context = runtime.entryTransitionAdmissionContext
+    _ = await runtime.session.start()
+    let head = try #require(context.entryTransition.firstRouteOccurrenceID)
+    for (index, longitude) in [139.76002, 139.76006].prefix(orderedCount).enumerated() {
+      let update = try await runtime.session.observeEntryTransitionEvidence(
+        entryEvidence(
+          context: context,
+          id: "entry.ordered.\(index)",
+          at: 1_000 + index * 1_000,
+          edgeID: context.firstRouteDirectedEdgeID,
+          occurrenceID: head,
+          coordinate: MatcherCoordinate(latitude: 35.68, longitude: longitude),
+          confidence: .medium
+        )
+      )
+      #expect(update.status == .progressed)
+    }
+    for (index, longitude) in clearOfTheLine.enumerated() {
+      let update = try await runtime.session.observeEntryTransitionEvidence(
+        entryEvidence(
+          context: context,
+          id: "entry.low.\(index)",
+          at: 5_000 + index * 1_000,
+          edgeID: context.firstRouteDirectedEdgeID,
+          occurrenceID: head,
+          coordinate: MatcherCoordinate(latitude: 35.68, longitude: longitude),
+          confidence: .low
+        )
+      )
+      #expect(update.status == .observing, "after \(orderedCount) ordered fixes")
+      #expect(update.navigationSnapshot.journeyPhase != .strictRoute, "after \(orderedCount) ordered fixes")
+    }
+  }
+}
+
+@Test("A LOW route-head fix more than one occurrence past the ordered fixes never decides entry")
+func lowFixBeyondTheNextOccurrenceNeverDecidesEntry() async throws {
+  let runtime = try entryFixtureRuntime()
+  let context = runtime.entryTransitionAdmissionContext
+  _ = await runtime.session.start()
+  let head = try #require(context.entryTransition.firstRouteOccurrenceID)
+  for (index, longitude) in [139.76002, 139.76006, 139.7601].enumerated() {
+    let update = try await runtime.session.observeEntryTransitionEvidence(
+      entryEvidence(
+        context: context,
+        id: "entry.ordered.\(index)",
+        at: 1_000 + index * 1_000,
+        edgeID: context.firstRouteDirectedEdgeID,
+        occurrenceID: head,
+        coordinate: MatcherCoordinate(latitude: 35.68, longitude: longitude),
+        confidence: .medium
+      )
+    )
+    #expect(update.status == .progressed)
+  }
+
+  // Two occurrences on, the car is past where the ordered fixes reached by
+  // more than entry may lag it.
+  let beyond = try await runtime.session.observeEntryTransitionEvidence(
+    entryEvidence(
+      context: context,
+      id: "entry.low.beyond",
+      at: 4_000,
+      edgeID: "test.edge.loop",
+      occurrenceID: "test.occurrence.loop-edge-1",
+      coordinate: MatcherCoordinate(latitude: 35.68, longitude: 139.7605),
+      confidence: .low
+    )
+  )
+  #expect(beyond.status == .observing)
+  #expect(beyond.navigationSnapshot.journeyPhase != .strictRoute)
+}
+
 @Test("Ordered route-head fixes past the approach line enter strict navigation")
 func routeHeadProgressionPastApproachLineEnters() async throws {
   let database = try loadEntryTestWholeShutoDatabase()
@@ -335,6 +456,23 @@ func navigationReleaseRejectsUnboundEntryGeometry() {
   } catch {
     Issue.record("Unexpected error: \(error)")
   }
+}
+
+private func entryFixtureRuntime() throws -> KaidoProductNavigationRuntime {
+  let fixture = navigationReleaseBundleFixture()
+  return try KaidoProductNavigationRuntime(
+    release: KaidoProductRelease(
+      artifact: KaidoProductReleaseArtifact(
+        releaseID: "test.product-release.entry-evidence",
+        releasedAt: "2026-07-24T12:00:00+09:00",
+        navigationRelease: navigationReleaseArtifact(fixture),
+        routeAtlasRelease: productRouteAtlasArtifact(
+          fixture,
+          includeIncomingApproach: true
+        )
+      )
+    )
+  )
 }
 
 private func entryEvidence(

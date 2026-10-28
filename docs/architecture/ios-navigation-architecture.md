@@ -512,7 +512,16 @@ ratio of at least 9 that the fixes lie on the route head rather than on the
 straight continuation of the reviewed approach. Only fixes where the two are
 at least 20 m apart are weighed, because correlated GPS error would otherwise
 let one hypothesis drift ahead where they coincide. A route head that never
-leaves its approach line cannot confirm entry. Strict-route navigation starts
+leaves its approach line cannot confirm entry. Once three such fixes have
+followed the car and the ratio has passed, an ordered, heading-compatible LOW
+route-head fix whose residual fits also confirms entry, at the occurrence the
+fixes above LOW reached: where the plan's first fork comes just as the head
+clears the approach line, a car on the other road runs beside the head and the
+matcher holds it LOW there. A LOW fix never counts toward the three and never
+advances progress, and it confirms entry only on that occurrence or the next.
+Entry further behind the car would leave the roads beside the head reachable
+from progress, so every fix after entry would compete with them and stay
+below HIGH. Strict-route navigation starts
 at the occurrence the evidence reached, with the ramp behind it recorded as
 driven, and route matching restarts there. The current 45-degree
 heading and ten-second age gates are conservative implementation thresholds, not

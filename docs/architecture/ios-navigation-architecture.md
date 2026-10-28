@@ -1003,7 +1003,17 @@ reachable off-plan edge, or on a traversal of the plan more than the
 longitudinal window behind admitted progress, and that lie farther than three
 times the fix's allowance from every road of the plan from that window on and
 from the road its exit leads onto. A fix beyond every corridor road continues
-such a run but cannot start one, and near the exit it continues none. A match
+such a run. It starts one from the off-plan road the matcher placed the car
+on in the last 30 s once 100 m from every road of the plan it can be on, or
+by itself once farther from all of them than twice its accuracy plus 120 m,
+and never nearer than 125 m: a car gone on past where the corridor follows
+its branch, onto another expressway. Such a run names no road. Every released
+detour is a corridor road, so that departure makes recovery explicitly
+unavailable, and only the destination PA's past-entry check reads the nearest
+off-plan corridor road for it, because missing the entry ends the drive
+whichever road beyond it the car took. Coarse fixes never count, after a
+tunnel distance alone starts nothing, and near the exit a fix beyond every
+corridor road continues no run. A match
 farther ahead of admitted progress than 40 m/s since that progress, plus
 100 m, is never admitted and restarts the matcher on progress: it is a
 repeated traversal or a misplaced fix, not where the car went. The observed edge maps to its released candidate through the

@@ -2315,6 +2315,70 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(record.arrived)
   }
 
+  func testPassingThePlannedExitIsSaidOncePerRecovery() {
+    var notices = WholeShutoRecoveryNotices()
+    func step(
+      enters: Bool = false, wasConfirming: Bool, phase: JourneyPhase = .routeRecovery,
+      status: RecoveryState.Status = .unavailable, confirming: Bool
+    ) -> WholeShutoJourneyNotice? {
+      notices.notice(
+        entersRecovery: enters, wasConfirmingPlannedExit: wasConfirming, phase: phase,
+        recoveryStatus: status, isConfirmingPlannedExit: confirming,
+        phaseTrigger: "VERIFIED_ROUTE_HEAD_PROGRESSION"
+      )
+    }
+    XCTAssertNil(step(enters: true, wasConfirming: false, confirming: true))
+    XCTAssertNil(step(wasConfirming: true, confirming: true))
+    XCTAssertEqual(step(wasConfirming: true, confirming: false), .passedPlannedExit)
+    // Back within the exit's reach and out again, it is not said twice.
+    XCTAssertNil(step(wasConfirming: false, confirming: true))
+    XCTAssertNil(step(wasConfirming: true, confirming: false))
+    // A later recovery says it again.
+    XCTAssertNil(step(wasConfirming: false, phase: .strictRoute, status: .inactive, confirming: false))
+    XCTAssertNil(step(enters: true, wasConfirming: false, confirming: true))
+    XCTAssertEqual(step(wasConfirming: true, confirming: false), .passedPlannedExit)
+  }
+
+  func testLeavingByAnUnidentifiedRoadIsSaidOnlyAsRecoveryBegins() {
+    var notices = WholeShutoRecoveryNotices()
+    func step(
+      enters: Bool, wasConfirming: Bool = false, phase: JourneyPhase = .routeRecovery,
+      status: RecoveryState.Status = .unavailable, trigger: String
+    ) -> WholeShutoJourneyNotice? {
+      notices.notice(
+        entersRecovery: enters, wasConfirmingPlannedExit: wasConfirming, phase: phase,
+        recoveryStatus: status, isConfirmingPlannedExit: false, phaseTrigger: trigger
+      )
+    }
+    XCTAssertEqual(step(enters: true, trigger: "DEPARTED_BY_UNIDENTIFIED_ROAD"), .offGuidedRoute)
+    XCTAssertNil(step(enters: false, trigger: "DEPARTED_BY_UNIDENTIFIED_ROAD"))
+    // Read only as recovery begins: a trigger standing from before says nothing.
+    var fresh = WholeShutoRecoveryNotices()
+    XCTAssertNil(
+      fresh.notice(
+        entersRecovery: false, wasConfirmingPlannedExit: false, phase: .routeRecovery,
+        recoveryStatus: .unavailable, isConfirmingPlannedExit: false,
+        phaseTrigger: "DEPARTED_BY_UNIDENTIFIED_ROAD"
+      )
+    )
+    // A recovery with a rejoin path, or one begun by any other evidence, says
+    // nothing here; nor does the update that hands over or completes.
+    XCTAssertNil(step(enters: true, phase: .strictRoute, status: .inactive, trigger: "PLANNED_ROUTE_REACQUIRED"))
+    XCTAssertNil(step(enters: true, status: .active, trigger: "DEPARTED_BY_UNIDENTIFIED_ROAD"))
+    XCTAssertNil(step(enters: true, trigger: "VERIFIED_ROUTE_HEAD_PROGRESSION"))
+    XCTAssertNil(step(enters: false, wasConfirming: true, phase: .surfaceEgress, trigger: "UNPLANNED_EXIT"))
+    XCTAssertNil(step(enters: false, wasConfirming: true, phase: .completed, trigger: "DESTINATION_PARKING_AREA_NOT_ENTERED"))
+  }
+
+  func testRecoveryNoticesSayWhatHappenedInEveryVoiceLanguage() {
+    XCTAssertEqual(WholeShutoJourneyNotice.passedPlannedExit.text(locale: .japanese), "予定の出口を通過しました。")
+    XCTAssertEqual(WholeShutoJourneyNotice.passedPlannedExit.text(locale: .simplifiedChinese), "已驶过预定出口。")
+    XCTAssertEqual(WholeShutoJourneyNotice.passedPlannedExit.text(locale: .english), "You've passed your planned exit.")
+    XCTAssertEqual(WholeShutoJourneyNotice.offGuidedRoute.text(locale: .japanese), "案内ルートから外れています。")
+    XCTAssertEqual(WholeShutoJourneyNotice.offGuidedRoute.text(locale: .simplifiedChinese), "当前不在导航路线上。")
+    XCTAssertEqual(WholeShutoJourneyNotice.offGuidedRoute.text(locale: .english), "You're off the guided route.")
+  }
+
   // Finish is offered within 150 m of the route end on admitted progress,
   // which can still be short of the terminal occurrence; pressing it there
   // must still let the drive complete, with or without a surface leg.

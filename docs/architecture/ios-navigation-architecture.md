@@ -694,7 +694,12 @@ after a positioning gap. Ordinary-road maneuver progress rejects fixes at least
 ten seconds old or with at least 30 meters of reported uncertainty, matching the
 existing matcher's stale/low evidence boundaries. Informational start, entry, exit, rerouting, rejoin,
 position-loss/recovery, rest/resume and completion notices use the selected
-voice language, are episode-scoped, and yield to maneuver guidance. A lost
+voice language, are episode-scoped, and yield to maneuver guidance. Recovery
+without a rejoin path speaks only for the two causes that arise with the car
+clear of the plan, once each per recovery: 予定の出口を通過しました when
+exit confirmation lapses, and 案内ルートから外れています as recovery begins on
+`DEPARTED_BY_UNIDENTIFIED_ROAD`. Neither is spoken in the update that hands
+over or completes the drive, which speaks its own line. A lost
 position produces one notice per outage, and the 60-second cooldown belongs to
 the drive, so a lap swap does not reopen it. Muting drops a pending notice and
 a notice raised while muted is not queued, so unmuting never speaks old news.
@@ -1020,7 +1025,8 @@ the corridor follows its branch, onto another expressway. Such a run names no
 road, and only a fix as far continues it, so one jumped fix beside a LOST
 one on the plan is no departure. Every released
 detour is a corridor road, so that departure makes recovery explicitly
-unavailable, and only the destination PA's past-entry check reads the nearest
+unavailable, with `DEPARTED_BY_UNIDENTIFIED_ROAD` as its transition trigger,
+and only the destination PA's past-entry check reads the nearest
 off-plan corridor road for it, because missing the entry ends the drive
 whichever road beyond it the car took. Coarse fixes never count, after a
 tunnel distance alone starts nothing, and near the exit a fix beyond every
@@ -2628,8 +2634,9 @@ Fixes on that street read as the road beside it and put the session in
 recovery before it can tell a taken exit from a missed one; while that
 recovery has no rejoin, began past the last choice and the car is within 500 m
 of the exit, `NavigationSessionUpdate.isConfirmingPlannedExit` holds and the
-App shows the position as confirming the exit rather than interrupted. Voice
-and recovery are unchanged.
+App shows the position as confirming the exit rather than interrupted.
+Recovery is unchanged. When the confirmation lapses while that recovery
+stands, the car has carried on past the exit, and the App says so once.
 The check runs before post-tunnel reacquisition holds the rest of the fix
 back, because a car that left right after a tunnel never reacquires the plan.
 The App then speaks once and either starts a provider-only ordinary-road leg

@@ -117,6 +117,11 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
   /// kilometres. A car that drove out of the corridor along that road is
   /// still on the expressway; it can only have left it at one of those.
   public let onwardExitPoints: [String: [MatcherCoordinate]]
+  /// Edges the corridor follows on from along one road while the network
+  /// carries another on from the same point, one the corridor does not hold:
+  /// the corridor stops following that road there, with no road end to
+  /// show it. Corridors authored without the network carry none.
+  public let openEndEdgeIDs: Set<String>
 
   public init(
     id: String,
@@ -125,7 +130,8 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     edges: [RouteMatcherDirectedEdge],
     occurrences: [RouteMatcherOccurrence],
     exitRampEdgeIDs: Set<String> = [],
-    onwardExitPoints: [String: [MatcherCoordinate]] = [:]
+    onwardExitPoints: [String: [MatcherCoordinate]] = [:],
+    openEndEdgeIDs: Set<String> = []
   ) {
     self.id = id
     self.networkSnapshotID = networkSnapshotID
@@ -134,6 +140,7 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     self.occurrences = occurrences
     self.exitRampEdgeIDs = exitRampEdgeIDs
     self.onwardExitPoints = onwardExitPoints
+    self.openEndEdgeIDs = openEndEdgeIDs
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -144,6 +151,7 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     case occurrences
     case exitRampEdgeIDs = "exit_ramp_edge_ids"
     case onwardExitPoints = "onward_exit_points"
+    case openEndEdgeIDs = "open_end_edge_ids"
   }
 
   public init(from decoder: Decoder) throws {
@@ -159,6 +167,9 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     onwardExitPoints =
       try container.decodeIfPresent([String: [MatcherCoordinate]].self, forKey: .onwardExitPoints)
       ?? [:]
+    openEndEdgeIDs = Set(
+      try container.decodeIfPresent([String].self, forKey: .openEndEdgeIDs) ?? []
+    )
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -173,6 +184,9 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
     }
     if !onwardExitPoints.isEmpty {
       try container.encode(onwardExitPoints, forKey: .onwardExitPoints)
+    }
+    if !openEndEdgeIDs.isEmpty {
+      try container.encode(openEndEdgeIDs.sorted(), forKey: .openEndEdgeIDs)
     }
   }
 
@@ -202,6 +216,9 @@ public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
       || !onwardExitPoints.values.allSatisfy({ $0.allSatisfy(\.isValid) })
     {
       issues.append("an onward exit point is not on a corridor edge")
+    }
+    if !openEndEdgeIDs.isSubset(of: edgeIDSet) {
+      issues.append("an open end is not a corridor edge")
     }
     let occurrenceIDs = occurrences.map(\.id)
     if occurrences.isEmpty { issues.append("corridor occurrences are empty") }

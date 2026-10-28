@@ -79,6 +79,59 @@
       #expect(!run.reachedCompletion, "\(summary)")
     }
 
+    /// A car off the corridor 1.4–1.8 km past a missed exit lies inside how
+    /// far the corridor seemed to follow every other road, and the drive
+    /// ended as if it had taken the exit. Past Tomigaya the corridor stops
+    /// following C2 with no road end, and the car drives on inside the Yamate
+    /// tunnel: it stays in recovery. Past Komatsugawa the car leaves Route 7 by
+    /// Ichinoe's exit link, a road end nearer it than the planned exit: it
+    /// hands over there.
+    @Test(
+      "driving on past where the corridor follows the road never completes",
+      arguments: [
+        (
+          "via:c2:shuto.ic.4.hatagaya:shuto.ic.c2.tomigaya:1",
+          "fork=osm.80581127.19.forward/osm.381953859.0.forward/osm.80581127.20.forward",
+          "URBAN", UInt64(1), false
+        ),
+        (
+          "via:c1i:shuto.ic.7.ichinoe:shuto.ic.7.komatsugawa:1",
+          "fork=osm.295944720.12.forward/osm.751177044.0.forward/osm.295944722.0.forward",
+          "MULTIPATH", 1, true
+        ),
+      ]
+    )
+    func drivingOnPastTheCorridorNeverCompletes(
+      route: String, fork: String, noise: String, seed: UInt64, handsOver: Bool
+    ) async throws {
+      let gate = try NavigationStress.fixture(route).gate
+      let movement = try #require(NavigationStress.forkMovement(gate, spec: fork))
+      let missed = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: movement.movementIndex, alternativeEdgeID: movement.alternative
+        ),
+        seed: seed,
+        noise: Self.noise(noise)
+      )
+      let summary = gateLine(file: route, seed: seed, run: missed, label: "PAST-CORRIDOR-\(noise)")
+      print(summary)
+      #expect(!missed.reachedCompletion, "\(summary)")
+      if handsOver {
+        #expect(missed.handedOver, "\(summary)")
+      } else {
+        #expect(missed.records.last?.phase == .routeRecovery, "\(summary)")
+      }
+      let planned = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: Self.noise(noise))
+      let plannedSummary = gateLine(file: route, seed: seed, run: planned, label: "ROUTE-END-\(noise)")
+      print(plannedSummary)
+      #expect(planned.reachedCompletion, "\(plannedSummary)")
+      #expect(!planned.completedEarly(), "\(plannedSummary)")
+      #expect(
+        (planned.completionDelaySeconds ?? .max) <= Self.maximumCompletionDelaySeconds,
+        "\(plannedSummary)"
+      )
+    }
+
     /// Driving on past Shiodome follows the plan's own first pass beside
     /// the ramp; the drive ended there as if the car had taken the exit.
     @Test(

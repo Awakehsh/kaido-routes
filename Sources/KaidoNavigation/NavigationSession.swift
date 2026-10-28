@@ -1309,11 +1309,18 @@ public actor NavigationSession {
           )
         } ?? false
       } ?? false
+    // Off the corridor the car can also have left it where another road
+    // leaves the expressway. Measured from the exit, the street past
+    // Ichinoe's exit link stays as far from Komatsugawa as the link's end,
+    // so the fix must also lie nearer the planned exit than any other place
+    // the car could have left by, as for an unplanned exit.
     let isOffCorridorAtEnd =
       estimate.confidence == .lost
       && metersFromExit <= routeEnd.exitCoverageMeters(fromProgress: currentIndex) - clearance
       && (metersFromOtherRoads - metersFromExit > nearerExitMarginMeters
         || drivesAlongNoOtherRoad)
+      && metersFromExit
+        < routeEnd.metersFromOtherDepartures(observation.coordinate, fromProgress: currentIndex)
     guard isOffCorridorAtEnd || continuesPastRouteEnd,
       metersFromOtherRoads >= clearance
     else {
@@ -2131,7 +2138,10 @@ private struct RouteEndGeometry: Sendable {
   private let otherRoads: [(coordinates: [MatcherCoordinate], lastReachingIndex: Int)]
   /// Where the corridor stops following each road the car could be on
   /// instead of the exit: that point, its distance from the exit, and the
-  /// last occurrence of the plan the road can be reached from.
+  /// last occurrence of the plan the road can be reached from. That is a
+  /// road end, or an edge the corridor follows only one way on from while
+  /// the network carries its road on another way too (C2 past Tomigaya).
+  /// That point has no end in the corridor to show it.
   private let roadEnds: [(end: MatcherCoordinate, metersFromExit: Double, lastReachingIndex: Int)]
   /// Where a car that left the corridor along one of those roads can have
   /// left the expressway: the road end itself, or, where the network
@@ -2222,7 +2232,8 @@ private struct RouteEndGeometry: Sendable {
     }
     roadEnds = corridor.edges.compactMap {
       guard !routeEdgeIDs.contains($0.id), !exitRoadIDs.contains($0.id), !rampIDs.contains($0.id),
-        $0.successorEdgeIDs.isEmpty, let end = $0.coordinates.last,
+        $0.successorEdgeIDs.isEmpty || corridor.openEndEdgeIDs.contains($0.id),
+        let end = $0.coordinates.last,
         let reachingIndex = lastReachingIndex[$0.id]
       else { return nil }
       return (end, Self.meters(from: end, toPolyline: exit), reachingIndex)

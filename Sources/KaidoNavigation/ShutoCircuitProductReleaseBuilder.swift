@@ -809,6 +809,22 @@ public enum ShutoCircuitProductReleaseBuilder {
         )
       )
     }
+    // Where the corridor holds one road on from an edge's end and not another
+    // the network carries on, the other leaves the corridor with no road end
+    // to show it: past Tomigaya, C2 continues beyond where the branch search
+    // stopped, beside a road the corridor holds for touching the route. A turn
+    // back the way the edge came is no road carrying on.
+    let openEndEdgeIDs = Set(
+      edges.compactMap { corridorEdge -> String? in
+        guard !corridorEdge.successorEdgeIDs.isEmpty,
+          let edge = edgesByID[corridorEdge.id],
+          (outgoing[edge.toNodeID] ?? []).contains(where: {
+            !requiredIDs.contains($0.edgeID) && $0.toNodeID != edge.fromNodeID
+          })
+        else { return nil }
+        return corridorEdge.id
+      }
+    )
     if let virtualEdge = entryApproach.virtualMatcherEdge {
       edges.append(virtualEdge)
       edges.sort { $0.id < $1.id }
@@ -822,7 +838,8 @@ public enum ShutoCircuitProductReleaseBuilder {
       exitRampEdgeIDs: assets.matcherCorridor.exitRampEdgeIDs.intersection(edges.map(\.id)),
       onwardExitPoints: assets.matcherCorridor.onwardExitPoints.filter { endEdgeID, _ in
         edges.contains { $0.id == endEdgeID && $0.successorEdgeIDs.isEmpty }
-      }
+      },
+      openEndEdgeIDs: openEndEdgeIDs
     )
   }
 

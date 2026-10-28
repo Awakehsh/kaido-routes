@@ -42135,6 +42135,19 @@
           }
         ]
       },
+      "open_end_edge_ids" : [
+        "osm.1545541217.5.forward",
+        "osm.23681223.155.forward",
+        "osm.23681223.222.forward",
+        "osm.23681223.251.forward",
+        "osm.23681223.56.forward",
+        "osm.23681223.76.forward",
+        "osm.24039781.21.forward",
+        "osm.28194421.7.forward",
+        "osm.316185365.6.forward",
+        "osm.44883987.0.forward",
+        "osm.4857852.0.forward"
+      ],
       "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.5.itabashihoncho.x1.recommended"
     },
     "network_snapshot" : {

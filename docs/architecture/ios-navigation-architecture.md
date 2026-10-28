@@ -1859,14 +1859,22 @@ three consecutive accurate fixes, no more than three seconds apart, that
 match no corridor road within the exit's coverage less four times the fix's
 accuracy, or lie on a road reached only through the terminal edge. Each
 must also lie at least four times its accuracy from every other corridor
-road, earlier passes of the plan included. In `ROUTE_RECOVERY` a fix off
+road, earlier passes of the plan included. A fix off every corridor road
+must also lie nearer the exit than any other place the car could have
+left the expressway by, the same places the unplanned-exit handover
+weighs: past Komatsugawa a street beyond Ichinoe's exit link stays as far
+from the planned exit as that link's end. In `ROUTE_RECOVERY` a fix off
 every corridor road also has to lie nearer the exit than any other road:
 the car has already been seen off the plan, as often on the road past the
 exit as on the exit, and a receiver reporting half its real error scatters
 fixes off that road by as much as four times the error it reports. A drive
 that took the exit after recovery started still finishes there. The coverage is read from the
 corridor itself — the nearest point near the exit where it stops following
-a road — and the compiler follows the roads leaving the exit decision until
+a road. That is a road end, or one of the corridor's open ends: an edge
+the corridor holds one road on from while the network carries another on
+that the corridor does not hold. The release builder records those open
+ends, because past Tomigaya C2 leaves the corridor with no road end to show
+it. The compiler follows the roads leaving the exit decision until
 300 m from the exit, so a car off all of them there has taken it. An exit
 ramp can run within metres of the road it leaves for its whole length (C1
 Shiodome and C2 Itabashi-honcho do), so neither the matcher's choice of

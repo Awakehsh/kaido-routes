@@ -43,7 +43,7 @@ extension AppBundleProductReleaseDescriptor {
         "wangan-westbound-chidoricho-daikoku-pa-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "e8eb51fe1b549129314806d7d03b44c3fe47c1da72ff3bcb7f460c9aef09b251",
+        "e30acefcbce2989f22b3c961620809bc8ed96f0086deac57374da1e676aa99d1",
       expectedReleaseID:
         "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07",
       role: .foregroundNavigation
@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-itabashihoncho-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "1a466821e11d3f4977386373363fd8b26f291f45e5d4565b1d26f007ae802eaa",
+        "a07aac4eda8fed84cf9d9bb175990fd54b8b0a89217ea88def28eb22e5e18b1e",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-itabashihoncho.2026-09-07",
       role: .foregroundNavigation

@@ -25215,6 +25215,18 @@
           }
         ]
       },
+      "open_end_edge_ids" : [
+        "osm.205411835.0.forward",
+        "osm.28194421.7.forward",
+        "osm.316305910.19.forward",
+        "osm.41009552.1.forward",
+        "osm.44883987.0.forward",
+        "osm.45021970.28.forward",
+        "osm.4848933.5.forward",
+        "osm.4857852.0.forward",
+        "osm.593037725.3.forward",
+        "osm.749205419.1.forward"
+      ],
       "route_plan_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.pa.daikoku.x1.recommended"
     },
     "network_snapshot" : {

@@ -1003,11 +1003,13 @@ reachable off-plan edge, or on a traversal of the plan more than the
 longitudinal window behind admitted progress, and that lie farther than three
 times the fix's allowance from every road of the plan from that window on and
 from the road its exit leads onto. A fix beyond every corridor road continues
-such a run. It starts one from the off-plan road the matcher placed the car
-on in the last 30 s once 100 m from every road of the plan it can be on, or
-by itself once farther from all of them than twice its accuracy plus 120 m,
-and never nearer than 125 m: a car gone on past where the corridor follows
-its branch, onto another expressway. Such a run names no road. Every released
+a run that names a road. It starts one from the off-plan road the matcher
+placed the car on in the last 30 s once 100 m from every road of the plan it
+can be on, or by itself once farther from all of them than twice its
+accuracy plus 120 m, and never nearer than 125 m: a car gone on past where
+the corridor follows its branch, onto another expressway. Such a run names no
+road, and only a fix as far continues it, so one jumped fix beside a LOST
+one on the plan is no departure. Every released
 detour is a corridor road, so that departure makes recovery explicitly
 unavailable, and only the destination PA's past-entry check reads the nearest
 off-plan corridor road for it, because missing the entry ends the drive

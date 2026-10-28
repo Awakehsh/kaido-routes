@@ -776,7 +776,7 @@ public actor NavigationSession {
   ) {
     guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters
     else { return }
-    let continues = offPlanRun.map {
+    var continues = offPlanRun.map {
       observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
         <= Self.offPlanDeviationMaximumGapMilliseconds
     } ?? false
@@ -796,18 +796,24 @@ public actor NavigationSession {
       // the exit looks like. Just out of a tunnel the first fixes are the
       // worst, so distance alone is no evidence there.
       let metersFromPlan = metersFromPlanInWindow(observation.coordinate)
+      let isBeyondReceiverError =
+        !onlyOnReachableBranches
+        && metersFromPlan
+          >= Self.metersBeyondReceiverError(
+            horizontalAccuracyMeters: observation.horizontalAccuracyMeters
+          )
+      // A run only distance shows goes on only while distance still shows
+      // it: one jumped fix beside a LOST one on the plan is no departure.
+      if continues, offPlanRun?.edgeID == nil, !isBeyondReceiverError {
+        continues = false
+      }
       if continues {
         edgeID = offPlanRun?.edgeID
       } else if metersFromPlan >= Self.unplannedExitMarginMeters,
         let recentOffPlanPlacementEdgeID
       {
         edgeID = recentOffPlanPlacementEdgeID
-      } else if !onlyOnReachableBranches,
-        metersFromPlan
-          >= Self.metersBeyondReceiverError(
-            horizontalAccuracyMeters: observation.horizontalAccuracyMeters
-          )
-      {
+      } else if isBeyondReceiverError {
         edgeID = nil
       } else {
         offPlanRun = nil

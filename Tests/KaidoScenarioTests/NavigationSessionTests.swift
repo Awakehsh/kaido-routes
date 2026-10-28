@@ -423,6 +423,117 @@ struct NavigationSessionFixture {
   let initialSnapshot: NavigationSnapshot
 }
 
+@Test("A departure shown only by distance needs every fix beyond the receiver's error")
+func distanceOnlyDepartureNeedsEveryFixFar() async throws {
+  let routePlan = RoutePlan(
+    id: "test.plan.distance-departure",
+    networkSnapshotID: "test.snapshot.distance-departure",
+    entryFacilityID: "test.entrance",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(id: "test.occurrence.first", index: 0, kind: .edge, entityID: "test.edge.first"),
+      RouteOccurrence(id: "test.occurrence.second", index: 1, kind: .edge, entityID: "test.edge.second"),
+      RouteOccurrence(id: "test.occurrence.exit", index: 2, kind: .edge, entityID: "test.edge.exit"),
+    ]
+  )
+  let corridor = RouteMatcherCorridor(
+    id: "test.corridor.distance-departure",
+    networkSnapshotID: routePlan.networkSnapshotID,
+    routePlanID: routePlan.id,
+    edges: [
+      RouteMatcherDirectedEdge(
+        id: "test.edge.first",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.76),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.765),
+        ],
+        successorEdgeIDs: ["test.edge.second"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.second",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.765),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.77),
+        ],
+        successorEdgeIDs: ["test.edge.exit", "test.edge.branch"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.exit",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.77),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.79),
+        ]
+      ),
+      // The last choice before the exit: the corridor follows the other road
+      // only so far, which bounds how near the exit leaving it is the exit.
+      RouteMatcherDirectedEdge(
+        id: "test.edge.branch",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.77),
+          MatcherCoordinate(latitude: 35.678, longitude: 139.77),
+        ]
+      ),
+    ],
+    occurrences: [
+      RouteMatcherOccurrence(id: "test.occurrence.first", index: 0, directedEdgeID: "test.edge.first"),
+      RouteMatcherOccurrence(id: "test.occurrence.second", index: 1, directedEdgeID: "test.edge.second"),
+      RouteMatcherOccurrence(id: "test.occurrence.exit", index: 2, directedEdgeID: "test.edge.exit"),
+    ]
+  )
+  // Another expressway 300 m north that the corridor does not carry: a car
+  // on it is still on an expressway, so no unplanned exit hands over.
+  let otherExpressway = [
+    MatcherCoordinate(latitude: 35.6827, longitude: 139.75),
+    MatcherCoordinate(latitude: 35.6827, longitude: 139.78),
+  ]
+  let session = try NavigationSession(
+    navigationConfiguration: NavigationConfiguration(routePlan: routePlan),
+    matcherCorridor: corridor,
+    decisionZones: [],
+    initialNavigationSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      activeRoutePlanID: routePlan.id,
+      currentOccurrenceID: "test.occurrence.first",
+      locationConfidence: .high
+    ),
+    initialMatcherOccurrenceID: "test.occurrence.first",
+    expresswayRoads: [otherExpressway]
+  )
+  _ = await session.start()
+  func fix(latitude: Double, longitude: Double, at observedAt: Int, accuracy: Double = 5)
+    -> RouteMatcherObservation
+  {
+    RouteMatcherObservation(
+      observedAtMilliseconds: observedAt,
+      receivedAtMilliseconds: observedAt,
+      coordinate: MatcherCoordinate(latitude: latitude, longitude: longitude),
+      horizontalAccuracyMeters: accuracy,
+      courseDegrees: 90,
+      courseAccuracyDegrees: 5,
+      speedMetersPerSecond: 20,
+      source: .phone
+    )
+  }
+  _ = try await session.observe(fix(latitude: 35.68, longitude: 139.7605, at: 1_000, accuracy: 3))
+  _ = try await session.observe(fix(latitude: 35.68, longitude: 139.7607, at: 2_000, accuracy: 3))
+
+  // One jumped fix 300 m off, then a LOST one 55 m off the plan.
+  let jumped = try await session.observe(fix(latitude: 35.6827, longitude: 139.7609, at: 3_000))
+  #expect(jumped.matcherEstimate.confidence == .lost)
+  let scattered = try await session.observe(fix(latitude: 35.6805, longitude: 139.7611, at: 4_000))
+  #expect(scattered.matcherEstimate.confidence == .lost)
+  #expect(scattered.navigationSnapshot.journeyPhase == .strictRoute)
+
+  // Two in a row beyond it show the car left, by a road no fix names.
+  let first = try await session.observe(fix(latitude: 35.6827, longitude: 139.7613, at: 5_000))
+  #expect(first.navigationSnapshot.journeyPhase == .strictRoute)
+  let departed = try await session.observe(fix(latitude: 35.6827, longitude: 139.7615, at: 6_000))
+  #expect(departed.matcherEstimate.confidence == .lost)
+  #expect(departed.navigationSnapshot.journeyPhase == .routeRecovery)
+  #expect(departed.navigationSnapshot.recovery.status == .unavailable)
+}
+
 func navigationSessionFixture(
   corridorRoutePlanID: String = "test.plan.session"
 ) -> NavigationSessionFixture {

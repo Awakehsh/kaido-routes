@@ -386,6 +386,28 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
       evidence.headingErrorDegrees != nil,
       residualFits
     else {
+      // Once fixes above LOW have followed the car along the route head and
+      // the route has outgrown the approach line, a LOW fix on the head
+      // still says the car got onto it: the matcher is torn by a road beside
+      // the head, as at Kukounishi, where the plan's first fork comes just as
+      // the head clears the approach line. It decides entry at the
+      // occurrence those fixes reached, and moves nothing itself. Only on
+      // that occurrence or the next: entry further behind the car leaves
+      // the roads beside the head reachable from progress, and they then
+      // hold every fix after entry below HIGH.
+      if evidence.confidence == .low,
+        evidence.headingErrorDegrees != nil,
+        residualFits,
+        let progressIndex, headIndex >= progressIndex, headIndex <= progressIndex + 1,
+        progressObservationCount >= Self.minimumProgressObservationCount,
+        logLikelihoodRatio >= Self.entryLogLikelihoodRatio
+      {
+        return EntryTransitionAdmissionDecision(
+          status: .strictRouteEntered,
+          rejectionReason: nil,
+          reachedOccurrenceID: geometry.occurrenceID(at: progressIndex)
+        )
+      }
       return observing()
     }
     if let progressIndex, headIndex + 1 < progressIndex {

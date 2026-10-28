@@ -66,6 +66,29 @@
       }
     }
 
+    /// From Kukounishi the plan's first fork comes just as the route head
+    /// clears the straight line, so the ordered fixes before it have not yet
+    /// moved the odds. A car that takes the other road there runs beside the
+    /// head and is held LOW on it: it is entered, then seen leaving, instead
+    /// of never told.
+    @Test("a car that leaves at the first fork past a straight entry is entered, then seen leaving")
+    func leavesAtTheFirstFork() async throws {
+      let gate = try Self.kukounishi.gate()
+      let alternative = "osm.561915732.0.forward"
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(movementIndex: 7, alternativeEdgeID: alternative),
+        seed: 12,
+        noise: .urban
+      )
+      let summary = branchLine(
+        file: Self.kukounishi.name, movementIndex: 7, alternative: alternative, seed: 12, run: run
+      )
+      print("FIRST-FORK " + summary)
+      #expect(run.entryRecord != nil, "\(summary)")
+      #expect(run.deviationDetectedAfterOffPlanMeters != nil, "\(summary)")
+      #expect(!run.reachedCompletion, "\(summary)")
+    }
+
     private static func announcement(
       _ gate: LiveNavigationReplayGate
     ) throws -> ReleasedGuidanceDefinition? {
@@ -108,6 +131,10 @@
     static let daiba = Site(
       name: "c1-inner daiba-shiodome", circuit: .c1Inner,
       entry: "shuto.ic.11.daiba", exit: "shuto.ic.c1.shiodome"
+    )
+    static let kukounishi = Site(
+      name: "c2 kukounishi-toyosu", circuit: .c2InnerWithBayshore,
+      entry: "shuto.ic.1-haneda.kukounishi", exit: "shuto.ic.10.toyosu"
     )
     static let hatagaya = Site(
       name: "c2 hatagaya-tomigaya", circuit: .c2InnerWithBayshore,

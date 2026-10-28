@@ -101,7 +101,9 @@ public actor NavigationSession {
   /// progress does not count it.
   private var skippedParkingStops: [Range<Int>] = []
   private var parkingStopBypassRun: (count: Int, lastObservedAtMilliseconds: Int, stop: Range<Int>)?
-  private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String)?
+  /// The road a run of off-plan fixes places the car on, nil while only
+  /// distance from the plan shows it left.
+  private var offPlanRun: (count: Int, lastObservedAtMilliseconds: Int, edgeID: String?)?
   private var laterPassRun: (count: Int, lastObservedAtMilliseconds: Int)?
   private var unplannedExitRun: (count: Int, lastObservedAtMilliseconds: Int)?
   /// Every road the car can drive without having left the expressway: the
@@ -724,6 +726,18 @@ public actor NavigationSession {
     }.min() ?? 0
   }
 
+  /// Edges meeting at a node tie there, so the lower ID breaks the tie.
+  private func nearestOffPlanCorridorEdgeID(to coordinate: MatcherCoordinate) -> String? {
+    var nearest: (meters: Double, edgeID: String)?
+    for (edgeID, coordinates) in corridorEdgeCoordinates where !routeEdgeIDs.contains(edgeID) {
+      let meters = RouteEndGeometry.meters(from: coordinate, toPolyline: coordinates)
+      if nearest.map({ (meters, edgeID) < ($0.meters, $0.edgeID) }) ?? true {
+        nearest = (meters, edgeID)
+      }
+    }
+    return nearest?.edgeID
+  }
+
   private func metersFromExpressway(_ coordinate: MatcherCoordinate) -> Double {
     expresswayRoads.map {
       RouteEndGeometry.meters(from: coordinate, toPolyline: $0)
@@ -739,6 +753,19 @@ public actor NavigationSession {
   static let offPlanDeviationObservationCount = 2
   static let offPlanDeviationMaximumGapMilliseconds = 3_000
 
+  /// A fix the matcher places on no road shows by itself that the car left
+  /// the plan once it lies this far from every road of the plan the car can
+  /// be on: beyond twice the error its receiver reports, by a margin no fix
+  /// on the plan was seen to reach, and never nearer than the floor.
+  static func metersBeyondReceiverError(horizontalAccuracyMeters: Double) -> Double {
+    max(
+      receiverErrorFloorMeters,
+      2 * horizontalAccuracyMeters + receiverErrorMarginMeters
+    )
+  }
+  static let receiverErrorFloorMeters = 125.0
+  static let receiverErrorMarginMeters = 120.0
+
   private func observeOffPlanEvidence(
     estimate: MatcherEstimate,
     isOnReachableOffPlanEdge: Bool,
@@ -749,11 +776,11 @@ public actor NavigationSession {
   ) {
     guard observation.horizontalAccuracyMeters < Self.coarseFixAccuracyMeters
     else { return }
-    let continues = offPlanRun.map {
+    var continues = offPlanRun.map {
       observation.observedAtMilliseconds - $0.lastObservedAtMilliseconds
         <= Self.offPlanDeviationMaximumGapMilliseconds
     } ?? false
-    let edgeID: String
+    let edgeID: String?
     if estimate.confidence == .lost {
       // Beyond every corridor road: a run already on a branch has left the
       // corridor along it. So has a car the matcher last placed on a road it
@@ -761,15 +788,38 @@ public actor NavigationSession {
       // the plan it can be on as an unplanned exit needs: where that road
       // runs stacked on or beside the plan (Route 11 over the Bayshore at
       // Ariake JCT), and through coarse fixes after, no fix along it is
-      // evidence before the corridor runs out. Otherwise it proves nothing,
-      // and near the route end leaving the corridor is what taking the exit
-      // looks like.
-      let runEdgeID = continues ? offPlanRun?.edgeID : nil
-      let placedEdgeID =
-        runEdgeID == nil
-          && metersFromPlanInWindow(observation.coordinate) >= Self.unplannedExitMarginMeters
-        ? recentOffPlanPlacementEdgeID : nil
-      guard let lastEdgeID = runEdgeID ?? placedEdgeID,
+      // evidence before the corridor runs out. A car the matcher never placed
+      // off the plan, gone on past where the corridor follows its branch onto
+      // another expressway, shows it only by distance: farther from the plan
+      // than its receiver errs, on a road no fix names. Otherwise it proves
+      // nothing, and near the route end leaving the corridor is what taking
+      // the exit looks like. Just out of a tunnel the first fixes are the
+      // worst, so distance alone is no evidence there.
+      let metersFromPlan = metersFromPlanInWindow(observation.coordinate)
+      let isBeyondReceiverError =
+        !onlyOnReachableBranches
+        && metersFromPlan
+          >= Self.metersBeyondReceiverError(
+            horizontalAccuracyMeters: observation.horizontalAccuracyMeters
+          )
+      // A run only distance shows goes on only while distance still shows
+      // it: one jumped fix beside a LOST one on the plan is no departure.
+      if continues, offPlanRun?.edgeID == nil, !isBeyondReceiverError {
+        continues = false
+      }
+      if continues {
+        edgeID = offPlanRun?.edgeID
+      } else if metersFromPlan >= Self.unplannedExitMarginMeters,
+        let recentOffPlanPlacementEdgeID
+      {
+        edgeID = recentOffPlanPlacementEdgeID
+      } else if isBeyondReceiverError {
+        edgeID = nil
+      } else {
+        offPlanRun = nil
+        return
+      }
+      guard
         routeEnd.map({
           $0.metersFromExit(
             observation.coordinate, fromProgress: engine.snapshot.currentOccurrenceIndex ?? 0
@@ -779,7 +829,6 @@ public actor NavigationSession {
         offPlanRun = nil
         return
       }
-      edgeID = lastEdgeID
     } else if estimate.occurrenceID == nil,
       estimate.directedEdgeID == nil,
       !estimate.candidateEdgeIDs.contains(where: routeEdgeIDs.contains)
@@ -838,15 +887,25 @@ public actor NavigationSession {
     offPlanRun = (count, observation.observedAtMilliseconds, edgeID)
     guard count >= Self.offPlanDeviationObservationCount else { return }
     offPlanRun = nil
+    // Missing a destination PA's entry ends the drive whichever road past it
+    // the car took, so a run that names no road is checked against the
+    // entry by the off-plan corridor road nearest it.
     if let entry = destinationParkingAreaEntry,
+      let roadEdgeID = edgeID ?? nearestOffPlanCorridorEdgeID(to: observation.coordinate),
       isPastDestinationParkingAreaEntry(
-        edgeID,
+        roadEdgeID,
         atMilliseconds: observation.observedAtMilliseconds
       )
     {
       engine.endPastDestinationParkingArea(
         divergenceOccurrenceID: entry.divergenceOccurrenceID
       )
+      return
+    }
+    // Every released detour runs on corridor roads, so a car on none of them
+    // is on no detour: recovery has no rejoin path to offer.
+    guard let edgeID else {
+      engine.observeDepartureByUnidentifiedRoad()
       return
     }
     engine.observeBranch(

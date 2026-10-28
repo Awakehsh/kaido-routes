@@ -396,6 +396,15 @@ public struct NavigationEngine: Sendable {
     activateRecovery(recovery, routePlan: routePlan)
   }
 
+  /// The car left the plan by a road no observation names: off every road
+  /// the plan and its released detours run on. No detour can be chosen for
+  /// it, and once recovering there is nothing new to learn.
+  public mutating func observeDepartureByUnidentifiedRoad() {
+    guard snapshot.journeyPhase == .strictRoute, let routePlan = configuration.routePlan
+    else { return }
+    activateUnavailableRecovery(routePlan: routePlan)
+  }
+
   public mutating func updateRestriction(subjectID: String, state: String) {
     guard state == "KNOWN_CLOSED",
       let routePlan = configuration.routePlan

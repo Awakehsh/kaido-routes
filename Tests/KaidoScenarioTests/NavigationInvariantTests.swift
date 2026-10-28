@@ -395,6 +395,16 @@ func wrongBranchRecoveryRequiresExactTriggerEdge() {
   )
   #expect(matching.snapshot.recovery.status == .active)
   #expect(matching.snapshot.recovery.chosenRejoinOccurrenceID == "rejoin")
+
+  var unidentified = engine()
+  unidentified.observeDepartureByUnidentifiedRoad()
+  #expect(unidentified.snapshot.journeyPhase == .routeRecovery)
+  #expect(unidentified.snapshot.recovery.status == .unavailable)
+  #expect(unidentified.snapshot.recovery.chosenRejoinOccurrenceID == nil)
+
+  matching.observeDepartureByUnidentifiedRoad()
+  #expect(matching.snapshot.recovery.status == .active)
+  #expect(matching.snapshot.recovery.chosenRejoinOccurrenceID == "rejoin")
 }
 
 @Test("Unavailable recovery clears stale egress authority")

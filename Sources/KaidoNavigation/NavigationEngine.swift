@@ -403,6 +403,7 @@ public struct NavigationEngine: Sendable {
     guard snapshot.journeyPhase == .strictRoute, let routePlan = configuration.routePlan
     else { return }
     activateUnavailableRecovery(routePlan: routePlan)
+    snapshot.lastPhaseTransitionTrigger = "DEPARTED_BY_UNIDENTIFIED_ROAD"
   }
 
   public mutating func updateRestriction(subjectID: String, state: String) {

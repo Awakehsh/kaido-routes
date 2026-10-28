@@ -22,10 +22,11 @@ enum WholeShutoJourneyPhase:
   case completed = "COMPLETED"
 }
 
-private enum WholeShutoJourneyNotice: String {
+enum WholeShutoJourneyNotice: String {
   case started, enteredExpressway, positionLost, positionRecovered
   case rerouting, rejoined, exiting, resting, resumed, arrived, lapNotAdded
   case nearDestination, leftRouteRerouting, leftRouteEnded
+  case passedPlannedExit, offGuidedRoute
 
   func text(locale: KaidoReleaseLocale) -> String {
     let words: (String, String, String)
@@ -58,12 +59,51 @@ private enum WholeShutoJourneyNotice: String {
       words = ("ルートを外れました。新しいルートで案内します。", "已偏离路线，重新规划路线。", "You've left the route. Rerouting.")
     case .leftRouteEnded:
       words = ("ルートを外れました。案内を終了します。", "已偏离路线，导航结束。", "You've left the route. Guidance has ended.")
+    case .passedPlannedExit:
+      words = ("予定の出口を通過しました。", "已驶过预定出口。", "You've passed your planned exit.")
+    case .offGuidedRoute:
+      words = ("案内ルートから外れています。", "当前不在导航路线上。", "You're off the guided route.")
     }
     switch locale {
     case .japanese: return words.0
     case .simplifiedChinese: return words.1
     case .english: return words.2
     }
+  }
+}
+
+/// What a recovery with no rejoin path says, once each per recovery, for the
+/// two causes that only arise with the car clear of the plan: it carried on
+/// past the planned exit and no longer stands beside it, or it left by a
+/// road no fix names (`DEPARTED_BY_UNIDENTIFIED_ROAD`). That trigger is read
+/// only as recovery begins, so one left over from an earlier recovery never
+/// speaks. Outside recovery, which a handover or a completion also leaves,
+/// nothing is said here.
+struct WholeShutoRecoveryNotices {
+  private var spoken: Set<WholeShutoJourneyNotice> = []
+
+  mutating func notice(
+    entersRecovery: Bool,
+    wasConfirmingPlannedExit: Bool,
+    phase: JourneyPhase,
+    recoveryStatus: RecoveryState.Status,
+    isConfirmingPlannedExit: Bool,
+    phaseTrigger: String?
+  ) -> WholeShutoJourneyNotice? {
+    guard phase == .routeRecovery else {
+      spoken = []
+      return nil
+    }
+    guard recoveryStatus == .unavailable else { return nil }
+    let notice: WholeShutoJourneyNotice
+    if entersRecovery, phaseTrigger == "DEPARTED_BY_UNIDENTIFIED_ROAD" {
+      notice = .offGuidedRoute
+    } else if wasConfirmingPlannedExit, !isConfirmingPlannedExit {
+      notice = .passedPlannedExit
+    } else {
+      return nil
+    }
+    return spoken.insert(notice).inserted ? notice : nil
   }
 }
 
@@ -715,6 +755,7 @@ final class WholeShutoProductModel: ObservableObject {
   static let entranceAnnouncementRepeatMilliseconds = 10_000
   private var surfaceSpeechGeneration = 0
   private var noticeSequence = 0
+  private var recoveryNotices = WholeShutoRecoveryNotices()
   private var pendingNotice: GuidanceSpeechCommand?
   private var positionLossAnnounced = false
   private var positionLossAnnouncedAtMilliseconds: Int?
@@ -5840,6 +5881,7 @@ final class WholeShutoProductModel: ObservableObject {
   private func applyNavigationUpdate(_ update: NavigationSessionUpdate) {
     let wasRecovering = runtimeRecoveryStatus == .active
     let entersRecovery = runtimeJourneyPhase != .routeRecovery
+    let wasConfirmingPlannedExit = runtimeIsConfirmingPlannedExit
     if activeGuidanceCueIsObsolete(after: update) {
       speechCoordinator?.invalidateGuidance(keepingNotices: true)
     }
@@ -5855,6 +5897,16 @@ final class WholeShutoProductModel: ObservableObject {
       announceJourneyNotice(.rejoined)
     } else if isLiveDrive, !wasRecovering, runtimeRecoveryStatus == .active {
       announceJourneyNotice(.rerouting)
+    }
+    if let notice = recoveryNotices.notice(
+      entersRecovery: entersRecovery,
+      wasConfirmingPlannedExit: wasConfirmingPlannedExit,
+      phase: update.navigationSnapshot.journeyPhase,
+      recoveryStatus: update.navigationSnapshot.recovery.status,
+      isConfirmingPlannedExit: update.isConfirmingPlannedExit,
+      phaseTrigger: update.navigationSnapshot.lastPhaseTransitionTrigger
+    ) {
+      announceJourneyNotice(notice)
     }
     runtimeRecoveryTargetOccurrenceID =
       update.navigationSnapshot.recovery.chosenRejoinOccurrenceID

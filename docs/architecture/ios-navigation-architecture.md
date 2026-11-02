@@ -1842,6 +1842,12 @@ The selected plan never becomes an A-to-B destination route.
 
 If no released rejoin exists, return `NO_RELEASED_REJOIN`. A separate safe-egress
 policy may then mark the original route interrupted.
+With no released rejoin, an admitted fix on a later occurrence of the plan
+rejoins it (`EXACT_LATER_ROUTE_OCCURRENCE_REACQUIRED`). A road the car drives
+off the plan can cross a later pass on another level, outside the corridor,
+where the crossing fixes match the pass with nothing off the plan to compete.
+So a fix whose known course does not run along the matched edge is not
+admitted for that rejoin; without a course it rejoins as before.
 
 ### Finish-drive egress
 

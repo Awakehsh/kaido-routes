@@ -402,14 +402,16 @@ public actor NavigationSession {
       observed,
       atMilliseconds: observation.observedAtMilliseconds
     )
+    // Withheld like a fix beside an off-plan road: not admitted.
+    let isCrossingLaterPass = crossesLaterPass(observed, observation: observation)
     engine.observeLocation(
       Self.locationObservation(
         from: observed,
         source: observation,
         admitsOccurrenceProgress: admitsOccurrenceProgress,
-        admitsMediumConfidence: admitsMediumConfidenceProgress,
+        admitsMediumConfidence: admitsMediumConfidenceProgress && !isCrossingLaterPass,
         resolvesLongitudinalCandidates: resolvesLongitudinalCandidates,
-        separatedFromOffPlanRoads: separatedFromOffPlanRoads && isWithinReach
+        separatedFromOffPlanRoads: separatedFromOffPlanRoads && isWithinReach && !isCrossingLaterPass
       )
     )
     let isBesideOffPlanRoad =
@@ -1052,6 +1054,29 @@ public actor NavigationSession {
       let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] })
     else { return false }
     return index < progressIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+  }
+
+  /// From recovery with no released rejoin, one admitted fix on a later
+  /// pass of the plan rejoins it, and nothing takes that back. A road the car
+  /// drives off the plan can cross that pass on another level at a steep
+  /// angle, outside the corridor: the fixes at the crossing match the pass,
+  /// no off-plan road near them competes, and they are admitted. A car back
+  /// on the pass drives along it; one whose course says it does not is
+  /// crossing it. Without a course (a stop, slow traffic) the fix rejoins as
+  /// before.
+  private func crossesLaterPass(
+    _ estimate: MatcherEstimate,
+    observation: RouteMatcherObservation
+  ) -> Bool {
+    guard engine.snapshot.journeyPhase == .routeRecovery,
+      engine.snapshot.recovery.status == .unavailable,
+      let edgeID = estimate.directedEdgeID,
+      let index = estimate.occurrenceID.flatMap({ occurrenceIndexByID[$0] }),
+      let currentIndex = engine.snapshot.currentOccurrenceIndex,
+      index > currentIndex,
+      observation.courseDegrees != nil, observation.courseAccuracyDegrees != nil
+    else { return false }
+    return !isDrivingAlong(edgeID, observation: observation)
   }
 
   /// A car can leave the plan for a road the plan drives only later, and

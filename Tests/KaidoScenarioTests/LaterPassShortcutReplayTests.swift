@@ -154,5 +154,46 @@
       )
       #expect(!run.reachedCompletion, "\(summary)")
     }
+
+    /// The road a wrong branch leads onto can cross a later pass of the plan
+    /// on another level, at 66–71 degrees: from recovery with no released
+    /// rejoin, the fixes at the crossing matched the pass and rejoined it
+    /// with the car still off the plan.
+    @Test(
+      "a road crossing a later pass of the plan never rejoins it",
+      arguments: [
+        (
+          "via:c1i:shuto.ic.k1.daishi:shuto.ic.c1.shiodome:1",
+          "fork=osm.37794907.5.forward/osm.331922698.0.forward/osm.331692345.0.forward",
+          "URBAN", UInt64(16)
+        ),
+        (
+          "via:daikoku:shuto.ic.3.takagicho:shuto.ic.3.shibuya:1",
+          "fork=osm.37794907.5.forward/osm.331692345.0.forward/osm.331922698.0.forward",
+          "UNDER2X", 5
+        ),
+        (
+          "via:c1i:shuto.ic.k7-yokohama-hokusei.yokohamaaoba:shuto.ic.c1.shiodome:1",
+          "fork=osm.44351955.5.forward/osm.956016069.0.forward/osm.1462532758.0.forward",
+          "UNDER2X", 30
+        ),
+      ]
+    )
+    func roadCrossingALaterPassNeverRejoinsIt(
+      route: String, fork: String, noise: String, seed: UInt64
+    ) async throws {
+      let gate = try NavigationStress.fixture(route).gate
+      let movement = try #require(NavigationStress.forkMovement(gate, spec: fork))
+      let run = try await gate.run(
+        legs: gate.wrongBranchLegs(
+          movementIndex: movement.movementIndex, alternativeEdgeID: movement.alternative
+        ),
+        seed: seed,
+        noise: noise == "URBAN" ? .urban : .underReported
+      )
+      let summary = gateLine(file: route, seed: seed, run: run, label: "CROSSING-\(noise)")
+      print(summary)
+      #expect(run.offPlanRejoinCount == 0, "\(summary)")
+    }
   }
 #endif

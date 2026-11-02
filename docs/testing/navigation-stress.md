@@ -96,7 +96,9 @@ A row is one group, route and profile over every seed and drive variant in it.
 Timing metrics (unadmitted median/p95/max, false-recovery median/p95/max,
 detection latency median/max) are worse at +5 s or more. Counts are worse at
 +1: runs over the 75 s unadmitted and 300 s false-recovery contract lines,
-#73 wrong commits, entry failures, handovers, incomplete or early completions,
+#73 wrong commits, rejoins of the plan with the car off it (which the
+false-recovery time, counting only fixes on the plan, never sees), entry
+failures, handovers, incomplete or early completions,
 undetected deviations, off-plan advances, false arrivals, completions on a
 missed exit, unskipped stops and wrong lap landings. The branch passes when:
 

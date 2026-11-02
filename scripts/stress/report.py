@@ -72,6 +72,7 @@ def row_metrics(runs, group):
         f"runs >{UNADMITTED_LINE_S} s unadmitted": sum(1 for x in unadmitted if x > UNADMITTED_LINE_S),
         f"runs >{FALSE_RECOVERY_LINE_S} s false recovery": sum(1 for x in false_recovery if x > FALSE_RECOVERY_LINE_S),
         "wrong (#73) runs": sum(1 for r in runs if r["wrong73"] > 0),
+        "off-plan rejoin runs": sum(1 for r in runs if r.get("offPlanRejoins", 0) > 0),
         "entry failures": sum(1 for r in runs if not r["entered"]),
     }
     if group not in ("missedFinal", "wrongBranch"):
@@ -102,6 +103,7 @@ RUN_FLAGS = {
     f"runs >{UNADMITTED_LINE_S} s unadmitted": lambda r: r["unadmitted"] > UNADMITTED_LINE_S,
     f"runs >{FALSE_RECOVERY_LINE_S} s false recovery": lambda r: r["falseRecovery"] > FALSE_RECOVERY_LINE_S,
     "wrong (#73) runs": lambda r: r["wrong73"] > 0,
+    "off-plan rejoin runs": lambda r: r.get("offPlanRejoins", 0) > 0,
     "entry failures": lambda r: not r["entered"],
     "handed over": lambda r: r.get("handover"),
     "undetected": undetected,
@@ -215,6 +217,7 @@ def headline(runs, group):
         if group in ("missedFinal", "wrongBranch") else "")
     h["undetected"] = sum(1 for r in runs if undetected(r)) if group in DEVIATION_GROUPS else ""
     h["wrong73 runs"] = sum(1 for r in runs if r["wrong73"] > 0)
+    h["off-plan rejoin runs"] = sum(1 for r in runs if r.get("offPlanRejoins", 0) > 0)
     h[f">{UNADMITTED_LINE_S} s unadmitted"] = sum(1 for r in runs if r["unadmitted"] > UNADMITTED_LINE_S)
     h[f">{FALSE_RECOVERY_LINE_S} s false recovery"] = sum(1 for r in runs if r["falseRecovery"] > FALSE_RECOVERY_LINE_S)
     return h

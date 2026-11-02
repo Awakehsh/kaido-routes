@@ -307,6 +307,31 @@
       #expect(run.falseRouteRecoveryCount == 0, "\(summary)")
     }
 
+    /// A short exit ramp crossed in a fix or two leaves progress one or two
+    /// occurrences short of the plan's last choice: the matcher holds the car
+    /// on the plan's earlier pass beside the ramp (Tomigaya), on the road the
+    /// plan leaves there (Mukojima), or on Route S2 beside the ramp
+    /// (Shintoshin). Off the expressway, nearer the planned exit than any
+    /// other departure, these drives were handed over as unplanned exits.
+    @Test(
+      "a short exit ramp crossed with progress just short of the last choice completes",
+      arguments: [
+        (ShutoCircuitDefinition.c2InnerWithBayshore, "shuto.ic.4.hatagaya", "shuto.ic.c2.tomigaya", UInt64(9)),
+        (.c1Inner, "shuto.ic.6-mukojima.hamacho", "shuto.ic.6-mukojima.mukoujima", 13),
+        (.c2InnerWithBayshore, "shuto.ic.s2.saitamaminuma", "shuto.ic.s2.shintoshin", 5),
+      ]
+    )
+    func shortRampJustShortOfTheLastChoiceCompletes(
+      circuit: ShutoCircuitDefinition, entry: String, exit: String, seed: UInt64
+    ) async throws {
+      let gate = try Self.gate(circuit, entry, exit)
+      let run = try await gate.run(legs: gate.plannedLegs(), seed: seed, noise: .underReported)
+      let summary = gateLine(file: exit, seed: seed, run: run, label: "ROUTE-END-UNDER2X")
+      print(summary)
+      #expect(run.reachedCompletion, "\(summary)")
+      #expect(!run.completedEarly(), "\(summary)")
+    }
+
     /// Tonomachi's ramp curves away from K6, and fixes 100 m down its street
     /// lay a metre nearer a bend than the ramp's end. Read as beside the exit,
     /// each one restarted the exit evidence, and the drive went 79 s

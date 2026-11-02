@@ -551,6 +551,14 @@ public actor NavigationSession {
   /// consecutive ones mean the car left.
   static let unplannedExitMarginMeters = 100.0
 
+  /// How far short of the plan's last choice admitted progress or the
+  /// matcher's placement can stop while the car takes the exit. Of the 21
+  /// planned stress drives (seeds 1–120) that left by the planned exit with
+  /// progress short of the last choice, 19 were within 2 occurrences of it;
+  /// no missed-exit drive (seeds 41–120) that left elsewhere was nearer
+  /// that exit than another departure from within 2.
+  static let exitSideProgressShortfallOccurrences = 2
+
   /// The update for a fix that ended the expressway portion at an unplanned
   /// exit, or nil when it did not.
   private func handOverAtUnplannedExit(
@@ -613,11 +621,14 @@ public actor NavigationSession {
     // no placement on it either: beside the plan the matcher holds the car
     // on the plan's own continuation, and the stretch lies beyond the
     // window. That the car can have reached it by road, off the plan, is
-    // then what says it was on the exit.
+    // then what says it was on the exit. Progress can also stop just short
+    // of the last choice while the car takes a short exit ramp in a fix or
+    // two: the matcher holds it on the plan's earlier pass beside the ramp,
+    // or on the road the plan leaves there.
     if let routeEnd,
       let currentIndex = engine.snapshot.currentOccurrenceIndex,
       max(currentIndex, lastMatchedOccurrenceIndex ?? currentIndex)
-        >= routeEnd.exitSideStartIndex
+        >= routeEnd.exitSideStartIndex - Self.exitSideProgressShortfallOccurrences
         || recentOffPlanPlacementEdgeID.map(routeEnd.isOnExit) == true
         || reachesFinalStretchOffPlan(
           from: currentIndex,

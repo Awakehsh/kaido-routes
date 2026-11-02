@@ -2628,8 +2628,9 @@ the actor to `SURFACE_EGRESS` with `UNPLANNED_EXIT`: neither a recovery nor a
 completion. A wrong junction branch onto another expressway leaves the
 corridor too, but stays within the network, so it stays in recovery until
 the car leaves the expressway.
-Past the plan's last choice of road the same fixes may instead be the planned
-exit taken. Off the expressway the car left the corridor somewhere, so the
+Past the plan's last choice of road, or with progress or the matcher's
+placement at most two occurrences short of it (a short exit ramp crossed in a
+fix or two), the same fixes may instead be the planned exit taken. Off the expressway the car left the corridor somewhere, so the
 session credits the planned exit when the fix is nearer it — the exit side of
 the plan, the roads past its end, and the exit facility's other ramps, which
 the corridor records — than any other place the car can have left the

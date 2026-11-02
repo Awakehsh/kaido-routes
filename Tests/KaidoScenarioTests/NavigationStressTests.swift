@@ -420,6 +420,7 @@
         "wrongOld": wrongOld,
         "wrong73": wrong73,
         "falseRecovery": run.falseRouteRecoveryCount,
+        "offPlanRejoins": run.offPlanRejoinCount,
         "unadmitted": run.longestUnadmittedSeconds,
         "lostRun": run.longestLostSeconds,
         "entered": run.entryRecord != nil,

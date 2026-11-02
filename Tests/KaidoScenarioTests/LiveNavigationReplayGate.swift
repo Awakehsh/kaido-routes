@@ -1340,6 +1340,19 @@
       }
     }
 
+    /// Returns from recovery to strict route at a fix the car took off the
+    /// plan: a rejoin the false-recovery count, which looks only at fixes on
+    /// the plan, never sees.
+    var offPlanRejoinCount: Int {
+      zip(records, records.dropFirst()).count { previous, record in
+        guard previous.phase == .routeRecovery, record.phase == .strictRoute else { return false }
+        switch record.truth.kind {
+        case .offPlan, .egress, .parked: return true
+        case .approach, .occurrence: return false
+        }
+      }
+    }
+
     /// Fixes on the alternative branch at which progress stood at or past
     /// the planned movement the car did not take.
     func offPlanCommitCount(movementIndex: Int) -> Int {

@@ -556,10 +556,11 @@ public actor NavigationSession {
   /// How far short of the plan's last choice admitted progress or the
   /// matcher's placement can stop while the car takes the exit. Of the 21
   /// planned stress drives (seeds 1–120) that left by the planned exit with
-  /// progress short of the last choice, 19 were within 2 occurrences of it;
-  /// no missed-exit drive (seeds 41–120) that left elsewhere was nearer
-  /// that exit than another departure from within 2.
-  static let exitSideProgressShortfallOccurrences = 2
+  /// progress short of the last choice, 20 were within 3 occurrences of it;
+  /// the other was 12 short, progress lost long before the exit. No
+  /// missed-exit drive (seeds 41–120) that left elsewhere was nearer that
+  /// exit than another departure from within 12.
+  static let exitSideProgressShortfallOccurrences = 3
 
   /// The update for a fix that ended the expressway portion at an unplanned
   /// exit, or nil when it did not.

@@ -64,14 +64,19 @@ The product distinguishes what is known from what is still unconfirmed:
 - The drive uses Apple's muted basemap without congestion colouring: the
   standard yellow expressways and the congestion layer buried the route line,
   and congestion on the road being driven sits under that line anyway. Kaido
-  has no traffic source of its own, so no surface shows current traffic.
+  has no traffic source of its own; the only traffic it shows is inside
+  MapKit's durations.
 - The driving map shows, on tap, Apple's place card for a basemap point of
   interest — the only surface carrying its operating hours, because MapKit
   exposes them to no API. It is Apple's answer rendered on Apple's basemap: it
-  never reaches a Kaido route, tariff, or passage decision, and the preview
-  duration stays non-realtime. The drive narrows the basemap catalog to fuel,
-  charge, parking, and restrooms so storefronts cannot bury the route; a
-  parked map keeps the full catalog.
+  never reaches a Kaido route, tariff, or passage decision. The drive narrows
+  the basemap catalog to fuel, charge, parking, and restrooms so storefronts
+  cannot bury the route; a parked map keeps the full catalog.
+- The preview duration may carry MapKit's traffic-aware time for the Shuto
+  section, accepted only when MapKit's own route between the section's ends is
+  the exact planned path and reports expressway use. It is a duration only: it
+  never authors, ranks, or changes a `RoutePlan`, and a loop, an unmatched
+  route, or a restored checkpoint shows the free-flow reference instead.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`. During a live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and

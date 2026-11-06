@@ -155,11 +155,17 @@ struct WholeShutoJourneyReviewView: View {
           english: "ESTIMATED TIME"
         ),
         value: durationLabel(model.plannedPreviewDurationSeconds),
-        detail: copy.resolve(
-          japanese: "リアルタイム交通を含まない",
-          simplifiedChinese: "不含实时路况",
-          english: "No realtime traffic"
-        ),
+        detail: model.usesProviderExpresswayTiming
+          ? copy.resolve(
+            japanese: "Apple マップの交通情報を含む",
+            simplifiedChinese: "含 Apple 地图路况",
+            english: "Includes Apple Maps traffic"
+          )
+          : copy.resolve(
+            japanese: "リアルタイム交通を含まない",
+            simplifiedChinese: "不含实时路况",
+            english: "No realtime traffic"
+          ),
         tint: KaidoInk.accentWarm,
         isPending: model.isUpdatingSurfaceRoute,
         accessibilityIdentifier: "whole-shuto-journey-estimated-duration"

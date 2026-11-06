@@ -50,10 +50,10 @@ struct KaidoPalette: Equatable, Sendable {
 
   // Map layers.
   /// The planned route drawn on the provider basemap. It cannot be
-  /// `accentWarm`: that basemap paints its own congestion layer in amber and
-  /// red, so a warm route line reads as a jam rather than as the route. Blue
-  /// is the one hue the congestion band never uses, which is why every
-  /// mainstream navigator draws its route in it.
+  /// `accentWarm`: Apple's basemap draws expressways and traffic in yellow,
+  /// amber and red, so a warm route line reads as a road class or a jam
+  /// rather than as the route. Blue is the hue every mainstream navigator
+  /// gives the route for that reason.
   let mapRouteDriving: KaidoColorToken
   let mapWater: KaidoColorToken
   let mapCasing: KaidoColorToken
@@ -168,6 +168,12 @@ enum KaidoInk {
   /// shield ground.
   static let onShieldToken = KaidoColorToken(hex: 0xEEF2F2)
   static let onShield = onShieldToken.color
+
+  /// The driving-map position arrow when the fix is estimated or held. The
+  /// arrow sits on a white disc in both appearances, so the token is fixed;
+  /// grey is what drivers read as "position uncertain".
+  static let mapPositionDegradedToken = KaidoColorToken(hex: 0x6B7280)
+  static let mapPositionDegraded = mapPositionDegradedToken.color
 
   /// The raised card face, as one gradient rather than a flat fill.
   static let raisedFace = LinearGradient(

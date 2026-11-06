@@ -6070,6 +6070,105 @@ final class WholeShutoProductModelTests: XCTestCase {
     _ = await model.pausePlayback()
   }
 
+  func testProviderShutoTimeReplacesTheFreeFlowReferenceWhenItMatches()
+    async throws
+  {
+    let resolver = TimedShutoSurfaceRouteResolver(shutoSeconds: 2_909)
+    let model = try await reviewedPreviewJourney(resolver: resolver)
+    for _ in 0..<200 where !model.usesProviderExpresswayTiming {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    let route = try XCTUnwrap(model.selectedRoute)
+    let access = try XCTUnwrap(model.accessRoute)
+    let egress = try XCTUnwrap(model.egressRoute)
+
+    XCTAssertTrue(model.usesProviderExpresswayTiming)
+    XCTAssertEqual(
+      try XCTUnwrap(model.plannedPreviewDurationSeconds),
+      access.expectedTravelTimeSeconds + 2_909 + egress.expectedTravelTimeSeconds,
+      accuracy: 0.001
+    )
+    for _ in 0..<200
+    where await resolver.timedPaths.count < model.recommendations.count {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    // The selected route first, then every other choice, once each.
+    let timedPaths = await resolver.timedPaths
+    XCTAssertEqual(timedPaths.first, route.coordinates)
+    XCTAssertEqual(
+      Set(timedPaths.map { $0.map { "\($0.latitude),\($0.longitude)" } }).count,
+      model.recommendations.count
+    )
+    XCTAssertEqual(timedPaths.count, model.recommendations.count)
+    if let metrics = model.routeChoiceMetrics(at: model.selectedRecommendationIndex) {
+      XCTAssertEqual(
+        metrics.expectedTravelTimeSeconds,
+        try XCTUnwrap(model.plannedPreviewDurationSeconds),
+        accuracy: 0.001
+      )
+    }
+  }
+
+  func testUnmatchedProviderShutoTimeKeepsTheFreeFlowReference()
+    async throws
+  {
+    let resolver = TimedShutoSurfaceRouteResolver(shutoSeconds: nil)
+    let model = try await reviewedPreviewJourney(resolver: resolver)
+    for _ in 0..<200 where await resolver.timedPaths.isEmpty {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    let route = try XCTUnwrap(model.selectedRoute)
+    let access = try XCTUnwrap(model.accessRoute)
+    let egress = try XCTUnwrap(model.egressRoute)
+
+    XCTAssertFalse(model.usesProviderExpresswayTiming)
+    XCTAssertEqual(
+      try XCTUnwrap(model.plannedPreviewDurationSeconds),
+      access.expectedTravelTimeSeconds
+        + route.distanceMeters
+        / WholeShutoProductModel.expresswayReferenceSpeedMetersPerSecond
+        + egress.expectedTravelTimeSeconds,
+      accuracy: 0.001
+    )
+  }
+
+  func testLoopJourneyNeverAsksTheProviderToTimeTheShutoSection()
+    async throws
+  {
+    let resolver = TimedShutoSurfaceRouteResolver(shutoSeconds: 900)
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: resolver, checkpointStore: nil
+    )
+    model.selectCurrentOrigin(.init(latitude: 35.6586, longitude: 139.7454))
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+
+    XCTAssertFalse(try XCTUnwrap(model.selectedRoute).lapBoundaryOccurrenceIndices.isEmpty)
+    XCTAssertFalse(model.usesProviderExpresswayTiming)
+    let timedPaths = await resolver.timedPaths
+    XCTAssertTrue(timedPaths.isEmpty)
+  }
+
+  private func reviewedPreviewJourney(
+    resolver: TimedShutoSurfaceRouteResolver
+  ) async throws -> WholeShutoProductModel {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: resolver, checkpointStore: nil
+    )
+    model.originQuery = "現在地"
+    model.selectCurrentOrigin(WholeShutoProductModel.previewOrigin.coordinate)
+    model.selectDestinationPreview(WholeShutoProductModel.previewDestination)
+    model.planJourney()
+    for _ in 0..<200 where model.isPlanning || model.isUpdatingSurfaceRoute {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(try XCTUnwrap(model.selectedRoute).lapBoundaryOccurrenceIndices.isEmpty)
+    return model
+  }
+
   func testUnavailableSurfaceLegsBlockPreviewUntilRetrySucceeds() async {
     let resolver = WholeShutoRecoveringSurfaceRouteResolver()
     let model = WholeShutoProductModel(
@@ -7855,6 +7954,35 @@ private actor WholeShutoOutOfOrderSurfaceRouteResolver:
       try? await Task.sleep(nanoseconds: delay)
       return route
     }.value
+  }
+}
+
+private actor TimedShutoSurfaceRouteResolver: WholeShutoSurfaceRouteResolving {
+  private let shutoSeconds: Double?
+  private(set) var timedPaths: [[ShutoCoordinate]] = []
+
+  init(shutoSeconds: Double?) {
+    self.shutoSeconds = shutoSeconds
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_000,
+      expectedTravelTimeSeconds: 120,
+      instructions: []
+    )
+  }
+
+  func expresswayTravelTime(
+    along path: [ShutoCoordinate],
+    distanceMeters: Double
+  ) async -> Double? {
+    timedPaths.append(path)
+    return shutoSeconds
   }
 }
 

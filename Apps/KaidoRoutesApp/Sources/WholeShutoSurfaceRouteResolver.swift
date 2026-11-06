@@ -13,11 +13,96 @@ enum WholeShutoSurfaceRoutePreference:
 /// Resolves a connecting leg to or from the expressway. Connecting legs stay
 /// on ordinary roads: an expressway leg would guide through junctions Kaido
 /// has not reviewed and add a second toll outside the quoted band.
+///
+/// The same provider may also time the Shuto section itself. That answer is
+/// a duration only: it never authors or changes the `RoutePlan`.
 protocol WholeShutoSurfaceRouteResolving: Sendable {
   func route(
     from origin: ShutoCoordinate,
     to destination: ShutoCoordinate
   ) async -> WholeShutoSurfaceRoute?
+
+  /// The provider's travel time for the exact Shuto path, departing now, or
+  /// nil when its own route between the path's ends is not that path.
+  func expresswayTravelTime(
+    along path: [ShutoCoordinate],
+    distanceMeters: Double
+  ) async -> Double?
+}
+
+extension WholeShutoSurfaceRouteResolving {
+  func expresswayTravelTime(
+    along path: [ShutoCoordinate],
+    distanceMeters: Double
+  ) async -> Double? {
+    nil
+  }
+}
+
+/// Whether a provider route between a Shuto path's ends drove that path.
+///
+/// MapKit cannot be told which deck or carriageway to start on, so its route
+/// between the same two points is often another road: the surface street
+/// under the viaduct, the opposite carriageway, or a detour through a ramp
+/// (measured on C1, Bayshore and Route 1, 2026-11-06). Geometry alone cannot
+/// separate a viaduct from the street under it, so the route must also
+/// report expressway use.
+enum WholeShutoExpresswayTimingMatch {
+  /// Measured matches sat within 13 m; wrong-road answers were 100 m and
+  /// more off the path.
+  static let maximumDeviationMeters = 60.0
+  static let distanceTolerance = 0.05
+
+  static func accepts(
+    candidate: [ShutoCoordinate],
+    candidateDistanceMeters: Double,
+    usesExpressway: Bool,
+    path: [ShutoCoordinate],
+    pathDistanceMeters: Double
+  ) -> Bool {
+    guard
+      usesExpressway,
+      candidate.count >= 2,
+      path.count >= 2,
+      pathDistanceMeters > 0,
+      abs(candidateDistanceMeters / pathDistanceMeters - 1)
+        <= distanceTolerance
+    else {
+      return false
+    }
+    // Both directions: the candidate stays on the path, and the path is
+    // covered by the candidate rather than shortcut past.
+    return candidate.allSatisfy {
+      distance(from: $0, to: path) <= maximumDeviationMeters
+    }
+      && path.allSatisfy {
+        distance(from: $0, to: candidate) <= maximumDeviationMeters
+      }
+  }
+
+  private static func distance(
+    from point: ShutoCoordinate,
+    to line: [ShutoCoordinate]
+  ) -> Double {
+    let metersPerDegree = 111_320.0
+    let metersPerLongitude =
+      metersPerDegree * cos(point.latitude * .pi / 180)
+    var nearest = Double.infinity
+    for (start, end) in zip(line, line.dropFirst()) {
+      let ax = (start.longitude - point.longitude) * metersPerLongitude
+      let ay = (start.latitude - point.latitude) * metersPerDegree
+      let dx = (end.longitude - start.longitude) * metersPerLongitude
+      let dy = (end.latitude - start.latitude) * metersPerDegree
+      let lengthSquared = dx * dx + dy * dy
+      let t =
+        lengthSquared == 0
+        ? 0 : max(0, min(1, -(ax * dx + ay * dy) / lengthSquared))
+      let x = ax + t * dx
+      let y = ay + t * dy
+      nearest = min(nearest, (x * x + y * y).squareRoot())
+    }
+    return nearest
+  }
 }
 
 struct WholeShutoRouteChoiceSurfaceRoutes: Equatable, Sendable {
@@ -131,6 +216,37 @@ struct WholeShutoMapKitSurfaceRouteResolver:
     subsystem: "app.kaidoroutes",
     category: "surface-routing"
   )
+
+  func expresswayTravelTime(
+    along path: [ShutoCoordinate],
+    distanceMeters: Double
+  ) async -> Double? {
+    guard let start = path.first, let end = path.last else { return nil }
+    let request = MKDirections.Request()
+    request.source = Self.mapItem(start)
+    request.destination = Self.mapItem(end)
+    request.transportType = .automobile
+    request.requestsAlternateRoutes = true
+    do {
+      let response = try await MKDirections(request: request).calculate()
+      let match = response.routes.compactMap(Self.surfaceRoute).first {
+        WholeShutoExpresswayTimingMatch.accepts(
+          candidate: $0.coordinates,
+          candidateDistanceMeters: $0.distanceMeters,
+          usesExpressway: $0.hasHighways == true,
+          path: path,
+          pathDistanceMeters: distanceMeters
+        )
+      }
+      return match?.expectedTravelTimeSeconds
+    } catch {
+      let nsError = error as NSError
+      Self.logger.error(
+        "MapKit expressway timing failed: domain=\(nsError.domain, privacy: .public) code=\(nsError.code)"
+      )
+      return nil
+    }
+  }
 
   func route(
     from origin: ShutoCoordinate,

@@ -418,8 +418,9 @@ Review is a short journey summary, not an evidence report. It shows:
 - the ordered Shuto route, repeated laps, JCT decisions, and planned PA visits;
 - directional exit, resolved surface egress, and the destination when one was
   chosen;
-- full-journey planned distance and a preview duration that explicitly excludes
-  realtime traffic;
+- full-journey planned distance and a preview duration labelled as either
+  including Apple Maps traffic (the Shuto section matched MapKit's own route)
+  or excluding realtime traffic (the free-flow reference);
 - a separately sourced toll quote when current, or an explicit no-current-quote
   state without inventing a tariff distance or amount;
 - current traffic or restriction availability with a timestamp; and
@@ -497,7 +498,8 @@ The next reviewed decision is the primary visual even before its actor-owned
 voice or junction-inset threshold is reached. Its distance is the largest
 number on the driving surface, while the selected movement text and outgoing
 route shield remain directly adjacent. The lower instrument strip carries the
-non-realtime reference time remaining, full-journey distance remaining, and one
+reference time remaining (the review's duration, scaled by progress),
+full-journey distance remaining, and one
 continuous route-thread progress rail. It must not promote the route's total
 remaining distance above the next decision distance.
 

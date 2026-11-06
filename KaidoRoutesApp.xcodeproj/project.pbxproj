@@ -36,6 +36,7 @@
 		28F9B9A5B886A492D4673575 /* SavedRouteLibraryModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BCE0D5D6D140E232C6C0B6 /* SavedRouteLibraryModelTests.swift */; };
 		2BDF994A609CD51C9C99E9E2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8DB8358AB6806A7F1D04E522 /* InfoPlist.strings */; };
 		2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */ = {isa = PBXBuildFile; fileRef = FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */; };
+		2DF9755F0515B14D77138F59 /* WholeShutoExpresswayTimingMatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A1E8DD2C3BD72199CD98A3 /* WholeShutoExpresswayTimingMatchTests.swift */; };
 		2F41F54352B06B7840A72D1A /* C2GeographicRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6D16129891A91DD1C2FE1C /* C2GeographicRouteTests.swift */; };
 		2F9142968F903E7BBDCA50D5 /* C2RouteMapDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7736D4DA384D6C8C19BC71A7 /* C2RouteMapDemoUITests.swift */; };
 		2FDD37296E5C36302AAC3131 /* InternalLocationCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */; };
@@ -223,6 +224,7 @@
 		2E6E5EFF9C6EA822392F9579 /* WholeShutoNetworkOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoNetworkOverviewView.swift; sourceTree = "<group>"; };
 		3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductModelTests.swift; sourceTree = "<group>"; };
 		313817A04D3745DA3B692788 /* WholeShutoAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoAttribution.swift; sourceTree = "<group>"; };
+		31A1E8DD2C3BD72199CD98A3 /* WholeShutoExpresswayTimingMatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoExpresswayTimingMatchTests.swift; sourceTree = "<group>"; };
 		32AB01EB48CB3DE3DDC993B8 /* WholeShutoParkingDestinationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoParkingDestinationTests.swift; sourceTree = "<group>"; };
 		37030EBBC3D8321FBC21C013 /* XCUIApplication+SilentAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+SilentAudio.swift"; sourceTree = "<group>"; };
 		3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "k7-aoba-kohoku-product-release.json"; sourceTree = "<group>"; };
@@ -439,6 +441,7 @@
 				FC391ECE79DA9EEFC6D198F0 /* SyntheticProductRuntimeTests.swift */,
 				19CBDA5BD1B96ACAFD3A8219 /* UnitTestAppStateReset.swift */,
 				E729B5FD665FA2783F79978F /* WholeShutoDriveRecordTests.swift */,
+				31A1E8DD2C3BD72199CD98A3 /* WholeShutoExpresswayTimingMatchTests.swift */,
 				32AB01EB48CB3DE3DDC993B8 /* WholeShutoParkingDestinationTests.swift */,
 				BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */,
 				749C52FDED247720BDCA981D /* WholeShutoPlanningLocationTests.swift */,
@@ -821,6 +824,7 @@
 				6E68F9CECE3EB180CCF7A871 /* SyntheticProductRuntimeTests.swift in Sources */,
 				3641C28B72CFED6ED01D8DF9 /* UnitTestAppStateReset.swift in Sources */,
 				18D1E35E5D2E762BAE5ADF87 /* WholeShutoDriveRecordTests.swift in Sources */,
+				2DF9755F0515B14D77138F59 /* WholeShutoExpresswayTimingMatchTests.swift in Sources */,
 				4D05A9A7B7E10FEBE93A1F0D /* WholeShutoParkingDestinationTests.swift in Sources */,
 				5A17461F9788177CFEB81559 /* WholeShutoPlaceSearchTests.swift in Sources */,
 				E82ABDDB8084F0B061EEAC74 /* WholeShutoPlanningLocationTests.swift in Sources */,

@@ -627,6 +627,13 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitTariffBandsByFacilityID: [String: ShutoTariffBand] = [:]
   @Published private(set) var accessRoute: WholeShutoSurfaceRoute?
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
+  /// MapKit's traffic-aware time for a route's exact Shuto path, by plan,
+  /// when MapKit's own route between its ends was that path. Loops never
+  /// get one: MapKit routes the short way between a lap's ends.
+  @Published private(set) var providerExpresswaySecondsByRoutePlanID:
+    [String: Double] = [:]
+  private var expresswayTimingRequestedIDs: Set<String> = []
+  private var expresswayTimingPass = 0
   @Published private(set) var progressFraction = 0.0
   @Published private(set) var isPlaying = false
   /// True only after the selected exact route has produced a validated
@@ -1653,9 +1660,11 @@ final class WholeShutoProductModel: ObservableObject {
     guard recommendations.indices.contains(recommendationIndex) else {
       return nil
     }
-    return routeChoiceMetricsByRoutePlanID[
-      recommendations[recommendationIndex].route.routePlan.id
-    ]
+    let route = recommendations[recommendationIndex].route
+    return withProviderExpresswayTime(
+      routeChoiceMetricsByRoutePlanID[route.routePlan.id],
+      for: route
+    )
   }
 
   var customRouteChoiceMetrics: WholeShutoRouteChoiceMetrics? {
@@ -1667,10 +1676,13 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       return nil
     }
-    return Self.routeChoiceMetrics(
-      for: recommendation.route,
-      accessRoute: accessRoute,
-      egressRoute: egressRoute
+    return withProviderExpresswayTime(
+      Self.routeChoiceMetrics(
+        for: recommendation.route,
+        accessRoute: accessRoute,
+        egressRoute: egressRoute
+      ),
+      for: recommendation.route
     )
   }
 
@@ -2147,6 +2159,39 @@ final class WholeShutoProductModel: ObservableObject {
       + (egressRoute?.distanceMeters ?? 0)
   }
 
+  /// Whether the displayed duration carries MapKit's traffic-aware time for
+  /// the Shuto section rather than the free-flow reference.
+  var usesProviderExpresswayTiming: Bool {
+    guard let route = selectedRoute else { return false }
+    return providerExpresswaySecondsByRoutePlanID[route.routePlan.id] != nil
+  }
+
+  private func expresswayDurationSeconds(
+    for route: ShutoPlannedRoute
+  ) -> Double {
+    providerExpresswaySecondsByRoutePlanID[route.routePlan.id]
+      ?? route.distanceMeters / Self.expresswayReferenceSpeedMetersPerSecond
+  }
+
+  /// Choice metrics are stored at the free-flow reference; a route MapKit has
+  /// timed shows the same total on its card as on the review.
+  private func withProviderExpresswayTime(
+    _ metrics: WholeShutoRouteChoiceMetrics?,
+    for route: ShutoPlannedRoute
+  ) -> WholeShutoRouteChoiceMetrics? {
+    guard let metrics,
+      let seconds = providerExpresswaySecondsByRoutePlanID[route.routePlan.id]
+    else {
+      return metrics
+    }
+    return WholeShutoRouteChoiceMetrics(
+      totalDistanceMeters: metrics.totalDistanceMeters,
+      expectedTravelTimeSeconds: metrics.expectedTravelTimeSeconds
+        - route.distanceMeters / Self.expresswayReferenceSpeedMetersPerSecond
+        + seconds
+    )
+  }
+
   var plannedPreviewDurationSeconds: Double? {
     guard
       let route = selectedRoute,
@@ -2156,8 +2201,7 @@ final class WholeShutoProductModel: ObservableObject {
       return nil
     }
     return accessRoute.expectedTravelTimeSeconds
-      + route.distanceMeters
-      / Self.expresswayReferenceSpeedMetersPerSecond
+      + expresswayDurationSeconds(for: route)
       + (egressRoute?.expectedTravelTimeSeconds ?? 0)
   }
 
@@ -2169,9 +2213,7 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       return nil
     }
-    let expresswayDuration =
-      route.distanceMeters
-      / Self.expresswayReferenceSpeedMetersPerSecond
+    let expresswayDuration = expresswayDurationSeconds(for: route)
     switch phase {
     case .planning, .review:
       return accessRoute.expectedTravelTimeSeconds
@@ -4056,6 +4098,7 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     prepareLiveNavigationAdmission(for: recommendation.route)
     cancelSurfaceRouteResolution()
+    resolveProviderExpresswayTiming(for: recommendation.route)
     accessRoute = nil
     egressRoute = nil
     isUpdatingSurfaceRoute = true
@@ -4160,15 +4203,49 @@ final class WholeShutoProductModel: ObservableObject {
     }
     prepareLiveNavigationAdmission(for: recommendation.route)
     cancelSurfaceRouteResolution()
+    resolveProviderExpresswayTiming(for: recommendation.route)
     accessRoute = routes.access
     egressRoute = routes.egress
     failureCode = nil
     return true
   }
 
+  /// One MapKit request per route, departing now: the selected route first,
+  /// then the other choices so their cards compare like with like. A loop is
+  /// never asked: MapKit routes the short way between a lap's ends. Routes
+  /// already asked this planning pass are skipped, matched or not.
+  private func resolveProviderExpresswayTiming(for route: ShutoPlannedRoute) {
+    let routes = ([route] + recommendations.map(\.route)).filter {
+      $0.lapBoundaryOccurrenceIndices.isEmpty
+        && !expresswayTimingRequestedIDs.contains($0.routePlan.id)
+    }
+    guard !routes.isEmpty else { return }
+    let resolver = surfaceRouteResolver
+    let pass = expresswayTimingPass
+    Task { [weak self] in
+      for route in routes {
+        let routePlanID = route.routePlan.id
+        guard let self, self.expresswayTimingPass == pass,
+          !self.expresswayTimingRequestedIDs.contains(routePlanID)
+        else { continue }
+        self.expresswayTimingRequestedIDs.insert(routePlanID)
+        let seconds = await resolver.expresswayTravelTime(
+          along: route.coordinates,
+          distanceMeters: route.distanceMeters
+        )
+        guard let seconds, self.expresswayTimingPass == pass else { continue }
+        self.providerExpresswaySecondsByRoutePlanID[routePlanID] = seconds
+      }
+    }
+  }
+
   private func clearRouteChoiceEvaluation() {
     routeChoiceSurfaceRoutesByRoutePlanID = [:]
     routeChoiceMetricsByRoutePlanID = [:]
+    // A new planning pass departs now; earlier traffic times are stale.
+    expresswayTimingPass += 1
+    expresswayTimingRequestedIDs = []
+    providerExpresswaySecondsByRoutePlanID = [:]
   }
 
   /// Deterministic route playback for the automated suites and internal

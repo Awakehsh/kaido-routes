@@ -395,9 +395,9 @@ extension ShutoRoutePlanner {
   private static let entranceCandidateLimit = 16
 
   /// An expressway approach meter against a straight-line surface meter
-  /// when ranking entrances by time to the course: the product's expressway
-  /// reference is 54 km/h (catalog card, drive preview) and its surface
-  /// access reference ~27 km/h (8 km in 15–20 min, `ShutoEntranceAccessTier`).
+  /// when ranking entrances by time to the course: a 54 km/h expressway
+  /// reference against the ~27 km/h surface access reference (8 km in
+  /// 15–20 min, `ShutoEntranceAccessTier`).
   private static let approachMeterWeight = 0.5
 
   /// How far past the soonest exit after the final lap a loop's recommended

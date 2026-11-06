@@ -9,5 +9,16 @@ struct WholeShutoCircuitPreview: Equatable, Sendable {
   /// experience actually uses them.
   let routeIDsInOrder: [String]
 
-  var referenceMinutes: Int { max(1, Int(ceil(distanceMeters / 15 / 60))) }
+  var referenceMinutes: Int {
+    max(
+      1,
+      Int(
+        ceil(
+          distanceMeters
+            / WholeShutoProductModel.expresswayReferenceSpeedMetersPerSecond
+            / 60
+        )
+      )
+    )
+  }
 }

@@ -130,8 +130,9 @@ internal review workbench.
   another home surface.
 - Route choice leads to one parked route pass before the drive starts. It
   combines the bounded surface access and egress legs with the exact selected
-  Shuto route, shows full-journey distance and a non-realtime preview duration,
-  and keeps passage and toll information explicitly unconfirmed when no current
+  Shuto route, shows full-journey distance and a non-realtime preview duration
+  (MapKit's estimate for the surface legs, the Shuto section at a 60 km/h
+  free-flow reference, the same reference as the catalog card), and keeps passage and toll information explicitly unconfirmed when no current
   source exists. Missing a required surface leg blocks review and start rather than
   silently skipping that part of the journey.
 - Saved-route import preserves the complete shared `RoutePlan` and never

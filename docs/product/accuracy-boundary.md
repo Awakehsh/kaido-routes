@@ -55,18 +55,23 @@ The product distinguishes what is known from what is still unconfirmed:
   route's end onto another operator's expressway is handed over as if it had
   left the expressway.
 - The driving map draws the planned route in blue, never in the product's warm
-  route accent: Apple's congestion layer owns amber and red on that basemap, so
-  a warm route line would read as a jam along the whole route. Kaido's own
-  surfaces — route cards, course thumbnails, the track map — draw no congestion
-  and keep the warm accent.
-- The driving map draws Apple's congestion layer and, on tap, Apple's place
-  card for a basemap point of interest — the only surface carrying its
-  operating hours, because MapKit exposes them to no API. Both are Apple's
-  answer rendered on Apple's basemap: neither reaches a Kaido route, tariff,
-  or passage decision, and the preview duration stays non-realtime. The drive
-  narrows the basemap catalog to fuel, charge, parking, and restrooms so
-  storefronts cannot bury the route; a parked map keeps the full catalog and
-  omits congestion colouring, which is unreadable at journey framing.
+  route accent: Apple's basemap draws expressways and traffic in yellow, amber
+  and red, so a warm route line would read as a road class or a jam. The
+  surface legs share the blue, the position arrow is blue (grey while
+  estimated or held), and IC, PA and JCT labels sit on neutral plates. Kaido's
+  own surfaces — route cards, course thumbnails, the track map — keep the warm
+  accent.
+- The drive uses Apple's muted basemap without congestion colouring: the
+  standard yellow expressways and the congestion layer buried the route line,
+  and congestion on the road being driven sits under that line anyway. Kaido
+  has no traffic source of its own, so no surface shows current traffic.
+- The driving map shows, on tap, Apple's place card for a basemap point of
+  interest — the only surface carrying its operating hours, because MapKit
+  exposes them to no API. It is Apple's answer rendered on Apple's basemap: it
+  never reaches a Kaido route, tariff, or passage decision, and the preview
+  duration stays non-realtime. The drive narrows the basemap catalog to fuel,
+  charge, parking, and restrooms so storefronts cannot bury the route; a
+  parked map keeps the full catalog.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`. During a live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and

@@ -6869,21 +6869,20 @@ private struct WholeShutoGeographicMap: View {
       if let accessRoute = model.accessRoute,
         model.phase == .review || model.phase == .surfaceAccess
       {
-        // Casing under a solid core, the way every driving map draws a
-        // route. A dash cannot carry "provider leg, not Kaido authority"
-        // here: the casing shows through its gaps and the leg reads as a
-        // striped ribbon rather than a road. Colour carries that meaning
-        // instead — teal for both surface legs, against the route's blue.
-        // The legs never need telling apart: one runs to the entry marker,
-        // the other from the exit marker. A warm leg would, on the driving
-        // map, read as Apple's congestion red.
+        // The whole drive is one blue path, the way every driving map
+        // draws "the way you go"; a second hue beside the route's blue read
+        // as a different route rather than the same journey. Width carries
+        // "provider leg, not Kaido authority" instead: the surface legs are
+        // narrower than the Shuto section, and the entry and exit markers
+        // mark the boundary. A dash cannot: the casing shows through its
+        // gaps and the leg reads as a striped ribbon rather than a road.
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
           KaidoInk.surface.opacity(0.8),
           style: StrokeStyle(
-            lineWidth: 9,
+            lineWidth: 11,
             lineCap: .round,
             lineJoin: .round
           )
@@ -6892,9 +6891,9 @@ private struct WholeShutoGeographicMap: View {
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoInk.accentCool,
+          KaidoInk.mapRouteDriving,
           style: StrokeStyle(
-            lineWidth: 5.5,
+            lineWidth: 7,
             lineCap: .round,
             lineJoin: .round
           )
@@ -6907,10 +6906,9 @@ private struct WholeShutoGeographicMap: View {
         // the line it borders: a white one blends into MapKit's own white
         // motorway fill and the route stops looking like an overlay at all.
         //
-        // The core is `mapRouteDriving`, not the warm route accent: this is
-        // the one map that draws Apple's congestion layer, and amber and red
-        // belong to it there. A warm route line on top of it reads as a
-        // kilometres-long jam.
+        // The core is `mapRouteDriving`, not the warm route accent: on a
+        // provider basemap the route takes the hue every navigator gives
+        // it, so it reads as "the way you go" rather than as a road class.
         MapPolyline(
           coordinates: route.coordinates.map(\.mapCoordinate)
         )
@@ -7020,8 +7018,7 @@ private struct WholeShutoGeographicMap: View {
         ) {
           WholeShutoFacilityLabel(
             prefix: "IC",
-            name: facility.nameJA,
-            color: KaidoInk.accentWarmDeep
+            name: facility.nameJA
           )
         }
       }
@@ -7033,9 +7030,7 @@ private struct WholeShutoGeographicMap: View {
         ) {
           WholeShutoFacilityLabel(
             prefix: "P",
-            name: parkingArea.baseNameJA,
-            color: KaidoInk.accentWarm,
-            darkText: true
+            name: parkingArea.baseNameJA
           )
         }
       }
@@ -7050,7 +7045,7 @@ private struct WholeShutoGeographicMap: View {
         .stroke(
           KaidoInk.surface.opacity(0.8),
           style: StrokeStyle(
-            lineWidth: 9,
+            lineWidth: 11,
             lineCap: .round,
             lineJoin: .round
           )
@@ -7059,9 +7054,9 @@ private struct WholeShutoGeographicMap: View {
           coordinates: egressRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoInk.accentCool,
+          KaidoInk.mapRouteDriving,
           style: StrokeStyle(
-            lineWidth: 5.5,
+            lineWidth: 7,
             lineCap: .round,
             lineJoin: .round
           )
@@ -7075,8 +7070,7 @@ private struct WholeShutoGeographicMap: View {
         ) {
           WholeShutoFacilityLabel(
             prefix: "JCT",
-            name: prompt.nameJA,
-            color: KaidoInk.textPrimary
+            name: prompt.nameJA
           )
         }
       }
@@ -7134,9 +7128,9 @@ private struct WholeShutoGeographicMap: View {
           center: current.mapCoordinate,
           radius: uncertainty
         )
-        .foregroundStyle(KaidoInk.accentWarm.opacity(0.12))
+        .foregroundStyle(KaidoInk.mapPositionDegraded.opacity(0.14))
         .stroke(
-          KaidoInk.accentWarm.opacity(0.55),
+          KaidoInk.mapPositionDegraded.opacity(0.6),
           style: StrokeStyle(lineWidth: 2, dash: [5, 4])
         )
       }
@@ -7162,7 +7156,7 @@ private struct WholeShutoGeographicMap: View {
                 || model.positionState == .routeInterrupted
                 || model.positionState == .confirmingExit
                 || model.isHoldingLivePosition
-                ? KaidoInk.accentWarm : KaidoInk.accentCool
+                ? KaidoInk.mapPositionDegraded : KaidoInk.mapRouteDriving
             )
             .rotationEffect(
               .degrees(
@@ -7182,15 +7176,17 @@ private struct WholeShutoGeographicMap: View {
     }
     .mapStyle(
       model.phase == .planning || model.phase == .review
-        // Congestion colouring is unreadable at journey framing — it paints
-        // the whole Kanto basemap and the selected route stops standing out
-        // — and nothing here acts on it. The drive frames close enough for
-        // it to mean something.
         ? .standard(elevation: .flat)
+        // Muted, without congestion: the standard basemap paints every
+        // expressway yellow and the congestion layer adds amber and red, and
+        // together they buried the route line on the phone. Congestion on
+        // the road being driven sits under the route line anyway, so the
+        // layer only coloured roads the driver is not on.
         : .standard(
           elevation: .realistic,
+          emphasis: .muted,
           pointsOfInterest: .including(Self.drivingPointsOfInterest),
-          showsTraffic: true
+          showsTraffic: false
         )
     )
     // Apple's place card carries the operating hours MapKit does not expose
@@ -7612,27 +7608,29 @@ private struct WholeShutoMapMarker: View {
   }
 }
 
+/// One neutral plate for IC, PA and JCT labels on the driving map, so the
+/// only colour Kaido adds there is the route's; the prefix tells the kinds
+/// apart.
 private struct WholeShutoFacilityLabel: View {
   let prefix: String
   let name: String
-  let color: Color
-  var darkText = false
 
   var body: some View {
     HStack(spacing: 3) {
       Text(prefix)
         .font(.system(size: 7, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoInk.textSecondary)
       Text(name)
         .font(.system(size: 8, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoInk.textPrimary)
         .lineLimit(1)
     }
-    .foregroundStyle(darkText ? KaidoInk.surface : Color.white)
     .padding(.horizontal, 6)
     .frame(height: 20)
-    .background(color)
+    .background(KaidoInk.surfaceRaised)
     .clipShape(Capsule())
     .overlay {
-      Capsule().stroke(Color.white.opacity(0.9), lineWidth: 1)
+      Capsule().stroke(KaidoInk.divider, lineWidth: 1)
     }
     .shadow(color: .black.opacity(0.24), radius: 3, y: 1)
   }

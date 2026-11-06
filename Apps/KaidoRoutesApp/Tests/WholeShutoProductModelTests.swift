@@ -5993,7 +5993,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let expectedDuration =
       access.expectedTravelTimeSeconds
       + route.distanceMeters
-      / WholeShutoProductModel.simulationReferenceSpeedMetersPerSecond
+      / WholeShutoProductModel.expresswayReferenceSpeedMetersPerSecond
       + egress.expectedTravelTimeSeconds
 
     XCTAssertTrue(model.isJourneyReadyForPreview)

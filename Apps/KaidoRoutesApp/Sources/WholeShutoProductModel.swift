@@ -534,6 +534,12 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   static let simulationReferenceSpeedMetersPerSecond = 15.0
+  /// The expressway part of every displayed duration: free flow at 60 km/h,
+  /// the limit on most Shuto routes. Kaido has no traffic source, so this is
+  /// a no-traffic reference the UI labels as such; weekday daytime runs far
+  /// slower (MLIT puts C1's 7–19 h average near 37 km/h). The replay keeps
+  /// its own 54 km/h trace, and entrance pairing ranks with its own weight.
+  nonisolated static let expresswayReferenceSpeedMetersPerSecond = 60.0 / 3.6
   static let simulationPlaybackSpeed: NavigationDriveSimulationSpeed =
     .twentyTimes
 
@@ -2151,7 +2157,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
     return accessRoute.expectedTravelTimeSeconds
       + route.distanceMeters
-      / Self.simulationReferenceSpeedMetersPerSecond
+      / Self.expresswayReferenceSpeedMetersPerSecond
       + (egressRoute?.expectedTravelTimeSeconds ?? 0)
   }
 
@@ -2165,7 +2171,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
     let expresswayDuration =
       route.distanceMeters
-      / Self.simulationReferenceSpeedMetersPerSecond
+      / Self.expresswayReferenceSpeedMetersPerSecond
     switch phase {
     case .planning, .review:
       return accessRoute.expectedTravelTimeSeconds
@@ -7774,7 +7780,7 @@ final class WholeShutoProductModel: ObservableObject {
       expectedTravelTimeSeconds:
         accessRoute.expectedTravelTimeSeconds
         + route.distanceMeters
-        / simulationReferenceSpeedMetersPerSecond
+        / expresswayReferenceSpeedMetersPerSecond
         + egressRoute.expectedTravelTimeSeconds
     )
   }

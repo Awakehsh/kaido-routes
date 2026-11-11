@@ -211,6 +211,49 @@ final class WholeShutoPlaceSearchTests: XCTestCase {
     XCTAssertEqual(controller.suggestions.map(\.id), ["search"])
   }
 
+  func testPendingCompletionLookupIsDiscardedByEditOrAnotherPick() async throws {
+    let first = WholeShutoPlaceSuggestion(id: "first", title: "横浜中華街", subtitle: "")
+    let second = WholeShutoPlaceSuggestion(id: "second", title: "元町", subtitle: "")
+    var lookups: [String: CheckedContinuation<WholeShutoPlace, any Error>] = [:]
+    let controller = WholeShutoPlaceSearchController(
+      completePlaces: { _, _ in [first, second] },
+      resolveCompletion: { suggestion in
+        try await withCheckedThrowingContinuation { lookups[suggestion.id] = $0 }
+      },
+      completionDelay: .zero)
+
+    controller.update(query: "中華", near: nil)
+    try await waitUntil { controller.suggestions.count == 2 }
+    let edited = Task { try await controller.resolve(first) }
+    try await waitUntil { lookups["first"] != nil }
+    controller.update(query: "中華街", near: nil)
+    lookups["first"]?.resume(returning: tokyoTower)
+    await XCTAssertThrowsErrorAsync { try await edited.value }
+    XCTAssertNil(controller.selectedSuggestion)
+    try await waitUntil { controller.suggestions.count == 2 }
+
+    let superseded = Task { try await controller.resolve(first) }
+    try await waitUntil { lookups["first"] != nil }
+    let chosen = Task { try await controller.resolve(second) }
+    try await waitUntil { lookups["second"] != nil }
+    lookups["first"]?.resume(returning: tokyoTower)
+    await XCTAssertThrowsErrorAsync { try await superseded.value }
+    let motomachi = WholeShutoPlace(title: "元町", coordinate: .init(latitude: 35.44, longitude: 139.65))
+    lookups["second"]?.resume(returning: motomachi)
+    let place = try await chosen.value
+    XCTAssertEqual(place, motomachi)
+    XCTAssertEqual(controller.selectedSuggestion, second)
+  }
+
+  private func XCTAssertThrowsErrorAsync(
+    _ body: () async throws -> some Any, file: StaticString = #filePath, line: UInt = #line
+  ) async {
+    do {
+      _ = try await body()
+      XCTFail("Expected an error", file: file, line: line)
+    } catch {}
+  }
+
   private func waitUntil(
     _ condition: @MainActor () -> Bool, file: StaticString = #filePath, line: UInt = #line
   ) async throws {

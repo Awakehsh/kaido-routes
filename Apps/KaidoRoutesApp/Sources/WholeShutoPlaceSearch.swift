@@ -172,12 +172,16 @@ final class WholeShutoPlaceSearchController: ObservableObject {
     if let known = placesByID[suggestion.id] {
       place = known
     } else if completionIDs.contains(suggestion.id), let resolveCompletion {
+      // An edit or another pick while the lookup is in flight supersedes it.
+      let currentRequest = UUID()
+      requestID = currentRequest
       do {
         place = try await resolveCompletion(suggestion)
       } catch {
-        state = .unavailable
+        if currentRequest == requestID { state = .unavailable }
         throw error
       }
+      guard currentRequest == requestID else { throw CancellationError() }
     } else {
       state = .unavailable
       throw C2NavigationDemoError.placeNotFound

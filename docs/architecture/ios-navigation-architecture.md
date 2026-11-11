@@ -2684,7 +2684,11 @@ through its own `GuidanceSpeechCoordinator` keyed by a per-drive identity.
 It shares the surface-leg rules: step progress by step distance
 (`WholeShutoSurfaceRoute.stepProgress`), a 30-100 m corridor that accuracy
 only widens, two off-route fixes before rerouting, a 15 s reroute cooldown,
-and a spoken position notice only for a fix stale 10 s, once a minute. A route
+and a spoken position notice only for a fix stale 10 s, once a minute. A fix
+already 10 s old when delivered is dropped, a stale gap shows a visible weak-
+position line until the next fresh fix whatever the speech mode, and arrival
+(50 m from the place, or the line's end) widens with accuracy to at most
+100 m, because arrival stops tracking for good. A route
 through the Shuto is guided by MapKit's steps there too; it never becomes or
 alters a Kaido `RoutePlan`, and Kaido makes no junction claim for it. A
 provider route that matches a Kaido candidate's whole path

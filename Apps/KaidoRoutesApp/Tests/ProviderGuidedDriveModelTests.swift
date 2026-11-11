@@ -93,6 +93,37 @@ final class ProviderGuidedDriveModelTests: XCTestCase {
     XCTAssertEqual(resolver.requestCount, 0)
   }
 
+  func testACoarseFixFarFromThePlaceDoesNotArrive() {
+    let source = FakeLocationSource()
+    let drive = makeDrive(source: source)
+    drive.start()
+
+    drive.observe(north(0.1), horizontalAccuracyMeters: 1_000, at: now)
+
+    XCTAssertEqual(drive.phase, .driving)
+    XCTAssertTrue(source.isUpdating)
+  }
+
+  func testAFixAlreadyStaleWhenDeliveredMovesNothing() {
+    let source = FakeLocationSource()
+    let drive = makeDrive(source: source)
+    drive.start()
+    func deliver(_ coordinate: ShutoCoordinate, age: TimeInterval) {
+      let fix = CLLocation(
+        coordinate: CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude),
+        altitude: 0, horizontalAccuracy: 10, verticalAccuracy: -1,
+        timestamp: now.addingTimeInterval(-age))
+      drive.foregroundNavigationLocationSource(source, didDeliver: [fix], receivedAt: now)
+    }
+
+    deliver(end, age: 15)
+    XCTAssertEqual(drive.phase, .driving)
+    XCTAssertEqual(drive.progressFraction, 0)
+
+    deliver(north(0.5), age: 1)
+    XCTAssertEqual(drive.progressFraction, 0.5, accuracy: 0.01)
+  }
+
   func testCoarseAccuracyWidensTheCorridorInsteadOfLeavingTheRoute() {
     let resolver = ProviderRouteStub(routes: [route()])
     let drive = makeDrive(resolver: resolver)
@@ -168,9 +199,11 @@ final class ProviderGuidedDriveModelTests: XCTestCase {
     now = now.addingTimeInterval(9)
     drive.evaluateFixFreshness()
     XCTAssertFalse(output.spokenTexts.contains(notice))
+    XCTAssertFalse(drive.isPositionStale)
 
     now = now.addingTimeInterval(2)
     drive.evaluateFixFreshness()
+    XCTAssertTrue(drive.isPositionStale)
     now = now.addingTimeInterval(30)
     drive.evaluateFixFreshness()
     XCTAssertEqual(output.spokenTexts.filter { $0 == notice }.count, 1)
@@ -178,6 +211,9 @@ final class ProviderGuidedDriveModelTests: XCTestCase {
     now = now.addingTimeInterval(31)
     drive.evaluateFixFreshness()
     XCTAssertEqual(output.spokenTexts.filter { $0 == notice }.count, 2)
+
+    drive.observe(north(0.2), horizontalAccuracyMeters: 10, at: now)
+    XCTAssertFalse(drive.isPositionStale)
   }
 
   private func waitUntil(

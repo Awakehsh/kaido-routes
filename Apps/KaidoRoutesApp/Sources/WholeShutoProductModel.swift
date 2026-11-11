@@ -220,6 +220,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let guidanceLanguageCode: String?
   let hasHighways: Bool?
   let hasTolls: Bool?
+  /// The provider's summary of the roads it uses, e.g. a national route.
+  let name: String?
 
   init(
     coordinates: [ShutoCoordinate],
@@ -229,7 +231,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     steps: [WholeShutoSurfaceRouteStep]? = nil,
     guidanceLanguageCode: String? = nil,
     hasHighways: Bool? = nil,
-    hasTolls: Bool? = nil
+    hasTolls: Bool? = nil,
+    name: String? = nil
   ) {
     self.coordinates = coordinates
     self.distanceMeters = distanceMeters
@@ -239,12 +242,42 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     self.guidanceLanguageCode = guidanceLanguageCode
     self.hasHighways = hasHighways
     self.hasTolls = hasTolls
+    self.name = name
   }
 }
 
 struct WholeShutoSurfaceRouteStep: Codable, Equatable, Sendable {
   let instruction: String
   let distanceMeters: Double
+}
+
+struct WholeShutoSurfaceStepProgress: Equatable {
+  let index: Int
+  let step: WholeShutoSurfaceRouteStep
+  let steps: [WholeShutoSurfaceRouteStep]
+  let remainingMeters: Double
+}
+
+extension WholeShutoSurfaceRoute {
+  /// The spoken step at a fraction of the route. MapKit steps carry no
+  /// maneuver coordinates, so progress walks their distances.
+  func stepProgress(atFraction fraction: Double) -> WholeShutoSurfaceStepProgress? {
+    guard let steps = steps?.filter({ !$0.instruction.isEmpty && $0.distanceMeters > 0 }),
+      !steps.isEmpty
+    else { return nil }
+    let total = steps.reduce(0) { $0 + $1.distanceMeters }
+    guard total > 0 else { return nil }
+    let traveled = min(total, max(0, fraction) * total)
+    var cursor = 0.0
+    for (index, step) in steps.enumerated() {
+      let end = cursor + step.distanceMeters
+      if traveled <= end {
+        return .init(index: index, step: step, steps: steps, remainingMeters: max(0, end - traveled))
+      }
+      cursor = end
+    }
+    return .init(index: steps.count - 1, step: steps[steps.count - 1], steps: steps, remainingMeters: 0)
+  }
 }
 
 struct WholeShutoRouteChoiceMetrics: Equatable, Sendable {
@@ -676,6 +709,10 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
   @Published private(set) var speechMode: GuidanceSpeechMode = .full
+  @Published private(set) var destinationRouteChoice: DestinationRouteChoice?
+  @Published private(set) var providerDrive: ProviderGuidedDriveModel?
+  /// Three cards and the Go button fit the half-height dock without a scroll.
+  static let destinationRouteOptionLimit = 3
   private var audibleSpeechMode: GuidanceSpeechMode = .full
   @Published private(set) var speechVolume: GuidanceSpeechVolume = .loud
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
@@ -1466,37 +1503,9 @@ final class WholeShutoProductModel: ObservableObject {
       remainingMeters: Double
     )?
   {
-    guard let route = activeSurfaceRoute,
-      let steps = route.steps?.filter({
-        !$0.instruction.isEmpty && $0.distanceMeters > 0
-      }),
-      !steps.isEmpty
-    else {
-      return nil
+    activeSurfaceRoute?.stepProgress(atFraction: progressFraction).map {
+      (index: $0.index, step: $0.step, steps: $0.steps, remainingMeters: $0.remainingMeters)
     }
-    let total = steps.reduce(0) { $0 + $1.distanceMeters }
-    guard total > 0 else { return nil }
-    let traveled = min(total, max(0, progressFraction) * total)
-    var cursor = 0.0
-    for (index, step) in steps.enumerated() {
-      let end = cursor + step.distanceMeters
-      if traveled <= end {
-        return (
-          index: index,
-          step: step,
-          steps: steps,
-          remainingMeters: max(0, end - traveled)
-        )
-      }
-      cursor = end
-    }
-    guard let step = steps.last else { return nil }
-    return (
-      index: steps.count - 1,
-      step: step,
-      steps: steps,
-      remainingMeters: 0
-    )
   }
 
   var savedRouteTemplateParameters: [String: String] {
@@ -3028,6 +3037,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func clearDestinationPreview() {
     guard phase == .planning else { return }
+    destinationRouteChoice = nil
     destination = nil
     selectedDestinationTitle = nil
   }
@@ -3248,6 +3258,7 @@ final class WholeShutoProductModel: ObservableObject {
   func planJourney() {
     guard !isPlanning else { return }
     journeyEnding = .destination
+    destinationRouteChoice = nil
     cancelSurfaceRouteResolution()
     clearRouteChoiceEvaluation()
     accessRoute = nil
@@ -3261,17 +3272,23 @@ final class WholeShutoProductModel: ObservableObject {
         let resolvedDestination = try await resolveDestination(
           near: resolvedOrigin.coordinate
         )
+        let isParkingDestination = resolvedDestination.parkingAreaID != nil
+        let resolver = surfaceRouteResolver
+        let providerRoutesTask = Task {
+          isParkingDestination
+            ? []
+            : await resolver.providerRoutes(
+              from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate)
+        }
+        defer { providerRoutesTask.cancel() }
         let routes: [ShutoRouteRecommendation]
         if let parkingID = resolvedDestination.parkingAreaID {
           routes = planner.recommend(from: resolvedOrigin.coordinate, destinationParkingAreaID: parkingID, preference: preference)
         } else {
           routes = try planner.recommend(from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate, preference: preference)
         }
-        guard !routes.isEmpty else {
-          throw WholeShutoProductError.noExpresswayRoute
-        }
         let evaluation: WholeShutoRouteChoiceEvaluation
-        if resolvedDestination.parkingAreaID != nil {
+        if isParkingDestination || routes.isEmpty {
           evaluation = .init(recommendations: routes, surfaceRoutesByRoutePlanID: [:], usesComparableProviderMetrics: false)
         } else {
           evaluation = await routeChoiceEvaluator.evaluate(
@@ -3280,8 +3297,36 @@ final class WholeShutoProductModel: ObservableObject {
           destination: resolvedDestination.coordinate
         )
         }
+        let providerRoutes = await providerRoutesTask.value
+        guard !routes.isEmpty || !providerRoutes.isEmpty else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
         origin = resolvedOrigin
         destination = resolvedDestination
+        // A PA ends inside the parking area, which only a Kaido route
+        // reaches; every other place lists all the ways there first. With no
+        // provider route (offline) the list would only repeat review's cards.
+        guard isParkingDestination || providerRoutes.isEmpty else {
+          destinationRouteChoice = Self.destinationRouteChoice(
+            destination: resolvedDestination, evaluation: evaluation, providerRoutes: providerRoutes)
+          mapMode = .geographic
+          return
+        }
+        enterKaidoReview(evaluation: evaluation, origin: resolvedOrigin, destination: resolvedDestination)
+      } catch {
+        failureCode = Self.failureCode(error)
+      }
+    }
+  }
+
+  /// Continues a chosen Kaido route into the parked review, as planning did
+  /// before the route list existed.
+  private func enterKaidoReview(
+    evaluation: WholeShutoRouteChoiceEvaluation,
+    origin resolvedOrigin: WholeShutoPlace,
+    destination resolvedDestination: WholeShutoPlace,
+    selectedIndex: Int = 0
+  ) {
         recommendations = evaluation.recommendations
         routeChoiceSurfaceRoutesByRoutePlanID =
           evaluation.surfaceRoutesByRoutePlanID
@@ -3293,24 +3338,82 @@ final class WholeShutoProductModel: ObservableObject {
               evaluation.surfaceRoutesByRoutePlanID
           )
           : [:]
-        selectedRecommendationIndex = 0
+        selectedRecommendationIndex = selectedIndex
         clearCustomRouteSelection()
         clearCircuitRouteSelection()
         clearCircuitPlanningDraft()
         phase = .review
         progressFraction = 0
-        if !applyCachedSurfaceRoutes(for: evaluation.recommendations[0]) {
+        if !applyCachedSurfaceRoutes(for: evaluation.recommendations[selectedIndex]) {
           resolveSurfaceRoutes(
-            for: evaluation.recommendations[0],
+            for: evaluation.recommendations[selectedIndex],
             origin: resolvedOrigin,
             destination: resolvedDestination
           )
         }
         persistCheckpoint()
-      } catch {
-        failureCode = Self.failureCode(error)
+  }
+
+  /// Every way to the place, fastest first. A provider route that drives a
+  /// Kaido route's exact path is that Kaido route: it is listed once, as
+  /// Kaido (which guides its junctions), with the provider's traffic-aware
+  /// time. A Kaido route timed only in part goes after the timed ones.
+  static func destinationRouteChoice(
+    destination: WholeShutoPlace,
+    evaluation: WholeShutoRouteChoiceEvaluation,
+    providerRoutes: [WholeShutoSurfaceRoute]
+  ) -> DestinationRouteChoice {
+    var unmatchedProviderRoutes = providerRoutes
+    var kaidoOptions: [DestinationRouteOption] = []
+    for (index, recommendation) in evaluation.recommendations.enumerated() {
+      let route = recommendation.route
+      let legs = evaluation.surfaceRoutesByRoutePlanID[route.routePlan.id]
+      let path = (legs?.access.coordinates ?? []) + route.coordinates + (legs?.egress.coordinates ?? [])
+      var seconds: Double?
+      var meters: Double?
+      if let legs {
+        let metrics = routeChoiceMetrics(for: route, accessRoute: legs.access, egressRoute: legs.egress)
+        seconds = metrics.expectedTravelTimeSeconds
+        meters = metrics.totalDistanceMeters
+        if let match = unmatchedProviderRoutes.firstIndex(where: {
+          WholeShutoExpresswayTimingMatch.accepts(
+            candidate: $0.coordinates, candidateDistanceMeters: $0.distanceMeters,
+            usesExpressway: $0.hasHighways == true,
+            path: path, pathDistanceMeters: metrics.totalDistanceMeters)
+        }) {
+          seconds = unmatchedProviderRoutes[match].expectedTravelTimeSeconds
+          unmatchedProviderRoutes.remove(at: match)
+        }
       }
+      kaidoOptions.append(
+        DestinationRouteOption(
+          id: "kaido:\(route.routePlan.id)",
+          source: .kaido(recommendationIndex: index),
+          travelSeconds: seconds,
+          distanceMeters: meters,
+          roads: .kaido(
+            routeIDs: route.routeIDsInOrder, entryNameJA: route.entryFacility.nameJA,
+            exitNameJA: route.exitFacility?.nameJA ?? ""),
+          coordinates: path))
     }
+    let providerOptions = unmatchedProviderRoutes.enumerated().map { index, route in
+      DestinationRouteOption(
+        id: "provider:\(index)",
+        source: .provider(route),
+        travelSeconds: route.expectedTravelTimeSeconds,
+        distanceMeters: route.distanceMeters,
+        roads: .provider(usesExpressway: route.hasHighways == true, name: route.name),
+        coordinates: route.coordinates)
+    }
+    let timed = (providerOptions + kaidoOptions.filter { $0.travelSeconds != nil })
+      .sorted { ($0.travelSeconds ?? 0) < ($1.travelSeconds ?? 0) }
+    let options = Array((timed + kaidoOptions.filter { $0.travelSeconds == nil })
+      .prefix(destinationRouteOptionLimit))
+    return DestinationRouteChoice(
+      destination: destination, options: options,
+      recommendations: evaluation.recommendations,
+      surfaceRoutesByRoutePlanID: evaluation.surfaceRoutesByRoutePlanID,
+      usesComparableProviderMetrics: evaluation.usesComparableProviderMetrics)
   }
 
   func selectRecommendation(at index: Int) {
@@ -6135,10 +6238,62 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .idle
   }
 
+  func selectDestinationRoute(at index: Int) {
+    guard destinationRouteChoice?.options.indices.contains(index) == true else { return }
+    destinationRouteChoice?.selectedIndex = index
+  }
+
+  func cancelDestinationRouteChoice() {
+    destinationRouteChoice = nil
+  }
+
+  /// Goes with the selected way: a provider route starts its drive now; a
+  /// Kaido route continues into the parked review before any drive.
+  func goWithDestinationRoute() {
+    guard phase == .planning, providerDrive == nil, let choice = destinationRouteChoice,
+      let origin, let destination
+    else { return }
+    switch choice.selectedOption.source {
+    case .provider(let route):
+      startProviderDrive(route: route, destination: choice.destination)
+    case .kaido(let index):
+      destinationRouteChoice = nil
+      enterKaidoReview(
+        evaluation: WholeShutoRouteChoiceEvaluation(
+          recommendations: choice.recommendations,
+          surfaceRoutesByRoutePlanID: choice.surfaceRoutesByRoutePlanID,
+          usesComparableProviderMetrics: choice.usesComparableProviderMetrics),
+        origin: origin, destination: destination, selectedIndex: index)
+    }
+  }
+
+  private func startProviderDrive(route: WholeShutoSurfaceRoute, destination: WholeShutoPlace) {
+    let drive = ProviderGuidedDriveModel(
+      route: route,
+      destination: destination,
+      resolver: surfaceRouteResolver,
+      source: liveLocationSource ?? CoreLocationForegroundNavigationSource(),
+      speechOutput: speechOutput,
+      speechMode: speechMode,
+      voiceLocale: { [languageSelectionProvider] in languageSelectionProvider().guidanceVoiceLocale })
+    destinationRouteChoice = nil
+    providerDrive = drive
+    drive.start()
+  }
+
+  /// Ends the provider-guided drive, arrived or not, and returns home.
+  func finishProviderDrive() {
+    providerDrive?.end()
+    providerDrive = nil
+    clearDestinationPreview()
+    destinationQuery = ""
+  }
+
   func setSpeechMode(_ mode: GuidanceSpeechMode) {
     speechMode = mode
     driveRecordPreferenceStore.set(mode.rawValue, forKey: Self.speechModeDefaultsKey)
     speechCoordinator?.setMode(mode)
+    providerDrive?.setSpeechMode(mode)
     if mode == .muted {
       // A notice held back while muted would be spoken as news on unmute.
       pendingNotice = nil
@@ -7213,12 +7368,12 @@ final class WholeShutoProductModel: ObservableObject {
     return nil
   }
 
-  private struct SurfaceRouteMeasurement {
+  struct SurfaceRouteMeasurement {
     let fractionAlongRoute: Double
     let lateralDistanceMeters: Double
   }
 
-  private static func surfaceRouteMeasurement(
+  static func surfaceRouteMeasurement(
     _ point: ShutoCoordinate,
     along coordinates: [ShutoCoordinate]
   ) -> SurfaceRouteMeasurement? {
@@ -7862,7 +8017,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
   }
 
-  private nonisolated static func distance(
+  nonisolated static func distance(
     _ first: ShutoCoordinate,
     _ second: ShutoCoordinate
   ) -> Double {

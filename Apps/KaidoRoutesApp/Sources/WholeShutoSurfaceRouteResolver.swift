@@ -28,6 +28,13 @@ protocol WholeShutoSurfaceRouteResolving: Sendable {
     along path: [ShutoCoordinate],
     distanceMeters: Double
   ) async -> Double?
+
+  /// The provider's own door-to-door routes, fastest first, for a drive it
+  /// guides end to end. Expressways are allowed; nothing here is Kaido's.
+  func providerRoutes(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> [WholeShutoSurfaceRoute]
 }
 
 extension WholeShutoSurfaceRouteResolving {
@@ -36,6 +43,13 @@ extension WholeShutoSurfaceRouteResolving {
     distanceMeters: Double
   ) async -> Double? {
     nil
+  }
+
+  func providerRoutes(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> [WholeShutoSurfaceRoute] {
+    []
   }
 }
 
@@ -248,6 +262,27 @@ struct WholeShutoMapKitSurfaceRouteResolver:
     }
   }
 
+  func providerRoutes(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> [WholeShutoSurfaceRoute] {
+    let request = MKDirections.Request()
+    request.source = Self.mapItem(origin)
+    request.destination = Self.mapItem(destination)
+    request.transportType = .automobile
+    request.requestsAlternateRoutes = true
+    do {
+      let response = try await MKDirections(request: request).calculate()
+      return response.routes.compactMap(Self.surfaceRoute).sorted(by: Self.isFaster)
+    } catch {
+      let nsError = error as NSError
+      Self.logger.error(
+        "MapKit provider routes failed: domain=\(nsError.domain, privacy: .public) code=\(nsError.code)"
+      )
+      return []
+    }
+  }
+
   func route(
     from origin: ShutoCoordinate,
     to destination: ShutoCoordinate
@@ -391,7 +426,8 @@ struct WholeShutoMapKitSurfaceRouteResolver:
         Locale.preferredLanguages.first ?? Locale.current.identifier
       ),
       hasHighways: route.hasHighways,
-      hasTolls: route.hasTolls
+      hasTolls: route.hasTolls,
+      name: route.name.isEmpty ? nil : route.name
     )
   }
 
@@ -434,6 +470,32 @@ struct WholeShutoPreviewSurfaceRouteResolver:
   WholeShutoSurfaceRouteResolving,
   Sendable
 {
+  /// Whether the provider also offers its own door-to-door route, so the
+  /// route list and the provider-guided drive can be exercised offline.
+  var offersProviderRoutes = false
+
+  func providerRoutes(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> [WholeShutoSurfaceRoute] {
+    guard offersProviderRoutes else { return [] }
+    let distance = WholeShutoProductModel.distance(origin, destination)
+    return [
+      WholeShutoSurfaceRoute(
+        coordinates: [origin, destination],
+        distanceMeters: distance,
+        expectedTravelTimeSeconds: distance / 12,
+        instructions: ["そのまま直進してください", "目的地に到着します"],
+        steps: [
+          .init(instruction: "そのまま直進してください", distanceMeters: distance * 0.8),
+          .init(instruction: "目的地に到着します", distanceMeters: distance * 0.2),
+        ],
+        guidanceLanguageCode: "ja-JP",
+        hasHighways: false,
+        name: "国道15号")
+    ]
+  }
+
   func route(
     from origin: ShutoCoordinate,
     to destination: ShutoCoordinate

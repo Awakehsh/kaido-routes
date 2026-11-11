@@ -10,7 +10,11 @@
 - The home experience is route-first: the user chooses the route experience
   (route family, saved route, template, or exact custom route) before anything
   else. Destination search is an optional continuation of a journey, never the
-  primary entry point.
+  primary entry point. A searched place lists every way there, fastest first:
+  Kaido routes and the map provider's own door-to-door routes, without
+  naming who guides them. A provider route is a secondary, provider-guided
+  drive with no Kaido `RoutePlan`; a Kaido route continues into the parked
+  review.
 - After the user chooses a route, the product recommends direction-valid
   entrances reachable from the current origin and shows the tariff band of
   each entrance/exit pairing from dated tariff evidence. The Shuto tariff uses

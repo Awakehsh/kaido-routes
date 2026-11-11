@@ -41,6 +41,7 @@
         "KaidoProductJourneyUITests/testWholeShutoC2RecommendedRouteExposesLiveNavigation()",
         "KaidoProductJourneyUITests/testWholeShutoLongSurfaceAccessExposesLiveNavigation()",
         "KaidoProductJourneyUITests/testWholeShutoSettingsSwitchHighwayPreference()",
+        "ProviderGuidedDriveUITests/testPlaceListsEveryWayAndAProviderRouteDrivesWithoutReview()",
         "RouteExperienceUITests/testDayAndNightCatalogExposeRouteReferences()"
       ],
       "target" : {

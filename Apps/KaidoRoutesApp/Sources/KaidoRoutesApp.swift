@@ -1,4 +1,5 @@
 import AppIntents
+import CoreLocation
 import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
@@ -532,6 +533,30 @@ private struct WholeShutoPlanningLocationQualificationHost: View {
   }
 }
 
+/// One good fix at a fixed place, delivered when updates start.
+@MainActor
+private final class PreviewStationaryLocationSource: ForegroundNavigationLocationSource {
+  weak var delegate: (any ForegroundNavigationLocationSourceDelegate)?
+  let authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
+  let accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+  let supportsBackgroundNavigation = true
+  private let coordinate: CLLocationCoordinate2D
+
+  init(latitude: Double, longitude: Double) {
+    coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+  }
+
+  func requestWhenInUseAuthorization() {}
+  func setBackgroundNavigationEnabled(_ enabled: Bool) {}
+  func stopUpdatingLocation() {}
+  func startUpdatingLocation() {
+    let fix = CLLocation(
+      coordinate: coordinate, altitude: 0, horizontalAccuracy: 8, verticalAccuracy: 8,
+      timestamp: Date())
+    delegate?.foregroundNavigationLocationSource(self, didDeliver: [fix], receivedAt: Date())
+  }
+}
+
 private struct WholeShutoSearchPreviewHost: View {
   @StateObject private var model: WholeShutoProductModel
   @StateObject private var planningLocation:
@@ -540,9 +565,17 @@ private struct WholeShutoSearchPreviewHost: View {
 
   init() {
     let coordinate = WholeShutoSearchPreviewLocationProvider.coordinate
+    let offersProviderRoutes = ProcessInfo.processInfo.arguments.contains("-WHOLE-SHUTO-PROVIDER-ROUTES")
     let model = WholeShutoProductModel(
       locationProvider: WholeShutoSearchPreviewLocationProvider(),
-      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(
+        offersProviderRoutes: offersProviderRoutes),
+      checkpointStore: nil,
+      // The provider drive starts where the preview origin is, not wherever
+      // the simulator's own location was last left.
+      liveLocationSource: offersProviderRoutes
+        ? PreviewStationaryLocationSource(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        : nil
     )
     _model = StateObject(wrappedValue: model)
     _planningLocation = StateObject(
@@ -623,7 +656,9 @@ private struct WholeShutoLocationDeniedPreviewHost: View {
   @StateObject private var placeSearch: WholeShutoPlaceSearchController
 
   init() {
-    let model = WholeShutoProductModel(checkpointStore: nil)
+    // Offline legs: a preview never asks the live map provider for routes.
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil)
     _model = StateObject(wrappedValue: model)
     _planningLocation = StateObject(
       wrappedValue: WholeShutoPlanningLocationController(

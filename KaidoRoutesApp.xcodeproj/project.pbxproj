@@ -42,7 +42,9 @@
 		2FDD37296E5C36302AAC3131 /* InternalLocationCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */; };
 		31C81EB5F6310D33857A24E1 /* KRU03CorridorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */; };
 		3213A36BC77158EC02718D91 /* KaidoProductJourneyModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F718989C373E79DA78630D0D /* KaidoProductJourneyModelTests.swift */; };
+		32D6B5BF6FC711D7DAFDBC6B /* ProviderGuidedDriveModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD693C6D344A29796C3CEA09 /* ProviderGuidedDriveModelTests.swift */; };
 		33EF4E841901D5FAF06FAA3A /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = F6D107CACC8069B94271861D /* AppShortcuts.strings */; };
+		3451E3AA981222F5126921C8 /* ProviderGuidedDriveUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F02E23FA51552E7E3BAE532 /* ProviderGuidedDriveUITests.swift */; };
 		3641C28B72CFED6ED01D8DF9 /* UnitTestAppStateReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19CBDA5BD1B96ACAFD3A8219 /* UnitTestAppStateReset.swift */; };
 		364EAB2BE5288A7F6CAF6CAB /* PreDriveReviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */; };
 		36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = 3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */; };
@@ -120,6 +122,7 @@
 		A4403E2DF2EA7FD89A6F97ED /* GuidanceControlsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0357DEB3CA3D2F53A7817985 /* GuidanceControlsUITests.swift */; };
 		A6E9B00C43F28C3DA3146446 /* PreDriveEvidenceUpdateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655F7EDB9CF7F8649877603D /* PreDriveEvidenceUpdateModel.swift */; };
 		A796FFDE16198C1790E8651F /* WholeShutoRouteReleaseAuthority.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEDDE7ACC5CECB2CA20F0254 /* WholeShutoRouteReleaseAuthority.swift */; };
+		A86BBA9BDE2015AC928323CA /* ProviderGuidedDrive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C00BBE4397D2E4FD7B0A36 /* ProviderGuidedDrive.swift */; };
 		A86BC9CA33D0CA93A2A62965 /* GuidanceLanguagePreviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */; };
 		A88661D038F4E0054F18A0AA /* KaidoRoutesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */; };
 		AF9AAC7098C384C0C7993A29 /* EntranceRecommendationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F565A001D9C74EA1175DCEC8 /* EntranceRecommendationModel.swift */; };
@@ -161,6 +164,7 @@
 		EB9E33B1837B9E11C01BE548 /* KaidoPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 55CA08F012ED78E3B6403A9D /* KaidoPresentation */; };
 		EDAC0E9181F85ED0E70DA712 /* ProductNavigationRuntimeModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */; };
 		EE2095C8B683BEBA65A3BC25 /* SyntheticDrivingPreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */; };
+		EE20A93A01BAC7628EB9F76B /* ProviderGuidedDriveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C071FFDC8F2DCADB9C8674D /* ProviderGuidedDriveView.swift */; };
 		EEE6CCFA40BA99EB8F3A1852 /* RouteAtlasAttribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4860344042C17F616B51F445 /* RouteAtlasAttribution.swift */; };
 		F0BDB7C776E286F447A5A8D2 /* WholeShutoJourneyReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */; };
 		F3E06774C793B38335B1BD85 /* PlacePhotoBundleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74DF3BB26DA09F15B47FDF6 /* PlacePhotoBundleTests.swift */; };
@@ -276,6 +280,7 @@
 		79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationView.swift; sourceTree = "<group>"; };
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
 		7E536909E02D59C5C1ABBE65 /* ReleaseStackJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseStackJourneyUITests.swift; sourceTree = "<group>"; };
+		7F02E23FA51552E7E3BAE532 /* ProviderGuidedDriveUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderGuidedDriveUITests.swift; sourceTree = "<group>"; };
 		7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModel.swift; sourceTree = "<group>"; };
 		808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		81A8B0425C0CC1F8FA065C1E /* ReleasedProductRouteAuthoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductRouteAuthoringView.swift; sourceTree = "<group>"; };
@@ -286,6 +291,7 @@
 		86BAF8B0C5A1D6000D85903F /* ReleasedRouteEditorAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedRouteEditorAdapter.swift; sourceTree = "<group>"; };
 		88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutes.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C071FFDC8F2DCADB9C8674D /* ProviderGuidedDriveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderGuidedDriveView.swift; sourceTree = "<group>"; };
 		8DBD99A4C0E565B9348ADFA4 /* WholeShutoDriveRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoDriveRecord.swift; sourceTree = "<group>"; };
 		92238A03BB59E6CCA5CADE8D /* AppGuidanceSpeechOutputFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGuidanceSpeechOutputFactory.swift; sourceTree = "<group>"; };
 		93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModelTests.swift; sourceTree = "<group>"; };
@@ -311,6 +317,7 @@
 		BDCE7C8BB4AC641AC2D81189 /* KaidoMapPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoMapPalette.swift; sourceTree = "<group>"; };
 		BE76289EC570C8F9B8864AE7 /* WholeShutoJourneyEndingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoJourneyEndingView.swift; sourceTree = "<group>"; };
 		BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoPlaceSearchTests.swift; sourceTree = "<group>"; };
+		C0C00BBE4397D2E4FD7B0A36 /* ProviderGuidedDrive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderGuidedDrive.swift; sourceTree = "<group>"; };
 		C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewView.swift; sourceTree = "<group>"; };
 		C68D697CA5443959E84E8E3A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C836965E12C990BA77B852C6 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -350,6 +357,7 @@
 		FB1E682A168C4207E6C5957A /* AppSafetyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyState.swift; sourceTree = "<group>"; };
 		FC391ECE79DA9EEFC6D198F0 /* SyntheticProductRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeTests.swift; sourceTree = "<group>"; };
 		FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "synthetic-product-runtime-preview.json"; sourceTree = "<group>"; };
+		FD693C6D344A29796C3CEA09 /* ProviderGuidedDriveModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderGuidedDriveModelTests.swift; sourceTree = "<group>"; };
 		FDF76A2AF30C8BE1D54E3CE1 /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json"; path = "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json"; sourceTree = "<group>"; };
 		FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveEvidenceUpdateModelTests.swift; sourceTree = "<group>"; };
 		FEDDE7ACC5CECB2CA20F0254 /* WholeShutoRouteReleaseAuthority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoRouteReleaseAuthority.swift; sourceTree = "<group>"; };
@@ -429,6 +437,7 @@
 				E0933E1161E416A3A2A7E290 /* ProductMapPresentationTests.swift */,
 				A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */,
 				9D3A347D84B33D5AAB7D8743 /* ProductPrivacyDisclosureTests.swift */,
+				FD693C6D344A29796C3CEA09 /* ProviderGuidedDriveModelTests.swift */,
 				193FEF08FEDD2E8F7ACBE3D3 /* ReleasedPreDriveReviewAdapterTests.swift */,
 				4F89A1B8C8651E1A2BF58930 /* ReleasedProductRouteAuthoringModelTests.swift */,
 				108FBFE290E9B9049C3FF6EA /* ReleasedProductTestSupport.swift */,
@@ -524,6 +533,7 @@
 				A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */,
 				B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */,
 				67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */,
+				7F02E23FA51552E7E3BAE532 /* ProviderGuidedDriveUITests.swift */,
 				7E536909E02D59C5C1ABBE65 /* ReleaseStackJourneyUITests.swift */,
 				F696441576DF5372272A07E3 /* RouteAtlasAttributionUITests.swift */,
 				5DC47F9C0741F7D959EA38B5 /* RouteExperienceUITests.swift */,
@@ -589,6 +599,8 @@
 				44252DA4C7228D8FF042990B /* ProductNavigationRuntimeModel.swift */,
 				4B612524090282FD210010B6 /* ProductPrivacyDisclosure.swift */,
 				4D732025FBD031E83CAF8F68 /* ProductRuntimeDrivingSurface.swift */,
+				C0C00BBE4397D2E4FD7B0A36 /* ProviderGuidedDrive.swift */,
+				8C071FFDC8F2DCADB9C8674D /* ProviderGuidedDriveView.swift */,
 				CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */,
 				F4A724BED8E00B81DE3BD2B1 /* ReleasedProductNavigationView.swift */,
 				65155C1FCDF19DFFDA69ED9F /* ReleasedProductRouteAuthoringModel.swift */,
@@ -812,6 +824,7 @@
 				45563D5723E68ACEC71B4E62 /* ProductMapPresentationTests.swift in Sources */,
 				EDAC0E9181F85ED0E70DA712 /* ProductNavigationRuntimeModelTests.swift in Sources */,
 				C761E584BB6922A734653C9E /* ProductPrivacyDisclosureTests.swift in Sources */,
+				32D6B5BF6FC711D7DAFDBC6B /* ProviderGuidedDriveModelTests.swift in Sources */,
 				B087ACB7F5432F2A1715587A /* ReleasedPreDriveReviewAdapterTests.swift in Sources */,
 				058EB4C464380023B2A869AC /* ReleasedProductRouteAuthoringModelTests.swift in Sources */,
 				4565008A387473050BEB433A /* ReleasedProductTestSupport.swift in Sources */,
@@ -843,6 +856,7 @@
 				B49B9BD3E9BFE10360C5D215 /* KaidoProductJourneyUITests.swift in Sources */,
 				E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */,
 				B7269CF47D7E3EB171FA9147 /* ProductRuntimePreviewUITests.swift in Sources */,
+				3451E3AA981222F5126921C8 /* ProviderGuidedDriveUITests.swift in Sources */,
 				B01A8500DD60FD96F78B8726 /* ReleaseStackJourneyUITests.swift in Sources */,
 				378B198A2A9A48CCAF7D826F /* RouteAtlasAttributionUITests.swift in Sources */,
 				9C228CFD1D027B401F4B8B48 /* RouteExperienceUITests.swift in Sources */,
@@ -899,6 +913,8 @@
 				396FFA77C5442A8DDD55DC39 /* ProductNavigationRuntimeModel.swift in Sources */,
 				0916DE415E44498B53599BD9 /* ProductPrivacyDisclosure.swift in Sources */,
 				909E7D0B346C9262E90C031C /* ProductRuntimeDrivingSurface.swift in Sources */,
+				A86BBA9BDE2015AC928323CA /* ProviderGuidedDrive.swift in Sources */,
+				EE20A93A01BAC7628EB9F76B /* ProviderGuidedDriveView.swift in Sources */,
 				4E417044D493DCB7948A36CA /* ReleasedPreDriveReviewAdapter.swift in Sources */,
 				044E1C5C296038C10575ECC8 /* ReleasedProductNavigationView.swift in Sources */,
 				46B325E66996D8EE0A22F3C6 /* ReleasedProductRouteAuthoringModel.swift in Sources */,

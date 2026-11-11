@@ -144,8 +144,10 @@ The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 
 ## Non-goals for the first implementation
 
-- generic door-to-door navigation for all Japanese roads beyond the bounded
-  access and egress legs of a supported Kaido journey;
+- Kaido-authored door-to-door navigation for all Japanese roads beyond the
+  bounded access and egress legs of a supported Kaido journey. A searched
+  place may still be driven on the map provider's own route, guided end to
+  end by the provider; that drive carries no Kaido route authority;
 - live traffic redistribution without licensed data;
 - guaranteed toll or PA availability;
 - crowd rendezvous or event coordination at parking areas;

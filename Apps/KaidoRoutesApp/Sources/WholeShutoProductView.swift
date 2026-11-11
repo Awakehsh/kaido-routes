@@ -2657,47 +2657,78 @@ struct WholeShutoProductView: View {
   }
 
   /// The destination is an optional continuation after route choice, so the
-  /// search composer stays collapsed behind this divider by default.
+  /// search composer stays collapsed by default. Collapsed, the entry looks
+  /// like the search field it opens, so a place search reads as available;
+  /// open, it shrinks to a divider that folds the composer away again.
   private var optionalDestinationDivider: some View {
     Button {
       showsDestinationComposer.toggle()
       if !showsDestinationComposer {
         focusedPlanningField = nil
         placeSearch.dismissResults()
-      } else if planningLocation.snapshot == nil {
-        // Suggestions are ranked around the driver, so measure while they type.
-        planningLocation.requestCurrentLocation()
+      } else {
+        focusedPlanningField = .destination
+        if planningLocation.snapshot == nil {
+          // Suggestions are ranked around the driver, so measure while they type.
+          planningLocation.requestCurrentLocation()
+        }
       }
     } label: {
-      HStack(spacing: 8) {
-        Rectangle()
-          .fill(KaidoInk.divider)
-          .frame(height: 1)
-        Text(
-          copy.resolve(
-            japanese: "または目的地へ",
-            simplifiedChinese: "或者：去一个地方",
-            english: "OR GO SOMEWHERE"
+      if showsDestinationComposer {
+        HStack(spacing: 8) {
+          Rectangle()
+            .fill(KaidoInk.divider)
+            .frame(height: 1)
+          Image(systemName: "chevron.up")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.secondary)
+          Rectangle()
+            .fill(KaidoInk.divider)
+            .frame(height: 1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .contentShape(Rectangle())
+      } else {
+        HStack(spacing: 10) {
+          Image(systemName: "magnifyingglass")
+            .font(.system(size: 15, weight: .bold))
+            .foregroundStyle(KaidoInk.accentWarm)
+          Text(
+            copy.resolve(
+              japanese: "行き先を検索",
+              simplifiedChinese: "搜索目的地",
+              english: "Search destination"
+            )
           )
-        )
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(.secondary)
-        .fixedSize()
-        Image(
-          systemName: showsDestinationComposer
-            ? "chevron.up" : "chevron.down"
-        )
-        .font(.system(size: 9, weight: .bold))
-        .foregroundStyle(.secondary)
-        Rectangle()
-          .fill(KaidoInk.divider)
-          .frame(height: 1)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(KaidoInk.textPrimary)
+          .lineLimit(1)
+          Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, minHeight: 52)
+        .background(KaidoInk.surfaceRaised.opacity(0.94))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay {
+          RoundedRectangle(cornerRadius: 12)
+            .stroke(KaidoInk.divider, lineWidth: 1)
+        }
+        .contentShape(Rectangle())
       }
-      .frame(maxWidth: .infinity, minHeight: 44)
-      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
     .contentShape(Rectangle())
+    .accessibilityLabel(
+      showsDestinationComposer
+        ? copy.resolve(
+          japanese: "行き先の検索を閉じる",
+          simplifiedChinese: "收起目的地搜索",
+          english: "Close destination search")
+        : copy.resolve(
+          japanese: "行き先を検索",
+          simplifiedChinese: "搜索目的地",
+          english: "Search destination")
+    )
     .accessibilityIdentifier("whole-shuto-destination-toggle")
   }
 

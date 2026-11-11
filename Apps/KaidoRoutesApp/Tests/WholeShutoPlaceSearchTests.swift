@@ -143,6 +143,126 @@ final class WholeShutoPlaceSearchTests: XCTestCase {
     XCTAssertEqual(selected.parkingAreaID, "daikoku")
   }
 
+  func testTypingAppendsCompletionsAfterBundledMatchesWithoutSubmit() async throws {
+    let facility = WholeShutoPlaceSuggestion(id: "ginza-ic", title: "銀座 IC", subtitle: "C1", isShutoFacility: true)
+    let store = WholeShutoPlaceSuggestion(id: "completion:store", title: "銀座三越", subtitle: "中央区銀座")
+    var queries: [String] = []
+    let controller = WholeShutoPlaceSearchController(
+      localPlaces: [(facility, tokyoTower)],
+      completePlaces: { query, near in
+        queries.append(query)
+        XCTAssertEqual(near, self.tokyoTower.coordinate)
+        return [store, WholeShutoPlaceSuggestion(id: "completion:ic", title: "銀座IC", subtitle: "")]
+      },
+      resolveCompletion: { suggestion in
+        XCTAssertEqual(suggestion, store)
+        return self.tokyoTower
+      },
+      completionDelay: .zero)
+
+    controller.update(query: "銀座", near: tokyoTower.coordinate)
+    XCTAssertEqual(controller.suggestions, [facility])
+
+    try await waitUntil { controller.suggestions.count == 2 }
+    XCTAssertEqual(queries, ["銀座"])
+    XCTAssertEqual(controller.suggestions, [facility, store])
+    XCTAssertEqual(controller.state, .results)
+    let place = try await controller.resolve(store)
+    XCTAssertEqual(place, tokyoTower)
+    XCTAssertEqual(controller.selectedSuggestion, store)
+    XCTAssertTrue(controller.suggestions.isEmpty)
+  }
+
+  func testEditedQueryDiscardsAnOlderCompletion() async throws {
+    var answers: [String: CheckedContinuation<[WholeShutoPlaceSuggestion], any Error>] = [:]
+    let controller = WholeShutoPlaceSearchController(
+      completePlaces: { query, _ in try await withCheckedThrowingContinuation { answers[query] = $0 } },
+      resolveCompletion: { _ in self.tokyoTower },
+      completionDelay: .zero)
+
+    controller.update(query: "中華", near: nil)
+    XCTAssertEqual(controller.state, .searching)
+    try await waitUntil { answers["中華"] != nil }
+    controller.update(query: "中華街", near: nil)
+    try await waitUntil { answers["中華街"] != nil }
+    answers["中華"]?.resume(returning: [WholeShutoPlaceSuggestion(id: "old", title: "中華料理", subtitle: "")])
+    answers["中華街"]?.resume(returning: [WholeShutoPlaceSuggestion(id: "new", title: "横浜中華街", subtitle: "")])
+
+    try await waitUntil { !controller.suggestions.isEmpty }
+    XCTAssertEqual(controller.suggestions.map(\.id), ["new"])
+  }
+
+  func testSubmittedSearchReplacesPendingCompletion() async throws {
+    var completionCalls = 0
+    let place = WholeShutoPlace(title: "横浜中華街", coordinate: tokyoTower.coordinate)
+    let controller = WholeShutoPlaceSearchController(
+      searchPlaces: { _, _ in [(WholeShutoPlaceSuggestion(id: "search", title: "横浜中華街", subtitle: ""), place)] },
+      completePlaces: { _, _ in
+        completionCalls += 1
+        return [WholeShutoPlaceSuggestion(id: "completion", title: "横浜中華街", subtitle: "")]
+      },
+      resolveCompletion: { _ in place },
+      completionDelay: .milliseconds(50))
+
+    await controller.search(query: "中華街", near: nil)
+    try await Task.sleep(for: .milliseconds(150))
+
+    XCTAssertEqual(completionCalls, 0)
+    XCTAssertEqual(controller.suggestions.map(\.id), ["search"])
+  }
+
+  func testPendingCompletionLookupIsDiscardedByEditOrAnotherPick() async throws {
+    let first = WholeShutoPlaceSuggestion(id: "first", title: "横浜中華街", subtitle: "")
+    let second = WholeShutoPlaceSuggestion(id: "second", title: "元町", subtitle: "")
+    var lookups: [String: CheckedContinuation<WholeShutoPlace, any Error>] = [:]
+    let controller = WholeShutoPlaceSearchController(
+      completePlaces: { _, _ in [first, second] },
+      resolveCompletion: { suggestion in
+        try await withCheckedThrowingContinuation { lookups[suggestion.id] = $0 }
+      },
+      completionDelay: .zero)
+
+    controller.update(query: "中華", near: nil)
+    try await waitUntil { controller.suggestions.count == 2 }
+    let edited = Task { try await controller.resolve(first) }
+    try await waitUntil { lookups["first"] != nil }
+    controller.update(query: "中華街", near: nil)
+    lookups["first"]?.resume(returning: tokyoTower)
+    await XCTAssertThrowsErrorAsync { try await edited.value }
+    XCTAssertNil(controller.selectedSuggestion)
+    try await waitUntil { controller.suggestions.count == 2 }
+
+    let superseded = Task { try await controller.resolve(first) }
+    try await waitUntil { lookups["first"] != nil }
+    let chosen = Task { try await controller.resolve(second) }
+    try await waitUntil { lookups["second"] != nil }
+    lookups["first"]?.resume(returning: tokyoTower)
+    await XCTAssertThrowsErrorAsync { try await superseded.value }
+    let motomachi = WholeShutoPlace(title: "元町", coordinate: .init(latitude: 35.44, longitude: 139.65))
+    lookups["second"]?.resume(returning: motomachi)
+    let place = try await chosen.value
+    XCTAssertEqual(place, motomachi)
+    XCTAssertEqual(controller.selectedSuggestion, second)
+  }
+
+  private func XCTAssertThrowsErrorAsync(
+    _ body: () async throws -> some Any, file: StaticString = #filePath, line: UInt = #line
+  ) async {
+    do {
+      _ = try await body()
+      XCTFail("Expected an error", file: file, line: line)
+    } catch {}
+  }
+
+  private func waitUntil(
+    _ condition: @MainActor () -> Bool, file: StaticString = #filePath, line: UInt = #line
+  ) async throws {
+    for _ in 0..<200 where !condition() {
+      try await Task.sleep(for: .milliseconds(5))
+    }
+    XCTAssertTrue(condition(), file: file, line: line)
+  }
+
   private func makeController() -> WholeShutoPlaceSearchController {
     WholeShutoPlaceSearchController(
       previewPlaces: [

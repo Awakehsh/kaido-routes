@@ -105,10 +105,15 @@ survives only inside the advanced custom entry.
 The origin chip uses current location only after explicit permission. It also
 supports a manually entered origin and previously selected origins. If
 permission is denied, saved and manually selected routes remain available.
-Manual origin and destination fields share one completion surface. Exact
-directional ICs from the bundled snapshot appear before MapKit address and POI
-suggestions, keep their selected coordinate through planning, and remain
-available when MapKit completion is unavailable.
+Manual origin and destination fields share one completion surface. Suggestions
+appear while the driver types, without a search tap: exact directional ICs and
+PAs from the bundled snapshot first, then MapKit address and POI completions
+ranked around the measured location, which opening the place search starts
+measuring. Bundled facilities keep their selected coordinate through planning
+and remain available when MapKit completion is unavailable. While a field is
+being searched the route catalog steps aside so the suggestions sit above the
+keyboard. Choosing the place that completes the origin/destination pair finds
+routes at once; there is no separate Find routes tap on that path.
 Entrance recommendation reuses the measured coordinate shown by the origin
 chip. If a measurement is still pending, the recommendation action shows that
 it is locating and continues automatically when the coordinate arrives; it

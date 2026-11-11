@@ -220,6 +220,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let guidanceLanguageCode: String?
   let hasHighways: Bool?
   let hasTolls: Bool?
+  /// The provider's summary of the roads it uses, e.g. a national route.
+  let name: String?
 
   init(
     coordinates: [ShutoCoordinate],
@@ -229,7 +231,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     steps: [WholeShutoSurfaceRouteStep]? = nil,
     guidanceLanguageCode: String? = nil,
     hasHighways: Bool? = nil,
-    hasTolls: Bool? = nil
+    hasTolls: Bool? = nil,
+    name: String? = nil
   ) {
     self.coordinates = coordinates
     self.distanceMeters = distanceMeters
@@ -239,12 +242,42 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     self.guidanceLanguageCode = guidanceLanguageCode
     self.hasHighways = hasHighways
     self.hasTolls = hasTolls
+    self.name = name
   }
 }
 
 struct WholeShutoSurfaceRouteStep: Codable, Equatable, Sendable {
   let instruction: String
   let distanceMeters: Double
+}
+
+struct WholeShutoSurfaceStepProgress: Equatable {
+  let index: Int
+  let step: WholeShutoSurfaceRouteStep
+  let steps: [WholeShutoSurfaceRouteStep]
+  let remainingMeters: Double
+}
+
+extension WholeShutoSurfaceRoute {
+  /// The spoken step at a fraction of the route. MapKit steps carry no
+  /// maneuver coordinates, so progress walks their distances.
+  func stepProgress(atFraction fraction: Double) -> WholeShutoSurfaceStepProgress? {
+    guard let steps = steps?.filter({ !$0.instruction.isEmpty && $0.distanceMeters > 0 }),
+      !steps.isEmpty
+    else { return nil }
+    let total = steps.reduce(0) { $0 + $1.distanceMeters }
+    guard total > 0 else { return nil }
+    let traveled = min(total, max(0, fraction) * total)
+    var cursor = 0.0
+    for (index, step) in steps.enumerated() {
+      let end = cursor + step.distanceMeters
+      if traveled <= end {
+        return .init(index: index, step: step, steps: steps, remainingMeters: max(0, end - traveled))
+      }
+      cursor = end
+    }
+    return .init(index: steps.count - 1, step: steps[steps.count - 1], steps: steps, remainingMeters: 0)
+  }
 }
 
 struct WholeShutoRouteChoiceMetrics: Equatable, Sendable {
@@ -676,6 +709,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
   @Published private(set) var speechMode: GuidanceSpeechMode = .full
+  @Published private(set) var providerRouteChoice: ProviderRouteChoice?
+  @Published private(set) var providerDrive: ProviderGuidedDriveModel?
+  static let providerRouteChoiceLimit = 3
   private var audibleSpeechMode: GuidanceSpeechMode = .full
   @Published private(set) var speechVolume: GuidanceSpeechVolume = .loud
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
@@ -1466,37 +1502,9 @@ final class WholeShutoProductModel: ObservableObject {
       remainingMeters: Double
     )?
   {
-    guard let route = activeSurfaceRoute,
-      let steps = route.steps?.filter({
-        !$0.instruction.isEmpty && $0.distanceMeters > 0
-      }),
-      !steps.isEmpty
-    else {
-      return nil
+    activeSurfaceRoute?.stepProgress(atFraction: progressFraction).map {
+      (index: $0.index, step: $0.step, steps: $0.steps, remainingMeters: $0.remainingMeters)
     }
-    let total = steps.reduce(0) { $0 + $1.distanceMeters }
-    guard total > 0 else { return nil }
-    let traveled = min(total, max(0, progressFraction) * total)
-    var cursor = 0.0
-    for (index, step) in steps.enumerated() {
-      let end = cursor + step.distanceMeters
-      if traveled <= end {
-        return (
-          index: index,
-          step: step,
-          steps: steps,
-          remainingMeters: max(0, end - traveled)
-        )
-      }
-      cursor = end
-    }
-    guard let step = steps.last else { return nil }
-    return (
-      index: steps.count - 1,
-      step: step,
-      steps: steps,
-      remainingMeters: 0
-    )
   }
 
   var savedRouteTemplateParameters: [String: String] {
@@ -3028,6 +3036,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func clearDestinationPreview() {
     guard phase == .planning else { return }
+    providerRouteChoice = nil
     destination = nil
     selectedDestinationTitle = nil
   }
@@ -3248,6 +3257,7 @@ final class WholeShutoProductModel: ObservableObject {
   func planJourney() {
     guard !isPlanning else { return }
     journeyEnding = .destination
+    providerRouteChoice = nil
     cancelSurfaceRouteResolution()
     clearRouteChoiceEvaluation()
     accessRoute = nil
@@ -3268,6 +3278,20 @@ final class WholeShutoProductModel: ObservableObject {
           routes = try planner.recommend(from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate, preference: preference)
         }
         guard !routes.isEmpty else {
+          // No direction-valid Shuto route reaches this place; the map
+          // provider's own routes still can.
+          if resolvedDestination.parkingAreaID == nil {
+            let providerRoutes = await surfaceRouteResolver.providerRoutes(
+              from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate)
+            if !providerRoutes.isEmpty {
+              origin = resolvedOrigin
+              destination = resolvedDestination
+              providerRouteChoice = ProviderRouteChoice(
+                destination: resolvedDestination,
+                routes: Array(providerRoutes.prefix(Self.providerRouteChoiceLimit)))
+              return
+            }
+          }
           throw WholeShutoProductError.noExpresswayRoute
         }
         let evaluation: WholeShutoRouteChoiceEvaluation
@@ -6135,10 +6159,43 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .idle
   }
 
+  func selectProviderRoute(at index: Int) {
+    guard providerRouteChoice?.routes.indices.contains(index) == true else { return }
+    providerRouteChoice?.selectedIndex = index
+  }
+
+  func cancelProviderRouteChoice() {
+    providerRouteChoice = nil
+  }
+
+  func startProviderDrive() {
+    guard phase == .planning, providerDrive == nil, let choice = providerRouteChoice else { return }
+    let drive = ProviderGuidedDriveModel(
+      route: choice.selectedRoute,
+      destination: choice.destination,
+      resolver: surfaceRouteResolver,
+      source: liveLocationSource ?? CoreLocationForegroundNavigationSource(),
+      speechOutput: speechOutput,
+      speechMode: speechMode,
+      voiceLocale: { [languageSelectionProvider] in languageSelectionProvider().guidanceVoiceLocale })
+    providerRouteChoice = nil
+    providerDrive = drive
+    drive.start()
+  }
+
+  /// Ends the provider-guided drive, arrived or not, and returns home.
+  func finishProviderDrive() {
+    providerDrive?.end()
+    providerDrive = nil
+    clearDestinationPreview()
+    destinationQuery = ""
+  }
+
   func setSpeechMode(_ mode: GuidanceSpeechMode) {
     speechMode = mode
     driveRecordPreferenceStore.set(mode.rawValue, forKey: Self.speechModeDefaultsKey)
     speechCoordinator?.setMode(mode)
+    providerDrive?.setSpeechMode(mode)
     if mode == .muted {
       // A notice held back while muted would be spoken as news on unmute.
       pendingNotice = nil
@@ -7213,12 +7270,12 @@ final class WholeShutoProductModel: ObservableObject {
     return nil
   }
 
-  private struct SurfaceRouteMeasurement {
+  struct SurfaceRouteMeasurement {
     let fractionAlongRoute: Double
     let lateralDistanceMeters: Double
   }
 
-  private static func surfaceRouteMeasurement(
+  static func surfaceRouteMeasurement(
     _ point: ShutoCoordinate,
     along coordinates: [ShutoCoordinate]
   ) -> SurfaceRouteMeasurement? {
@@ -7862,7 +7919,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
   }
 
-  private nonisolated static func distance(
+  nonisolated static func distance(
     _ first: ShutoCoordinate,
     _ second: ShutoCoordinate
   ) -> Double {

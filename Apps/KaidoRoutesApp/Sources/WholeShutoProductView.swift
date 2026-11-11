@@ -172,6 +172,19 @@ struct WholeShutoProductView: View {
       value: model.activeJunctionPrompt
     )
     .preferredColorScheme(mapAppearance.colorScheme)
+    .overlay {
+      if let drive = model.providerDrive {
+        ProviderGuidedDriveView(
+          drive: drive,
+          locale: languageSettings.interfaceLocale,
+          isMuted: model.speechMode == .muted,
+          onToggleMute: {
+            if model.speechMode == .muted { model.unmuteSpeech() } else { model.setSpeechMode(.muted) }
+          },
+          onFinish: { model.finishProviderDrive() }
+        )
+      }
+    }
     .sheet(isPresented: $showsRouteCustomization) {
       WholeShutoCustomRouteSheet(model: model)
         .environment(\.colorScheme, .dark)
@@ -269,6 +282,10 @@ struct WholeShutoProductView: View {
     .onChange(of: model.isLiveDrive, initial: true) {
       updateIdleTimer()
     }
+    .onChange(of: model.providerDrive == nil) {
+      updateIdleTimer()
+      planningLocation.setForeground(scenePhase == .active && model.providerDrive == nil)
+    }
     .onChange(of: model.phase) {
       updateIdleTimer()
       if model.phase == .review, model.isCircuitRouteSelected {
@@ -324,7 +341,8 @@ struct WholeShutoProductView: View {
 
   private func updateIdleTimer() {
     UIApplication.shared.isIdleTimerDisabled =
-      WholeShutoIdleTimerPolicy.disablesIdleTimer(
+      model.providerDrive != nil
+      || WholeShutoIdleTimerPolicy.disablesIdleTimer(
         isLiveDrive: model.isLiveDrive,
         phase: model.phase
       )
@@ -1154,6 +1172,25 @@ struct WholeShutoProductView: View {
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
+      if let choice = model.providerRouteChoice {
+        ProviderRouteChoicePanel(
+          choice: choice,
+          locale: languageSettings.interfaceLocale,
+          onSelect: { model.selectProviderRoute(at: $0) },
+          onStart: { model.startProviderDrive() },
+          onCancel: { model.cancelProviderRouteChoice() }
+        )
+      } else {
+        planningComposer
+      }
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 4)
+    .padding(.bottom, 14)
+  }
+
+  private var planningComposer: some View {
+    VStack(spacing: 12) {
       // While a place search is open the catalog steps aside, so the field
       // and its suggestions sit above the keyboard instead of under it.
       if !isPlaceSearchActive {
@@ -1175,9 +1212,6 @@ struct WholeShutoProductView: View {
 
       routeFailureBanner
     }
-    .padding(.horizontal, 16)
-    .padding(.top, 4)
-    .padding(.bottom, 14)
   }
 
   private var isPlaceSearchActive: Bool {

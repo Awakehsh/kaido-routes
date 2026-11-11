@@ -82,6 +82,20 @@ internal review workbench.
   it flags as using either is taken only when it returns nothing else (an
   access leg that ends on the entrance ramp is often flagged for the ramp
   itself).
+- A searched place (other than a PA) opens one route list of at most three
+  ways there, fastest first: Kaido routes and MapKit's own door-to-door
+  routes, which may use expressways including the Shuto. Cards show time,
+  distance and roads only; no toll amount, because MapKit gives only whether
+  a route has tolls. A MapKit route that drives a Kaido route's exact path
+  (within 60 m and 5 % distance) is listed once, as the Kaido route, with
+  MapKit's traffic-aware time. A Kaido route then continues into the parked
+  review as before. A MapKit route starts a provider-guided drive at once:
+  MapKit's own steps on the header and in speech, reroutes from MapKit after
+  two off-route fixes and a 15 s cooldown (keeping the chosen road kind),
+  no junction insets, and arrival within 50 m of the place or at the route's
+  end. Without any MapKit route (offline) the place goes straight to the
+  Kaido review. A provider-guided drive is not restored after the app is
+  closed and is not written to drive history.
 - PAs appear in destination search alongside other places. Selecting one
   plans its exact directional access and an arrival point on the reviewed
   parking interior. There is no separate stop-selection screen. A PA-ended

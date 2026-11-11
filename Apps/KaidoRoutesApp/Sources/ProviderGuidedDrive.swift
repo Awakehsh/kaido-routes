@@ -5,14 +5,44 @@ import KaidoDomain
 import KaidoPresentation
 import KaidoRouting
 
-/// Door-to-door routes the map provider offered for one destination, before
-/// the driver picks one.
-struct ProviderRouteChoice: Equatable {
+/// One way to the chosen place, as the route list shows it. The driver
+/// compares time, distance and roads; who guides it is not shown.
+struct DestinationRouteOption: Equatable, Identifiable {
+  enum Source: Equatable {
+    /// The provider guides the whole drive.
+    case provider(WholeShutoSurfaceRoute)
+    /// A Kaido Shuto route, continuing into the parked review.
+    case kaido(recommendationIndex: Int)
+  }
+
+  enum Roads: Equatable {
+    case provider(usesExpressway: Bool, name: String?)
+    case kaido(routeIDs: [String], entryNameJA: String, exitNameJA: String)
+  }
+
+  let id: String
+  let source: Source
+  /// Nil when only part of the drive could be timed.
+  let travelSeconds: Double?
+  let distanceMeters: Double?
+  let roads: Roads
+  let coordinates: [ShutoCoordinate]
+}
+
+struct DestinationRouteChoice: Equatable {
   let destination: WholeShutoPlace
-  let routes: [WholeShutoSurfaceRoute]
+  let options: [DestinationRouteOption]
+  let recommendations: [ShutoRouteRecommendation]
+  let surfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes]
+  let usesComparableProviderMetrics: Bool
   var selectedIndex = 0
 
-  var selectedRoute: WholeShutoSurfaceRoute { routes[selectedIndex] }
+  var selectedOption: DestinationRouteOption { options[selectedIndex] }
+
+  static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.destination == rhs.destination && lhs.options == rhs.options
+      && lhs.selectedIndex == rhs.selectedIndex
+  }
 }
 
 /// A drive the map provider guides end to end. It has no Kaido `RoutePlan`
@@ -40,6 +70,9 @@ final class ProviderGuidedDriveModel: ObservableObject {
   static let staleFixSeconds = 10.0
   static let positionNoticeCooldownSeconds = 60.0
   static let preannounceDistanceMeters = 250.0
+  /// A car this close to the place has arrived wherever the line ends: the
+  /// provider's route often stops on a road beside or past the entrance.
+  static let nearDestinationMeters = 50.0
 
   private let resolver: any WholeShutoSurfaceRouteResolving
   private let source: any ForegroundNavigationLocationSource
@@ -112,11 +145,15 @@ final class ProviderGuidedDriveModel: ObservableObject {
   }
 
   func end() {
+    stopTracking()
+    speech?.stop()
+  }
+
+  private func stopTracking() {
     freshnessTask?.cancel()
     freshnessTask = nil
     source.setBackgroundNavigationEnabled(false)
     source.stopUpdatingLocation()
-    speech?.stop()
   }
 
   func setSpeechMode(_ mode: GuidanceSpeechMode) {
@@ -131,6 +168,12 @@ final class ProviderGuidedDriveModel: ObservableObject {
     guard phase == .driving else { return }
     currentCoordinate = coordinate
     lastFixAt = timestamp
+    if WholeShutoProductModel.distance(coordinate, destination.coordinate)
+      <= max(Self.nearDestinationMeters, horizontalAccuracyMeters * 2)
+    {
+      arrive()
+      return
+    }
     let corridor = min(100, max(30, horizontalAccuracyMeters * 3))
     guard
       let measurement = WholeShutoProductModel.surfaceRouteMeasurement(
@@ -191,11 +234,12 @@ final class ProviderGuidedDriveModel: ObservableObject {
   private func arrive() {
     phase = .arrived
     progressFraction = 1
-    end()
+    // Speech outlives tracking so the arrival is still said; Done ends it.
+    stopTracking()
     announce(.nearDestination)
   }
 
-  private func evaluateFixFreshness() {
+  func evaluateFixFreshness() {
     guard phase == .driving, !isLocationDenied, let lastFixAt else { return }
     let current = now()
     guard current.timeIntervalSince(lastFixAt) >= Self.staleFixSeconds,

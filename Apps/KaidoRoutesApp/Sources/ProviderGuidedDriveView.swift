@@ -4,13 +4,13 @@ import KaidoRouting
 import MapKit
 import SwiftUI
 
-/// The routes to a place no Shuto route reaches: time, distance and the
-/// roads, nothing about who guides them.
-struct ProviderRouteChoicePanel: View {
-  let choice: ProviderRouteChoice
+/// Every way to the chosen place: time, distance and roads, nothing about
+/// who guides them.
+struct DestinationRouteChoicePanel: View {
+  let choice: DestinationRouteChoice
   let locale: KaidoReleaseLocale
   let onSelect: (Int) -> Void
-  let onStart: () -> Void
+  let onGo: () -> Void
   let onCancel: () -> Void
 
   private var copy: KaidoInterfaceText { KaidoInterfaceText(locale: locale) }
@@ -26,15 +26,15 @@ struct ProviderRouteChoicePanel: View {
         Button(copy.resolve(japanese: "閉じる", simplifiedChinese: "关闭", english: "Close"), action: onCancel)
           .font(.subheadline.weight(.semibold))
           .frame(minHeight: 44)
-          .accessibilityIdentifier("provider-route-choice-close")
+          .accessibilityIdentifier("destination-route-close")
       }
-      ForEach(Array(choice.routes.enumerated()), id: \.offset) { index, route in
-        Button { onSelect(index) } label: { card(route, selected: index == choice.selectedIndex) }
+      ForEach(Array(choice.options.enumerated()), id: \.element.id) { index, option in
+        Button { onSelect(index) } label: { card(option, selected: index == choice.selectedIndex) }
           .buttonStyle(.plain)
-          .accessibilityIdentifier("provider-route-option-\(index)")
+          .accessibilityIdentifier("destination-route-option-\(index)")
           .accessibilityAddTraits(index == choice.selectedIndex ? .isSelected : [])
       }
-      Button(action: onStart) {
+      Button(action: onGo) {
         Text(copy.resolve(japanese: "出発", simplifiedChinese: "出发", english: "Go"))
           .font(.headline.weight(.bold))
           .foregroundStyle(KaidoInk.surface)
@@ -42,28 +42,29 @@ struct ProviderRouteChoicePanel: View {
           .background(KaidoInk.mapRouteDriving)
           .clipShape(RoundedRectangle(cornerRadius: KaidoRadius.card))
       }
-      .accessibilityIdentifier("provider-route-start")
+      .accessibilityIdentifier("destination-route-go")
     }
   }
 
-  private func card(_ route: WholeShutoSurfaceRoute, selected: Bool) -> some View {
-    VStack(alignment: .leading, spacing: 2) {
+  private func card(_ option: DestinationRouteOption, selected: Bool) -> some View {
+    VStack(alignment: .leading, spacing: 3) {
       HStack(alignment: .firstTextBaseline, spacing: 6) {
-        Text("\(Int((route.expectedTravelTimeSeconds / 60).rounded()))")
-          .font(.system(size: selected ? 26 : 22, weight: .heavy))
-        Text(copy.resolve(japanese: "分", simplifiedChinese: "分钟", english: "min"))
-          .font(.caption)
-          .foregroundStyle(KaidoInk.textSecondary)
-        Text(ProviderGuidedDriveView.distanceLabel(route.distanceMeters))
-          .font(.subheadline.weight(.bold))
-          .foregroundStyle(KaidoInk.textSecondary)
-          .padding(.leading, 6)
+        if let seconds = option.travelSeconds {
+          Text("\(Int((seconds / 60).rounded()))")
+            .font(.system(size: selected ? 26 : 22, weight: .heavy))
+          Text(copy.resolve(japanese: "分", simplifiedChinese: "分钟", english: "min"))
+            .font(.caption)
+            .foregroundStyle(KaidoInk.textSecondary)
+        }
+        if let meters = option.distanceMeters {
+          Text(ProviderGuidedDriveView.distanceLabel(meters))
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(KaidoInk.textSecondary)
+            .padding(.leading, option.travelSeconds == nil ? 0 : 6)
+        }
       }
       .foregroundStyle(KaidoInk.textPrimary)
-      Text(roadSummary(route))
-        .font(.caption)
-        .foregroundStyle(KaidoInk.textQuiet)
-        .lineLimit(1)
+      roads(option.roads)
     }
     .padding(.horizontal, 14)
     .padding(.vertical, 10)
@@ -74,15 +75,38 @@ struct ProviderRouteChoicePanel: View {
       RoundedRectangle(cornerRadius: KaidoRadius.card)
         .stroke(selected ? KaidoInk.mapRouteDriving : KaidoInk.divider, lineWidth: selected ? 2 : 1)
     }
+    .accessibilityElement(children: .combine)
   }
 
-  private func roadSummary(_ route: WholeShutoSurfaceRoute) -> String {
-    let kind =
-      route.hasHighways == true
-      ? copy.resolve(japanese: "高速道路", simplifiedChinese: "高速", english: "Expressway")
-      : copy.resolve(japanese: "一般道路", simplifiedChinese: "一般道路", english: "Local roads")
-    guard let name = route.name else { return kind }
-    return "\(kind) · \(name)"
+  @ViewBuilder
+  private func roads(_ roads: DestinationRouteOption.Roads) -> some View {
+    switch roads {
+    case .provider(let usesExpressway, let name):
+      let kind =
+        usesExpressway
+        ? copy.resolve(japanese: "高速道路", simplifiedChinese: "高速", english: "Expressway")
+        : copy.resolve(japanese: "一般道路", simplifiedChinese: "一般道路", english: "Local roads")
+      Text(name.map { "\(kind) · \($0)" } ?? kind)
+        .font(.caption)
+        .foregroundStyle(KaidoInk.textQuiet)
+        .lineLimit(1)
+    case .kaido(let routeIDs, let entryNameJA, let exitNameJA):
+      HStack(spacing: 4) {
+        ForEach(Array(routeIDs.enumerated()), id: \.offset) { _, routeID in
+          Text(shieldLabel(routeID))
+            .font(.system(size: 10, weight: .heavy, design: .rounded))
+            .foregroundStyle(KaidoInk.onShield)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(KaidoInk.accentCool.opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: KaidoRadius.mark))
+        }
+        Text(exitNameJA.isEmpty ? entryNameJA : "\(entryNameJA) → \(exitNameJA)")
+          .font(.caption)
+          .foregroundStyle(KaidoInk.textQuiet)
+          .lineLimit(1)
+      }
+    }
   }
 }
 
@@ -137,6 +161,9 @@ struct ProviderGuidedDriveView: View {
       }
     }
     .environment(\.colorScheme, .dark)
+    // The drive covers the home: assistive navigation stays inside it.
+    .accessibilityElement(children: .contain)
+    .accessibilityAddTraits(.isModal)
     .accessibilityIdentifier("provider-drive")
   }
 
@@ -148,7 +175,7 @@ struct ProviderGuidedDriveView: View {
         ).text
       }
       let maneuver = drive.stepProgress.map { SurfaceManeuver.from(instruction: $0.step.instruction) } ?? .unknown
-      Image(systemName: maneuver == .unknown ? "arrow.up" : maneuver.symbol)
+      Image(systemName: maneuver.symbol)
         .font(.system(size: 34, weight: .bold))
         .foregroundStyle(KaidoInk.surface)
         .frame(width: 72, height: 72)
@@ -168,6 +195,7 @@ struct ProviderGuidedDriveView: View {
               .font(.headline.weight(.bold))
               .lineLimit(2)
               .minimumScaleFactor(0.8)
+              .accessibilityIdentifier("provider-drive-instruction")
           }
         }
       }

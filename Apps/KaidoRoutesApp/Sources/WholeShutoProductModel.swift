@@ -709,9 +709,10 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
   @Published private(set) var speechMode: GuidanceSpeechMode = .full
-  @Published private(set) var providerRouteChoice: ProviderRouteChoice?
+  @Published private(set) var destinationRouteChoice: DestinationRouteChoice?
   @Published private(set) var providerDrive: ProviderGuidedDriveModel?
-  static let providerRouteChoiceLimit = 3
+  /// Three cards and the Go button fit the half-height dock without a scroll.
+  static let destinationRouteOptionLimit = 3
   private var audibleSpeechMode: GuidanceSpeechMode = .full
   @Published private(set) var speechVolume: GuidanceSpeechVolume = .loud
   static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
@@ -3036,7 +3037,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func clearDestinationPreview() {
     guard phase == .planning else { return }
-    providerRouteChoice = nil
+    destinationRouteChoice = nil
     destination = nil
     selectedDestinationTitle = nil
   }
@@ -3257,7 +3258,7 @@ final class WholeShutoProductModel: ObservableObject {
   func planJourney() {
     guard !isPlanning else { return }
     journeyEnding = .destination
-    providerRouteChoice = nil
+    destinationRouteChoice = nil
     cancelSurfaceRouteResolution()
     clearRouteChoiceEvaluation()
     accessRoute = nil
@@ -3271,31 +3272,23 @@ final class WholeShutoProductModel: ObservableObject {
         let resolvedDestination = try await resolveDestination(
           near: resolvedOrigin.coordinate
         )
+        let isParkingDestination = resolvedDestination.parkingAreaID != nil
+        let resolver = surfaceRouteResolver
+        let providerRoutesTask = Task {
+          isParkingDestination
+            ? []
+            : await resolver.providerRoutes(
+              from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate)
+        }
+        defer { providerRoutesTask.cancel() }
         let routes: [ShutoRouteRecommendation]
         if let parkingID = resolvedDestination.parkingAreaID {
           routes = planner.recommend(from: resolvedOrigin.coordinate, destinationParkingAreaID: parkingID, preference: preference)
         } else {
           routes = try planner.recommend(from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate, preference: preference)
         }
-        guard !routes.isEmpty else {
-          // No direction-valid Shuto route reaches this place; the map
-          // provider's own routes still can.
-          if resolvedDestination.parkingAreaID == nil {
-            let providerRoutes = await surfaceRouteResolver.providerRoutes(
-              from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate)
-            if !providerRoutes.isEmpty {
-              origin = resolvedOrigin
-              destination = resolvedDestination
-              providerRouteChoice = ProviderRouteChoice(
-                destination: resolvedDestination,
-                routes: Array(providerRoutes.prefix(Self.providerRouteChoiceLimit)))
-              return
-            }
-          }
-          throw WholeShutoProductError.noExpresswayRoute
-        }
         let evaluation: WholeShutoRouteChoiceEvaluation
-        if resolvedDestination.parkingAreaID != nil {
+        if isParkingDestination || routes.isEmpty {
           evaluation = .init(recommendations: routes, surfaceRoutesByRoutePlanID: [:], usesComparableProviderMetrics: false)
         } else {
           evaluation = await routeChoiceEvaluator.evaluate(
@@ -3304,8 +3297,36 @@ final class WholeShutoProductModel: ObservableObject {
           destination: resolvedDestination.coordinate
         )
         }
+        let providerRoutes = await providerRoutesTask.value
+        guard !routes.isEmpty || !providerRoutes.isEmpty else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
         origin = resolvedOrigin
         destination = resolvedDestination
+        // A PA ends inside the parking area, which only a Kaido route
+        // reaches; every other place lists all the ways there first. With no
+        // provider route (offline) the list would only repeat review's cards.
+        guard isParkingDestination || providerRoutes.isEmpty else {
+          destinationRouteChoice = Self.destinationRouteChoice(
+            destination: resolvedDestination, evaluation: evaluation, providerRoutes: providerRoutes)
+          mapMode = .geographic
+          return
+        }
+        enterKaidoReview(evaluation: evaluation, origin: resolvedOrigin, destination: resolvedDestination)
+      } catch {
+        failureCode = Self.failureCode(error)
+      }
+    }
+  }
+
+  /// Continues a chosen Kaido route into the parked review, as planning did
+  /// before the route list existed.
+  private func enterKaidoReview(
+    evaluation: WholeShutoRouteChoiceEvaluation,
+    origin resolvedOrigin: WholeShutoPlace,
+    destination resolvedDestination: WholeShutoPlace,
+    selectedIndex: Int = 0
+  ) {
         recommendations = evaluation.recommendations
         routeChoiceSurfaceRoutesByRoutePlanID =
           evaluation.surfaceRoutesByRoutePlanID
@@ -3317,24 +3338,82 @@ final class WholeShutoProductModel: ObservableObject {
               evaluation.surfaceRoutesByRoutePlanID
           )
           : [:]
-        selectedRecommendationIndex = 0
+        selectedRecommendationIndex = selectedIndex
         clearCustomRouteSelection()
         clearCircuitRouteSelection()
         clearCircuitPlanningDraft()
         phase = .review
         progressFraction = 0
-        if !applyCachedSurfaceRoutes(for: evaluation.recommendations[0]) {
+        if !applyCachedSurfaceRoutes(for: evaluation.recommendations[selectedIndex]) {
           resolveSurfaceRoutes(
-            for: evaluation.recommendations[0],
+            for: evaluation.recommendations[selectedIndex],
             origin: resolvedOrigin,
             destination: resolvedDestination
           )
         }
         persistCheckpoint()
-      } catch {
-        failureCode = Self.failureCode(error)
+  }
+
+  /// Every way to the place, fastest first. A provider route that drives a
+  /// Kaido route's exact path is that Kaido route: it is listed once, as
+  /// Kaido (which guides its junctions), with the provider's traffic-aware
+  /// time. A Kaido route timed only in part goes after the timed ones.
+  static func destinationRouteChoice(
+    destination: WholeShutoPlace,
+    evaluation: WholeShutoRouteChoiceEvaluation,
+    providerRoutes: [WholeShutoSurfaceRoute]
+  ) -> DestinationRouteChoice {
+    var unmatchedProviderRoutes = providerRoutes
+    var kaidoOptions: [DestinationRouteOption] = []
+    for (index, recommendation) in evaluation.recommendations.enumerated() {
+      let route = recommendation.route
+      let legs = evaluation.surfaceRoutesByRoutePlanID[route.routePlan.id]
+      let path = (legs?.access.coordinates ?? []) + route.coordinates + (legs?.egress.coordinates ?? [])
+      var seconds: Double?
+      var meters: Double?
+      if let legs {
+        let metrics = routeChoiceMetrics(for: route, accessRoute: legs.access, egressRoute: legs.egress)
+        seconds = metrics.expectedTravelTimeSeconds
+        meters = metrics.totalDistanceMeters
+        if let match = unmatchedProviderRoutes.firstIndex(where: {
+          WholeShutoExpresswayTimingMatch.accepts(
+            candidate: $0.coordinates, candidateDistanceMeters: $0.distanceMeters,
+            usesExpressway: $0.hasHighways == true,
+            path: path, pathDistanceMeters: metrics.totalDistanceMeters)
+        }) {
+          seconds = unmatchedProviderRoutes[match].expectedTravelTimeSeconds
+          unmatchedProviderRoutes.remove(at: match)
+        }
       }
+      kaidoOptions.append(
+        DestinationRouteOption(
+          id: "kaido:\(route.routePlan.id)",
+          source: .kaido(recommendationIndex: index),
+          travelSeconds: seconds,
+          distanceMeters: meters,
+          roads: .kaido(
+            routeIDs: route.routeIDsInOrder, entryNameJA: route.entryFacility.nameJA,
+            exitNameJA: route.exitFacility?.nameJA ?? ""),
+          coordinates: path))
     }
+    let providerOptions = unmatchedProviderRoutes.enumerated().map { index, route in
+      DestinationRouteOption(
+        id: "provider:\(index)",
+        source: .provider(route),
+        travelSeconds: route.expectedTravelTimeSeconds,
+        distanceMeters: route.distanceMeters,
+        roads: .provider(usesExpressway: route.hasHighways == true, name: route.name),
+        coordinates: route.coordinates)
+    }
+    let timed = (providerOptions + kaidoOptions.filter { $0.travelSeconds != nil })
+      .sorted { ($0.travelSeconds ?? 0) < ($1.travelSeconds ?? 0) }
+    let options = Array((timed + kaidoOptions.filter { $0.travelSeconds == nil })
+      .prefix(destinationRouteOptionLimit))
+    return DestinationRouteChoice(
+      destination: destination, options: options,
+      recommendations: evaluation.recommendations,
+      surfaceRoutesByRoutePlanID: evaluation.surfaceRoutesByRoutePlanID,
+      usesComparableProviderMetrics: evaluation.usesComparableProviderMetrics)
   }
 
   func selectRecommendation(at index: Int) {
@@ -6159,26 +6238,45 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .idle
   }
 
-  func selectProviderRoute(at index: Int) {
-    guard providerRouteChoice?.routes.indices.contains(index) == true else { return }
-    providerRouteChoice?.selectedIndex = index
+  func selectDestinationRoute(at index: Int) {
+    guard destinationRouteChoice?.options.indices.contains(index) == true else { return }
+    destinationRouteChoice?.selectedIndex = index
   }
 
-  func cancelProviderRouteChoice() {
-    providerRouteChoice = nil
+  func cancelDestinationRouteChoice() {
+    destinationRouteChoice = nil
   }
 
-  func startProviderDrive() {
-    guard phase == .planning, providerDrive == nil, let choice = providerRouteChoice else { return }
+  /// Goes with the selected way: a provider route starts its drive now; a
+  /// Kaido route continues into the parked review before any drive.
+  func goWithDestinationRoute() {
+    guard phase == .planning, providerDrive == nil, let choice = destinationRouteChoice,
+      let origin, let destination
+    else { return }
+    switch choice.selectedOption.source {
+    case .provider(let route):
+      startProviderDrive(route: route, destination: choice.destination)
+    case .kaido(let index):
+      destinationRouteChoice = nil
+      enterKaidoReview(
+        evaluation: WholeShutoRouteChoiceEvaluation(
+          recommendations: choice.recommendations,
+          surfaceRoutesByRoutePlanID: choice.surfaceRoutesByRoutePlanID,
+          usesComparableProviderMetrics: choice.usesComparableProviderMetrics),
+        origin: origin, destination: destination, selectedIndex: index)
+    }
+  }
+
+  private func startProviderDrive(route: WholeShutoSurfaceRoute, destination: WholeShutoPlace) {
     let drive = ProviderGuidedDriveModel(
-      route: choice.selectedRoute,
-      destination: choice.destination,
+      route: route,
+      destination: destination,
       resolver: surfaceRouteResolver,
       source: liveLocationSource ?? CoreLocationForegroundNavigationSource(),
       speechOutput: speechOutput,
       speechMode: speechMode,
       voiceLocale: { [languageSelectionProvider] in languageSelectionProvider().guidanceVoiceLocale })
-    providerRouteChoice = nil
+    destinationRouteChoice = nil
     providerDrive = drive
     drive.start()
   }

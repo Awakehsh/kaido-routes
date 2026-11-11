@@ -282,6 +282,15 @@ struct WholeShutoProductView: View {
     .onChange(of: model.isLiveDrive, initial: true) {
       updateIdleTimer()
     }
+    .onChange(of: model.destinationRouteChoice != nil) { _, isChoosing in
+      // The route list replaces the search: fold it so the dock sits at the
+      // foot and the map above shows the selected way.
+      if isChoosing {
+        showsDestinationComposer = false
+        focusedPlanningField = nil
+        placeSearch.dismissResults()
+      }
+    }
     .onChange(of: model.providerDrive == nil) {
       updateIdleTimer()
       planningLocation.setForeground(scenePhase == .active && model.providerDrive == nil)
@@ -1172,13 +1181,13 @@ struct WholeShutoProductView: View {
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
-      if let choice = model.providerRouteChoice {
-        ProviderRouteChoicePanel(
+      if let choice = model.destinationRouteChoice {
+        DestinationRouteChoicePanel(
           choice: choice,
           locale: languageSettings.interfaceLocale,
-          onSelect: { model.selectProviderRoute(at: $0) },
-          onStart: { model.startProviderDrive() },
-          onCancel: { model.cancelProviderRouteChoice() }
+          onSelect: { model.selectDestinationRoute(at: $0) },
+          onGo: { model.goWithDestinationRoute() },
+          onCancel: { model.cancelDestinationRouteChoice() }
         )
       } else {
         planningComposer
@@ -6916,6 +6925,14 @@ private struct WholeShutoGeographicMap: View {
           )
       }
 
+      if model.phase == .planning, let option = model.destinationRouteChoice?.selectedOption {
+        MapPolyline(coordinates: option.coordinates.map(\.mapCoordinate))
+          .stroke(
+            KaidoInk.mapRouteDriving,
+            style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round)
+          )
+      }
+
       if let accessRoute = model.accessRoute,
         model.phase == .review || model.phase == .surfaceAccess
       {
@@ -7337,6 +7354,9 @@ private struct WholeShutoGeographicMap: View {
     .onChange(of: selectedMapFeature != nil) { _, isSelected in
       handleMapFeatureSelection(isSelected: isSelected)
     }
+    .onChange(of: model.destinationRouteChoice?.selectedOption.id) {
+      updateCamera(force: true)
+    }
     .onDisappear {
       gestureResumeTask?.cancel()
       gestureResumeTask = nil
@@ -7586,8 +7606,13 @@ private struct WholeShutoGeographicMap: View {
   /// Bounding region over the selected route plus resolved surface legs,
   /// with padding so the review frame reads as one journey.
   private func journeyRegion() -> MKCoordinateRegion? {
-    guard let route = model.selectedRoute else { return nil }
     var coordinates: [ShutoCoordinate] = []
+    if model.phase == .planning, let option = model.destinationRouteChoice?.selectedOption {
+      coordinates = stride(from: 0, to: option.coordinates.count, by: 8).map { option.coordinates[$0] }
+      coordinates += [option.coordinates.last, model.origin?.coordinate].compactMap { $0 }
+      return Self.region(spanning: coordinates)
+    }
+    guard let route = model.selectedRoute else { return nil }
     coordinates.append(
       contentsOf: stride(from: 0, to: route.coordinates.count, by: 8)
         .map { route.coordinates[$0] }
@@ -7601,6 +7626,10 @@ private struct WholeShutoGeographicMap: View {
     if let origin = model.origin {
       coordinates.append(origin.coordinate)
     }
+    return Self.region(spanning: coordinates)
+  }
+
+  private static func region(spanning coordinates: [ShutoCoordinate]) -> MKCoordinateRegion? {
     guard let first = coordinates.first else { return nil }
     var minLatitude = first.latitude
     var maxLatitude = first.latitude

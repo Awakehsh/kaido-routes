@@ -2670,3 +2670,23 @@ surface access but no provider egress; the existing exit-handoff completion path
 ends them. Ordinary onward destinations require resolved access and egress. Changing the onward
 destination invalidates cached surface comparisons and does not alter RoutePlan.
 Changing an exit is an explicit route edit; a circuit retains its course and laps.
+
+### Provider-guided drive
+
+A searched place's route list can include MapKit's own door-to-door routes
+(`WholeShutoSurfaceRouteResolving.providerRoutes`). Choosing one starts a
+`ProviderGuidedDriveModel`, which is deliberately outside the Kaido runtime:
+no `RoutePlan`, no `KaidoProductRelease`, no `KaidoLiveJourneyAdmission`, no
+`NavigationSession` and no checkpoint. It reads the same
+`ForegroundNavigationLocationSource` the released runtime uses directly, with
+background updates only while the driver-started drive runs, and speaks
+through its own `GuidanceSpeechCoordinator` keyed by a per-drive identity.
+It shares the surface-leg rules: step progress by step distance
+(`WholeShutoSurfaceRoute.stepProgress`), a 30-100 m corridor that accuracy
+only widens, two off-route fixes before rerouting, a 15 s reroute cooldown,
+and a spoken position notice only for a fix stale 10 s, once a minute. A route
+through the Shuto is guided by MapKit's steps there too; it never becomes or
+alters a Kaido `RoutePlan`, and Kaido makes no junction claim for it. A
+provider route that matches a Kaido candidate's whole path
+(`WholeShutoExpresswayTimingMatch`) is not offered separately: the Kaido route
+is, with the provider's time.

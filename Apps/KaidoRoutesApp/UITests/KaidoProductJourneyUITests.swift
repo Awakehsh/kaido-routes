@@ -1024,23 +1024,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
     suggestionsScreenshot.lifetime = .keepAlways
     add(suggestionsScreenshot)
 
+    // Choosing the place is the last step: routes are found without a
+    // separate "Find routes" tap once the origin is known.
     suggestion.tap()
-
-    XCTAssertTrue(
-      element("whole-shuto-selected-destination", in: app)
-        .waitForExistence(timeout: 5)
-    )
-    XCTAssertEqual(destination.value as? String, "东京塔")
-    XCTAssertTrue(app.buttons["whole-shuto-plan-route"].isEnabled)
-
-    let selectedDestinationScreenshot = XCTAttachment(
-      screenshot: XCUIScreen.main.screenshot()
-    )
-    selectedDestinationScreenshot.name = "Whole Shuto selected destination"
-    selectedDestinationScreenshot.lifetime = .keepAlways
-    add(selectedDestinationScreenshot)
-
-    app.buttons["whole-shuto-plan-route"].tap()
     XCTAssertTrue(
       element("whole-shuto-route-selection", in: app)
         .waitForExistence(timeout: 5)
@@ -1349,7 +1335,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let ginza = app.buttons["whole-shuto-place-suggestion-shuto-facility:shuto.ic.c1.ginza"]
     XCTAssertTrue(ginza.waitForExistence(timeout: 5))
     ginza.tap()
-    XCTAssertTrue(planRoute.isEnabled)
+    // The second end completes the pair, so routes are found at once.
+    XCTAssertTrue(
+      element("whole-shuto-route-selection", in: app)
+        .waitForExistence(timeout: 5)
+    )
 
     let manualOriginScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()

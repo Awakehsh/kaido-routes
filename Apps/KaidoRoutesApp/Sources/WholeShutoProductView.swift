@@ -1154,7 +1154,11 @@ struct WholeShutoProductView: View {
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
-      circuitExperienceSection
+      // While a place search is open the catalog steps aside, so the field
+      // and its suggestions sit above the keyboard instead of under it.
+      if !isPlaceSearchActive {
+        circuitExperienceSection
+      }
 
       HStack(spacing: 8) {
         if !showsDestinationComposer {
@@ -1174,6 +1178,11 @@ struct WholeShutoProductView: View {
     .padding(.horizontal, 16)
     .padding(.top, 4)
     .padding(.bottom, 14)
+  }
+
+  private var isPlaceSearchActive: Bool {
+    showsDestinationComposer
+      && (focusedPlanningField != nil || placeSearch.state != .idle)
   }
 
   /// The home leads with the route experience, not a destination field.
@@ -2612,6 +2621,9 @@ struct WholeShutoProductView: View {
       if !showsDestinationComposer {
         focusedPlanningField = nil
         placeSearch.dismissResults()
+      } else if planningLocation.snapshot == nil {
+        // Suggestions are ranked around the driver, so measure while they type.
+        planningLocation.requestCurrentLocation()
       }
     } label: {
       HStack(spacing: 8) {
@@ -2625,7 +2637,7 @@ struct WholeShutoProductView: View {
             english: "OR GO SOMEWHERE"
           )
         )
-        .font(.system(size: 10, weight: .semibold))
+        .font(.system(size: 12, weight: .semibold))
         .foregroundStyle(.secondary)
         .fixedSize()
         Image(
@@ -2801,16 +2813,16 @@ struct WholeShutoProductView: View {
                   systemName: suggestion.isShutoFacility
                     ? "road.lanes" : "mappin"
                 )
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(
                   suggestion.isShutoFacility
                     ? KaidoInk.accentCool : KaidoInk.accentWarm
                 )
-                .frame(width: 24)
+                .frame(width: 28)
                 VStack(alignment: .leading, spacing: 1) {
                   HStack(spacing: 6) {
                     Text(suggestion.title)
-                      .font(.system(size: 13, weight: .bold))
+                      .font(.system(size: 16, weight: .bold))
                       .foregroundStyle(KaidoInk.textPrimary)
                       .lineLimit(1)
                     if suggestion.isShutoFacility {
@@ -2831,7 +2843,7 @@ struct WholeShutoProductView: View {
                   }
                   if !suggestion.displaySubtitle(copy).isEmpty {
                     Text(suggestion.displaySubtitle(copy))
-                      .font(.system(size: 9, weight: .medium))
+                      .font(.system(size: 12, weight: .medium))
                       .foregroundStyle(KaidoInk.textQuiet)
                       .lineLimit(1)
                   }
@@ -2842,7 +2854,7 @@ struct WholeShutoProductView: View {
                   .foregroundStyle(KaidoInk.textSecondary)
               }
               .padding(.horizontal, 10)
-              .frame(height: 46)
+              .frame(height: 58)
               .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -2858,7 +2870,7 @@ struct WholeShutoProductView: View {
 
             if suggestion.id != placeSearch.suggestions.last?.id {
               Divider()
-                .padding(.leading, 44)
+                .padding(.leading, 48)
             }
           }
         }
@@ -5397,10 +5409,14 @@ struct WholeShutoProductView: View {
           model.selectOriginPreview(place)
           showsManualOrigin = true
           model.refreshCircuitEntrances()
-          focusedPlanningField = .destination
+          focusedPlanningField = nil
+          if model.hasSelectedDestinationPreview {
+            beginRoutePlanning()
+          }
         } else {
           model.selectDestinationPreview(place)
           focusedPlanningField = nil
+          beginRoutePlanning()
         }
       } catch {
         // The search controller exposes the failure beside the search action.

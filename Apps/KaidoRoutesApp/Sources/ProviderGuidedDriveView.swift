@@ -251,6 +251,14 @@ struct ProviderGuidedDriveView: View {
             english: "Location is off. Allow it in Settings"))
             .font(.footnote.weight(.semibold))
             .foregroundStyle(KaidoInk.accentClay)
+        } else if drive.isPositionStale {
+          Text(copy.resolve(
+            japanese: "位置不確か · 自動再取得中",
+            simplifiedChinese: "定位弱 · 正在自动重新定位",
+            english: "Weak position · reacquiring"))
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(KaidoInk.accentClay)
+            .accessibilityIdentifier("provider-drive-position-stale")
         }
         HStack(alignment: .firstTextBaseline) {
           VStack(alignment: .leading, spacing: 2) {

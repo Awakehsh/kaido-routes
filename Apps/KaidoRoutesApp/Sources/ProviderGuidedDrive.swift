@@ -62,6 +62,7 @@ final class ProviderGuidedDriveModel: ObservableObject {
   @Published private(set) var isOffRoute = false
   @Published private(set) var isRerouting = false
   @Published private(set) var isLocationDenied = false
+  @Published private(set) var isPositionStale = false
 
   let destination: WholeShutoPlace
 
@@ -73,6 +74,9 @@ final class ProviderGuidedDriveModel: ObservableObject {
   /// A car this close to the place has arrived wherever the line ends: the
   /// provider's route often stops on a road beside or past the entrance.
   static let nearDestinationMeters = 50.0
+  /// Arrival ends tracking for good, so a coarse fix may widen its radius
+  /// only this far; a 1 km fix at the start must not end the drive.
+  static let arrivalRadiusCapMeters = 100.0
 
   private let resolver: any WholeShutoSurfaceRouteResolving
   private let source: any ForegroundNavigationLocationSource
@@ -168,8 +172,9 @@ final class ProviderGuidedDriveModel: ObservableObject {
     guard phase == .driving else { return }
     currentCoordinate = coordinate
     lastFixAt = timestamp
+    isPositionStale = false
     if WholeShutoProductModel.distance(coordinate, destination.coordinate)
-      <= max(Self.nearDestinationMeters, horizontalAccuracyMeters * 2)
+      <= Self.arrivalRadius(Self.nearDestinationMeters, horizontalAccuracyMeters)
     {
       arrive()
       return
@@ -187,12 +192,17 @@ final class ProviderGuidedDriveModel: ObservableObject {
     isOffRoute = false
     progressFraction = max(progressFraction, measurement.fractionAlongRoute)
     if progressFraction >= 0.995, let end = route.coordinates.last,
-      WholeShutoProductModel.distance(coordinate, end) <= max(30, horizontalAccuracyMeters * 2)
+      WholeShutoProductModel.distance(coordinate, end)
+        <= Self.arrivalRadius(30, horizontalAccuracyMeters)
     {
       arrive()
       return
     }
     scheduleStepSpeech(forceCurrentStep: false)
+  }
+
+  private static func arrivalRadius(_ floor: Double, _ horizontalAccuracyMeters: Double) -> Double {
+    min(arrivalRadiusCapMeters, max(floor, horizontalAccuracyMeters * 2))
   }
 
   private func beginUpdating() {
@@ -242,8 +252,9 @@ final class ProviderGuidedDriveModel: ObservableObject {
   func evaluateFixFreshness() {
     guard phase == .driving, !isLocationDenied, let lastFixAt else { return }
     let current = now()
-    guard current.timeIntervalSince(lastFixAt) >= Self.staleFixSeconds,
-      lastPositionNoticeAt.map({ current.timeIntervalSince($0) >= Self.positionNoticeCooldownSeconds })
+    guard current.timeIntervalSince(lastFixAt) >= Self.staleFixSeconds else { return }
+    isPositionStale = true
+    guard lastPositionNoticeAt.map({ current.timeIntervalSince($0) >= Self.positionNoticeCooldownSeconds })
         ?? true
     else { return }
     lastPositionNoticeAt = current
@@ -314,7 +325,13 @@ extension ProviderGuidedDriveModel: ForegroundNavigationLocationSourceDelegate {
     didDeliver locations: [CLLocation],
     receivedAt: Date
   ) {
-    for location in locations where location.horizontalAccuracy >= 0 {
+    // A fix that was already stale when it arrived (a cached first fix, a
+    // late batch) would move progress or end the drive from where the car
+    // was; drop it and let the freshness check own the gap.
+    for location in locations
+    where location.horizontalAccuracy >= 0
+      && receivedAt.timeIntervalSince(location.timestamp) < Self.staleFixSeconds
+    {
       observe(
         ShutoCoordinate(
           latitude: location.coordinate.latitude, longitude: location.coordinate.longitude),
